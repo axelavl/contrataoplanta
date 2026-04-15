@@ -1,0 +1,25 @@
+======================================================================
+CATÁLOGO: 700 instituciones
+----------------------------------------------------------------------
+Clasificación por status:
+Traceback (most recent call last):
+  File "C:\proyectos\empleoestado\scrapers\run_all.py", line 619, in <module>
+    main()
+    ~~~~^^
+  File "C:\proyectos\empleoestado\scrapers\run_all.py", line 245, in main
+    print_pre_run_summary(
+    ~~~~~~~~~~~~~~~~~~~~~^
+        total_catalogo=len(instituciones),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+        only_kind=only_kind_raw,
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\proyectos\empleoestado\scrapers\run_all.py", line 533, in print_pre_run_summary
+    print(f"  {mark} {status.value:<16} {count:>4}")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\valen\AppData\Local\Programs\Python\Python314\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2192' in position 2: character maps to <undefined>

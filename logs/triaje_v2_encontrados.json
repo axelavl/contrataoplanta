@@ -1,0 +1,237 @@
+[
+  {
+    "id": 367,
+    "nombre": "Municipalidad de El Quisco",
+    "sitio_web": "http://www.elquisco.cl",
+    "status": 200,
+    "url_final": "https://www.elquisco.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://www.elquisco.cl/postulacion-feria-libre-2026/",
+        "texto": "Municipalidad de El Quisco abre postulaciones para nuevos puestos en la Feria Libre",
+        "score": 5,
+        "match": [
+          "t+postulaciones",
+          "h+postul"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 368,
+    "nombre": "Municipalidad de El Tabo",
+    "sitio_web": "https://www.eltabo.cl",
+    "status": 200,
+    "url_final": "https://eltabo.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://eltabo.cl/omil/",
+        "texto": "Oficina de Información Laboral (omil)",
+        "score": 4,
+        "match": [
+          "H+/omil/"
+        ]
+      },
+      {
+        "url": "https://eltabo.cl/proceso-de-seleccion-para-el-cargo-de-orientador-a-laboral-para-omil-el-tabo/",
+        "texto": "Leer más...",
+        "score": 4,
+        "match": [
+          "H+omil-"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 375,
+    "nombre": "Municipalidad de Santa María",
+    "sitio_web": "http://imsantamaria.cl",
+    "status": 200,
+    "url_final": "https://imsantamaria.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "links_empleo": []
+  },
+  {
+    "id": 427,
+    "nombre": "Municipalidad de Talagante",
+    "sitio_web": "https://www.talagante.com",
+    "status": 200,
+    "url_final": "http://www.talagante.com/",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "links_empleo": []
+  },
+  {
+    "id": 428,
+    "nombre": "Municipalidad de El Monte",
+    "sitio_web": "http://munielmonte.cl",
+    "status": 200,
+    "url_final": "https://munielmonte.cl/",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "links_empleo": [
+      {
+        "url": "https://munielmonte.cl/concursos.html",
+        "texto": "Concursos",
+        "score": 8,
+        "match": [
+          "t+concursos",
+          "t+concurso",
+          "h+concurs"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 468,
+    "nombre": "Municipalidad de Maule",
+    "sitio_web": "http://comunademaule.cl",
+    "status": 200,
+    "url_final": "http://comunademaule.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "links_empleo": []
+  },
+  {
+    "id": 491,
+    "nombre": "Municipalidad de San Javier",
+    "sitio_web": "http://www.imsanjavier.cl",
+    "status": 200,
+    "url_final": "https://imsanjavier.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://imsanjavier.cl/concursos/",
+        "texto": "Concursos",
+        "score": 4,
+        "match": [
+          "H+/concursos/"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 547,
+    "nombre": "Municipalidad de Tirúa",
+    "sitio_web": "https://munitirua.gob.cl",
+    "status": 200,
+    "url_final": "https://munitirua.gob.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "links_empleo": []
+  },
+  {
+    "id": 583,
+    "nombre": "Municipalidad de La Unión",
+    "sitio_web": "https://municipiolaunion.com",
+    "status": 200,
+    "url_final": "https://municipiolaunion.com",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "links_empleo": []
+  },
+  {
+    "id": 623,
+    "nombre": "Municipalidad de Lago Verde",
+    "sitio_web": "https://comunalagoverde.cl",
+    "status": 200,
+    "url_final": "https://comunalagoverde.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:powered by layerslider 8.1.2 - build her",
+    "links_empleo": []
+  },
+  {
+    "id": 657,
+    "nombre": "Corporación Municipal de Chonchi",
+    "sitio_web": "http://www.municipalidadchonchi.cl",
+    "status": 200,
+    "url_final": "https://municipalidadchonchi.cl/web/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://municipalidadchonchi.cl/web/documentos/decreto-convocatoria-consejo-comunal-de-organizaciones-de-la-sociedad-civil/",
+        "texto": "Convocatoria Consejo Comunal de Organizaciones de la Sociedad Civil",
+        "score": 5,
+        "match": [
+          "t+convocatoria",
+          "h+convocatoria"
+        ]
+      },
+      {
+        "url": "https://municipalidadchonchi.cl/web/municipio/omil/",
+        "texto": "OMIL",
+        "score": 4,
+        "match": [
+          "H+/omil/"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 658,
+    "nombre": "Corporación Municipal de Queilén",
+    "sitio_web": "https://www.muniqueilen.cl",
+    "status": 200,
+    "url_final": "https://muniqueilen.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://muniqueilen.cl/concursos-publicos/",
+        "texto": "Concursos Públicos",
+        "score": 9,
+        "match": [
+          "T+concursos públicos",
+          "H+concursos-publicos"
+        ]
+      },
+      {
+        "url": "https://muniqueilen.cl/direcciones/dideco/omil/",
+        "texto": "OMIL",
+        "score": 4,
+        "match": [
+          "H+/omil/"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 661,
+    "nombre": "Corporación Municipal de Curaco de Vélez",
+    "sitio_web": "https://www.curacodevelez.cl",
+    "status": 200,
+    "url_final": "https://curacodevelez.cl/web/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://curacodevelez.cl/web/cat_doc/recepcion-de-antecedentes/",
+        "texto": "Concursos Públicos",
+        "score": 5,
+        "match": [
+          "T+concursos públicos"
+        ]
+      }
+    ]
+  }
+]

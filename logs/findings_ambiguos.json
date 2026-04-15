@@ -1,0 +1,387 @@
+{
+  "300": {
+    "sitio_web_nuevo": "https://maho.cl",
+    "url_empleo": "https://maho.cl",
+    "plataforma": "Sitio propio",
+    "notas": "Dominio oficial es maho.cl, no altohospicio.cl. Sin seccion empleo dedicada visible.",
+    "estado": "Verificado"
+  },
+  "348": {
+    "sitio_web_nuevo": null,
+    "url_empleo": "https://callelarga.omil.cl/",
+    "plataforma": "Trabajando.cl/OMIL",
+    "notas": "Portal OMIL propio en callelarga.omil.cl",
+    "estado": "Verificado"
+  },
+  "350": {
+    "sitio_web_nuevo": null,
+    "url_empleo": "https://www.munisanesteban.cl",
+    "plataforma": "Sitio propio",
+    "notas": "OMIL fisico con telefono 34-2481828; sin portal web dedicado visible",
+    "estado": "Verificado"
+  },
+  "356": {
+    "sitio_web_nuevo": "https://quillota.cl",
+    "url_empleo": "https://quillota.cl/municipalidad/municipio/concursos-publicos/",
+    "plataforma": "WordPress",
+    "notas": "Dominio oficial es quillota.cl (no muniquillota.cl). OMIL en omil.quillota.cl",
+    "estado": "Verificado"
+  },
+  "359": {
+    "sitio_web_nuevo": "https://lacruz.cl",
+    "url_empleo": "https://lacruz.cl",
+    "plataforma": "Sitio propio",
+    "notas": "Dominio lacruz.cl. Sin seccion empleo dedicada visible en busqueda",
+    "estado": "Verificado"
+  },
+  "370": {
+    "sitio_web_nuevo": null,
+    "url_empleo": "http://sanfelipe.omil.cl/",
+    "plataforma": "Trabajando.cl/OMIL",
+    "notas": "Portal OMIL propio sanfelipe.omil.cl",
+    "estado": "Verificado"
+  },
+  "305": {
+    "sitio_web_nuevo": null,
+    "url_empleo": "https://www.pica.cl",
+    "plataforma": "Sitio propio",
+    "notas": "Portal turistico comunal; concursos via empleospublicos.cl",
+    "estado": "Verificado"
+  },
+  "312": {
+    "sitio_web_nuevo": null,
+    "url_empleo": "https://www.sanpedrodeatacama.cl",
+    "plataforma": "Sitio propio",
+    "notas": "Sin seccion empleo dedicada; concursos via empleospublicos.cl",
+    "estado": "Verificado"
+  },
+  "314": {
+    "sitio_web_nuevo": null,
+    "url_empleo": "https://mariaelena.cl",
+    "plataforma": "WordPress",
+    "notas": "Sitio WordPress; sin seccion empleo dedicada",
+    "estado": "Verificado"
+  },
+  "327": {
+    "sitio_web_nuevo": null,
+    "url_empleo": "https://www.munilahiguera.cl/concursos_p.html",
+    "plataforma": "Sitio propio",
+    "notas": "HTML estatico con pagina concursos_p.html",
+    "estado": "Verificado"
+  },
+  "329": {
+    "sitio_web_nuevo": null,
+    "url_empleo": "https://munivicuna.cl",
+    "plataforma": "WordPress",
+    "notas": "WordPress; sin link directo a empleos en home — revisar menu",
+    "estado": "Verificado"
+  },
+  "373": {
+    "sitio_web_nuevo": "https://www.impanquehue.cl",
+    "url_empleo": "https://www.impanquehue.cl",
+    "plataforma": "WordPress",
+    "notas": "WordPress; concursos como posts sin pagina agrupadora",
+    "estado": "Verificado"
+  },
+  "376": {
+    "sitio_web_nuevo": null,
+    "url_empleo": "https://www.quilpue.cl/municipio/concursos-publicos",
+    "plataforma": "Sitio propio",
+    "notas": "Seccion /municipio/concursos-publicos",
+    "estado": "Verificado"
+  },
+  "384": {
+    "sitio_web_nuevo": "https://www.municipalidadelbosque.cl",
+    "url_empleo": "https://www.municipalidadelbosque.cl/concursospublicos/",
+    "plataforma": "Sitio propio",
+    "notas": "Dominio correcto: municipalidadelbosque.cl (elbosque.cl esta en venta)",
+    "estado": "Verificado"
+  },
+  "388": {
+    "sitio_web_nuevo": "http://www.cisterna.cl",
+    "url_empleo": "http://www.cisterna.cl/022-concurso-publico.php",
+    "plataforma": "PHP propio",
+    "notas": "Dominio cisterna.cl (no lacisterna.cl); PHP estatico",
+    "estado": "Verificado"
+  },
+  "390": {
+    "sitio_web_nuevo": "https://www.municipalidadlagranja.cl",
+    "url_empleo": "https://www.municipalidadlagranja.cl/llamado-a-cargo-publico/",
+    "plataforma": "WordPress",
+    "notas": "Dominio municipalidadlagranja.cl; WordPress",
+    "estado": "Verificado"
+  },
+  "391": {
+    "sitio_web_nuevo": "https://pintana.cl",
+    "url_empleo": "https://omil.dideco.cl/empleos/",
+    "plataforma": "Sitio propio",
+    "notas": "Concursos en pintana.cl/?page_id=7123; OMIL separado en omil.dideco.cl",
+    "estado": "Verificado"
+  },
+  "405": {
+    "sitio_web_nuevo": null,
+    "url_empleo": "https://quintanormal.cl/secciones/5151",
+    "plataforma": "Sitio propio",
+    "notas": "Seccion /secciones/5151 - Trabaja con nosotros",
+    "estado": "Verificado"
+  },
+  "409": {
+    "sitio_web_nuevo": "https://web.sanmiguel.cl",
+    "url_empleo": "https://web.sanmiguel.cl/concursos-publicos/",
+    "plataforma": "WordPress",
+    "notas": "WP en web.sanmiguel.cl; OMIL HiringRoom en omilsanmiguel.hiringroomcampus.com",
+    "estado": "Verificado"
+  },
+  "410": {
+    "sitio_web_nuevo": "http://www.municipalidadsanramon.cl",
+    "url_empleo": "http://www.municipalidadsanramon.cl/concursos-publicos/",
+    "plataforma": "Sitio propio",
+    "notas": "Dominio municipalidadsanramon.cl (no sanramon.cl)",
+    "estado": "Verificado"
+  },
+  "434": {
+    "sitio_web_nuevo": null,
+    "url_empleo": "https://www.municoinco.cl/secciones/4471",
+    "plataforma": "Sitio propio",
+    "notas": "OMIL en /secciones/4471",
+    "estado": "Verificado"
+  },
+  "446": {
+    "sitio_web_nuevo": "https://municipalidadrengo.cl",
+    "url_empleo": "https://municipalidadrengo.cl/actualidad/concursos-publicos/",
+    "plataforma": "WordPress",
+    "notas": "Dominio municipalidadrengo.cl (no munirengo.cl)",
+    "estado": "Verificado"
+  },
+  "450": {
+    "sitio_web_nuevo": null,
+    "url_empleo": "https://www.munilaestrella.cl/new/",
+    "plataforma": "WordPress",
+    "notas": "WP con /new/ prefix",
+    "estado": "Verificado"
+  },
+  "454": {
+    "sitio_web_nuevo": null,
+    "url_empleo": "https://www.munipalmilla.cl",
+    "plataforma": "WordPress",
+    "notas": "WP; sin pagina agrupadora concursos",
+    "estado": "Verificado"
+  },
+  "457": {
+    "sitio_web_nuevo": "https://www.municipalidadchepica.cl/jc",
+    "url_empleo": "https://www.municipalidadchepica.cl/jc/",
+    "plataforma": "Sitio propio Joomla",
+    "notas": "Joomla /jc/ prefix (dominio municipalidadchepica.cl)",
+    "estado": "Verificado"
+  },
+  "461": {
+    "sitio_web_nuevo": null,
+    "url_empleo": "https://muniplacilla.cl",
+    "plataforma": "WordPress",
+    "notas": "WP; concursos como posts sin agrupador",
+    "estado": "Verificado"
+  },
+  "476": {
+    "sitio_web_nuevo": null,
+    "url_empleo": "https://munipelluhue.cl",
+    "plataforma": "WordPress",
+    "notas": "Sitio under construction — verificar en 1-3 meses",
+    "estado": "Por verificar con notas"
+  },
+  "482": {
+    "sitio_web_nuevo": null,
+    "url_empleo": "https://muniromeral.cl/romeral/?page_id=3217",
+    "plataforma": "WordPress",
+    "notas": "WP con /romeral/ prefix, page_id=3217 concursos",
+    "estado": "Verificado"
+  },
+  "488": {
+    "sitio_web_nuevo": "https://longavi.cl",
+    "url_empleo": "https://longavi.cl/concursos-publicos/",
+    "plataforma": "WordPress",
+    "notas": "Dominio principal longavi.cl (tambien municipalidadlongavi.cl)",
+    "estado": "Verificado"
+  },
+  "493": {
+    "sitio_web_nuevo": "https://www.muniyerbasbuenas.cl/web",
+    "url_empleo": "https://www.muniyerbasbuenas.cl/web/omil-2/",
+    "plataforma": "WordPress",
+    "notas": "WP con /web/ prefix, OMIL en /omil-2/",
+    "estado": "Verificado"
+  },
+  "501": {
+    "sitio_web_nuevo": null,
+    "url_empleo": "https://www.munisanignacio.cl",
+    "plataforma": "WordPress",
+    "notas": "WP; concursos como posts",
+    "estado": "Verificado"
+  },
+  "512": {
+    "sitio_web_nuevo": null,
+    "url_empleo": "https://www.muniniquen.cl/Sitio_Municipalidad/web/",
+    "plataforma": "Sitio propio",
+    "notas": "/Sitio_Municipalidad/web/ prefix",
+    "estado": "Verificado"
+  },
+  "522": {
+    "sitio_web_nuevo": "https://sanpedrodelapaz.cl",
+    "url_empleo": "https://sanpedrodelapaz.cl/concursos-publicos/",
+    "plataforma": "WordPress",
+    "notas": "Dominio sanpedrodelapaz.cl (no sanpedro.cl)",
+    "estado": "Verificado"
+  },
+  "530": {
+    "sitio_web_nuevo": "https://munilaja.cl/w",
+    "url_empleo": "https://munilaja.cl/w/omil/",
+    "plataforma": "WordPress",
+    "notas": "WP /w/ prefix, OMIL en /w/omil/",
+    "estado": "Verificado"
+  },
+  "543": {
+    "sitio_web_nuevo": "https://www.contulmo.cl",
+    "url_empleo": "https://www.contulmo.cl",
+    "plataforma": "Sitio propio",
+    "notas": "Dominio contulmo.cl (no municontulmo.cl)",
+    "estado": "Verificado"
+  },
+  "562": {
+    "sitio_web_nuevo": "https://municipalidadpucon.cl",
+    "url_empleo": "https://municipalidadpucon.cl/?page_id=89",
+    "plataforma": "WordPress",
+    "notas": "Dominio municipalidadpucon.cl (no munipucon.cl); WP page_id=89",
+    "estado": "Verificado"
+  },
+  "568": {
+    "sitio_web_nuevo": null,
+    "url_empleo": "https://www.municholchol.cl/index.php/142-concurso-publico",
+    "plataforma": "Sitio propio Joomla",
+    "notas": "Joomla, articulo 142 concursos",
+    "estado": "Verificado"
+  },
+  "572": {
+    "sitio_web_nuevo": "https://sites.google.com/muniercilla.cl/municipalidadercilla",
+    "url_empleo": "https://sites.google.com/muniercilla.cl/municipalidadercilla/municipalidad/concursos-p%C3%BAblicos",
+    "plataforma": "Sitio propio",
+    "notas": "Google Sites — requiere scraper tipo Google Sites (generic)",
+    "estado": "Verificado"
+  },
+  "574": {
+    "sitio_web_nuevo": "http://munilossauces.com",
+    "url_empleo": "http://munilossauces.com",
+    "plataforma": "WordPress",
+    "notas": "Dominio .com (no .cl); TLD distinto",
+    "estado": "Verificado"
+  },
+  "585": {
+    "sitio_web_nuevo": null,
+    "url_empleo": "https://www.munilanco.cl",
+    "plataforma": "Sitio propio Joomla",
+    "notas": "Joomla; sin URL dedicada visible",
+    "estado": "Verificado"
+  },
+  "595": {
+    "sitio_web_nuevo": null,
+    "url_empleo": "https://www.munifresia.cl",
+    "plataforma": "WordPress",
+    "notas": "WP; concursos como posts",
+    "estado": "Verificado"
+  },
+  "602": {
+    "sitio_web_nuevo": "https://www.muniancud.cl/portal",
+    "url_empleo": "https://www.muniancud.cl/portal/concursos-publicos/",
+    "plataforma": "WordPress",
+    "notas": "WP con /portal/ prefix",
+    "estado": "Verificado"
+  },
+  "605": {
+    "sitio_web_nuevo": "https://www.munidalcahue.cl/portal",
+    "url_empleo": "https://www.munidalcahue.cl/portal/",
+    "plataforma": "WordPress",
+    "notas": "WP /portal/; concursos como posts",
+    "estado": "Verificado"
+  },
+  "609": {
+    "sitio_web_nuevo": null,
+    "url_empleo": "https://www.muniquemchi.cl",
+    "plataforma": "WordPress",
+    "notas": "WP; sin URL dedicada",
+    "estado": "Verificado"
+  },
+  "610": {
+    "sitio_web_nuevo": "https://www.municipalidadquinchao.cl",
+    "url_empleo": "https://www.municipalidadquinchao.cl",
+    "plataforma": "Sitio propio",
+    "notas": "Dominio municipalidadquinchao.cl (no muniquinchao.cl)",
+    "estado": "Verificado"
+  },
+  "615": {
+    "sitio_web_nuevo": null,
+    "url_empleo": "https://www.munirionegro.cl",
+    "plataforma": "Sitio propio",
+    "notas": "Sitio propio; sin URL dedicada",
+    "estado": "Verificado"
+  },
+  "624": {
+    "sitio_web_nuevo": "https://www.puertoaysen.cl",
+    "url_empleo": "https://www.puertoaysen.cl/concursos-publicos/",
+    "plataforma": "WordPress",
+    "notas": "Dominio puertoaysen.cl (no muniaysen.cl)",
+    "estado": "Verificado"
+  },
+  "644": {
+    "sitio_web_nuevo": null,
+    "url_empleo": "https://cormudespa.cl/",
+    "plataforma": "WordPress",
+    "notas": "Corporacion Municipal Desarrollo Social (SPA?); sin URL dedicada",
+    "estado": "Verificado"
+  },
+  "651": {
+    "sitio_web_nuevo": "https://www.educormun.cl",
+    "url_empleo": "https://www.educormun.cl",
+    "plataforma": "Sitio propio",
+    "notas": "Cormun Rancagua - educormun.cl (educacion)",
+    "estado": "Verificado"
+  },
+  "652": {
+    "sitio_web_nuevo": "https://cormusaf.cl",
+    "url_empleo": "https://cormusaf.cl/concursos/",
+    "plataforma": "WordPress",
+    "notas": "Cormusaf San Fernando; probe detecto /concursos/",
+    "estado": "Verificado"
+  },
+  "655": {
+    "sitio_web_nuevo": "https://www.muniancud.cl/portal",
+    "url_empleo": "http://www.corporacionancud.cl/inicio/category/concursos-publicos/",
+    "plataforma": "WordPress",
+    "notas": "Corporacion Ancud en corporacionancud.cl (distinto al parent)",
+    "estado": "Verificado"
+  },
+  "656": {
+    "sitio_web_nuevo": "https://www.munidalcahue.cl/portal",
+    "url_empleo": "https://www.munidalcahue.cl/portal/",
+    "plataforma": "WordPress",
+    "notas": "Corporacion Dalcahue comparte sitio con muni",
+    "estado": "Verificado"
+  },
+  "660": {
+    "sitio_web_nuevo": "https://corporacionquinchao.cl",
+    "url_empleo": "https://corporacionquinchao.cl/transparencia_activa/",
+    "plataforma": "Sitio propio",
+    "notas": "Corporacion Quinchao - dominio propio corporacionquinchao.cl",
+    "estado": "Verificado"
+  },
+  "669": {
+    "sitio_web_nuevo": "https://www.cdsprovidencia.cl",
+    "url_empleo": "https://cdsprovidencia.trabajando.cl/",
+    "plataforma": "Trabajando.cl/OMIL",
+    "notas": "Portal Trabajando.cl en cdsprovidencia.trabajando.cl",
+    "estado": "Verificado"
+  },
+  "447": {
+    "sitio_web_nuevo": "https://www.requinoa.cl",
+    "url_empleo": "https://www.requinoa.cl",
+    "plataforma": "PHP propio",
+    "notas": "PHP propio (VIREQ); sin URL dedicada",
+    "estado": "Verificado"
+  }
+}

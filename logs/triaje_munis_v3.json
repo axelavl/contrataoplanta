@@ -1,0 +1,3822 @@
+[
+  {
+    "id": 296,
+    "nombre": "Municipalidad de Camarones",
+    "sitio_web": "https://www.municamarones.cl",
+    "region": "Arica y Parinacota",
+    "status": 200,
+    "url_final": "https://municamarones.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://municamarones.cl/index.php/concurso-publicos/",
+        "texto": "INGRESAR",
+        "score": 4,
+        "match": [
+          "H+concurso-publico"
+        ]
+      }
+    ],
+    "total_links": 83
+  },
+  {
+    "id": 300,
+    "nombre": "Municipalidad de Alto Hospicio",
+    "sitio_web": "https://www.altohospicio.cl",
+    "region": "Tarapacá",
+    "status": 200,
+    "url_final": "https://www.altohospicio.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 365
+  },
+  {
+    "id": 305,
+    "nombre": "Municipalidad de Pica",
+    "sitio_web": "https://www.pica.cl",
+    "region": "Tarapacá",
+    "status": 200,
+    "url_final": "https://www.pica.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 15
+  },
+  {
+    "id": 311,
+    "nombre": "Municipalidad de Ollagüe",
+    "sitio_web": "https://www.municipalidadollague.cl",
+    "region": "Antofagasta",
+    "status": 200,
+    "url_final": "https://www.municipalidadollague.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 2
+  },
+  {
+    "id": 312,
+    "nombre": "Municipalidad de San Pedro de Atacama",
+    "sitio_web": "https://www.sanpedrodeatacama.cl",
+    "region": "Antofagasta",
+    "status": 200,
+    "url_final": "https://www.sanpedrodeatacama.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 351
+  },
+  {
+    "id": 314,
+    "nombre": "Municipalidad de María Elena",
+    "sitio_web": "https://www.mariaelena.cl",
+    "region": "Antofagasta",
+    "status": 200,
+    "url_final": "https://mariaelena.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.8.5",
+    "plataforma_motivo": "meta:wordpress 6.8.5",
+    "links_empleo": [],
+    "total_links": 12
+  },
+  {
+    "id": 321,
+    "nombre": "Municipalidad de Alto del Carmen",
+    "sitio_web": "https://www.munialtodelcarmen.cl",
+    "region": "Atacama",
+    "status": 200,
+    "url_final": "https://www.munialtodelcarmen.cl/web/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://www.munialtodelcarmen.cl/web/oficinas-municipales/administracion-y-finanzas/recursos-humanos/",
+        "texto": "RECURSOS HUMANOS",
+        "score": 9,
+        "match": [
+          "T+recursos humanos",
+          "H+recursos-humanos"
+        ]
+      }
+    ],
+    "total_links": 118
+  },
+  {
+    "id": 327,
+    "nombre": "Municipalidad de La Higuera",
+    "sitio_web": "https://www.munilahiguera.cl",
+    "region": "Coquimbo",
+    "status": 200,
+    "url_final": "https://www.munilahiguera.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 56
+  },
+  {
+    "id": 329,
+    "nombre": "Municipalidad de Vicuña",
+    "sitio_web": "https://www.munivicuna.cl",
+    "region": "Coquimbo",
+    "status": 200,
+    "url_final": "https://munivicuna.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [],
+    "total_links": 122
+  },
+  {
+    "id": 334,
+    "nombre": "Municipalidad de Ovalle",
+    "sitio_web": "https://www.muniovalle.cl",
+    "region": "Coquimbo",
+    "status": 200,
+    "url_final": "https://muniovalle.cl/sitio/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://www.portaltransparencia.cl/PortalPdT/directorio-de-organismos-regulados/?org=MU192",
+        "texto": "Concursos Públicos",
+        "score": 5,
+        "match": [
+          "T+concursos públicos"
+        ]
+      },
+      {
+        "url": "https://www.bne.cl",
+        "texto": "Bolsa Nacional de Empleo",
+        "score": 5,
+        "match": [
+          "T+bolsa nacional de empleo"
+        ]
+      }
+    ],
+    "total_links": 184
+  },
+  {
+    "id": 335,
+    "nombre": "Municipalidad de Combarbalá",
+    "sitio_web": "https://www.municombarbala.cl",
+    "region": "Coquimbo",
+    "status": 200,
+    "url_final": "https://www.municombarbala.cl",
+    "ok": true,
+    "plataforma": "HiringRoom",
+    "plataforma_motivo": "link a https://omilcombarbala.hiringroomcampus.com/",
+    "links_empleo": [],
+    "total_links": 59
+  },
+  {
+    "id": 336,
+    "nombre": "Municipalidad de Monte Patria",
+    "sitio_web": "https://www.munimontepatria.cl",
+    "region": "Coquimbo",
+    "status": 200,
+    "url_final": "https://munimontepatria.cl/web/",
+    "ok": true,
+    "plataforma": "Sitio propio Joomla",
+    "motivo": "paths joomla",
+    "plataforma_motivo": "paths joomla",
+    "links_empleo": [
+      {
+        "url": "https://munimontepatria.cl/web/index.php/direcciones-municipales/informacion-laboral",
+        "texto": "Ofertas Laborales",
+        "score": 5,
+        "match": [
+          "T+ofertas laborales"
+        ]
+      },
+      {
+        "url": "https://munimontepatria.cl/web/index.php/concursos-publicos#12-03-2026-llamado-a-postulacion-subvenciones-ordinarias-2026-para-proyectos-de-organizaciones-sociales",
+        "texto": "",
+        "score": 4,
+        "match": [
+          "H+concursos-publicos"
+        ]
+      },
+      {
+        "url": "https://munimontepatria.cl/web/index.php/concursos-publicos",
+        "texto": "Ver Concursos Cargos Municipales",
+        "score": 4,
+        "match": [
+          "H+concursos-publicos"
+        ]
+      }
+    ],
+    "total_links": 141
+  },
+  {
+    "id": 337,
+    "nombre": "Municipalidad de Punitaqui",
+    "sitio_web": "https://www.munipunitaqui.cl",
+    "region": "Coquimbo",
+    "status": 200,
+    "url_final": "https://www.munipunitaqui.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://www.munipunitaqui.cl/departamento-de-recursos-humanos/",
+        "texto": "Departamento de Recursos Humanos",
+        "score": 9,
+        "match": [
+          "T+recursos humanos",
+          "H+recursos-humanos"
+        ]
+      },
+      {
+        "url": "https://www.munipunitaqui.cl/ofertas-laborales-omil",
+        "texto": "Ofertas laborales - OMIL La Oficina Municipal de Información Laboral (OMIL) apoya a las...",
+        "score": 9,
+        "match": [
+          "T+ofertas laborales",
+          "H+ofertas-laborales"
+        ]
+      },
+      {
+        "url": "https://www.munipunitaqui.cl/departamento-de-recursos-humanos",
+        "texto": "Departamento de Recursos Humanos",
+        "score": 9,
+        "match": [
+          "T+recursos humanos",
+          "H+recursos-humanos"
+        ]
+      },
+      {
+        "url": "https://www.munipunitaqui.cl/recursos-humanos",
+        "texto": "Recursos humanos",
+        "score": 9,
+        "match": [
+          "T+recursos humanos",
+          "H+recursos-humanos"
+        ]
+      },
+      {
+        "url": "https://www.munipunitaqui.cl/departamento-omil/",
+        "texto": "OMIL",
+        "score": 5,
+        "match": [
+          "t+omil",
+          "h+omil"
+        ]
+      }
+    ],
+    "total_links": 227
+  },
+  {
+    "id": 343,
+    "nombre": "Municipalidad de Puchuncaví",
+    "sitio_web": "https://www.munipuchuncavi.cl",
+    "region": "Valparaíso",
+    "status": 200,
+    "url_final": "https://www.munipuchuncavi.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [
+      {
+        "url": "https://educacionpublica.gob.cl/concursosinternos2024/",
+        "texto": "BASES CONCURSOS",
+        "score": 8,
+        "match": [
+          "t+concursos",
+          "t+concurso",
+          "h+concurs"
+        ]
+      },
+      {
+        "url": "https://www.munipuchuncavi.cl/concursos.php",
+        "texto": "Concursos Públicos",
+        "score": 5,
+        "match": [
+          "T+concursos públicos"
+        ]
+      },
+      {
+        "url": "https://www.munipuchuncavi.cl/ofertas.php",
+        "texto": "Ofertas Laborales y Capacitaciones",
+        "score": 5,
+        "match": [
+          "T+ofertas laborales"
+        ]
+      }
+    ],
+    "total_links": 133
+  },
+  {
+    "id": 344,
+    "nombre": "Municipalidad de Quintero",
+    "sitio_web": "https://www.muniquintero.cl",
+    "region": "Valparaíso",
+    "status": 200,
+    "url_final": "https://www.muniquintero.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://www.muniquintero.cl/index.php/empleos/",
+        "texto": "",
+        "score": 4,
+        "match": [
+          "H+/empleos/"
+        ]
+      }
+    ],
+    "total_links": 156
+  },
+  {
+    "id": 347,
+    "nombre": "Municipalidad de Los Andes",
+    "sitio_web": "https://www.munilosandes.cl",
+    "region": "Valparaíso",
+    "status": 200,
+    "url_final": "https://www.losandes.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.8.3",
+    "plataforma_motivo": "meta:wordpress 6.8.3",
+    "links_empleo": [],
+    "total_links": 175
+  },
+  {
+    "id": 348,
+    "nombre": "Municipalidad de Calle Larga",
+    "sitio_web": "https://www.municalleLarga.cl",
+    "region": "Valparaíso",
+    "status": 200,
+    "url_final": "https://www.municallelarga.cl",
+    "ok": true,
+    "plataforma": "Sitio propio Joomla",
+    "motivo": "meta:joomla! - open source content management",
+    "plataforma_motivo": "meta:joomla! - open source content management",
+    "links_empleo": [],
+    "total_links": 115
+  },
+  {
+    "id": 349,
+    "nombre": "Municipalidad de Rinconada",
+    "sitio_web": "https://www.munirinconada.cl",
+    "region": "Valparaíso",
+    "status": 200,
+    "url_final": "https://munirinconada.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [],
+    "total_links": 190
+  },
+  {
+    "id": 350,
+    "nombre": "Municipalidad de San Esteban",
+    "sitio_web": "https://www.munisanesteban.cl",
+    "region": "Valparaíso",
+    "status": 200,
+    "url_final": "https://www.munisanesteban.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 0
+  },
+  {
+    "id": 353,
+    "nombre": "Municipalidad de Papudo",
+    "sitio_web": "https://www.munipapudo.cl",
+    "region": "Valparaíso",
+    "status": 200,
+    "url_final": "https://www.munipapudo.cl",
+    "ok": true,
+    "plataforma": "Sitio propio Joomla",
+    "motivo": "meta:joomla! - open source content management",
+    "plataforma_motivo": "meta:joomla! - open source content management",
+    "links_empleo": [
+      {
+        "url": "https://www.munipapudo.cl/beneficios-y-tramites/concursos-publicos",
+        "texto": "Concursos Públicos",
+        "score": 9,
+        "match": [
+          "T+concursos públicos",
+          "H+concursos-publicos"
+        ]
+      },
+      {
+        "url": "https://www.munipapudo.cl/beneficios-y-tramites/beneficios-y-programas/programa-fortalecimiento-omil",
+        "texto": "Programa Fortalecimiento OMIL",
+        "score": 5,
+        "match": [
+          "t+omil",
+          "h+omil"
+        ]
+      }
+    ],
+    "total_links": 124
+  },
+  {
+    "id": 354,
+    "nombre": "Municipalidad de Petorca",
+    "sitio_web": "https://www.munipetorca.cl",
+    "region": "Valparaíso",
+    "status": 200,
+    "url_final": "https://munipetorca.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://munipetorca.cl/concursos-publicos/",
+        "texto": "Concursos Públicos",
+        "score": 9,
+        "match": [
+          "T+concursos públicos",
+          "H+concursos-publicos"
+        ]
+      },
+      {
+        "url": "https://munipetorca.cl/docs/omil/",
+        "texto": "Ofertas Laborales",
+        "score": 9,
+        "match": [
+          "T+ofertas laborales",
+          "H+/omil/"
+        ]
+      }
+    ],
+    "total_links": 95
+  },
+  {
+    "id": 355,
+    "nombre": "Municipalidad de Zapallar",
+    "sitio_web": "https://www.munizapallar.cl",
+    "region": "Valparaíso",
+    "status": 200,
+    "url_final": "https://www.munizapallar.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [
+      {
+        "url": "http://www.munizapallar.cl/concursos-publicos",
+        "texto": "CONCURSOSPÚBLICOS",
+        "score": 4,
+        "match": [
+          "H+concursos-publicos"
+        ]
+      }
+    ],
+    "total_links": 144
+  },
+  {
+    "id": 356,
+    "nombre": "Municipalidad de Quillota",
+    "sitio_web": "https://www.muniquillota.cl",
+    "region": "Valparaíso",
+    "status": 200,
+    "url_final": "https://www.muniquillota.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 55
+  },
+  {
+    "id": 359,
+    "nombre": "Municipalidad de La Cruz",
+    "sitio_web": "https://www.munilacruz.cl",
+    "region": "Valparaíso",
+    "status": 200,
+    "url_final": "https://www.munilacruz.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 0
+  },
+  {
+    "id": 362,
+    "nombre": "Municipalidad de Olmué",
+    "sitio_web": "https://www.muniolmue.cl",
+    "region": "Valparaíso",
+    "status": 200,
+    "url_final": "https://www.muniolmue.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 73
+  },
+  {
+    "id": 365,
+    "nombre": "Municipalidad de Algarrobo",
+    "sitio_web": "https://www.munialgarrobo.cl",
+    "region": "Valparaíso",
+    "status": 200,
+    "url_final": "https://munialgarrobo.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://munialgarrobo.cl/oferta-laboral-2/",
+        "texto": "Ofertas laborales",
+        "score": 5,
+        "match": [
+          "T+ofertas laborales"
+        ]
+      }
+    ],
+    "total_links": 190
+  },
+  {
+    "id": 370,
+    "nombre": "Municipalidad de San Felipe",
+    "sitio_web": "https://www.munisanfelipe.cl",
+    "region": "Valparaíso",
+    "status": 200,
+    "url_final": "https://munisanfelipe.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.4.3",
+    "plataforma_motivo": "meta:wordpress 6.4.3",
+    "links_empleo": [],
+    "total_links": 134
+  },
+  {
+    "id": 371,
+    "nombre": "Municipalidad de Catemu",
+    "sitio_web": "https://www.municatemu.cl",
+    "region": "Valparaíso",
+    "status": 200,
+    "url_final": "https://www.municatemu.cl",
+    "ok": true,
+    "plataforma": "Sitio propio Joomla",
+    "motivo": "meta:joomla! - open source content management",
+    "plataforma_motivo": "meta:joomla! - open source content management",
+    "links_empleo": [
+      {
+        "url": "https://www.municatemu.cl/index.php/2-uncategorised/159-trabaja-con-nosotros",
+        "texto": "TRABAJA CON NOSOTROS",
+        "score": 9,
+        "match": [
+          "T+trabaja con nosotros",
+          "H+trabaja-con-nosotros"
+        ]
+      },
+      {
+        "url": "https://www.municatemu.cl/index.php/2-uncategorised/158-concurso-publico",
+        "texto": "CONCURSO PÚBLICO",
+        "score": 9,
+        "match": [
+          "T+concurso público",
+          "H+concurso-publico"
+        ]
+      }
+    ],
+    "total_links": 48
+  },
+  {
+    "id": 373,
+    "nombre": "Municipalidad de Panquehue",
+    "sitio_web": "https://www.munipanquehue.cl",
+    "region": "Valparaíso",
+    "status": 200,
+    "url_final": "http://www.impanquehue.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 4.3.34",
+    "plataforma_motivo": "meta:wordpress 4.3.34",
+    "links_empleo": [],
+    "total_links": 90
+  },
+  {
+    "id": 376,
+    "nombre": "Municipalidad de Quilpué",
+    "sitio_web": "https://www.quilpue.cl",
+    "region": "Valparaíso",
+    "status": 200,
+    "url_final": "https://www.quilpue.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 0
+  },
+  {
+    "id": 378,
+    "nombre": "Municipalidad de Olmué",
+    "sitio_web": "https://www.muniolmue.cl",
+    "region": "Valparaíso",
+    "status": 200,
+    "url_final": "https://www.muniolmue.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 73
+  },
+  {
+    "id": 381,
+    "nombre": "Municipalidad de Cerrillos",
+    "sitio_web": "https://www.municerrillos.cl",
+    "region": "Metropolitana de Santiago",
+    "status": 200,
+    "url_final": "https://municerrillos.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://mcerrillos.cl/secciones/concursos.html",
+        "texto": "Concursos Públicos",
+        "score": 5,
+        "match": [
+          "T+concursos públicos"
+        ]
+      }
+    ],
+    "total_links": 26
+  },
+  {
+    "id": 382,
+    "nombre": "Municipalidad de Cerro Navia",
+    "sitio_web": "https://www.cerronavia.cl",
+    "region": "Metropolitana de Santiago",
+    "status": 200,
+    "url_final": "https://www.cerronavia.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://www.cerronavia.cl/concurso-publicos-y-ofertas-laborales/",
+        "texto": "OFERTAS LABORALES",
+        "score": 13,
+        "match": [
+          "T+ofertas laborales",
+          "H+concurso-publico",
+          "H+ofertas-laborales"
+        ]
+      },
+      {
+        "url": "https://www.cerronavia.cl/empleos-omil/",
+        "texto": "Empleos OMIL",
+        "score": 13,
+        "match": [
+          "t+empleos",
+          "t+empleo",
+          "t+omil",
+          "h+empleo"
+        ]
+      },
+      {
+        "url": "https://www.cerronavia.cl/oficina-municipal-de-informacion-laboral-omil/",
+        "texto": "Empleo (OMIL)",
+        "score": 8,
+        "match": [
+          "t+empleo",
+          "t+omil",
+          "h+omil"
+        ]
+      },
+      {
+        "url": "https://www.cerronavia.cl/concurso-de-comodatos-y-permisos-de-uso-2026-ya-puedes-postular-para-administrar-canchas-y-multicanchas-de-la-comuna/",
+        "texto": "",
+        "score": 4,
+        "match": [
+          "h+concurs",
+          "h+postul"
+        ]
+      }
+    ],
+    "total_links": 499
+  },
+  {
+    "id": 384,
+    "nombre": "Municipalidad de El Bosque",
+    "sitio_web": "https://www.elbosque.cl",
+    "region": "Metropolitana de Santiago",
+    "status": 200,
+    "url_final": "https://www.dominios.cl/comprar-dominio?param=elbosque.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 7
+  },
+  {
+    "id": 387,
+    "nombre": "Municipalidad de Independencia",
+    "sitio_web": "https://www.independencia.cl",
+    "region": "Metropolitana de Santiago",
+    "status": 200,
+    "url_final": "https://www.independencia.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.6.2",
+    "plataforma_motivo": "meta:wordpress 6.6.2",
+    "links_empleo": [],
+    "total_links": 47
+  },
+  {
+    "id": 388,
+    "nombre": "Municipalidad de La Cisterna",
+    "sitio_web": "https://www.lacisterna.cl",
+    "region": "Metropolitana de Santiago",
+    "status": 200,
+    "url_final": "https://lacisterna.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9",
+    "plataforma_motivo": "meta:wordpress 6.9",
+    "links_empleo": [],
+    "total_links": 92
+  },
+  {
+    "id": 390,
+    "nombre": "Municipalidad de La Granja",
+    "sitio_web": "https://www.lagranja.cl",
+    "region": "Metropolitana de Santiago",
+    "status": 200,
+    "url_final": "https://lagranja.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9",
+    "plataforma_motivo": "meta:wordpress 6.9",
+    "links_empleo": [],
+    "total_links": 93
+  },
+  {
+    "id": 391,
+    "nombre": "Municipalidad de La Pintana",
+    "sitio_web": "https://www.lapintana.cl",
+    "region": "Metropolitana de Santiago",
+    "status": 200,
+    "url_final": "https://lapintana.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9",
+    "plataforma_motivo": "meta:wordpress 6.9",
+    "links_empleo": [],
+    "total_links": 93
+  },
+  {
+    "id": 395,
+    "nombre": "Municipalidad de Lo Espejo",
+    "sitio_web": "https://www.loespejo.cl",
+    "region": "Metropolitana de Santiago",
+    "status": 200,
+    "url_final": "https://www.loespejo.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://www.loespejo.cl/concursos-publicos/",
+        "texto": "Concursos Públicos",
+        "score": 9,
+        "match": [
+          "T+concursos públicos",
+          "H+concursos-publicos"
+        ]
+      },
+      {
+        "url": "https://www.loespejo.cl/banco-de-ofertas-laborales/",
+        "texto": "",
+        "score": 4,
+        "match": [
+          "H+ofertas-laborales"
+        ]
+      }
+    ],
+    "total_links": 201
+  },
+  {
+    "id": 396,
+    "nombre": "Municipalidad de Lo Prado",
+    "sitio_web": "https://www.loprado.cl",
+    "region": "Metropolitana de Santiago",
+    "status": 200,
+    "url_final": "https://loprado.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.5.8",
+    "plataforma_motivo": "meta:wordpress 6.5.8",
+    "links_empleo": [
+      {
+        "url": "https://loprado.cl/concursos-publicos/",
+        "texto": "",
+        "score": 4,
+        "match": [
+          "H+concursos-publicos"
+        ]
+      }
+    ],
+    "total_links": 98
+  },
+  {
+    "id": 400,
+    "nombre": "Municipalidad de Pedro Aguirre Cerda",
+    "sitio_web": "https://www.pedroaguirrecerda.cl",
+    "region": "Metropolitana de Santiago",
+    "status": 200,
+    "url_final": "https://www.pedroaguirrecerda.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://www.pedroaguirrecerda.cl/llamado-a-concurso-publico-para-proveer-cargos-de-director-de-centro-de-salud-familiar-padre-pierre-dubois-y-edgardo-enriquez-f-y-centro-comunitario-de-salud-menta/",
+        "texto": "",
+        "score": 4,
+        "match": [
+          "H+concurso-publico"
+        ]
+      }
+    ],
+    "total_links": 129
+  },
+  {
+    "id": 405,
+    "nombre": "Municipalidad de Quinta Normal",
+    "sitio_web": "https://www.quintanormal.cl",
+    "region": "Metropolitana de Santiago",
+    "status": 200,
+    "url_final": "https://www.quintanormal.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 0
+  },
+  {
+    "id": 408,
+    "nombre": "Municipalidad de San Joaquín",
+    "sitio_web": "https://www.sanjoaquin.cl",
+    "region": "Metropolitana de Santiago",
+    "status": 200,
+    "url_final": "https://sanjoaquin.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://sanjoaquin.cl/omil-san-joaquin/",
+        "texto": "Ofertas Laborales OMIL",
+        "score": 9,
+        "match": [
+          "T+ofertas laborales",
+          "H+omil-"
+        ]
+      }
+    ],
+    "total_links": 283
+  },
+  {
+    "id": 409,
+    "nombre": "Municipalidad de San Miguel",
+    "sitio_web": "https://www.sanmiguel.cl",
+    "region": "Metropolitana de Santiago",
+    "status": 200,
+    "url_final": "https://www.sanmiguel.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 0
+  },
+  {
+    "id": 410,
+    "nombre": "Municipalidad de San Ramón",
+    "sitio_web": "https://www.sanramon.cl",
+    "region": "Metropolitana de Santiago",
+    "status": 200,
+    "url_final": "https://sanramon.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9",
+    "plataforma_motivo": "meta:wordpress 6.9",
+    "links_empleo": [],
+    "total_links": 93
+  },
+  {
+    "id": 413,
+    "nombre": "Municipalidad de Lampa",
+    "sitio_web": "https://www.lampa.cl",
+    "region": "Metropolitana de Santiago",
+    "status": 200,
+    "url_final": "https://lampa.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://lampa.cl/municipalidad/concursos-publicos/",
+        "texto": "Concursos Públicos",
+        "score": 9,
+        "match": [
+          "T+concursos públicos",
+          "H+concursos-publicos"
+        ]
+      },
+      {
+        "url": "https://lampa.cl/mas-servicios-y-empleos-para-la-comunidad-inauguramos-el-nuevo-lider-express-en-lampa-centro/",
+        "texto": "MÁS SERVICIOS Y EMPLEOS PARA LA COMUNIDAD: INAUGURAMOS EL NUEVO LÍDER EXPRESS EN LAMPA CENTRO",
+        "score": 8,
+        "match": [
+          "t+empleos",
+          "t+empleo",
+          "h+empleo"
+        ]
+      }
+    ],
+    "total_links": 293
+  },
+  {
+    "id": 414,
+    "nombre": "Municipalidad de Tiltil",
+    "sitio_web": "https://www.tiltil.cl",
+    "region": "Metropolitana de Santiago",
+    "status": 200,
+    "url_final": "https://munitiltil.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://munitiltil.cl/recursos-humanos/",
+        "texto": "Recursos Humanos",
+        "score": 9,
+        "match": [
+          "T+recursos humanos",
+          "H+recursos-humanos"
+        ]
+      },
+      {
+        "url": "https://munitiltil.cl/bases-de-concurso-2025/",
+        "texto": "Bases de Concursos",
+        "score": 8,
+        "match": [
+          "t+concursos",
+          "t+concurso",
+          "h+concurs"
+        ]
+      },
+      {
+        "url": "https://munitiltil.cl/oficina-municipal-de-informacion-laboral-omil/",
+        "texto": "Oficina Municipal de Información Laboral OMIL",
+        "score": 5,
+        "match": [
+          "t+omil",
+          "h+omil"
+        ]
+      },
+      {
+        "url": "https://munitiltil.cl/municipalidad-de-tiltil-abre-postulaciones-a-beca-deportiva-2025-para-atletas-comunales/",
+        "texto": "Municipalidad de Tiltil abre postulaciones a Beca Deportiva 2025 para atletas comunales",
+        "score": 5,
+        "match": [
+          "t+postulaciones",
+          "h+postul"
+        ]
+      }
+    ],
+    "total_links": 261
+  },
+  {
+    "id": 416,
+    "nombre": "Municipalidad de Buin",
+    "sitio_web": "https://www.buin.cl",
+    "region": "Metropolitana de Santiago",
+    "status": 200,
+    "url_final": "https://www.buin.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://www.buin.cl/trabaja-con-nosotros/",
+        "texto": "",
+        "score": 4,
+        "match": [
+          "H+trabaja-con-nosotros"
+        ]
+      },
+      {
+        "url": "https://www.buin.cl/omil-oferta-laboral/",
+        "texto": "OFERTA LABORAL",
+        "score": 4,
+        "match": [
+          "H+omil-"
+        ]
+      }
+    ],
+    "total_links": 105
+  },
+  {
+    "id": 417,
+    "nombre": "Municipalidad de Calera de Tango",
+    "sitio_web": "https://www.caleradetango.cl",
+    "region": "Metropolitana de Santiago",
+    "status": 200,
+    "url_final": "https://www.caleradetango.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [
+      {
+        "url": "https://www.caleradetango.cl/ofertas-laborales",
+        "texto": "Ofertas Laborales",
+        "score": 9,
+        "match": [
+          "T+ofertas laborales",
+          "H+ofertas-laborales"
+        ]
+      },
+      {
+        "url": "https://www.caleradetango.cl/omil",
+        "texto": "OMIL",
+        "score": 5,
+        "match": [
+          "t+omil",
+          "h+omil"
+        ]
+      }
+    ],
+    "total_links": 118
+  },
+  {
+    "id": 418,
+    "nombre": "Municipalidad de Paine",
+    "sitio_web": "https://www.paine.cl",
+    "region": "Metropolitana de Santiago",
+    "status": 200,
+    "url_final": "https://www.paine.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://www.paine.cl/direccion-rrhh/",
+        "texto": "Dirección de Recursos Humanos",
+        "score": 9,
+        "match": [
+          "T+recursos humanos",
+          "H+rrhh"
+        ]
+      },
+      {
+        "url": "https://www.paine.cl/ofertas-laborales/%20",
+        "texto": "Ofertas Laborales",
+        "score": 9,
+        "match": [
+          "T+ofertas laborales",
+          "H+ofertas-laborales"
+        ]
+      },
+      {
+        "url": "https://www.paine.cl/postulaciones-recintos-deportivos-2026/",
+        "texto": "Postulaciones Recintos Deportivos 2026",
+        "score": 5,
+        "match": [
+          "t+postulaciones",
+          "h+postul"
+        ]
+      }
+    ],
+    "total_links": 84
+  },
+  {
+    "id": 420,
+    "nombre": "Municipalidad de Pirque",
+    "sitio_web": "https://www.pirque.cl",
+    "region": "Metropolitana de Santiago",
+    "status": 200,
+    "url_final": "https://www.pirque.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://www.pirque.cl/concursos-publicos-y-licitaciones/",
+        "texto": "Concursos Públicos",
+        "score": 9,
+        "match": [
+          "T+concursos públicos",
+          "H+concursos-publicos"
+        ]
+      }
+    ],
+    "total_links": 134
+  },
+  {
+    "id": 421,
+    "nombre": "Municipalidad de San José de Maipo",
+    "sitio_web": "https://www.sanjosedemaipo.cl",
+    "region": "Metropolitana de Santiago",
+    "status": 200,
+    "url_final": "https://www.sanjosedemaipo.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [
+      {
+        "url": "https://www.sanjosedemaipo.cl/servicios/oficina-municipal-de-intermediacion-laboral-omil/",
+        "texto": "Oficina Municipal de Intermediación Laboral (OMIL)",
+        "score": 5,
+        "match": [
+          "t+omil",
+          "h+omil"
+        ]
+      }
+    ],
+    "total_links": 189
+  },
+  {
+    "id": 426,
+    "nombre": "Municipalidad de San Pedro",
+    "sitio_web": "https://www.munisanpedro.cl",
+    "region": "Metropolitana de Santiago",
+    "status": 200,
+    "url_final": "https://www.munisanpedro.gob.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.1",
+    "plataforma_motivo": "meta:wordpress 6.9.1",
+    "links_empleo": [],
+    "total_links": 92
+  },
+  {
+    "id": 429,
+    "nombre": "Municipalidad de Isla de Maipo",
+    "sitio_web": "https://www.islaDemaipo.cl",
+    "region": "Metropolitana de Santiago",
+    "status": 200,
+    "url_final": "https://www.islademaipo.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [],
+    "total_links": 123
+  },
+  {
+    "id": 431,
+    "nombre": "Municipalidad de Peñaflor",
+    "sitio_web": "https://www.penaflor.cl",
+    "region": "Metropolitana de Santiago",
+    "status": 200,
+    "url_final": "https://penaflor.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://penaflor.cl/concursos-publicos/",
+        "texto": "Concursos Públicos",
+        "score": 9,
+        "match": [
+          "T+concursos públicos",
+          "H+concursos-publicos"
+        ]
+      },
+      {
+        "url": "https://www.bne.cl",
+        "texto": "Bolsa Nacional de Empleo",
+        "score": 5,
+        "match": [
+          "T+bolsa nacional de empleo"
+        ]
+      },
+      {
+        "url": "https://empleos.penaflor.cl/",
+        "texto": "Trabaja con nosotros",
+        "score": 5,
+        "match": [
+          "T+trabaja con nosotros"
+        ]
+      },
+      {
+        "url": "https://penaflor.cl/omil-pena-empleo",
+        "texto": "OMIL y Peña Empleo",
+        "score": 4,
+        "match": [
+          "H+omil-"
+        ]
+      },
+      {
+        "url": "https://penaflor.cl/tramites/tramite/inscripcion_omil_y_bolsa_nacional_del_empleo",
+        "texto": "Follow a manual added link",
+        "score": 4,
+        "match": [
+          "h+empleo",
+          "h+omil"
+        ]
+      }
+    ],
+    "total_links": 243
+  },
+  {
+    "id": 434,
+    "nombre": "Municipalidad de Coinco",
+    "sitio_web": "https://www.municoinco.cl",
+    "region": "O'Higgins",
+    "status": 200,
+    "url_final": "https://www.municoinco.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 0
+  },
+  {
+    "id": 438,
+    "nombre": "Municipalidad de Las Cabras",
+    "sitio_web": "https://www.munilascabras.cl",
+    "region": "O'Higgins",
+    "status": 200,
+    "url_final": "https://munilascabras.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://munilascabras.cl/concursos/",
+        "texto": "Concursos Públicos",
+        "score": 9,
+        "match": [
+          "T+concursos públicos",
+          "H+/concursos/"
+        ]
+      },
+      {
+        "url": "https://munilascabras.cl/concurso/concurso-literario-mujer-de-60-y-mas-letras-con-sabiduria/",
+        "texto": "Leer Más",
+        "score": 4,
+        "match": [
+          "H+/concurso/"
+        ]
+      },
+      {
+        "url": "https://munilascabras.cl/category/concurso/",
+        "texto": "Concurso",
+        "score": 4,
+        "match": [
+          "H+/concurso/"
+        ]
+      }
+    ],
+    "total_links": 341
+  },
+  {
+    "id": 440,
+    "nombre": "Municipalidad de Malloa",
+    "sitio_web": "https://www.munimalloa.cl",
+    "region": "O'Higgins",
+    "status": 200,
+    "url_final": "https://www.munimalloa.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.8.1",
+    "plataforma_motivo": "meta:wordpress 6.8.1",
+    "links_empleo": [
+      {
+        "url": "https://www.munimalloa.cl/portal/concursos-publicos/",
+        "texto": "Concursos Públicos",
+        "score": 9,
+        "match": [
+          "T+concursos públicos",
+          "H+concursos-publicos"
+        ]
+      },
+      {
+        "url": "https://www.munimalloa.cl/portal/concurso-publico-2/",
+        "texto": "CONCURSO PUBLICO",
+        "score": 9,
+        "match": [
+          "T+concurso publico",
+          "H+concurso-publico"
+        ]
+      }
+    ],
+    "total_links": 240
+  },
+  {
+    "id": 442,
+    "nombre": "Municipalidad de Olivar",
+    "sitio_web": "https://www.muniolivar.cl",
+    "region": "O'Higgins",
+    "status": 200,
+    "url_final": "https://muniolivar.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://muniolivar.cl/concursos/",
+        "texto": "Concursos",
+        "score": 4,
+        "match": [
+          "H+/concursos/"
+        ]
+      }
+    ],
+    "total_links": 120
+  },
+  {
+    "id": 446,
+    "nombre": "Municipalidad de Rengo",
+    "sitio_web": "https://www.munirengo.cl",
+    "region": "O'Higgins",
+    "status": 200,
+    "url_final": "http://www.munirengo.cl/",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 0
+  },
+  {
+    "id": 447,
+    "nombre": "Municipalidad de Requínoa",
+    "sitio_web": "https://www.munirequinoa.cl",
+    "region": "O'Higgins",
+    "ok": false,
+    "error": "timeout 15s"
+  },
+  {
+    "id": 450,
+    "nombre": "Municipalidad de La Estrella",
+    "sitio_web": "https://www.munilaestrella.cl",
+    "region": "O'Higgins",
+    "status": 200,
+    "url_final": "https://munilaestrella.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [],
+    "total_links": 244
+  },
+  {
+    "id": 452,
+    "nombre": "Municipalidad de Marchigüe",
+    "sitio_web": "https://www.munimarchigue.cl",
+    "region": "O'Higgins",
+    "status": 200,
+    "url_final": "https://www.marchigue.cl/municipalidad/",
+    "ok": true,
+    "plataforma": "Sitio propio Joomla",
+    "motivo": "meta:joomla! - open source content management",
+    "plataforma_motivo": "meta:joomla! - open source content management",
+    "links_empleo": [
+      {
+        "url": "https://www.marchigue.cl/municipalidad/index.php?option=com_sppagebuilder&view=page&id=259",
+        "texto": "Concursos Públiocs",
+        "score": 6,
+        "match": [
+          "t+concursos",
+          "t+concurso"
+        ]
+      }
+    ],
+    "total_links": 109
+  },
+  {
+    "id": 453,
+    "nombre": "Municipalidad de Navidad",
+    "sitio_web": "https://www.muniNavidad.cl",
+    "region": "O'Higgins",
+    "status": 200,
+    "url_final": "https://www.muninavidad.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [
+      {
+        "url": "https://www.muninavidad.cl/servicio/ofertas-laborales",
+        "texto": "Ofertas laborales",
+        "score": 9,
+        "match": [
+          "T+ofertas laborales",
+          "H+ofertas-laborales"
+        ]
+      },
+      {
+        "url": "https://www.muninavidad.cl/Concursos-Publicos-Salud-2024",
+        "texto": "",
+        "score": 4,
+        "match": [
+          "H+concursos-publicos"
+        ]
+      },
+      {
+        "url": "https://www.muninavidad.cl/Concurso-Publico-2024",
+        "texto": "",
+        "score": 4,
+        "match": [
+          "H+concurso-publico"
+        ]
+      },
+      {
+        "url": "https://www.muninavidad.cl/Concurso-Publico-DAEM",
+        "texto": "",
+        "score": 4,
+        "match": [
+          "H+concurso-publico"
+        ]
+      },
+      {
+        "url": "https://www.muninavidad.cl/Concursos-Publicos",
+        "texto": "",
+        "score": 4,
+        "match": [
+          "H+concursos-publicos"
+        ]
+      }
+    ],
+    "total_links": 162
+  },
+  {
+    "id": 454,
+    "nombre": "Municipalidad de Palmilla",
+    "sitio_web": "https://www.munipalmilla.cl",
+    "region": "O'Higgins",
+    "status": 200,
+    "url_final": "https://www.munipalmilla.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 5.5.18",
+    "plataforma_motivo": "meta:wordpress 5.5.18",
+    "links_empleo": [],
+    "total_links": 88
+  },
+  {
+    "id": 455,
+    "nombre": "Municipalidad de Peralillo",
+    "sitio_web": "https://www.muniperalillo.cl",
+    "region": "O'Higgins",
+    "status": 200,
+    "url_final": "https://www.muniperalillo.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://www.muniperalillo.cl/informaciones/licitaciones-y-concursos-publicos/",
+        "texto": "Concursos Públicos y Licitaciones",
+        "score": 9,
+        "match": [
+          "T+concursos públicos",
+          "H+concursos-publicos"
+        ]
+      }
+    ],
+    "total_links": 250
+  },
+  {
+    "id": 456,
+    "nombre": "Municipalidad de San Fernando",
+    "sitio_web": "https://www.munisanfernando.cl",
+    "region": "O'Higgins",
+    "status": 200,
+    "url_final": "https://municipalidadsanfernando.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://municipalidadsanfernando.cl/trabaja-con-nosotros/",
+        "texto": "Trabaja con Nosotros",
+        "score": 9,
+        "match": [
+          "T+trabaja con nosotros",
+          "H+trabaja-con-nosotros"
+        ]
+      },
+      {
+        "url": "https://municipalidadsanfernando.cl/omil/",
+        "texto": "Más Información",
+        "score": 4,
+        "match": [
+          "H+/omil/"
+        ]
+      }
+    ],
+    "total_links": 270
+  },
+  {
+    "id": 457,
+    "nombre": "Municipalidad de Chépica",
+    "sitio_web": "https://www.munichepica.cl",
+    "region": "O'Higgins",
+    "status": 200,
+    "url_final": "https://www.munichepica.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 1
+  },
+  {
+    "id": 459,
+    "nombre": "Municipalidad de Lolol",
+    "sitio_web": "https://www.munilolol.cl",
+    "region": "O'Higgins",
+    "status": 200,
+    "url_final": "https://municipalidaddelolol.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://municipalidaddelolol.cl/producto/comilon/",
+        "texto": "Comilón",
+        "score": 5,
+        "match": [
+          "t+omil",
+          "h+omil"
+        ]
+      },
+      {
+        "url": "https://municipalidaddelolol.cl/omil/",
+        "texto": "Oficina Municipal de Intermediación Laboral (OMIL)​",
+        "score": 4,
+        "match": [
+          "H+/omil/"
+        ]
+      }
+    ],
+    "total_links": 189
+  },
+  {
+    "id": 461,
+    "nombre": "Municipalidad de Placilla",
+    "sitio_web": "https://www.muniplacilla.cl",
+    "region": "O'Higgins",
+    "status": 200,
+    "url_final": "https://www.muniplacilla.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 70
+  },
+  {
+    "id": 462,
+    "nombre": "Municipalidad de Pumanque",
+    "sitio_web": "https://www.munipumanque.cl",
+    "region": "O'Higgins",
+    "status": 200,
+    "url_final": "https://munipumanque.cl/new/",
+    "ok": true,
+    "plataforma": "empleospublicos.cl",
+    "plataforma_motivo": "link a http://www.empleospublicos.cl/index.aspx",
+    "publica_en_empleospublicos": "Sí",
+    "links_empleo": [
+      {
+        "url": "https://munipumanque.cl/new/concursos-publicos/",
+        "texto": "",
+        "score": 4,
+        "match": [
+          "H+concursos-publicos"
+        ]
+      }
+    ],
+    "total_links": 73
+  },
+  {
+    "id": 463,
+    "nombre": "Municipalidad de Santa Cruz",
+    "sitio_web": "https://www.munisantacruz.cl",
+    "region": "O'Higgins",
+    "status": 200,
+    "url_final": "https://munisantacruz.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://munisantacruz.cl/concurso-publico-senda-previene-santa-cruz/",
+        "texto": "Leer mas",
+        "score": 4,
+        "match": [
+          "H+concurso-publico"
+        ]
+      }
+    ],
+    "total_links": 61
+  },
+  {
+    "id": 473,
+    "nombre": "Municipalidad de San Rafael",
+    "sitio_web": "https://www.munisanrafael.cl",
+    "region": "Maule",
+    "status": 200,
+    "url_final": "https://munisanrafael.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://munisanrafael.cl/?p=10189",
+        "texto": "Concurso Público DAEM",
+        "score": 5,
+        "match": [
+          "T+concurso público"
+        ]
+      },
+      {
+        "url": "https://munisanrafael.cl/?p=10187",
+        "texto": "CONCURSO PÚBLICO",
+        "score": 5,
+        "match": [
+          "T+concurso público"
+        ]
+      },
+      {
+        "url": "https://munisanrafael.cl/?p=9306",
+        "texto": "CONCURSO PÚBLICO APOYO SOCIAL",
+        "score": 5,
+        "match": [
+          "T+concurso público"
+        ]
+      },
+      {
+        "url": "https://munisanrafael.cl/?p=9304",
+        "texto": "CONCURSO PÚBLICO APOYO CONSTRUCTIVO",
+        "score": 5,
+        "match": [
+          "T+concurso público"
+        ]
+      },
+      {
+        "url": "https://munisanrafael.cl/?p=9302",
+        "texto": "CONCURSO PÚBLICO PRODESAL",
+        "score": 5,
+        "match": [
+          "T+concurso público"
+        ]
+      }
+    ],
+    "total_links": 218
+  },
+  {
+    "id": 476,
+    "nombre": "Municipalidad de Pelluhue",
+    "sitio_web": "https://www.munipelluhue.cl",
+    "region": "Maule",
+    "status": 200,
+    "url_final": "https://munipelluhue.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [],
+    "total_links": 166
+  },
+  {
+    "id": 481,
+    "nombre": "Municipalidad de Rauco",
+    "sitio_web": "https://www.munirauco.cl",
+    "region": "Maule",
+    "status": 200,
+    "url_final": "https://www.munirauco.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [
+      {
+        "url": "https://www.munirauco.cl/pages/concurso.html",
+        "texto": "Ofertas laborales",
+        "score": 5,
+        "match": [
+          "T+ofertas laborales"
+        ]
+      }
+    ],
+    "total_links": 23
+  },
+  {
+    "id": 482,
+    "nombre": "Municipalidad de Romeral",
+    "sitio_web": "https://www.muniromeral.cl",
+    "region": "Maule",
+    "status": 200,
+    "url_final": "https://www.muniromeral.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 0
+  },
+  {
+    "id": 485,
+    "nombre": "Municipalidad de Vichuquén",
+    "sitio_web": "https://www.munivichuquen.cl",
+    "region": "Maule",
+    "status": 200,
+    "url_final": "https://www.munivichuquen.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://www.munivichuquen.cl/concurso-publico/",
+        "texto": "Concurso Público",
+        "score": 9,
+        "match": [
+          "T+concurso público",
+          "H+concurso-publico"
+        ]
+      }
+    ],
+    "total_links": 112
+  },
+  {
+    "id": 486,
+    "nombre": "Municipalidad de Linares",
+    "sitio_web": "https://www.munilinares.cl",
+    "region": "Maule",
+    "status": 200,
+    "url_final": "https://www.munilinares.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [
+      {
+        "url": "https://www.corporacionlinares.cl/index.php/concursosPublicos",
+        "texto": "Concursos Publicos",
+        "score": 5,
+        "match": [
+          "T+concursos publicos"
+        ]
+      },
+      {
+        "url": "https://www.saludlinares.cl/",
+        "texto": "Trabaja con Nosotros",
+        "score": 5,
+        "match": [
+          "T+trabaja con nosotros"
+        ]
+      }
+    ],
+    "total_links": 170
+  },
+  {
+    "id": 488,
+    "nombre": "Municipalidad de Longaví",
+    "sitio_web": "https://www.munilongavi.cl",
+    "region": "Maule",
+    "status": 200,
+    "url_final": "https://www.munilongavi.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 0
+  },
+  {
+    "id": 493,
+    "nombre": "Municipalidad de Yerbas Buenas",
+    "sitio_web": "https://www.muniyerbasbuenas.cl",
+    "region": "Maule",
+    "status": 200,
+    "url_final": "https://www.muniyerbasbuenas.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 0
+  },
+  {
+    "id": 495,
+    "nombre": "Municipalidad de Bulnes",
+    "sitio_web": "https://www.munibulnes.cl",
+    "region": "Ñuble",
+    "status": 200,
+    "url_final": "https://www.imb.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.7.5",
+    "plataforma_motivo": "meta:wordpress 6.7.5",
+    "links_empleo": [
+      {
+        "url": "https://www.imb.cl/omil",
+        "texto": "OMIL Ofertas Laborales",
+        "score": 5,
+        "match": [
+          "T+ofertas laborales"
+        ]
+      }
+    ],
+    "total_links": 86
+  },
+  {
+    "id": 497,
+    "nombre": "Municipalidad de El Carmen",
+    "sitio_web": "https://www.munielcarmen.cl",
+    "region": "Ñuble",
+    "status": 200,
+    "url_final": "http://portal.municipalidadelcarmen.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 5.1.22",
+    "plataforma_motivo": "meta:wordpress 5.1.22",
+    "links_empleo": [
+      {
+        "url": "http://portal.municipalidadelcarmen.cl/recursos-humanos/",
+        "texto": "RECURSOS HUMANOS",
+        "score": 9,
+        "match": [
+          "T+recursos humanos",
+          "H+recursos-humanos"
+        ]
+      }
+    ],
+    "total_links": 170
+  },
+  {
+    "id": 498,
+    "nombre": "Municipalidad de Pemuco",
+    "sitio_web": "https://www.munipemuco.cl",
+    "region": "Ñuble",
+    "status": 200,
+    "url_final": "https://www.munipemuco.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://www.munipemuco.cl/dideco/omil",
+        "texto": "OMIL",
+        "score": 5,
+        "match": [
+          "t+omil",
+          "h+omil"
+        ]
+      }
+    ],
+    "total_links": 156
+  },
+  {
+    "id": 501,
+    "nombre": "Municipalidad de San Ignacio",
+    "sitio_web": "https://www.munisanignacio.cl",
+    "region": "Ñuble",
+    "status": 200,
+    "url_final": "https://www.munisanignacio.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [],
+    "total_links": 122
+  },
+  {
+    "id": 503,
+    "nombre": "Municipalidad de Quirihue",
+    "sitio_web": "https://www.muniquirihue.cl",
+    "region": "Ñuble",
+    "status": 200,
+    "url_final": "https://www.muniquirihue.cl/2025/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://www.muniquirihue.cl/2025/tramites-y-servicios/guia-de-tramites/concurso-publico/",
+        "texto": "Concurso Público",
+        "score": 9,
+        "match": [
+          "T+concurso público",
+          "H+concurso-publico"
+        ]
+      },
+      {
+        "url": "https://www.muniquirihue.cl/2025/tramites-y-servicios/servicios/empleo-y-emprendimiento/",
+        "texto": "Empleo y Emprendimiento",
+        "score": 5,
+        "match": [
+          "t+empleo",
+          "h+empleo"
+        ]
+      },
+      {
+        "url": "https://www.muniquirihue.cl/2025/tramites-y-servicios/guia-de-tramites/trabaja-con-nosotros/",
+        "texto": "Trabaje con Nosotros",
+        "score": 4,
+        "match": [
+          "H+trabaja-con-nosotros"
+        ]
+      }
+    ],
+    "total_links": 149
+  },
+  {
+    "id": 505,
+    "nombre": "Municipalidad de Coelemu",
+    "sitio_web": "https://www.municoelemu.cl",
+    "region": "Ñuble",
+    "status": 200,
+    "url_final": "https://www.municoelemu.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://www.municoelemu.cl/aprueba-bases-generales-de-concurso-publico-para-la-provision-de-cargo-de-planta-en-los-estamentos-directivos-profesionales-tecnicos-administrativos-y-auxiliares-de-la-municipalidad-de-coelemu/",
+        "texto": "Aprueba bases generales de concurso público.",
+        "score": 9,
+        "match": [
+          "T+concurso público",
+          "H+concurso-publico"
+        ]
+      },
+      {
+        "url": "https://www.municoelemu.cl/%f0%9f%92%9c%f0%9f%93%b8-concurso-de-fotografia-miradas-de-mujer/",
+        "texto": "💜📸 Concurso de Fotografía: “Miradas de Mujer”.",
+        "score": 5,
+        "match": [
+          "t+concurso",
+          "h+concurs"
+        ]
+      }
+    ],
+    "total_links": 108
+  },
+  {
+    "id": 506,
+    "nombre": "Municipalidad de Ninhue",
+    "sitio_web": "https://www.munininhue.cl",
+    "region": "Ñuble",
+    "status": 200,
+    "url_final": "https://www.munininhue.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://www.munininhue.cl/sin-categoria/llamado-a-concurso-para-jefea-daem/",
+        "texto": "LLAMADO A CONCURSO PARA JEFE(A) DAEM.",
+        "score": 5,
+        "match": [
+          "t+concurso",
+          "h+concurs"
+        ]
+      },
+      {
+        "url": "https://www.munininhue.cl/omil/",
+        "texto": "OMIL",
+        "score": 4,
+        "match": [
+          "H+/omil/"
+        ]
+      }
+    ],
+    "total_links": 151
+  },
+  {
+    "id": 510,
+    "nombre": "Municipalidad de San Carlos",
+    "sitio_web": "https://www.munisancarlos.cl",
+    "region": "Ñuble",
+    "status": 200,
+    "url_final": "https://munisancarlos.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://munisancarlos.cl/ofertas-laborales/",
+        "texto": "Ofertas Laborales",
+        "score": 9,
+        "match": [
+          "T+ofertas laborales",
+          "H+ofertas-laborales"
+        ]
+      }
+    ],
+    "total_links": 138
+  },
+  {
+    "id": 511,
+    "nombre": "Municipalidad de Coihueco",
+    "sitio_web": "https://www.municoihueco.cl",
+    "region": "Ñuble",
+    "status": 200,
+    "url_final": "https://municoihueco.cl/Inicio/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://municoihueco.cl/Inicio/category/concurso-publico/",
+        "texto": "",
+        "score": 4,
+        "match": [
+          "H+concurso-publico"
+        ]
+      },
+      {
+        "url": "https://municoihueco.cl/Inicio/category/ofertas-laborales/",
+        "texto": "",
+        "score": 4,
+        "match": [
+          "H+ofertas-laborales"
+        ]
+      }
+    ],
+    "total_links": 142
+  },
+  {
+    "id": 512,
+    "nombre": "Municipalidad de Ñiquén",
+    "sitio_web": "https://www.muniniquen.cl",
+    "region": "Ñuble",
+    "status": 200,
+    "url_final": "https://www.muniniquen.cl/Sitio_Municipalidad/web/",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 38
+  },
+  {
+    "id": 517,
+    "nombre": "Municipalidad de Chiguayante",
+    "sitio_web": "https://www.chiguayante.cl",
+    "region": "Biobío",
+    "status": 200,
+    "url_final": "https://chiguayante.cl/Chgte/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.1",
+    "plataforma_motivo": "meta:wordpress 6.9.1",
+    "links_empleo": [
+      {
+        "url": "https://chiguayante.cl/Chgte/?page_id=169",
+        "texto": "Recursos Humanos",
+        "score": 5,
+        "match": [
+          "T+recursos humanos"
+        ]
+      },
+      {
+        "url": "https://chiguayante.cl/Chgte/?page_id=274",
+        "texto": "Concurso Público",
+        "score": 5,
+        "match": [
+          "T+concurso público"
+        ]
+      },
+      {
+        "url": "https://chiguayante.cl/Chgte/?cat=21",
+        "texto": "Concurso público",
+        "score": 5,
+        "match": [
+          "T+concurso público"
+        ]
+      }
+    ],
+    "total_links": 219
+  },
+  {
+    "id": 518,
+    "nombre": "Municipalidad de Florida",
+    "sitio_web": "https://www.muniflorida.cl",
+    "region": "Biobío",
+    "status": 200,
+    "url_final": "https://muniflorida.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://muniflorida.cl/concursos-publicos/",
+        "texto": "Concursos Públicos",
+        "score": 9,
+        "match": [
+          "T+concursos públicos",
+          "H+concursos-publicos"
+        ]
+      }
+    ],
+    "total_links": 84
+  },
+  {
+    "id": 519,
+    "nombre": "Municipalidad de Hualqui",
+    "sitio_web": "https://www.munihualqui.cl",
+    "region": "Biobío",
+    "status": 200,
+    "url_final": "https://www.munihualqui.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [
+      {
+        "url": "https://www.munihualqui.cl/llamado-a-concurso-publico-para-el-cargo-de-asistente-de-cuidados-articulo-noticias-1776183909.html",
+        "texto": "Llamado a concurso público para el cargo de: ASISTENTE DE CUIDADOS",
+        "score": 9,
+        "match": [
+          "T+concurso público",
+          "H+concurso-publico"
+        ]
+      },
+      {
+        "url": "https://www.munihualqui.cl/concurso-publico-apoyo-familiar-integral-articulo-noticias-1774972123.html",
+        "texto": "Concurso público Apoyo Familiar Integral",
+        "score": 9,
+        "match": [
+          "T+concurso público",
+          "H+concurso-publico"
+        ]
+      },
+      {
+        "url": "https://www.munihualqui.cl/concurso-publico-monitora-comunitario-del-convenio-programa-acompanamiento-integral-con-enfoque-ocupacional-para-programa-vinculos-articulo-noticias-1776101961.html",
+        "texto": "Concurso público Monitor(a) Comunitario del Convenio programa Acompañamiento Integral con Enfoque Ocupacional para Progr",
+        "score": 6,
+        "match": [
+          "T+concurso público",
+          "H+concurso-publico",
+          "-texto_largo"
+        ]
+      }
+    ],
+    "total_links": 109
+  },
+  {
+    "id": 522,
+    "nombre": "Municipalidad de San Pedro de la Paz",
+    "sitio_web": "https://www.sanpedro.cl",
+    "region": "Biobío",
+    "status": 200,
+    "url_final": "https://www.sanpedro.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [],
+    "total_links": 59
+  },
+  {
+    "id": 530,
+    "nombre": "Municipalidad de Laja",
+    "sitio_web": "https://www.munilaja.cl",
+    "region": "Biobío",
+    "status": 200,
+    "url_final": "https://munilaja.cl/",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 2
+  },
+  {
+    "id": 531,
+    "nombre": "Municipalidad de Mulchén",
+    "sitio_web": "https://www.munimulchen.cl",
+    "region": "Biobío",
+    "status": 200,
+    "url_final": "https://www.munimulchen.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://www.munimulchen.cl/concurso-publico-abogado-para-dispositivo-centro-de-las-mujeres-mulchen/",
+        "texto": "MÁS INFORMACIÓN AQUÍ",
+        "score": 4,
+        "match": [
+          "H+concurso-publico"
+        ]
+      },
+      {
+        "url": "https://www.munimulchen.cl/pagina-central-ofertas-laborales/",
+        "texto": "Ir al trámite",
+        "score": 4,
+        "match": [
+          "H+ofertas-laborales"
+        ]
+      }
+    ],
+    "total_links": 99
+  },
+  {
+    "id": 533,
+    "nombre": "Municipalidad de Negrete",
+    "sitio_web": "https://www.muninegrete.cl",
+    "region": "Biobío",
+    "status": 200,
+    "url_final": "https://www.muninegrete.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://www.muninegrete.cl/bases-y-decreto-concurso-publico-cargo-director-a-de-cesfam-yanequen-de-negrete/",
+        "texto": "Bases y Decreto Concurso Público cargo Director (a) de CESFAM ‘Yanequén’ de Negrete",
+        "score": 9,
+        "match": [
+          "T+concurso público",
+          "H+concurso-publico"
+        ]
+      },
+      {
+        "url": "https://www.muninegrete.cl/oficina-municipal-de-intermediacion-laboral-omil/",
+        "texto": "Oficina Municipal de Intermediación Laboral (OMIL)",
+        "score": 5,
+        "match": [
+          "t+omil",
+          "h+omil"
+        ]
+      }
+    ],
+    "total_links": 170
+  },
+  {
+    "id": 538,
+    "nombre": "Municipalidad de Tucapel",
+    "sitio_web": "https://www.munitucapel.cl",
+    "region": "Biobío",
+    "status": 200,
+    "url_final": "https://www.munitucapel.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [
+      {
+        "url": "http://www.munitucapel.cl/transparencia/articulos.php?id_seccion=18&id_categoria=105&dominio=M",
+        "texto": "CONCURSO PÚBLICO",
+        "score": 5,
+        "match": [
+          "T+concurso público"
+        ]
+      }
+    ],
+    "total_links": 110
+  },
+  {
+    "id": 540,
+    "nombre": "Municipalidad de Alto Biobío",
+    "sitio_web": "https://www.munialtobiobio.cl",
+    "region": "Biobío",
+    "status": 200,
+    "url_final": "https://munialtobiobio.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://munialtobiobio.cl/municipio/concursos-publicos/",
+        "texto": "Concursos Públicos",
+        "score": 9,
+        "match": [
+          "T+concursos públicos",
+          "H+concursos-publicos"
+        ]
+      },
+      {
+        "url": "https://munialtobiobio.cl/categoria/concursos-publicos/",
+        "texto": "Concursos Públicos",
+        "score": 9,
+        "match": [
+          "T+concursos públicos",
+          "H+concursos-publicos"
+        ]
+      },
+      {
+        "url": "https://munialtobiobio.cl/llamado-a-concurso-publico-oln-2/",
+        "texto": "LLAMADO A CONCURSO PÚBLICO OLN",
+        "score": 9,
+        "match": [
+          "T+concurso público",
+          "H+concurso-publico"
+        ]
+      },
+      {
+        "url": "https://munialtobiobio.cl/llamado-a-concurso-publico-kinesiologo-a-prlac/",
+        "texto": "LLAMADO A CONCURSO PÚBLICO KINESIOLOGO/A PRLAC",
+        "score": 9,
+        "match": [
+          "T+concurso público",
+          "H+concurso-publico"
+        ]
+      },
+      {
+        "url": "https://munialtobiobio.cl/llamado-a-concurso-publico-oln/",
+        "texto": "LLAMADO A CONCURSO PÚBLICO OLN",
+        "score": 9,
+        "match": [
+          "T+concurso público",
+          "H+concurso-publico"
+        ]
+      }
+    ],
+    "total_links": 234
+  },
+  {
+    "id": 541,
+    "nombre": "Municipalidad de Arauco",
+    "sitio_web": "https://www.muniarauco.cl",
+    "region": "Biobío",
+    "status": 200,
+    "url_final": "https://muniarauco.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://muniarauco.cl/ofertas-de-trabajo/",
+        "texto": "Concursos Públicos",
+        "score": 5,
+        "match": [
+          "T+concursos públicos"
+        ]
+      }
+    ],
+    "total_links": 104
+  },
+  {
+    "id": 542,
+    "nombre": "Municipalidad de Cañete",
+    "sitio_web": "https://www.municanete.cl",
+    "region": "Biobío",
+    "status": 200,
+    "url_final": "https://municanete.cl/v2/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [],
+    "total_links": 84
+  },
+  {
+    "id": 543,
+    "nombre": "Municipalidad de Contulmo",
+    "sitio_web": "https://www.municontulmo.cl",
+    "region": "Biobío",
+    "status": 200,
+    "url_final": "https://www.municontulmo.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 0
+  },
+  {
+    "id": 546,
+    "nombre": "Municipalidad de Los Álamos",
+    "sitio_web": "https://www.munilosAlamos.cl",
+    "region": "Biobío",
+    "status": 200,
+    "url_final": "https://munilosalamos.gob.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://munilosalamos.gob.cl/concursos-publicos/",
+        "texto": "",
+        "score": 4,
+        "match": [
+          "H+concursos-publicos"
+        ]
+      }
+    ],
+    "total_links": 98
+  },
+  {
+    "id": 550,
+    "nombre": "Municipalidad de Cunco",
+    "sitio_web": "https://www.municunco.cl",
+    "region": "La Araucanía",
+    "status": 200,
+    "url_final": "https://www.municunco.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://www.municunco.cl/categorias-comunitarias/concursos-publicos",
+        "texto": "Concursos Públicos",
+        "score": 9,
+        "match": [
+          "T+concursos públicos",
+          "H+concursos-publicos"
+        ]
+      },
+      {
+        "url": "https://www.municunco.cl/noticias/bases-concurso-publico-cargo-programa-fomil-2026",
+        "texto": "Concursos Bases concurso público; cargo Programa FOMIL 2026",
+        "score": 8,
+        "match": [
+          "T+concurso público",
+          "H+concurso-publico",
+          "H+omil-",
+          "-noticia"
+        ]
+      },
+      {
+        "url": "https://www.municunco.cl/noticias/llamado-concurso-publico-programa-mujeres-jefas-de-hogar",
+        "texto": "Concursos LLAMADO CONCURSO PÚBLICO PROGRAMA MUJERES JEFAS DE HOGAR",
+        "score": 4,
+        "match": [
+          "T+concurso público",
+          "H+concurso-publico",
+          "-noticia"
+        ]
+      },
+      {
+        "url": "https://www.municunco.cl/noticias/bases-concurso-publico-director-de-salud",
+        "texto": "Concursos Bases Concurso público Director De Salud",
+        "score": 4,
+        "match": [
+          "T+concurso público",
+          "H+concurso-publico",
+          "-noticia"
+        ]
+      },
+      {
+        "url": "https://www.municunco.cl/noticias/postulacion-al-concurso-publico-del-programa-mujeres-jefas-de-hogar",
+        "texto": "Concursos Postulación al Concurso Público del Programa Mujeres Jefas de Hogar",
+        "score": 4,
+        "match": [
+          "T+concurso público",
+          "H+concurso-publico",
+          "-noticia"
+        ]
+      }
+    ],
+    "total_links": 127
+  },
+  {
+    "id": 552,
+    "nombre": "Municipalidad de Freire",
+    "sitio_web": "https://www.munifreire.cl",
+    "region": "La Araucanía",
+    "status": 200,
+    "url_final": "https://munifreire.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://munifreire.cl/concursos/",
+        "texto": "CONCURSOS",
+        "score": 4,
+        "match": [
+          "H+/concursos/"
+        ]
+      }
+    ],
+    "total_links": 66
+  },
+  {
+    "id": 555,
+    "nombre": "Municipalidad de Lautaro",
+    "sitio_web": "https://www.munilautaro.cl",
+    "region": "La Araucanía",
+    "status": 200,
+    "url_final": "https://sitio.munilautaro.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://sitio.munilautaro.cl/concurso-publico-de-antecedentes-programa-centro-comunitario-de-cuidados-el-mirador/",
+        "texto": "Concurso Público de Antecedentes – Programa Centro Comunitario de Cuidados El Mirador",
+        "score": 9,
+        "match": [
+          "T+concurso público",
+          "H+concurso-publico"
+        ]
+      },
+      {
+        "url": "https://sitio.munilautaro.cl/category/concursos-publicos/",
+        "texto": "Bases - Concursos Públicos",
+        "score": 9,
+        "match": [
+          "T+concursos públicos",
+          "H+concursos-publicos"
+        ]
+      },
+      {
+        "url": "https://sitio.munilautaro.cl/la-municipalidad-de-lautaro-llama-a-concurso-oferta/",
+        "texto": "LA MUNICIPALIDAD DE LAUTARO LLAMA A CONCURSO OFERTA",
+        "score": 5,
+        "match": [
+          "t+concurso",
+          "h+concurs"
+        ]
+      },
+      {
+        "url": "https://sitio.munilautaro.cl/trabaja-con-nosotros/",
+        "texto": "Documentos para postulaciones",
+        "score": 4,
+        "match": [
+          "H+trabaja-con-nosotros"
+        ]
+      }
+    ],
+    "total_links": 126
+  },
+  {
+    "id": 562,
+    "nombre": "Municipalidad de Pucón",
+    "sitio_web": "https://www.munipucon.cl",
+    "region": "La Araucanía",
+    "status": 200,
+    "url_final": "https://www.munipucon.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 0
+  },
+  {
+    "id": 567,
+    "nombre": "Municipalidad de Villarrica",
+    "sitio_web": "https://www.munivillarrica.cl",
+    "region": "La Araucanía",
+    "status": 200,
+    "url_final": "https://www.munivillarrica.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://www.munivillarrica.cl/concursos-publicos/",
+        "texto": "Concursos Públicos",
+        "score": 9,
+        "match": [
+          "T+concursos públicos",
+          "H+concursos-publicos"
+        ]
+      },
+      {
+        "url": "https://www.munivillarrica.cl/concursos-departamento-de-salud-municipal/",
+        "texto": "Concursos Departamento de Salud Municipal",
+        "score": 8,
+        "match": [
+          "t+concursos",
+          "t+concurso",
+          "h+concurs"
+        ]
+      },
+      {
+        "url": "https://www.munivillarrica.cl/postulacion-al-sistema-de-registro-nacional-de-artesania-chile-artesania-convocatoria-2019/",
+        "texto": "POSTULACIÓN AL SISTEMA DE REGISTRO NACIONAL DE ARTESANÍA “CHILE ARTESANÍA”, CONVOCATORIA 2019",
+        "score": 7,
+        "match": [
+          "t+convocatoria",
+          "h+postul",
+          "h+convocatoria"
+        ]
+      },
+      {
+        "url": "https://www.munivillarrica.cl/concurso-jardines-villarrica-2024/",
+        "texto": "CONCURSO JARDINES VILLARRICA 2024",
+        "score": 5,
+        "match": [
+          "t+concurso",
+          "h+concurs"
+        ]
+      },
+      {
+        "url": "https://www.munivillarrica.cl/convocatoria-abierta-stand-gastronomicos-la-cuecada-mas-larga-de-chile/",
+        "texto": "CONVOCATORIA ABIERTA STAND GASTRONÓMICOS, LA CUECADA MÁS LARGA DE CHILE.",
+        "score": 5,
+        "match": [
+          "t+convocatoria",
+          "h+convocatoria"
+        ]
+      }
+    ],
+    "total_links": 277
+  },
+  {
+    "id": 568,
+    "nombre": "Municipalidad de Cholchol",
+    "sitio_web": "https://www.municholchol.cl",
+    "region": "La Araucanía",
+    "status": 200,
+    "url_final": "https://www.municholchol.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 38
+  },
+  {
+    "id": 570,
+    "nombre": "Municipalidad de Collipulli",
+    "sitio_web": "https://www.municollipulli.cl",
+    "region": "La Araucanía",
+    "status": 200,
+    "url_final": "https://municipalidadcollipulli.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://municipalidadcollipulli.cl/concursos-publicos/",
+        "texto": "Concursos Públicos",
+        "score": 9,
+        "match": [
+          "T+concursos públicos",
+          "H+concursos-publicos"
+        ]
+      },
+      {
+        "url": "https://municipalidadcollipulli.cl/concursos-internos/",
+        "texto": "Concursos Internos",
+        "score": 8,
+        "match": [
+          "t+concursos",
+          "t+concurso",
+          "h+concurs"
+        ]
+      }
+    ],
+    "total_links": 111
+  },
+  {
+    "id": 572,
+    "nombre": "Municipalidad de Ercilla",
+    "sitio_web": "https://www.muniercilla.cl",
+    "region": "La Araucanía",
+    "status": 200,
+    "url_final": "https://muniercilla.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [],
+    "total_links": 44
+  },
+  {
+    "id": 574,
+    "nombre": "Municipalidad de Los Sauces",
+    "sitio_web": "https://www.munilossauces.cl",
+    "region": "La Araucanía",
+    "status": 200,
+    "url_final": "https://www.munilossauces.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 0
+  },
+  {
+    "id": 575,
+    "nombre": "Municipalidad de Lumaco",
+    "sitio_web": "https://www.munilumaco.cl",
+    "region": "La Araucanía",
+    "status": 200,
+    "url_final": "https://www.munilumaco.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [
+      {
+        "url": "https://www.munilumaco.cl/index.php/sala-de-prensa/794-bases-concurso-publico-pmjh",
+        "texto": "BASES CONCURSO PÚBLICO PMJH",
+        "score": 9,
+        "match": [
+          "T+concurso público",
+          "H+concurso-publico"
+        ]
+      }
+    ],
+    "total_links": 81
+  },
+  {
+    "id": 582,
+    "nombre": "Municipalidad de Futrono",
+    "sitio_web": "https://www.munifutrono.cl",
+    "region": "Los Ríos",
+    "status": 200,
+    "url_final": "https://www.munifutrono.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://www.munifutrono.cl/municipio/alcaldia-administracion/concursos-publicos/",
+        "texto": "Concursos Públicos",
+        "score": 9,
+        "match": [
+          "T+concursos públicos",
+          "H+concursos-publicos"
+        ]
+      },
+      {
+        "url": "https://www.munifutrono.cl/direcciones/recursos-humanos/",
+        "texto": "Recursos Humanos",
+        "score": 9,
+        "match": [
+          "T+recursos humanos",
+          "H+recursos-humanos"
+        ]
+      },
+      {
+        "url": "https://www.munifutrono.cl/download/decreto-aprueba-concurso-publico-1-coordinador-y-2-tecnicos-para-prodesal/?wpdmdl=30239&masterkey=OHtqf5YaPFTPtZs1U24NV9vQt6cTH_uTTAYgxHBlowZX31nKNcGI9uEkHgHZuMHE1QVQAvNf7U2-hX2zjvR5W4aG16688CRWLimEPvmF2Oh0",
+        "texto": "Concurso Publico 1 coordinador y 2 técnicos para PRODESAL",
+        "score": 9,
+        "match": [
+          "T+concurso publico",
+          "H+concurso-publico"
+        ]
+      },
+      {
+        "url": "https://www.munifutrono.cl/download/anexo-n-2a-formato-llamado-a-concurso-definitivo/?wpdmdl=30243&masterkey=OTKf09V8w1F54XHjcaMsmd0u4mPd8obq-oRPn-I9L4e0Dmmr_pCGrzppyLA7T3oQip2Do5qMeIJxkuYY7_jBS_MtbaukZHNMMcOZRqnrTMs0",
+        "texto": "Anexo N 2A formato llamado a concurso definitivo",
+        "score": 5,
+        "match": [
+          "t+concurso",
+          "h+concurs"
+        ]
+      }
+    ],
+    "total_links": 99
+  },
+  {
+    "id": 585,
+    "nombre": "Municipalidad de Lanco",
+    "sitio_web": "https://www.munilanco.cl",
+    "region": "Los Ríos",
+    "status": 200,
+    "url_final": "https://www.munilanco.cl",
+    "ok": true,
+    "plataforma": "Sitio propio Joomla",
+    "motivo": "paths joomla",
+    "plataforma_motivo": "paths joomla",
+    "links_empleo": [],
+    "total_links": 89
+  },
+  {
+    "id": 586,
+    "nombre": "Municipalidad de Los Lagos",
+    "sitio_web": "https://www.muniloslagos.cl",
+    "region": "Los Ríos",
+    "status": 200,
+    "url_final": "https://muniloslagos.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://muniloslagos.cl/bases-concurso-publico-direccion-centro-familiar-tomas-rojas-vergara/",
+        "texto": "BASES CONCURSO PÚBLICO DIRECCIÓN CENTRO FAMILIAR TOMÁS ROJAS VERGARA",
+        "score": 9,
+        "match": [
+          "T+concurso público",
+          "H+concurso-publico"
+        ]
+      }
+    ],
+    "total_links": 191
+  },
+  {
+    "id": 587,
+    "nombre": "Municipalidad de Máfil",
+    "sitio_web": "https://www.munimafil.cl",
+    "region": "Los Ríos",
+    "status": 200,
+    "url_final": "https://www.munimafil.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://www.munimafil.cl/concursos/",
+        "texto": "Bases de Concursos Municipal",
+        "score": 4,
+        "match": [
+          "H+/concursos/"
+        ]
+      }
+    ],
+    "total_links": 33
+  },
+  {
+    "id": 588,
+    "nombre": "Municipalidad de Mariquina",
+    "sitio_web": "https://www.munimariquina.cl",
+    "region": "Los Ríos",
+    "status": 200,
+    "url_final": "https://munimariquina.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://munimariquina.cl/hasta-el-30-de-abril-estaran-abiertas-las-postulaciones-a-la-beca-municipal-2026/",
+        "texto": "¡Hasta el 30 de Abril estarán abiertas las postulaciones a la Beca Municipal 2026!",
+        "score": 5,
+        "match": [
+          "t+postulaciones",
+          "h+postul"
+        ]
+      },
+      {
+        "url": "https://munimariquina.cl/omil/",
+        "texto": "OMIL",
+        "score": 4,
+        "match": [
+          "H+/omil/"
+        ]
+      }
+    ],
+    "total_links": 190
+  },
+  {
+    "id": 589,
+    "nombre": "Municipalidad de Paillaco",
+    "sitio_web": "https://www.munipaillaco.cl",
+    "region": "Los Ríos",
+    "status": 200,
+    "url_final": "https://www.munipaillaco.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://www.munipaillaco.cl/ofertas-laborales",
+        "texto": "Ofertas Laborales",
+        "score": 9,
+        "match": [
+          "T+ofertas laborales",
+          "H+ofertas-laborales"
+        ]
+      }
+    ],
+    "total_links": 85
+  },
+  {
+    "id": 591,
+    "nombre": "Municipalidad de Río Bueno",
+    "sitio_web": "https://www.muniriobueno.cl",
+    "region": "Los Ríos",
+    "status": 200,
+    "url_final": "https://muniriobueno.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://muniriobueno.cl/",
+        "texto": "CONCURSOS",
+        "score": 6,
+        "match": [
+          "t+concursos",
+          "t+concurso"
+        ]
+      }
+    ],
+    "total_links": 71
+  },
+  {
+    "id": 594,
+    "nombre": "Municipalidad de Cochamó",
+    "sitio_web": "https://www.municochamo.cl",
+    "region": "Los Lagos",
+    "status": 200,
+    "url_final": "https://municochamo.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 5.2.21",
+    "plataforma_motivo": "meta:wordpress 5.2.21",
+    "links_empleo": [
+      {
+        "url": "https://municochamo.cl/ofertas-laborales",
+        "texto": "",
+        "score": 4,
+        "match": [
+          "H+ofertas-laborales"
+        ]
+      }
+    ],
+    "total_links": 61
+  },
+  {
+    "id": 595,
+    "nombre": "Municipalidad de Fresia",
+    "sitio_web": "https://www.munifresia.cl",
+    "region": "Los Lagos",
+    "status": 200,
+    "url_final": "https://www.munifresia.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [],
+    "total_links": 74
+  },
+  {
+    "id": 596,
+    "nombre": "Municipalidad de Frutillar",
+    "sitio_web": "https://www.munifrutillar.cl",
+    "region": "Los Lagos",
+    "status": 200,
+    "url_final": "https://www.munifrutillar.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.7.5",
+    "plataforma_motivo": "meta:wordpress 6.7.5",
+    "links_empleo": [
+      {
+        "url": "https://www.munifrutillar.cl/municipalidad-de-frutillar-abre-concurso-publico-para-fortalecer-el-desarrollo-rural/",
+        "texto": "Municipalidad de Frutillar abre concurso público para fortalecer el desarrollo rural",
+        "score": 9,
+        "match": [
+          "T+concurso público",
+          "H+concurso-publico"
+        ]
+      },
+      {
+        "url": "https://www.munifrutillar.cl/municipalidad-de-frutillar-abre-postulaciones-para-equipo-pdti/",
+        "texto": "Municipalidad de Frutillar abre postulaciones para equipo PDTI",
+        "score": 5,
+        "match": [
+          "t+postulaciones",
+          "h+postul"
+        ]
+      },
+      {
+        "url": "https://www.munifrutillar.cl/concursos-publicos/",
+        "texto": "Concursos",
+        "score": 4,
+        "match": [
+          "H+concursos-publicos"
+        ]
+      }
+    ],
+    "total_links": 129
+  },
+  {
+    "id": 598,
+    "nombre": "Municipalidad de Llanquihue",
+    "sitio_web": "https://www.munillanquihue.cl",
+    "region": "Los Lagos",
+    "status": 200,
+    "url_final": "https://llanquihue.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://llanquihue.cl/concursos/",
+        "texto": "Concursos Públicos",
+        "score": 9,
+        "match": [
+          "T+concursos públicos",
+          "H+/concursos/"
+        ]
+      }
+    ],
+    "total_links": 109
+  },
+  {
+    "id": 599,
+    "nombre": "Municipalidad de Maullín",
+    "sitio_web": "https://www.munimaullin.cl",
+    "region": "Los Lagos",
+    "status": 200,
+    "url_final": "https://munimaullin.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.8.5",
+    "plataforma_motivo": "meta:wordpress 6.8.5",
+    "links_empleo": [],
+    "total_links": 7
+  },
+  {
+    "id": 601,
+    "nombre": "Municipalidad de Castro",
+    "sitio_web": "https://www.municastro.cl",
+    "region": "Los Lagos",
+    "status": 200,
+    "url_final": "https://www.municipalidadcastro.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:powered by wpbakery page builder - drag ",
+    "plataforma_motivo": "meta:powered by wpbakery page builder - drag ",
+    "links_empleo": [
+      {
+        "url": "https://www.municipalidadcastro.cl/?p=29062",
+        "texto": "Bases Postulación Concurso público Terapeuta Ocupacional Residencias Transitorias",
+        "score": 5,
+        "match": [
+          "T+concurso público"
+        ]
+      }
+    ],
+    "total_links": 128
+  },
+  {
+    "id": 602,
+    "nombre": "Municipalidad de Ancud",
+    "sitio_web": "https://www.muniancud.cl",
+    "region": "Los Lagos",
+    "status": 200,
+    "url_final": "https://www.muniancud.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 0
+  },
+  {
+    "id": 605,
+    "nombre": "Municipalidad de Dalcahue",
+    "sitio_web": "https://www.munidalcahue.cl",
+    "region": "Los Lagos",
+    "status": 200,
+    "url_final": "https://www.munidalcahue.cl/portal/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 5.2.21",
+    "plataforma_motivo": "meta:wordpress 5.2.21",
+    "links_empleo": [],
+    "total_links": 136
+  },
+  {
+    "id": 606,
+    "nombre": "Municipalidad de Puqueldón",
+    "sitio_web": "https://www.munipuqueldon.cl",
+    "region": "Los Lagos",
+    "status": 200,
+    "url_final": "https://munipuqueldon.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://munipuqueldon.cl/municipio/concursos-publicos/",
+        "texto": "Concursos Públicos",
+        "score": 9,
+        "match": [
+          "T+concursos públicos",
+          "H+concursos-publicos"
+        ]
+      },
+      {
+        "url": "https://www.bne.cl/oferta/2022-073401?fbclid=IwAR191M8_CM65yIWnAMR8L0xLra7JE0mLLaMYog2XZe1aPddhhwMPxGiRPAU",
+        "texto": "Bolsa Nacional de Empleos",
+        "score": 5,
+        "match": [
+          "T+bolsa nacional de empleo"
+        ]
+      },
+      {
+        "url": "https://munipuqueldon.cl/oficinas-municipales/",
+        "texto": "Recursos Humanos",
+        "score": 5,
+        "match": [
+          "T+recursos humanos"
+        ]
+      }
+    ],
+    "total_links": 107
+  },
+  {
+    "id": 608,
+    "nombre": "Municipalidad de Quellón",
+    "sitio_web": "https://www.muniquellon.cl",
+    "region": "Los Lagos",
+    "status": 200,
+    "url_final": "https://muniquellon.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://muniquellon.cl/concursos-publicos-2/",
+        "texto": "Concursos Públicos",
+        "score": 9,
+        "match": [
+          "T+concursos públicos",
+          "H+concursos-publicos"
+        ]
+      },
+      {
+        "url": "https://muniquellon.cl/omil/",
+        "texto": "Omil",
+        "score": 4,
+        "match": [
+          "H+/omil/"
+        ]
+      }
+    ],
+    "total_links": 180
+  },
+  {
+    "id": 609,
+    "nombre": "Municipalidad de Quemchi",
+    "sitio_web": "https://www.muniquemchi.cl",
+    "region": "Los Lagos",
+    "status": 200,
+    "url_final": "https://www.muniquemchi.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [],
+    "total_links": 86
+  },
+  {
+    "id": 610,
+    "nombre": "Municipalidad de Quinchao",
+    "sitio_web": "https://www.muniquinchao.cl",
+    "region": "Los Lagos",
+    "status": 200,
+    "url_final": "https://www.muniquinchao.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 0
+  },
+  {
+    "id": 615,
+    "nombre": "Municipalidad de Río Negro",
+    "sitio_web": "https://www.munirionegro.cl",
+    "region": "Los Lagos",
+    "status": 200,
+    "url_final": "https://www.munirionegro.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [],
+    "total_links": 181
+  },
+  {
+    "id": 624,
+    "nombre": "Municipalidad de Aysén",
+    "sitio_web": "https://www.muniaysen.cl",
+    "region": "Aysén",
+    "status": 200,
+    "url_final": "https://www.muniaysen.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 1
+  },
+  {
+    "id": 626,
+    "nombre": "Municipalidad de Guaitecas",
+    "sitio_web": "https://www.muniguaitecas.cl",
+    "region": "Aysén",
+    "status": 200,
+    "url_final": "https://muniguaitecas.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:powered by layerslider 6.11.1 - multi-pu",
+    "plataforma_motivo": "meta:powered by layerslider 6.11.1 - multi-pu",
+    "links_empleo": [
+      {
+        "url": "https://muniguaitecas.cl/category/concursos-publicos/",
+        "texto": "Concursos Públicos",
+        "score": 9,
+        "match": [
+          "T+concursos públicos",
+          "H+concursos-publicos"
+        ]
+      },
+      {
+        "url": "https://muniguaitecas.cl/galeria/preseleccion-concurso-apreciando-las-guaitecas-tras-el-lente/",
+        "texto": "Preselección Concurso \"Apreciando las Guaitecas tras el lente\"",
+        "score": 5,
+        "match": [
+          "t+concurso",
+          "h+concurs"
+        ]
+      }
+    ],
+    "total_links": 109
+  },
+  {
+    "id": 627,
+    "nombre": "Municipalidad de Cochrane",
+    "sitio_web": "https://www.municochrane.cl",
+    "region": "Aysén",
+    "status": 200,
+    "url_final": "https://municochrane.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://municochrane.cl/bases-concursos-y-postulaciones/",
+        "texto": "BASES, CONCURSOS Y POSTULACIONES",
+        "score": 13,
+        "match": [
+          "t+concursos",
+          "t+concurso",
+          "t+postulaciones",
+          "h+concurs"
+        ]
+      },
+      {
+        "url": "https://municochrane.cl/ofertas-laborales/",
+        "texto": "OFERTAS LABORALES",
+        "score": 9,
+        "match": [
+          "T+ofertas laborales",
+          "H+ofertas-laborales"
+        ]
+      }
+    ],
+    "total_links": 150
+  },
+  {
+    "id": 639,
+    "nombre": "Municipalidad de Torres del Paine",
+    "sitio_web": "https://www.munitorresdelpaine.cl",
+    "region": "Magallanes",
+    "status": 200,
+    "url_final": "https://www.munitorresdelpaine.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://www.munitorresdelpaine.cl/enlaces-a-postulaciones/",
+        "texto": "Enlaces a postulaciones",
+        "score": 5,
+        "match": [
+          "t+postulaciones",
+          "h+postul"
+        ]
+      }
+    ],
+    "total_links": 147
+  },
+  {
+    "id": 640,
+    "nombre": "Municipalidad de Porvenir",
+    "sitio_web": "https://www.muniporvenir.cl",
+    "region": "Magallanes",
+    "status": 200,
+    "url_final": "https://www.muniporvenir.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://www.muniporvenir.cl/llamado-a-concurso-publico-para-proveer-2-cargos-grado-13-e-m-s-del-escalafon-tecnico-de-la-planta-de-personal-de-la-municipalidad-de-porvenir/",
+        "texto": "LLAMADO A CONCURSO PÚBLICO PARA PROVEER 2 CARGOS GRADO 13° E.M.S DEL ESCALAFÓN TECNICO DE LA PLANTA DE PERSONAL DE LA MU",
+        "score": 6,
+        "match": [
+          "T+concurso público",
+          "H+concurso-publico",
+          "-texto_largo"
+        ]
+      }
+    ],
+    "total_links": 324
+  },
+  {
+    "id": 641,
+    "nombre": "Municipalidad de Primavera",
+    "sitio_web": "https://www.muniprimavera.cl",
+    "region": "Magallanes",
+    "status": 200,
+    "url_final": "https://www.muniprimavera.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [],
+    "total_links": 64
+  },
+  {
+    "id": 642,
+    "nombre": "Municipalidad de Timaukel",
+    "sitio_web": "https://www.munitimaukel.cl",
+    "region": "Magallanes",
+    "status": 200,
+    "url_final": "https://munitimaukel.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://munitimaukel.cl/municipalidad/concurso-publico/",
+        "texto": "Concurso público",
+        "score": 9,
+        "match": [
+          "T+concurso público",
+          "H+concurso-publico"
+        ]
+      }
+    ],
+    "total_links": 213
+  },
+  {
+    "id": 643,
+    "nombre": "Corporación Municipal de Desarrollo Social de Iquique",
+    "sitio_web": "https://cormudesi.cl",
+    "region": "Tarapacá",
+    "status": 200,
+    "url_final": "https://cormudesi.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "http://unisag.cormudesi.cl/unisag/rrhh/curriculum/view/index.phtml?departamento=1",
+        "texto": "Trabajo Con Nosotros",
+        "score": 4,
+        "match": [
+          "H+rrhh"
+        ]
+      },
+      {
+        "url": "https://cormudesi.cl/concurso-publico/",
+        "texto": "CONCURSO",
+        "score": 4,
+        "match": [
+          "H+concurso-publico"
+        ]
+      }
+    ],
+    "total_links": 45
+  },
+  {
+    "id": 644,
+    "nombre": "Corporación Municipal de Desarrollo Social de Pozo Almonte",
+    "sitio_web": "http://www.cormudespa.cl",
+    "region": "Tarapacá",
+    "status": 200,
+    "url_final": "https://cormudespa.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [],
+    "total_links": 74
+  },
+  {
+    "id": 645,
+    "nombre": "Corporación Municipal de Desarrollo Social de Antofagasta",
+    "sitio_web": "https://www.cmds.cl",
+    "region": "Antofagasta",
+    "status": 200,
+    "url_final": "https://www.cmds.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 5.4.19",
+    "plataforma_motivo": "meta:wordpress 5.4.19",
+    "links_empleo": [
+      {
+        "url": "https://www.cmds.cl/trabaja-con-nosotros/",
+        "texto": "Trabaja con Nosotros",
+        "score": 9,
+        "match": [
+          "T+trabaja con nosotros",
+          "H+trabaja-con-nosotros"
+        ]
+      },
+      {
+        "url": "https://www.cmds.cl/aps-celebra-mes-de-la-lactancia-materna-con-charlas-educativas-y-concursos-fotograficos/",
+        "texto": "APS CELEBRA MES DE LA LACTANCIA MATERNA CON CHARLAS EDUCATIVAS Y CONCURSOS FOTOGRÁFICOS",
+        "score": 8,
+        "match": [
+          "t+concursos",
+          "t+concurso",
+          "h+concurs"
+        ]
+      },
+      {
+        "url": "https://www.cmds.cl/el-lunes-9-de-noviembre-se-abren-las-postulaciones-al-liceo-armando-carrera-gonzalez/",
+        "texto": "EL LUNES 9 DE NOVIEMBRE SE ABREN LAS POSTULACIONES AL LICEO “ARMANDO CARRERA GONZÁLEZ”",
+        "score": 7,
+        "match": [
+          "t+postulaciones",
+          "h+postul",
+          "h+carrera"
+        ]
+      },
+      {
+        "url": "https://www.cmds.cl/destacada-participacion-de-alumnos-de-la-escuela-d-73-en-concurso-el-mercurio-de-los-estudiantes/",
+        "texto": "DESTACADA PARTICIPACIÓN DE LA ESCUELA D-73 EN CONCURSO “EL MERCURIO DE LOS ESTUDIANTES”",
+        "score": 5,
+        "match": [
+          "t+concurso",
+          "h+concurs"
+        ]
+      },
+      {
+        "url": "https://www.cmds.cl/cmds-inicia-las-postulaciones-al-nivel-pre-kinder-para-las-cuatro-escuelas-de-parvulos-de-la-comuna/",
+        "texto": "CMDS INICIA LAS POSTULACIONES AL NIVEL PRE-KÍNDER PARA LAS CUATRO ESCUELAS DE PÁRVULOS DE LA COMUNA",
+        "score": 5,
+        "match": [
+          "t+postulaciones",
+          "h+postul"
+        ]
+      }
+    ],
+    "total_links": 1598
+  },
+  {
+    "id": 651,
+    "nombre": "Corporación Municipal de Rancagua",
+    "sitio_web": "https://www.educormun.cl",
+    "region": "O'Higgins",
+    "status": 200,
+    "url_final": "https://www.educormun.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 17
+  },
+  {
+    "id": 652,
+    "nombre": "Corporación Municipal de San Fernando",
+    "sitio_web": "https://cormusaf.cl",
+    "region": "O'Higgins",
+    "ok": false,
+    "error": "timeout 15s"
+  },
+  {
+    "id": 654,
+    "nombre": "Corporación Municipal de Castro",
+    "sitio_web": "https://www.castromunicipio.cl",
+    "region": "Los Lagos",
+    "status": 200,
+    "url_final": "https://www.municipalidadcastro.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:powered by wpbakery page builder - drag ",
+    "plataforma_motivo": "meta:powered by wpbakery page builder - drag ",
+    "links_empleo": [
+      {
+        "url": "https://www.municipalidadcastro.cl/?p=29062",
+        "texto": "Bases Postulación Concurso público Terapeuta Ocupacional Residencias Transitorias",
+        "score": 5,
+        "match": [
+          "T+concurso público"
+        ]
+      }
+    ],
+    "total_links": 128
+  },
+  {
+    "id": 655,
+    "nombre": "Corporación Municipal de Ancud",
+    "sitio_web": "https://www.muniancud.cl",
+    "region": "Los Lagos",
+    "status": 200,
+    "url_final": "https://www.muniancud.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 0
+  },
+  {
+    "id": 656,
+    "nombre": "Corporación Municipal de Dalcahue",
+    "sitio_web": "https://www.munidalcahue.cl",
+    "region": "Los Lagos",
+    "status": 200,
+    "url_final": "https://www.munidalcahue.cl/portal/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 5.2.21",
+    "plataforma_motivo": "meta:wordpress 5.2.21",
+    "links_empleo": [],
+    "total_links": 136
+  },
+  {
+    "id": 659,
+    "nombre": "Corporación Municipal de Quellón",
+    "sitio_web": "https://www.muniquellon.cl",
+    "region": "Los Lagos",
+    "status": 200,
+    "url_final": "https://muniquellon.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://muniquellon.cl/concursos-publicos-2/",
+        "texto": "Concursos Públicos",
+        "score": 9,
+        "match": [
+          "T+concursos públicos",
+          "H+concursos-publicos"
+        ]
+      },
+      {
+        "url": "https://muniquellon.cl/omil/",
+        "texto": "Omil",
+        "score": 4,
+        "match": [
+          "H+/omil/"
+        ]
+      }
+    ],
+    "total_links": 180
+  },
+  {
+    "id": 660,
+    "nombre": "Corporación Municipal de Quinchao",
+    "sitio_web": "https://www.muniquinchao.cl",
+    "region": "Los Lagos",
+    "status": 200,
+    "url_final": "https://www.muniquinchao.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [],
+    "total_links": 0
+  },
+  {
+    "id": 662,
+    "nombre": "Corporación Municipal de Puqueldón",
+    "sitio_web": "https://www.munipuqueldon.cl",
+    "region": "Los Lagos",
+    "status": 200,
+    "url_final": "https://munipuqueldon.cl/",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "wp-content",
+    "plataforma_motivo": "wp-content",
+    "links_empleo": [
+      {
+        "url": "https://munipuqueldon.cl/municipio/concursos-publicos/",
+        "texto": "Concursos Públicos",
+        "score": 9,
+        "match": [
+          "T+concursos públicos",
+          "H+concursos-publicos"
+        ]
+      },
+      {
+        "url": "https://www.bne.cl/oferta/2022-073401?fbclid=IwAR191M8_CM65yIWnAMR8L0xLra7JE0mLLaMYog2XZe1aPddhhwMPxGiRPAU",
+        "texto": "Bolsa Nacional de Empleos",
+        "score": 5,
+        "match": [
+          "T+bolsa nacional de empleo"
+        ]
+      },
+      {
+        "url": "https://munipuqueldon.cl/oficinas-municipales/",
+        "texto": "Recursos Humanos",
+        "score": 5,
+        "match": [
+          "T+recursos humanos"
+        ]
+      }
+    ],
+    "total_links": 107
+  },
+  {
+    "id": 665,
+    "nombre": "Corporación de Educación de Maipú",
+    "sitio_web": "https://www.codeduc.cl",
+    "region": "Metropolitana de Santiago",
+    "status": 200,
+    "url_final": "https://www.codeduc.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 4.9.8",
+    "plataforma_motivo": "meta:wordpress 4.9.8",
+    "links_empleo": [
+      {
+        "url": "http://www.codeduc.cl/trabaja-con-nosotros/",
+        "texto": "",
+        "score": 4,
+        "match": [
+          "H+trabaja-con-nosotros"
+        ]
+      }
+    ],
+    "total_links": 155
+  },
+  {
+    "id": 668,
+    "nombre": "Corporación de Salud y Educación de Las Condes",
+    "sitio_web": "https://www.corplascondes.cl",
+    "region": "Metropolitana de Santiago",
+    "status": 200,
+    "url_final": "https://www.corplascondes.cl",
+    "ok": true,
+    "plataforma": "Sitio propio",
+    "motivo": "html estatico",
+    "plataforma_motivo": "html estatico",
+    "links_empleo": [
+      {
+        "url": "https://tcn.corplascondes.cl/",
+        "texto": "Trabaja con Nosotros",
+        "score": 5,
+        "match": [
+          "T+trabaja con nosotros"
+        ]
+      }
+    ],
+    "total_links": 104
+  },
+  {
+    "id": 669,
+    "nombre": "Corporación de Desarrollo Social de Providencia",
+    "sitio_web": "https://j4.cdsprovidencia.cl",
+    "region": "Metropolitana de Santiago",
+    "status": 200,
+    "url_final": "https://j4.cdsprovidencia.cl",
+    "ok": true,
+    "plataforma": "Sitio propio Joomla",
+    "motivo": "meta:joomla! - open source content management",
+    "plataforma_motivo": "meta:joomla! - open source content management",
+    "links_empleo": [],
+    "total_links": 62
+  },
+  {
+    "id": 671,
+    "nombre": "Corporación Municipal de Macul",
+    "sitio_web": "https://www.corpomunimacul.cl",
+    "region": "Metropolitana de Santiago",
+    "status": 200,
+    "url_final": "https://www.corpomunimacul.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://www.corpomunimacul.cl/macul-premia-la-creatividad-y-participacion-comunitaria-en-concurso-salud-mental-en-100-palabras/",
+        "texto": "Macul premia la creatividad y participación comunitaria en concurso “Salud Mental en 100 Palabras”",
+        "score": 5,
+        "match": [
+          "t+concurso",
+          "h+concurs"
+        ]
+      }
+    ],
+    "total_links": 94
+  },
+  {
+    "id": 674,
+    "nombre": "Corporación Municipal de Pirque",
+    "sitio_web": "https://www.corpirque.cl",
+    "region": "Metropolitana de Santiago",
+    "status": 200,
+    "url_final": "https://www.corpirque.cl",
+    "ok": true,
+    "plataforma": "WordPress",
+    "motivo": "meta:wordpress 6.9.4",
+    "plataforma_motivo": "meta:wordpress 6.9.4",
+    "links_empleo": [
+      {
+        "url": "https://www.corpirque.cl/concursos-publicos/",
+        "texto": "Concursos Públicos",
+        "score": 9,
+        "match": [
+          "T+concursos públicos",
+          "H+concursos-publicos"
+        ]
+      },
+      {
+        "url": "https://docs.google.com/forms/d/e/1FAIpQLSdnKL5mszrVw52r4qxeInADsqNXlv9B662mJgpTFr-_YGrxPA/viewform",
+        "texto": "Bolsa de Trabajo",
+        "score": 5,
+        "match": [
+          "T+bolsa de trabajo"
+        ]
+      },
+      {
+        "url": "https://corpirque.cl/concursos-publicos/",
+        "texto": "",
+        "score": 4,
+        "match": [
+          "H+concursos-publicos"
+        ]
+      }
+    ],
+    "total_links": 73
+  }
+]

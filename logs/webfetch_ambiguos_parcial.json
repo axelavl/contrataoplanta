@@ -1,0 +1,26 @@
+{
+  "300": {
+    "url_empleo": null,
+    "nota": "Sitio turistico/patrimonio sin HTML institucional"
+  },
+  "305": {
+    "url_empleo": null,
+    "nota": "Portal turistico comunal — sin seccion empleos"
+  },
+  "312": {
+    "url_empleo": null,
+    "nota": "HTML solo metadata — sin seccion empleos visible"
+  },
+  "314": {
+    "url_empleo": null,
+    "nota": "Sitio turismo/salitre — sin seccion empleos"
+  },
+  "327": {
+    "url_empleo": "https://www.munilahiguera.cl/concursos_p.html",
+    "nota": "HTML estatico — concursos_p.html"
+  },
+  "329": {
+    "url_empleo": null,
+    "nota": "Menu institucional visible — sin link directo a empleos"
+  }
+}

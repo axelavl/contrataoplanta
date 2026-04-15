@@ -1,0 +1,2602 @@
+[
+  {
+    "id": 296,
+    "nombre": "Municipalidad de Camarones",
+    "region": "Arica y Parinacota",
+    "sitio_web": "https://www.municamarones.cl",
+    "url_empleo": "https://www.municamarones.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 297,
+    "nombre": "Municipalidad de Putre",
+    "region": "Arica y Parinacota",
+    "sitio_web": "https://www.muniputre.cl",
+    "url_empleo": "https://www.muniputre.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 298,
+    "nombre": "Municipalidad de General Lagos",
+    "region": "Arica y Parinacota",
+    "sitio_web": "https://www.munigenerallago.cl",
+    "url_empleo": "https://www.munigenerallago.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 300,
+    "nombre": "Municipalidad de Alto Hospicio",
+    "region": "Tarapacá",
+    "sitio_web": "https://www.altohospicio.cl",
+    "url_empleo": "https://www.altohospicio.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 301,
+    "nombre": "Municipalidad de Pozo Almonte",
+    "region": "Tarapacá",
+    "sitio_web": "https://www.pozoalmonte.cl",
+    "url_empleo": "https://www.pozoalmonte.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 302,
+    "nombre": "Municipalidad de Camiña",
+    "region": "Tarapacá",
+    "sitio_web": "https://www.camina.cl",
+    "url_empleo": "https://www.camina.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 303,
+    "nombre": "Municipalidad de Colchane",
+    "region": "Tarapacá",
+    "sitio_web": "https://www.colchane.cl",
+    "url_empleo": "https://www.colchane.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 304,
+    "nombre": "Municipalidad de Huara",
+    "region": "Tarapacá",
+    "sitio_web": "https://www.huara.cl",
+    "url_empleo": "https://www.huara.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 305,
+    "nombre": "Municipalidad de Pica",
+    "region": "Tarapacá",
+    "sitio_web": "https://www.pica.cl",
+    "url_empleo": "https://www.pica.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 307,
+    "nombre": "Municipalidad de Mejillones",
+    "region": "Antofagasta",
+    "sitio_web": "https://www.munimejillones.cl",
+    "url_empleo": "https://www.munimejillones.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 308,
+    "nombre": "Municipalidad de Sierra Gorda",
+    "region": "Antofagasta",
+    "sitio_web": "https://www.munisierragorda.cl",
+    "url_empleo": "https://www.munisierragorda.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 309,
+    "nombre": "Municipalidad de Taltal",
+    "region": "Antofagasta",
+    "sitio_web": "https://www.munitaltal.cl",
+    "url_empleo": "https://www.munitaltal.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 310,
+    "nombre": "Municipalidad de Calama",
+    "region": "Antofagasta",
+    "sitio_web": "https://www.calama.cl",
+    "url_empleo": "https://www.calama.cl/transparencia/trabaje-con-nosotros",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 311,
+    "nombre": "Municipalidad de Ollagüe",
+    "region": "Antofagasta",
+    "sitio_web": "https://www.municipalidadollague.cl",
+    "url_empleo": "https://www.municipalidadollague.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 312,
+    "nombre": "Municipalidad de San Pedro de Atacama",
+    "region": "Antofagasta",
+    "sitio_web": "https://www.sanpedrodeatacama.cl",
+    "url_empleo": "https://www.sanpedrodeatacama.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 313,
+    "nombre": "Municipalidad de Tocopilla",
+    "region": "Antofagasta",
+    "sitio_web": "https://www.munitoropilla.cl",
+    "url_empleo": "https://www.munitoropilla.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 314,
+    "nombre": "Municipalidad de María Elena",
+    "region": "Antofagasta",
+    "sitio_web": "https://www.mariaelena.cl",
+    "url_empleo": "https://www.mariaelena.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 315,
+    "nombre": "Municipalidad de Copiapó",
+    "region": "Atacama",
+    "sitio_web": "https://www.municopiapo.cl",
+    "url_empleo": "https://www.municopiapo.cl/transparencia/trabaje-con-nosotros",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 316,
+    "nombre": "Municipalidad de Caldera",
+    "region": "Atacama",
+    "sitio_web": "https://www.municaldera.cl",
+    "url_empleo": "https://www.municaldera.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 317,
+    "nombre": "Municipalidad de Tierra Amarilla",
+    "region": "Atacama",
+    "sitio_web": "https://www.munitierraamarilla.cl",
+    "url_empleo": "https://www.munitierraamarilla.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 318,
+    "nombre": "Municipalidad de Chañaral",
+    "region": "Atacama",
+    "sitio_web": "https://www.munichanal.cl",
+    "url_empleo": "https://www.munichanal.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 319,
+    "nombre": "Municipalidad de Diego de Almagro",
+    "region": "Atacama",
+    "sitio_web": "https://www.munidiegoalmagro.cl",
+    "url_empleo": "https://www.munidiegoalmagro.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 320,
+    "nombre": "Municipalidad de Vallenar",
+    "region": "Atacama",
+    "sitio_web": "https://www.munivallenar.cl",
+    "url_empleo": "https://www.munivallenar.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 321,
+    "nombre": "Municipalidad de Alto del Carmen",
+    "region": "Atacama",
+    "sitio_web": "https://www.munialtodelcarmen.cl",
+    "url_empleo": "https://www.munialtodelcarmen.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 322,
+    "nombre": "Municipalidad de Freirina",
+    "region": "Atacama",
+    "sitio_web": "https://www.munifreirina.cl",
+    "url_empleo": "https://www.munifreirina.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 323,
+    "nombre": "Municipalidad de Huasco",
+    "region": "Atacama",
+    "sitio_web": "https://www.munihuasco.cl",
+    "url_empleo": "https://www.munihuasco.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 326,
+    "nombre": "Municipalidad de Andacollo",
+    "region": "Coquimbo",
+    "sitio_web": "https://www.muniandacollo.cl",
+    "url_empleo": "https://www.muniandacollo.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 327,
+    "nombre": "Municipalidad de La Higuera",
+    "region": "Coquimbo",
+    "sitio_web": "https://www.munilahiguera.cl",
+    "url_empleo": "https://www.munilahiguera.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 328,
+    "nombre": "Municipalidad de Paiguano",
+    "region": "Coquimbo",
+    "sitio_web": "https://www.munipaiguano.cl",
+    "url_empleo": "https://www.munipaiguano.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 329,
+    "nombre": "Municipalidad de Vicuña",
+    "region": "Coquimbo",
+    "sitio_web": "https://www.munivicuna.cl",
+    "url_empleo": "https://www.munivicuna.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 330,
+    "nombre": "Municipalidad de Illapel",
+    "region": "Coquimbo",
+    "sitio_web": "https://www.muniillapel.cl",
+    "url_empleo": "https://www.muniillapel.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 331,
+    "nombre": "Municipalidad de Canela",
+    "region": "Coquimbo",
+    "sitio_web": "https://www.municanela.cl",
+    "url_empleo": "https://www.municanela.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 332,
+    "nombre": "Municipalidad de Los Vilos",
+    "region": "Coquimbo",
+    "sitio_web": "https://www.munilosvilos.cl",
+    "url_empleo": "https://www.munilosvilos.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 333,
+    "nombre": "Municipalidad de Salamanca",
+    "region": "Coquimbo",
+    "sitio_web": "https://www.munisalamanca.cl",
+    "url_empleo": "https://www.munisalamanca.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 334,
+    "nombre": "Municipalidad de Ovalle",
+    "region": "Coquimbo",
+    "sitio_web": "https://www.muniovalle.cl",
+    "url_empleo": "https://www.muniovalle.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 335,
+    "nombre": "Municipalidad de Combarbalá",
+    "region": "Coquimbo",
+    "sitio_web": "https://www.municombarbala.cl",
+    "url_empleo": "https://www.municombarbala.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 336,
+    "nombre": "Municipalidad de Monte Patria",
+    "region": "Coquimbo",
+    "sitio_web": "https://www.munimontepatria.cl",
+    "url_empleo": "https://www.munimontepatria.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 337,
+    "nombre": "Municipalidad de Punitaqui",
+    "region": "Coquimbo",
+    "sitio_web": "https://www.munipunitaqui.cl",
+    "url_empleo": "https://www.munipunitaqui.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 338,
+    "nombre": "Municipalidad de Río Hurtado",
+    "region": "Coquimbo",
+    "sitio_web": "https://www.muniriohurtado.cl",
+    "url_empleo": "https://www.muniriohurtado.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 340,
+    "nombre": "Municipalidad de Casablanca",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.municasablanca.cl",
+    "url_empleo": "https://www.municasablanca.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 341,
+    "nombre": "Municipalidad de Concón",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.muniConcon.cl",
+    "url_empleo": "https://www.muniConcon.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 342,
+    "nombre": "Municipalidad de Juan Fernández",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.munijuanfernandez.cl",
+    "url_empleo": "https://www.munijuanfernandez.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 343,
+    "nombre": "Municipalidad de Puchuncaví",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.munipuchuncavi.cl",
+    "url_empleo": "https://www.munipuchuncavi.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 344,
+    "nombre": "Municipalidad de Quintero",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.muniquintero.cl",
+    "url_empleo": "https://www.muniquintero.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 346,
+    "nombre": "Municipalidad de Isla de Pascua",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.munirapa-nui.cl",
+    "url_empleo": "https://www.munirapa-nui.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 347,
+    "nombre": "Municipalidad de Los Andes",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.munilosandes.cl",
+    "url_empleo": "https://www.munilosandes.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 348,
+    "nombre": "Municipalidad de Calle Larga",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.municalleLarga.cl",
+    "url_empleo": "https://www.municalleLarga.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 349,
+    "nombre": "Municipalidad de Rinconada",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.munirinconada.cl",
+    "url_empleo": "https://www.munirinconada.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 350,
+    "nombre": "Municipalidad de San Esteban",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.munisanesteban.cl",
+    "url_empleo": "https://www.munisanesteban.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 351,
+    "nombre": "Municipalidad de La Ligua",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.munilaliguachile.cl",
+    "url_empleo": "https://www.munilaliguachile.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 352,
+    "nombre": "Municipalidad de Cabildo",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.municabildo.cl",
+    "url_empleo": "https://www.municabildo.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 353,
+    "nombre": "Municipalidad de Papudo",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.munipapudo.cl",
+    "url_empleo": "https://www.munipapudo.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 354,
+    "nombre": "Municipalidad de Petorca",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.munipetorca.cl",
+    "url_empleo": "https://www.munipetorca.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 355,
+    "nombre": "Municipalidad de Zapallar",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.munizapallar.cl",
+    "url_empleo": "https://www.munizapallar.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 356,
+    "nombre": "Municipalidad de Quillota",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.muniquillota.cl",
+    "url_empleo": "https://www.muniquillota.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 357,
+    "nombre": "Municipalidad de Calera",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.municalera.cl",
+    "url_empleo": "https://www.municalera.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 358,
+    "nombre": "Municipalidad de Hijuelas",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.munihijuelas.cl",
+    "url_empleo": "https://www.munihijuelas.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 359,
+    "nombre": "Municipalidad de La Cruz",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.munilacruz.cl",
+    "url_empleo": "https://www.munilacruz.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 360,
+    "nombre": "Municipalidad de Limache",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.munilimache.cl",
+    "url_empleo": "https://www.munilimache.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 361,
+    "nombre": "Municipalidad de Nogales",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.muninogales.cl",
+    "url_empleo": "https://www.muninogales.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 362,
+    "nombre": "Municipalidad de Olmué",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.muniolmue.cl",
+    "url_empleo": "https://www.muniolmue.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 363,
+    "nombre": "Municipalidad de Villa Alemana",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.villaalemana.cl",
+    "url_empleo": "https://www.villaalemana.cl/transparencia/trabaje-con-nosotros",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 365,
+    "nombre": "Municipalidad de Algarrobo",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.munialgarrobo.cl",
+    "url_empleo": "https://www.munialgarrobo.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 366,
+    "nombre": "Municipalidad de Cartagena",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.municartagena.cl",
+    "url_empleo": "https://www.municartagena.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 367,
+    "nombre": "Municipalidad de El Quisco",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.munielquisco.cl",
+    "url_empleo": "https://www.munielquisco.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 368,
+    "nombre": "Municipalidad de El Tabo",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.munieltabo.cl",
+    "url_empleo": "https://www.munieltabo.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 369,
+    "nombre": "Municipalidad de Santo Domingo",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.munisantodomingo.cl",
+    "url_empleo": "https://www.munisantodomingo.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 370,
+    "nombre": "Municipalidad de San Felipe",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.munisanfelipe.cl",
+    "url_empleo": "https://www.munisanfelipe.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 371,
+    "nombre": "Municipalidad de Catemu",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.municatemu.cl",
+    "url_empleo": "https://www.municatemu.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 372,
+    "nombre": "Municipalidad de Llaillay",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.munillaillay.cl",
+    "url_empleo": "https://www.munillaillay.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 373,
+    "nombre": "Municipalidad de Panquehue",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.munipanquehue.cl",
+    "url_empleo": "https://www.munipanquehue.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 374,
+    "nombre": "Municipalidad de Putaendo",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.muniputaendo.cl",
+    "url_empleo": "https://www.muniputaendo.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 375,
+    "nombre": "Municipalidad de Santa María",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.munisantamaria.cl",
+    "url_empleo": "https://www.munisantamaria.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 376,
+    "nombre": "Municipalidad de Quilpué",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.quilpue.cl",
+    "url_empleo": "https://www.quilpue.cl/municipio/ofertas",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 377,
+    "nombre": "Municipalidad de Limache",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.munilimache.cl",
+    "url_empleo": "https://www.munilimache.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 378,
+    "nombre": "Municipalidad de Olmué",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.muniolmue.cl",
+    "url_empleo": "https://www.muniolmue.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 379,
+    "nombre": "Municipalidad de Villa Alemana",
+    "region": "Valparaíso",
+    "sitio_web": "https://www.villaalemana.cl",
+    "url_empleo": "https://www.villaalemana.cl/transparencia/trabaje-con-nosotros",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 381,
+    "nombre": "Municipalidad de Cerrillos",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.municerrillos.cl",
+    "url_empleo": "https://www.municerrillos.cl/transparencia/trabaje-con-nosotros",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 382,
+    "nombre": "Municipalidad de Cerro Navia",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.cerronavia.cl",
+    "url_empleo": "https://www.cerronavia.cl/transparencia/trabaje-con-nosotros",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 384,
+    "nombre": "Municipalidad de El Bosque",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.elbosque.cl",
+    "url_empleo": "https://www.elbosque.cl/transparencia/trabaje-con-nosotros",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 385,
+    "nombre": "Municipalidad de Estación Central",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.muniecentral.cl",
+    "url_empleo": "https://www.muniecentral.cl/wp/bolsa-de-empleo",
+    "plataforma_empleo": "WordPress"
+  },
+  {
+    "id": 387,
+    "nombre": "Municipalidad de Independencia",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.independencia.cl",
+    "url_empleo": "https://www.independencia.cl/transparencia/trabaje-con-nosotros",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 388,
+    "nombre": "Municipalidad de La Cisterna",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.lacisterna.cl",
+    "url_empleo": "https://www.lacisterna.cl/transparencia/trabaje-con-nosotros",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 390,
+    "nombre": "Municipalidad de La Granja",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.lagranja.cl",
+    "url_empleo": "https://www.lagranja.cl/transparencia/trabaje-con-nosotros",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 391,
+    "nombre": "Municipalidad de La Pintana",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.lapintana.cl",
+    "url_empleo": "https://www.lapintana.cl/transparencia/trabaje-con-nosotros",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 395,
+    "nombre": "Municipalidad de Lo Espejo",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.loespejo.cl",
+    "url_empleo": "https://www.loespejo.cl/transparencia/trabaje-con-nosotros",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 396,
+    "nombre": "Municipalidad de Lo Prado",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.loprado.cl",
+    "url_empleo": "https://www.loprado.cl/transparencia/trabaje-con-nosotros",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 397,
+    "nombre": "Municipalidad de Macul",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.macul.cl",
+    "url_empleo": "https://www.macul.cl/transparencia/trabaje-con-nosotros",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 400,
+    "nombre": "Municipalidad de Pedro Aguirre Cerda",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.pedroaguirrecerda.cl",
+    "url_empleo": "https://www.pedroaguirrecerda.cl/transparencia/trabaje-con-nosotros",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 405,
+    "nombre": "Municipalidad de Quinta Normal",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.quintanormal.cl",
+    "url_empleo": "https://www.quintanormal.cl/transparencia/trabaje-con-nosotros",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 408,
+    "nombre": "Municipalidad de San Joaquín",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.sanjoaquin.cl",
+    "url_empleo": "https://www.sanjoaquin.cl/transparencia/trabaje-con-nosotros",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 409,
+    "nombre": "Municipalidad de San Miguel",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.sanmiguel.cl",
+    "url_empleo": "https://www.sanmiguel.cl/transparencia/trabaje-con-nosotros",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 410,
+    "nombre": "Municipalidad de San Ramón",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.sanramon.cl",
+    "url_empleo": "https://www.sanramon.cl/transparencia/trabaje-con-nosotros",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 413,
+    "nombre": "Municipalidad de Lampa",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.lampa.cl",
+    "url_empleo": "https://www.lampa.cl/transparencia/trabaje-con-nosotros",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 414,
+    "nombre": "Municipalidad de Tiltil",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.tiltil.cl",
+    "url_empleo": "https://www.tiltil.cl/transparencia/trabaje-con-nosotros",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 416,
+    "nombre": "Municipalidad de Buin",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.buin.cl",
+    "url_empleo": "https://www.buin.cl/transparencia/trabaje-con-nosotros",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 417,
+    "nombre": "Municipalidad de Calera de Tango",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.caleradetango.cl",
+    "url_empleo": "https://www.caleradetango.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 418,
+    "nombre": "Municipalidad de Paine",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.paine.cl",
+    "url_empleo": "https://www.paine.cl/transparencia/trabaje-con-nosotros",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 420,
+    "nombre": "Municipalidad de Pirque",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.pirque.cl",
+    "url_empleo": "https://www.pirque.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 421,
+    "nombre": "Municipalidad de San José de Maipo",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.sanjosedemaipo.cl",
+    "url_empleo": "https://www.sanjosedemaipo.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 423,
+    "nombre": "Municipalidad de Alhué",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.munialhue.cl",
+    "url_empleo": "https://www.munialhue.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 424,
+    "nombre": "Municipalidad de Curacaví",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.municuracavi.cl",
+    "url_empleo": "https://www.municuracavi.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 425,
+    "nombre": "Municipalidad de María Pinto",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.munimariapinto.cl",
+    "url_empleo": "https://www.munimariapinto.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 426,
+    "nombre": "Municipalidad de San Pedro",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.munisanpedro.cl",
+    "url_empleo": "https://www.munisanpedro.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 427,
+    "nombre": "Municipalidad de Talagante",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.talagante.cl",
+    "url_empleo": "https://www.talagante.cl/transparencia/trabaje-con-nosotros",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 428,
+    "nombre": "Municipalidad de El Monte",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.elmonte.cl",
+    "url_empleo": "https://www.elmonte.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 429,
+    "nombre": "Municipalidad de Isla de Maipo",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.islaDemaipo.cl",
+    "url_empleo": "https://www.islaDemaipo.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 430,
+    "nombre": "Municipalidad de Padre Hurtado",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.padrehurtado.cl",
+    "url_empleo": "https://www.padrehurtado.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 431,
+    "nombre": "Municipalidad de Peñaflor",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.penaflor.cl",
+    "url_empleo": "https://www.penaflor.cl/transparencia/trabaje-con-nosotros",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 433,
+    "nombre": "Municipalidad de Codegua",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.municodegua.cl",
+    "url_empleo": "https://www.municodegua.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 434,
+    "nombre": "Municipalidad de Coinco",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.municoinco.cl",
+    "url_empleo": "https://www.municoinco.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 435,
+    "nombre": "Municipalidad de Coltauco",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.municoltauco.cl",
+    "url_empleo": "https://www.municoltauco.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 436,
+    "nombre": "Municipalidad de Doñihue",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.munidonihue.cl",
+    "url_empleo": "https://www.munidonihue.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 437,
+    "nombre": "Municipalidad de Graneros",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.munigraneros.cl",
+    "url_empleo": "https://www.munigraneros.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 438,
+    "nombre": "Municipalidad de Las Cabras",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.munilascabras.cl",
+    "url_empleo": "https://www.munilascabras.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 439,
+    "nombre": "Municipalidad de Machalí",
+    "region": "Oighíggins",
+    "sitio_web": "https://www.munimachali.cl",
+    "url_empleo": "https://www.munimachali.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 440,
+    "nombre": "Municipalidad de Malloa",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.munimalloa.cl",
+    "url_empleo": "https://www.munimalloa.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 441,
+    "nombre": "Municipalidad de Mostazal",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.munimostazal.cl",
+    "url_empleo": "https://www.munimostazal.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 442,
+    "nombre": "Municipalidad de Olivar",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.muniolivar.cl",
+    "url_empleo": "https://www.muniolivar.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 443,
+    "nombre": "Municipalidad de Peumo",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.munipeumo.cl",
+    "url_empleo": "https://www.munipeumo.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 444,
+    "nombre": "Municipalidad de Pichidegua",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.munipichidegua.cl",
+    "url_empleo": "https://www.munipichidegua.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 445,
+    "nombre": "Municipalidad de Quinta de Tilcoco",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.muniquintadetilcoco.cl",
+    "url_empleo": "https://www.muniquintadetilcoco.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 446,
+    "nombre": "Municipalidad de Rengo",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.munirengo.cl",
+    "url_empleo": "https://www.munirengo.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 447,
+    "nombre": "Municipalidad de Requínoa",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.munirequinoa.cl",
+    "url_empleo": "https://www.munirequinoa.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 448,
+    "nombre": "Municipalidad de San Vicente",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.munisanvicente.cl",
+    "url_empleo": "https://www.munisanvicente.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 449,
+    "nombre": "Municipalidad de Pichilemu",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.munipichilemu.cl",
+    "url_empleo": "https://www.munipichilemu.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 450,
+    "nombre": "Municipalidad de La Estrella",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.munilaestrella.cl",
+    "url_empleo": "https://www.munilaestrella.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 451,
+    "nombre": "Municipalidad de Litueche",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.munilitueche.cl",
+    "url_empleo": "https://www.munilitueche.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 452,
+    "nombre": "Municipalidad de Marchigüe",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.munimarchigue.cl",
+    "url_empleo": "https://www.munimarchigue.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 453,
+    "nombre": "Municipalidad de Navidad",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.muniNavidad.cl",
+    "url_empleo": "https://www.muniNavidad.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 454,
+    "nombre": "Municipalidad de Palmilla",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.munipalmilla.cl",
+    "url_empleo": "https://www.munipalmilla.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 455,
+    "nombre": "Municipalidad de Peralillo",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.muniperalillo.cl",
+    "url_empleo": "https://www.muniperalillo.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 456,
+    "nombre": "Municipalidad de San Fernando",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.munisanfernando.cl",
+    "url_empleo": "https://www.munisanfernando.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 457,
+    "nombre": "Municipalidad de Chépica",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.munichepica.cl",
+    "url_empleo": "https://www.munichepica.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 458,
+    "nombre": "Municipalidad de Chimbarongo",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.munichimbarongo.cl",
+    "url_empleo": "https://www.munichimbarongo.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 459,
+    "nombre": "Municipalidad de Lolol",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.munilolol.cl",
+    "url_empleo": "https://www.munilolol.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 460,
+    "nombre": "Municipalidad de Nancagua",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.muninancagua.cl",
+    "url_empleo": "https://www.muninancagua.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 461,
+    "nombre": "Municipalidad de Placilla",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.muniplacilla.cl",
+    "url_empleo": "https://www.muniplacilla.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 462,
+    "nombre": "Municipalidad de Pumanque",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.munipumanque.cl",
+    "url_empleo": "https://www.munipumanque.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 463,
+    "nombre": "Municipalidad de Santa Cruz",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.munisantacruz.cl",
+    "url_empleo": "https://www.munisantacruz.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 464,
+    "nombre": "Municipalidad de Talca",
+    "region": "Maule",
+    "sitio_web": "https://www.municipalidadtalca.cl",
+    "url_empleo": "https://www.municipalidadtalca.cl/transparencia/trabaje-con-nosotros",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 465,
+    "nombre": "Municipalidad de Constitución",
+    "region": "Maule",
+    "sitio_web": "https://www.municonstitucion.cl",
+    "url_empleo": "https://www.municonstitucion.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 466,
+    "nombre": "Municipalidad de Curepto",
+    "region": "Maule",
+    "sitio_web": "https://www.municurepto.cl",
+    "url_empleo": "https://www.municurepto.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 467,
+    "nombre": "Municipalidad de Empedrado",
+    "region": "Maule",
+    "sitio_web": "https://www.muniempedrado.cl",
+    "url_empleo": "https://www.muniempedrado.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 468,
+    "nombre": "Municipalidad de Maule",
+    "region": "Maule",
+    "sitio_web": "https://www.munimaule.cl",
+    "url_empleo": "https://www.munimaule.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 469,
+    "nombre": "Municipalidad de Pelarco",
+    "region": "Maule",
+    "sitio_web": "https://www.munipelarco.cl",
+    "url_empleo": "https://www.munipelarco.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 470,
+    "nombre": "Municipalidad de Pencahue",
+    "region": "Maule",
+    "sitio_web": "https://www.munipencahue.cl",
+    "url_empleo": "https://www.munipencahue.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 471,
+    "nombre": "Municipalidad de Río Claro",
+    "region": "Maule",
+    "sitio_web": "https://www.munirioclaro.cl",
+    "url_empleo": "https://www.munirioclaro.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 472,
+    "nombre": "Municipalidad de San Clemente",
+    "region": "Maule",
+    "sitio_web": "https://www.munisanclemente.cl",
+    "url_empleo": "https://www.munisanclemente.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 473,
+    "nombre": "Municipalidad de San Rafael",
+    "region": "Maule",
+    "sitio_web": "https://www.munisanrafael.cl",
+    "url_empleo": "https://www.munisanrafael.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 474,
+    "nombre": "Municipalidad de Cauquenes",
+    "region": "Maule",
+    "sitio_web": "https://www.municauquenes.cl",
+    "url_empleo": "https://www.municauquenes.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 475,
+    "nombre": "Municipalidad de Chanco",
+    "region": "Maule",
+    "sitio_web": "https://www.munichanco.cl",
+    "url_empleo": "https://www.munichanco.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 476,
+    "nombre": "Municipalidad de Pelluhue",
+    "region": "Maule",
+    "sitio_web": "https://www.munipelluhue.cl",
+    "url_empleo": "https://www.munipelluhue.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 478,
+    "nombre": "Municipalidad de Hualañé",
+    "region": "Maule",
+    "sitio_web": "https://www.munihualane.cl",
+    "url_empleo": "https://www.munihualane.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 479,
+    "nombre": "Municipalidad de Licantén",
+    "region": "Maule",
+    "sitio_web": "https://www.munilicanten.cl",
+    "url_empleo": "https://www.munilicanten.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 480,
+    "nombre": "Municipalidad de Molina",
+    "region": "Maule",
+    "sitio_web": "https://www.munimolina.cl",
+    "url_empleo": "https://www.munimolina.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 481,
+    "nombre": "Municipalidad de Rauco",
+    "region": "Maule",
+    "sitio_web": "https://www.munirauco.cl",
+    "url_empleo": "https://www.munirauco.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 482,
+    "nombre": "Municipalidad de Romeral",
+    "region": "Maule",
+    "sitio_web": "https://www.muniromeral.cl",
+    "url_empleo": "https://www.muniromeral.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 483,
+    "nombre": "Municipalidad de Sagrada Familia",
+    "region": "Maule",
+    "sitio_web": "https://www.munisagradafamilia.cl",
+    "url_empleo": "https://www.munisagradafamilia.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 484,
+    "nombre": "Municipalidad de Teno",
+    "region": "Maule",
+    "sitio_web": "https://www.muniteno.cl",
+    "url_empleo": "https://www.muniteno.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 485,
+    "nombre": "Municipalidad de Vichuquén",
+    "region": "Maule",
+    "sitio_web": "https://www.munivichuquen.cl",
+    "url_empleo": "https://www.munivichuquen.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 486,
+    "nombre": "Municipalidad de Linares",
+    "region": "Maule",
+    "sitio_web": "https://www.munilinares.cl",
+    "url_empleo": "https://www.munilinares.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 487,
+    "nombre": "Municipalidad de Colbún",
+    "region": "Maule",
+    "sitio_web": "https://www.municolbun.cl",
+    "url_empleo": "https://www.municolbun.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 488,
+    "nombre": "Municipalidad de Longaví",
+    "region": "Maule",
+    "sitio_web": "https://www.munilongavi.cl",
+    "url_empleo": "https://www.munilongavi.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 489,
+    "nombre": "Municipalidad de Parral",
+    "region": "Maule",
+    "sitio_web": "https://www.muniparral.cl",
+    "url_empleo": "https://www.muniparral.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 490,
+    "nombre": "Municipalidad de Retiro",
+    "region": "Maule",
+    "sitio_web": "https://www.muniretiro.cl",
+    "url_empleo": "https://www.muniretiro.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 491,
+    "nombre": "Municipalidad de San Javier",
+    "region": "Maule",
+    "sitio_web": "https://www.munisanjavier.cl",
+    "url_empleo": "https://www.munisanjavier.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 492,
+    "nombre": "Municipalidad de Villa Alegre",
+    "region": "Maule",
+    "sitio_web": "https://www.munivillaalegre.cl",
+    "url_empleo": "https://www.munivillaalegre.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 493,
+    "nombre": "Municipalidad de Yerbas Buenas",
+    "region": "Maule",
+    "sitio_web": "https://www.muniyerbasbuenas.cl",
+    "url_empleo": "https://www.muniyerbasbuenas.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 495,
+    "nombre": "Municipalidad de Bulnes",
+    "region": "Ñuble",
+    "sitio_web": "https://www.munibulnes.cl",
+    "url_empleo": "https://www.munibulnes.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 497,
+    "nombre": "Municipalidad de El Carmen",
+    "region": "Ñuble",
+    "sitio_web": "https://www.munielcarmen.cl",
+    "url_empleo": "https://www.munielcarmen.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 498,
+    "nombre": "Municipalidad de Pemuco",
+    "region": "Ñuble",
+    "sitio_web": "https://www.munipemuco.cl",
+    "url_empleo": "https://www.munipemuco.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 499,
+    "nombre": "Municipalidad de Pinto",
+    "region": "Ñuble",
+    "sitio_web": "https://www.munipinto.cl",
+    "url_empleo": "https://www.munipinto.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 500,
+    "nombre": "Municipalidad de Quillón",
+    "region": "Ñuble",
+    "sitio_web": "https://www.muniquillon.cl",
+    "url_empleo": "https://www.muniquillon.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 501,
+    "nombre": "Municipalidad de San Ignacio",
+    "region": "Ñuble",
+    "sitio_web": "https://www.munisanignacio.cl",
+    "url_empleo": "https://www.munisanignacio.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 502,
+    "nombre": "Municipalidad de Yungay",
+    "region": "Ñuble",
+    "sitio_web": "https://www.muniyungay.cl",
+    "url_empleo": "https://www.muniyungay.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 503,
+    "nombre": "Municipalidad de Quirihue",
+    "region": "Ñuble",
+    "sitio_web": "https://www.muniquirihue.cl",
+    "url_empleo": "https://www.muniquirihue.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 504,
+    "nombre": "Municipalidad de Cobquecura",
+    "region": "Ñuble",
+    "sitio_web": "https://www.municobquecura.cl",
+    "url_empleo": "https://www.municobquecura.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 505,
+    "nombre": "Municipalidad de Coelemu",
+    "region": "Ñuble",
+    "sitio_web": "https://www.municoelemu.cl",
+    "url_empleo": "https://www.municoelemu.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 506,
+    "nombre": "Municipalidad de Ninhue",
+    "region": "Ñuble",
+    "sitio_web": "https://www.munininhue.cl",
+    "url_empleo": "https://www.munininhue.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 507,
+    "nombre": "Municipalidad de Portezuelo",
+    "region": "Ñuble",
+    "sitio_web": "https://www.muniportezuelo.cl",
+    "url_empleo": "https://www.muniportezuelo.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 508,
+    "nombre": "Municipalidad de Ránquil",
+    "region": "Ñuble",
+    "sitio_web": "https://www.muniranquil.cl",
+    "url_empleo": "https://www.muniranquil.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 509,
+    "nombre": "Municipalidad de Treguaco",
+    "region": "Ñuble",
+    "sitio_web": "https://www.munitreguaco.cl",
+    "url_empleo": "https://www.munitreguaco.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 510,
+    "nombre": "Municipalidad de San Carlos",
+    "region": "Ñuble",
+    "sitio_web": "https://www.munisancarlos.cl",
+    "url_empleo": "https://www.munisancarlos.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 511,
+    "nombre": "Municipalidad de Coihueco",
+    "region": "Ñuble",
+    "sitio_web": "https://www.municoihueco.cl",
+    "url_empleo": "https://www.municoihueco.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 512,
+    "nombre": "Municipalidad de Ñiquén",
+    "region": "Ñuble",
+    "sitio_web": "https://www.muniniquen.cl",
+    "url_empleo": "https://www.muniniquen.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 513,
+    "nombre": "Municipalidad de San Fabián",
+    "region": "Ñuble",
+    "sitio_web": "https://www.munisanfabian.cl",
+    "url_empleo": "https://www.munisanfabian.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 514,
+    "nombre": "Municipalidad de San Nicolás",
+    "region": "Ñuble",
+    "sitio_web": "https://www.munisannicolas.cl",
+    "url_empleo": "https://www.munisannicolas.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 517,
+    "nombre": "Municipalidad de Chiguayante",
+    "region": "Biobío",
+    "sitio_web": "https://www.chiguayante.cl",
+    "url_empleo": "https://www.chiguayante.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 518,
+    "nombre": "Municipalidad de Florida",
+    "region": "Biobío",
+    "sitio_web": "https://www.muniflorida.cl",
+    "url_empleo": "https://www.muniflorida.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 519,
+    "nombre": "Municipalidad de Hualqui",
+    "region": "Biobío",
+    "sitio_web": "https://www.munihualqui.cl",
+    "url_empleo": "https://www.munihualqui.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 520,
+    "nombre": "Municipalidad de Lota",
+    "region": "Biobío",
+    "sitio_web": "https://www.munilota.cl",
+    "url_empleo": "https://www.munilota.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 521,
+    "nombre": "Municipalidad de Penco",
+    "region": "Biobío",
+    "sitio_web": "https://www.munipenco.cl",
+    "url_empleo": "https://www.munipenco.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 522,
+    "nombre": "Municipalidad de San Pedro de la Paz",
+    "region": "Biobío",
+    "sitio_web": "https://www.sanpedro.cl",
+    "url_empleo": "https://www.sanpedro.cl/transparencia/trabaje-con-nosotros",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 523,
+    "nombre": "Municipalidad de Santa Juana",
+    "region": "Biobío",
+    "sitio_web": "https://www.munisantajuana.cl",
+    "url_empleo": "https://www.munisantajuana.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 525,
+    "nombre": "Municipalidad de Tomé",
+    "region": "Biobío",
+    "sitio_web": "https://www.munitome.cl",
+    "url_empleo": "https://www.munitome.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 526,
+    "nombre": "Municipalidad de Hualpén",
+    "region": "Biobío",
+    "sitio_web": "https://www.muniHualpen.cl",
+    "url_empleo": "https://www.muniHualpen.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 528,
+    "nombre": "Municipalidad de Antuco",
+    "region": "Biobío",
+    "sitio_web": "https://www.muniAntuco.cl",
+    "url_empleo": "https://www.muniAntuco.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 529,
+    "nombre": "Municipalidad de Cabrero",
+    "region": "Biobío",
+    "sitio_web": "https://www.municabrero.cl",
+    "url_empleo": "https://www.municabrero.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 530,
+    "nombre": "Municipalidad de Laja",
+    "region": "Biobío",
+    "sitio_web": "https://www.munilaja.cl",
+    "url_empleo": "https://www.munilaja.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 531,
+    "nombre": "Municipalidad de Mulchén",
+    "region": "Biobío",
+    "sitio_web": "https://www.munimulchen.cl",
+    "url_empleo": "https://www.munimulchen.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 532,
+    "nombre": "Municipalidad de Nacimiento",
+    "region": "Biobío",
+    "sitio_web": "https://www.muninacimiento.cl",
+    "url_empleo": "https://www.muninacimiento.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 533,
+    "nombre": "Municipalidad de Negrete",
+    "region": "Biobío",
+    "sitio_web": "https://www.muninegrete.cl",
+    "url_empleo": "https://www.muninegrete.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 534,
+    "nombre": "Municipalidad de Quilaco",
+    "region": "Biobío",
+    "sitio_web": "https://www.muniquilaco.cl",
+    "url_empleo": "https://www.muniquilaco.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 535,
+    "nombre": "Municipalidad de Quilleco",
+    "region": "Biobío",
+    "sitio_web": "https://www.muniquilleco.cl",
+    "url_empleo": "https://www.muniquilleco.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 536,
+    "nombre": "Municipalidad de San Rosendo",
+    "region": "Biobío",
+    "sitio_web": "https://www.munisanrosendo.cl",
+    "url_empleo": "https://www.munisanrosendo.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 537,
+    "nombre": "Municipalidad de Santa Bárbara",
+    "region": "Biobío",
+    "sitio_web": "https://www.munisantabarbara.cl",
+    "url_empleo": "https://www.munisantabarbara.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 538,
+    "nombre": "Municipalidad de Tucapel",
+    "region": "Biobío",
+    "sitio_web": "https://www.munitucapel.cl",
+    "url_empleo": "https://www.munitucapel.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 539,
+    "nombre": "Municipalidad de Yumbel",
+    "region": "Biobío",
+    "sitio_web": "https://www.muniyumbel.cl",
+    "url_empleo": "https://www.muniyumbel.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 540,
+    "nombre": "Municipalidad de Alto Biobío",
+    "region": "Biobío",
+    "sitio_web": "https://www.munialtobiobio.cl",
+    "url_empleo": "https://www.munialtobiobio.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 541,
+    "nombre": "Municipalidad de Arauco",
+    "region": "Biobío",
+    "sitio_web": "https://www.muniarauco.cl",
+    "url_empleo": "https://www.muniarauco.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 542,
+    "nombre": "Municipalidad de Cañete",
+    "region": "Biobío",
+    "sitio_web": "https://www.municanete.cl",
+    "url_empleo": "https://www.municanete.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 543,
+    "nombre": "Municipalidad de Contulmo",
+    "region": "Biobío",
+    "sitio_web": "https://www.municontulmo.cl",
+    "url_empleo": "https://www.municontulmo.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 544,
+    "nombre": "Municipalidad de Curanilahue",
+    "region": "Biobío",
+    "sitio_web": "https://www.municuranilahue.cl",
+    "url_empleo": "https://www.municuranilahue.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 545,
+    "nombre": "Municipalidad de Lebu",
+    "region": "Biobío",
+    "sitio_web": "https://www.munilebu.cl",
+    "url_empleo": "https://www.munilebu.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 546,
+    "nombre": "Municipalidad de Los Álamos",
+    "region": "Biobío",
+    "sitio_web": "https://www.munilosAlamos.cl",
+    "url_empleo": "https://www.munilosAlamos.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 547,
+    "nombre": "Municipalidad de Tirúa",
+    "region": "Biobío",
+    "sitio_web": "https://www.munitirua.cl",
+    "url_empleo": "https://www.munitirua.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 549,
+    "nombre": "Municipalidad de Carahue",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.municarahue.cl",
+    "url_empleo": "https://www.municarahue.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 550,
+    "nombre": "Municipalidad de Cunco",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.municunco.cl",
+    "url_empleo": "https://www.municunco.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 551,
+    "nombre": "Municipalidad de Curarrehue",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.municurarrehue.cl",
+    "url_empleo": "https://www.municurarrehue.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 552,
+    "nombre": "Municipalidad de Freire",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.munifreire.cl",
+    "url_empleo": "https://www.munifreire.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 553,
+    "nombre": "Municipalidad de Galvarino",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.munigalvarino.cl",
+    "url_empleo": "https://www.munigalvarino.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 554,
+    "nombre": "Municipalidad de Gorbea",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.munigorbea.cl",
+    "url_empleo": "https://www.munigorbea.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 555,
+    "nombre": "Municipalidad de Lautaro",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.munilautaro.cl",
+    "url_empleo": "https://www.munilautaro.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 556,
+    "nombre": "Municipalidad de Loncoche",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.muniloncoche.cl",
+    "url_empleo": "https://www.muniloncoche.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 557,
+    "nombre": "Municipalidad de Melipeuco",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.munimelipeuco.cl",
+    "url_empleo": "https://www.munimelipeuco.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 558,
+    "nombre": "Municipalidad de Nueva Imperial",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.muninuevaimperial.cl",
+    "url_empleo": "https://www.muninuevaimperial.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 559,
+    "nombre": "Municipalidad de Padre Las Casas",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.munipadrelascasas.cl",
+    "url_empleo": "https://www.munipadrelascasas.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 560,
+    "nombre": "Municipalidad de Perquenco",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.muniperquenco.cl",
+    "url_empleo": "https://www.muniperquenco.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 561,
+    "nombre": "Municipalidad de Pitrufquén",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.munipitrufquen.cl",
+    "url_empleo": "https://www.munipitrufquen.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 562,
+    "nombre": "Municipalidad de Pucón",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.munipucon.cl",
+    "url_empleo": "https://www.munipucon.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 563,
+    "nombre": "Municipalidad de Saavedra",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.munisaavedra.cl",
+    "url_empleo": "https://www.munisaavedra.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 564,
+    "nombre": "Municipalidad de Teodoro Schmidt",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.muniTeodoroSchmidt.cl",
+    "url_empleo": "https://www.muniTeodoroSchmidt.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 565,
+    "nombre": "Municipalidad de Toltén",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.munitolten.cl",
+    "url_empleo": "https://www.munitolten.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 566,
+    "nombre": "Municipalidad de Vilcún",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.munivilcun.cl",
+    "url_empleo": "https://www.munivilcun.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 567,
+    "nombre": "Municipalidad de Villarrica",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.munivillarrica.cl",
+    "url_empleo": "https://www.munivillarrica.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 568,
+    "nombre": "Municipalidad de Cholchol",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.municholchol.cl",
+    "url_empleo": "https://www.municholchol.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 569,
+    "nombre": "Municipalidad de Angol",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.muniangol.cl",
+    "url_empleo": "https://www.muniangol.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 570,
+    "nombre": "Municipalidad de Collipulli",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.municollipulli.cl",
+    "url_empleo": "https://www.municollipulli.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 571,
+    "nombre": "Municipalidad de Curacautín",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.municuracautin.cl",
+    "url_empleo": "https://www.municuracautin.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 572,
+    "nombre": "Municipalidad de Ercilla",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.muniercilla.cl",
+    "url_empleo": "https://www.muniercilla.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 573,
+    "nombre": "Municipalidad de Lonquimay",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.munilonquimay.cl",
+    "url_empleo": "https://www.munilonquimay.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 574,
+    "nombre": "Municipalidad de Los Sauces",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.munilossauces.cl",
+    "url_empleo": "https://www.munilossauces.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 575,
+    "nombre": "Municipalidad de Lumaco",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.munilumaco.cl",
+    "url_empleo": "https://www.munilumaco.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 576,
+    "nombre": "Municipalidad de Purén",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.munipuren.cl",
+    "url_empleo": "https://www.munipuren.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 577,
+    "nombre": "Municipalidad de Renaico",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.munirenaico.cl",
+    "url_empleo": "https://www.munirenaico.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 578,
+    "nombre": "Municipalidad de Traiguén",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.munitraiguen.cl",
+    "url_empleo": "https://www.munitraiguen.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 579,
+    "nombre": "Municipalidad de Victoria",
+    "region": "La Araucanía",
+    "sitio_web": "https://www.munivictoria.cl",
+    "url_empleo": "https://www.munivictoria.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 581,
+    "nombre": "Municipalidad de Corral",
+    "region": "Los Ríos",
+    "sitio_web": "https://www.municorral.cl",
+    "url_empleo": "https://www.municorral.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 582,
+    "nombre": "Municipalidad de Futrono",
+    "region": "Los Ríos",
+    "sitio_web": "https://www.munifutrono.cl",
+    "url_empleo": "https://www.munifutrono.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 583,
+    "nombre": "Municipalidad de La Unión",
+    "region": "Los Ríos",
+    "sitio_web": "https://www.municipalidadlaunion.cl",
+    "url_empleo": "https://www.municipalidadlaunion.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 584,
+    "nombre": "Municipalidad de Lago Ranco",
+    "region": "Los Ríos",
+    "sitio_web": "https://www.munilagoranco.cl",
+    "url_empleo": "https://www.munilagoranco.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 585,
+    "nombre": "Municipalidad de Lanco",
+    "region": "Los Ríos",
+    "sitio_web": "https://www.munilanco.cl",
+    "url_empleo": "https://www.munilanco.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 586,
+    "nombre": "Municipalidad de Los Lagos",
+    "region": "Los Ríos",
+    "sitio_web": "https://www.muniloslagos.cl",
+    "url_empleo": "https://www.muniloslagos.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 587,
+    "nombre": "Municipalidad de Máfil",
+    "region": "Los Ríos",
+    "sitio_web": "https://www.munimafil.cl",
+    "url_empleo": "https://www.munimafil.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 588,
+    "nombre": "Municipalidad de Mariquina",
+    "region": "Los Ríos",
+    "sitio_web": "https://www.munimariquina.cl",
+    "url_empleo": "https://www.munimariquina.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 589,
+    "nombre": "Municipalidad de Paillaco",
+    "region": "Los Ríos",
+    "sitio_web": "https://www.munipaillaco.cl",
+    "url_empleo": "https://www.munipaillaco.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 590,
+    "nombre": "Municipalidad de Panguipulli",
+    "region": "Los Ríos",
+    "sitio_web": "https://www.munipanguipulli.cl",
+    "url_empleo": "https://www.munipanguipulli.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 591,
+    "nombre": "Municipalidad de Río Bueno",
+    "region": "Los Ríos",
+    "sitio_web": "https://www.muniriobueno.cl",
+    "url_empleo": "https://www.muniriobueno.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 593,
+    "nombre": "Municipalidad de Calbuco",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.municalbuco.cl",
+    "url_empleo": "https://www.municalbuco.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 594,
+    "nombre": "Municipalidad de Cochamó",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.municochamo.cl",
+    "url_empleo": "https://www.municochamo.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 595,
+    "nombre": "Municipalidad de Fresia",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.munifresia.cl",
+    "url_empleo": "https://www.munifresia.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 596,
+    "nombre": "Municipalidad de Frutillar",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.munifrutillar.cl",
+    "url_empleo": "https://www.munifrutillar.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 597,
+    "nombre": "Municipalidad de Los Muermos",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.munilosmuermos.cl",
+    "url_empleo": "https://www.munilosmuermos.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 598,
+    "nombre": "Municipalidad de Llanquihue",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.munillanquihue.cl",
+    "url_empleo": "https://www.munillanquihue.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 599,
+    "nombre": "Municipalidad de Maullín",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.munimaullin.cl",
+    "url_empleo": "https://www.munimaullin.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 600,
+    "nombre": "Municipalidad de Puerto Varas",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.municipalidadpuertovaras.cl",
+    "url_empleo": "https://www.municipalidadpuertovaras.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 601,
+    "nombre": "Municipalidad de Castro",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.municastro.cl",
+    "url_empleo": "https://www.municastro.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 602,
+    "nombre": "Municipalidad de Ancud",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.muniancud.cl",
+    "url_empleo": "https://www.muniancud.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 603,
+    "nombre": "Municipalidad de Chonchi",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.munichonchi.cl",
+    "url_empleo": "https://www.munichonchi.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 604,
+    "nombre": "Municipalidad de Curaco de Vélez",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.municuracodeVelez.cl",
+    "url_empleo": "https://www.municuracodeVelez.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 605,
+    "nombre": "Municipalidad de Dalcahue",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.munidalcahue.cl",
+    "url_empleo": "https://www.munidalcahue.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 606,
+    "nombre": "Municipalidad de Puqueldón",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.munipuqueldon.cl",
+    "url_empleo": "https://www.munipuqueldon.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 607,
+    "nombre": "Municipalidad de Queilén",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.muniquillen.cl",
+    "url_empleo": "https://www.muniquillen.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 608,
+    "nombre": "Municipalidad de Quellón",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.muniquellon.cl",
+    "url_empleo": "https://www.muniquellon.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 609,
+    "nombre": "Municipalidad de Quemchi",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.muniquemchi.cl",
+    "url_empleo": "https://www.muniquemchi.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 610,
+    "nombre": "Municipalidad de Quinchao",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.muniquinchao.cl",
+    "url_empleo": "https://www.muniquinchao.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 611,
+    "nombre": "Municipalidad de Osorno",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.munosorno.cl",
+    "url_empleo": "https://www.munosorno.cl/transparencia/trabaje-con-nosotros",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 612,
+    "nombre": "Municipalidad de Puerto Octay",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.munipuertooctay.cl",
+    "url_empleo": "https://www.munipuertooctay.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 613,
+    "nombre": "Municipalidad de Purranque",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.munipurranque.cl",
+    "url_empleo": "https://www.munipurranque.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 614,
+    "nombre": "Municipalidad de Puyehue",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.munipuyehue.cl",
+    "url_empleo": "https://www.munipuyehue.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 615,
+    "nombre": "Municipalidad de Río Negro",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.munirionegro.cl",
+    "url_empleo": "https://www.munirionegro.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 616,
+    "nombre": "Municipalidad de San Juan de la Costa",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.munisanjuandelacosta.cl",
+    "url_empleo": "https://www.munisanjuandelacosta.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 617,
+    "nombre": "Municipalidad de San Pablo",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.munisanpablo.cl",
+    "url_empleo": "https://www.munisanpablo.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 618,
+    "nombre": "Municipalidad de Chaitén",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.munichaiten.cl",
+    "url_empleo": "https://www.munichaiten.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 619,
+    "nombre": "Municipalidad de Futaleufú",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.munifutaleufu.cl",
+    "url_empleo": "https://www.munifutaleufu.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 620,
+    "nombre": "Municipalidad de Hualaihué",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.munihualaihue.cl",
+    "url_empleo": "https://www.munihualaihue.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 621,
+    "nombre": "Municipalidad de Palena",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.munipalena.cl",
+    "url_empleo": "https://www.munipalena.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 623,
+    "nombre": "Municipalidad de Lago Verde",
+    "region": "Aysén",
+    "sitio_web": "https://www.munilagoverde.cl",
+    "url_empleo": "https://www.munilagoverde.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 624,
+    "nombre": "Municipalidad de Aysén",
+    "region": "Aysén",
+    "sitio_web": "https://www.muniaysen.cl",
+    "url_empleo": "https://www.muniaysen.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 625,
+    "nombre": "Municipalidad de Cisnes",
+    "region": "Aysén",
+    "sitio_web": "https://www.municisnes.cl",
+    "url_empleo": "https://www.municisnes.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 626,
+    "nombre": "Municipalidad de Guaitecas",
+    "region": "Aysén",
+    "sitio_web": "https://www.muniguaitecas.cl",
+    "url_empleo": "https://www.muniguaitecas.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 627,
+    "nombre": "Municipalidad de Cochrane",
+    "region": "Aysén",
+    "sitio_web": "https://www.municochrane.cl",
+    "url_empleo": "https://www.municochrane.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 628,
+    "nombre": "Municipalidad de O'Higgins",
+    "region": "Aysén",
+    "sitio_web": "https://www.muniohiggins-aysen.cl",
+    "url_empleo": "https://www.muniohiggins-aysen.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 629,
+    "nombre": "Municipalidad de Tortel",
+    "region": "Aysén",
+    "sitio_web": "https://www.munitratel.cl",
+    "url_empleo": "https://www.munitratel.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 630,
+    "nombre": "Municipalidad de Chile Chico",
+    "region": "Aysén",
+    "sitio_web": "https://www.munichilechico.cl",
+    "url_empleo": "https://www.munichilechico.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 631,
+    "nombre": "Municipalidad de Río Ibáñez",
+    "region": "Aysén",
+    "sitio_web": "https://www.muniribanez.cl",
+    "url_empleo": "https://www.muniribanez.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 633,
+    "nombre": "Municipalidad de Laguna Blanca",
+    "region": "Magallanes",
+    "sitio_web": "https://www.munilagunablanca.cl",
+    "url_empleo": "https://www.munilagunablanca.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 634,
+    "nombre": "Municipalidad de Río Verde",
+    "region": "Magallanes",
+    "sitio_web": "https://www.munirioverde-magallanes.cl",
+    "url_empleo": "https://www.munirioverde-magallanes.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 635,
+    "nombre": "Municipalidad de San Gregorio",
+    "region": "Magallanes",
+    "sitio_web": "https://www.munisangregorio.cl",
+    "url_empleo": "https://www.munisangregorio.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 636,
+    "nombre": "Municipalidad de Cabo de Hornos",
+    "region": "Magallanes",
+    "sitio_web": "https://www.municabodehornos.cl",
+    "url_empleo": "https://www.municabodehornos.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 637,
+    "nombre": "Municipalidad de Antártica",
+    "region": "Magallanes",
+    "sitio_web": "https://www.muniAntartica.cl",
+    "url_empleo": "https://www.muniAntartica.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 639,
+    "nombre": "Municipalidad de Torres del Paine",
+    "region": "Magallanes",
+    "sitio_web": "https://www.munitorresdelpaine.cl",
+    "url_empleo": "https://www.munitorresdelpaine.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 640,
+    "nombre": "Municipalidad de Porvenir",
+    "region": "Magallanes",
+    "sitio_web": "https://www.muniporvenir.cl",
+    "url_empleo": "https://www.muniporvenir.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 641,
+    "nombre": "Municipalidad de Primavera",
+    "region": "Magallanes",
+    "sitio_web": "https://www.muniprimavera.cl",
+    "url_empleo": "https://www.muniprimavera.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 642,
+    "nombre": "Municipalidad de Timaukel",
+    "region": "Magallanes",
+    "sitio_web": "https://www.munitimaukel.cl",
+    "url_empleo": "https://www.munitimaukel.cl/transparencia",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 643,
+    "nombre": "Corporación Municipal de Desarrollo Social de Iquique",
+    "region": "Tarapacá",
+    "sitio_web": "https://cormudesi.cl",
+    "url_empleo": "https://cormudesi.cl",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 644,
+    "nombre": "Corporación Municipal de Desarrollo Social de Pozo Almonte",
+    "region": "Tarapacá",
+    "sitio_web": "http://www.cormudespa.cl",
+    "url_empleo": "http://www.cormudespa.cl",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 645,
+    "nombre": "Corporación Municipal de Desarrollo Social de Antofagasta",
+    "region": "Antofagasta",
+    "sitio_web": "https://www.cmds.cl",
+    "url_empleo": "https://www.cmds.cl",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 651,
+    "nombre": "Corporación Municipal de Rancagua",
+    "region": "O'Higgins",
+    "sitio_web": "https://www.educormun.cl",
+    "url_empleo": "https://www.educormun.cl",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 652,
+    "nombre": "Corporación Municipal de San Fernando",
+    "region": "O'Higgins",
+    "sitio_web": "https://cormusaf.cl",
+    "url_empleo": "https://cormusaf.cl",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 654,
+    "nombre": "Corporación Municipal de Castro",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.castromunicipio.cl",
+    "url_empleo": "https://transparencia.municastro.cl",
+    "plataforma_empleo": "Transparencia"
+  },
+  {
+    "id": 655,
+    "nombre": "Corporación Municipal de Ancud",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.muniancud.cl",
+    "url_empleo": "https://www.muniancud.cl/transparencia",
+    "plataforma_empleo": "Transparencia"
+  },
+  {
+    "id": 656,
+    "nombre": "Corporación Municipal de Dalcahue",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.munidalcahue.cl",
+    "url_empleo": "https://www.munidalcahue.cl/transparencia",
+    "plataforma_empleo": "Transparencia"
+  },
+  {
+    "id": 657,
+    "nombre": "Corporación Municipal de Chonchi",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.munichonchi.cl",
+    "url_empleo": "https://www.munichonchi.cl/transparencia",
+    "plataforma_empleo": "Transparencia"
+  },
+  {
+    "id": 658,
+    "nombre": "Corporación Municipal de Queilén",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.muniquillen.cl",
+    "url_empleo": "https://www.muniquillen.cl/transparencia",
+    "plataforma_empleo": "Transparencia"
+  },
+  {
+    "id": 659,
+    "nombre": "Corporación Municipal de Quellón",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.muniquellon.cl",
+    "url_empleo": "https://www.muniquellon.cl/transparencia",
+    "plataforma_empleo": "Transparencia"
+  },
+  {
+    "id": 660,
+    "nombre": "Corporación Municipal de Quinchao",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.muniquinchao.cl",
+    "url_empleo": "https://www.muniquinchao.cl/transparencia",
+    "plataforma_empleo": "Transparencia"
+  },
+  {
+    "id": 661,
+    "nombre": "Corporación Municipal de Curaco de Vélez",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.municuracodeVelez.cl",
+    "url_empleo": "https://www.municuracodeVelez.cl/transparencia",
+    "plataforma_empleo": "Transparencia"
+  },
+  {
+    "id": 662,
+    "nombre": "Corporación Municipal de Puqueldón",
+    "region": "Los Lagos",
+    "sitio_web": "https://www.munipuqueldon.cl",
+    "url_empleo": "https://www.munipuqueldon.cl/transparencia",
+    "plataforma_empleo": "Transparencia"
+  },
+  {
+    "id": 665,
+    "nombre": "Corporación de Educación de Maipú",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.codeduc.cl",
+    "url_empleo": "https://www.codeduc.cl",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 668,
+    "nombre": "Corporación de Salud y Educación de Las Condes",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.corplascondes.cl",
+    "url_empleo": "https://www.corplascondes.cl",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 669,
+    "nombre": "Corporación de Desarrollo Social de Providencia",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://j4.cdsprovidencia.cl",
+    "url_empleo": "https://j4.cdsprovidencia.cl",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 671,
+    "nombre": "Corporación Municipal de Macul",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.corpomunimacul.cl",
+    "url_empleo": "https://www.corpomunimacul.cl",
+    "plataforma_empleo": "Sitio propio"
+  },
+  {
+    "id": 674,
+    "nombre": "Corporación Municipal de Pirque",
+    "region": "Metropolitana de Santiago",
+    "sitio_web": "https://www.corpirque.cl",
+    "url_empleo": "https://www.corpirque.cl",
+    "plataforma_empleo": "Sitio propio"
+  }
+]

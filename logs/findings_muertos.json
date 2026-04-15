@@ -1,0 +1,320 @@
+{
+  "297": {
+    "sitio_web_nuevo": "https://imputre.cl",
+    "url_empleo": "https://imputre.cl/concursos-publicos/",
+    "plataforma": "WordPress",
+    "notas": "Dominio correcto imputre.cl (IM = Ilustre Municipalidad)"
+  },
+  "298": {
+    "sitio_web_nuevo": "https://www.portalvisviri.cl",
+    "url_empleo": "https://www.portalvisviri.cl",
+    "plataforma": "Sitio propio",
+    "notas": "Dominio portalvisviri.cl"
+  },
+  "301": {
+    "sitio_web_nuevo": "https://www.impa.gob.cl",
+    "url_empleo": "https://www.impa.gob.cl",
+    "plataforma": "WordPress",
+    "notas": "Dominio .gob.cl atipico (impa.gob.cl)"
+  },
+  "302": {
+    "sitio_web_nuevo": "https://xn--municipalidaddecamia-m7b.cl",
+    "url_empleo": "https://xn--municipalidaddecamia-m7b.cl",
+    "plataforma": "Sitio propio",
+    "notas": "IDN (ñ); municipalidaddecamia.cl"
+  },
+  "303": {
+    "sitio_web_nuevo": "https://www.imcolchane.cl",
+    "url_empleo": "https://www.imcolchane.cl",
+    "plataforma": "Sitio propio",
+    "notas": "imcolchane.cl (IM prefix)"
+  },
+  "304": {
+    "sitio_web_nuevo": "https://imhuara.cl",
+    "url_empleo": "https://imhuara.cl",
+    "plataforma": "Sitio propio",
+    "notas": "imhuara.cl (IM prefix)"
+  },
+  "308": {
+    "sitio_web_nuevo": "https://municipalidadsierragorda.cl",
+    "url_empleo": "https://municipalidadsierragorda.cl",
+    "plataforma": "WordPress",
+    "notas": "Dominio municipalidadsierragorda.cl"
+  },
+  "313": {
+    "sitio_web_nuevo": "https://imtocopilla.cl",
+    "url_empleo": "https://imtocopilla.cl",
+    "plataforma": "WordPress",
+    "notas": "imtocopilla.cl (typo del original: munitoropilla)"
+  },
+  "317": {
+    "sitio_web_nuevo": "https://www.tierraamarilla.cl",
+    "url_empleo": "https://www.tierraamarilla.cl",
+    "plataforma": "Sitio propio",
+    "notas": "Dominio tierraamarilla.cl"
+  },
+  "319": {
+    "sitio_web_nuevo": "https://www.imda.cl",
+    "url_empleo": "https://www.imda.cl",
+    "plataforma": "WordPress",
+    "notas": "Dominio imda.cl (Ilustre Municipalidad Diego Almagro)"
+  },
+  "322": {
+    "sitio_web_nuevo": "https://imfreirina.cl",
+    "url_empleo": "https://imfreirina.cl",
+    "plataforma": "WordPress",
+    "notas": "imfreirina.cl"
+  },
+  "323": {
+    "sitio_web_nuevo": "https://imhuasco.cl",
+    "url_empleo": "https://imhuasco.cl",
+    "plataforma": "WordPress",
+    "notas": "imhuasco.cl (tambien nuevo.imhuasco.cl)"
+  },
+  "326": {
+    "sitio_web_nuevo": "https://andacollochile.cl",
+    "url_empleo": "https://andacollochile.cl",
+    "plataforma": "Sitio propio",
+    "notas": "Dominio andacollochile.cl"
+  },
+  "328": {
+    "sitio_web_nuevo": "https://www.munipaihuano.cl",
+    "url_empleo": "https://www.munipaihuano.cl",
+    "plataforma": "Sitio propio Joomla",
+    "notas": "Joomla; nombre oficial cambio a Paihuano"
+  },
+  "332": {
+    "sitio_web_nuevo": "https://www.munilosvilos.cl",
+    "url_empleo": "https://www.munilosvilos.cl",
+    "plataforma": "WordPress",
+    "notas": "DNS intermitente en triaje"
+  },
+  "342": {
+    "sitio_web_nuevo": "https://munijf.cl",
+    "url_empleo": "https://munijf.cl",
+    "plataforma": "WordPress",
+    "notas": "munijf.cl (Juan Fernandez)"
+  },
+  "351": {
+    "sitio_web_nuevo": "https://www.comunadelaligua.cl",
+    "url_empleo": "https://www.comunadelaligua.cl",
+    "plataforma": "WordPress",
+    "notas": "Dominio comunadelaligua.cl"
+  },
+  "352": {
+    "sitio_web_nuevo": "https://municipiocabildo.cl",
+    "url_empleo": "https://municipiocabildo.cl",
+    "plataforma": "WordPress",
+    "notas": "Dominio municipiocabildo.cl"
+  },
+  "357": {
+    "sitio_web_nuevo": "https://lacalera.cl",
+    "url_empleo": "https://lacalera.cl",
+    "plataforma": "WordPress",
+    "notas": "Dominio lacalera.cl"
+  },
+  "363": {
+    "sitio_web_nuevo": "https://munivillalemana.gob.cl",
+    "url_empleo": "https://munivillalemana.gob.cl/concursos-publicos/",
+    "plataforma": "WordPress",
+    "notas": "Dominio .gob.cl; concursos en /concursos-publicos/"
+  },
+  "439": {
+    "sitio_web_nuevo": "https://machali.cl",
+    "url_empleo": "https://machali.cl/index.php/concurso-publico/",
+    "plataforma": "Sitio propio Joomla",
+    "notas": "Joomla (index.php). Nota: region arreglada OHiggins"
+  },
+  "372": {
+    "sitio_web_nuevo": "https://www.munllayllay.cl",
+    "url_empleo": "https://www.munllayllay.cl",
+    "plataforma": "WordPress",
+    "notas": "Dominio munllayllay.cl (el original munillaillay.cl tenia typo)"
+  },
+  "397": {
+    "sitio_web_nuevo": "https://www.munimacul.cl",
+    "url_empleo": "https://www.munimacul.cl/portalnv/index.php/ofertas-laborales/",
+    "plataforma": "WordPress",
+    "notas": "WP con /portalnv/ prefix"
+  },
+  "430": {
+    "sitio_web_nuevo": "https://portal.mph.cl",
+    "url_empleo": "https://portal.mph.cl/?cat=33",
+    "plataforma": "WordPress",
+    "notas": "Subdominio portal.mph.cl; postulaciones en ?cat=33"
+  },
+  "436": {
+    "sitio_web_nuevo": "https://www.mdonihue.cl",
+    "url_empleo": "https://www.mdonihue.cl",
+    "plataforma": "Sitio propio",
+    "notas": "mdonihue.cl (prefix 'm' no 'muni')"
+  },
+  "489": {
+    "sitio_web_nuevo": "https://parral.cl",
+    "url_empleo": "https://parral.cl/concursos-publicos.html",
+    "plataforma": "Sitio propio",
+    "notas": "parral.cl con HTML estatico"
+  },
+  "532": {
+    "sitio_web_nuevo": "https://nacimiento.cl",
+    "url_empleo": "https://nacimiento.cl",
+    "plataforma": "WordPress",
+    "notas": "Dominio nacimiento.cl"
+  },
+  "544": {
+    "sitio_web_nuevo": "https://www.curanilahue.cl",
+    "url_empleo": "https://www.curanilahue.cl",
+    "plataforma": "Sitio propio",
+    "notas": "curanilahue.cl (PHP con ?pg=)"
+  },
+  "558": {
+    "sitio_web_nuevo": "https://www.nuevaimperial.cl",
+    "url_empleo": "https://www.nuevaimperial.cl/secciones/2316",
+    "plataforma": "Sitio propio",
+    "notas": "nuevaimperial.cl; seccion /secciones/2316 concursos"
+  },
+  "559": {
+    "sitio_web_nuevo": "https://padrelascasas.cl",
+    "url_empleo": "https://padrelascasas.cl/newplc/concursos-publicos/",
+    "plataforma": "WordPress",
+    "notas": "WP con /newplc/ prefix"
+  },
+  "569": {
+    "sitio_web_nuevo": "https://www.angol.cl",
+    "url_empleo": "https://www.angol.cl",
+    "plataforma": "WordPress",
+    "notas": "Dominio angol.cl"
+  },
+  "579": {
+    "sitio_web_nuevo": "https://victoriachile.cl",
+    "url_empleo": "https://victoriachile.cl",
+    "plataforma": "WordPress",
+    "notas": "Dominio victoriachile.cl (no muni)"
+  },
+  "600": {
+    "sitio_web_nuevo": "https://www.ptovaras.cl",
+    "url_empleo": "https://www.ptovaras.cl",
+    "plataforma": "Sitio propio",
+    "notas": "Dominio ptovaras.cl"
+  },
+  "636": {
+    "sitio_web_nuevo": "https://imcabodehornos.cl",
+    "url_empleo": "https://imcabodehornos.cl",
+    "plataforma": "Sitio propio",
+    "notas": "imcabodehornos.cl - en mantenimiento (abril 2026)"
+  },
+  "637": {
+    "sitio_web_nuevo": "https://imcabodehornos.cl",
+    "url_empleo": "https://imcabodehornos.cl",
+    "plataforma": "Sitio propio",
+    "notas": "Antartica sin municipalidad propia - integrada a Cabo de Hornos"
+  },
+  "629": {
+    "sitio_web_nuevo": "https://www.tortel.cl",
+    "url_empleo": "https://www.tortel.cl/category/municipio/",
+    "plataforma": "WordPress",
+    "notas": "tortel.cl (typo original era munitratel.cl)"
+  },
+  "578": {
+    "sitio_web_nuevo": "https://mtraiguen.cl",
+    "url_empleo": "https://mtraiguen.cl",
+    "plataforma": "WordPress",
+    "notas": "mtraiguen.cl (prefix 'm')"
+  },
+  "379": {
+    "sitio_web_nuevo": "https://www.villalemana.cl",
+    "url_empleo": "https://munivillalemana.gob.cl/concursos-publicos/",
+    "plataforma": "WordPress",
+    "notas": "villalemana.cl + munivillalemana.gob.cl para concursos"
+  },
+  "425": {
+    "sitio_web_nuevo": "https://mpinto.cl",
+    "url_empleo": "https://mpinto.cl",
+    "plataforma": "WordPress",
+    "notas": "mpinto.cl (prefix 'm')"
+  },
+  "443": {
+    "sitio_web_nuevo": "https://mpeumo.cl",
+    "url_empleo": "https://mpeumo.cl",
+    "plataforma": "WordPress",
+    "notas": "mpeumo.cl (prefix 'm')"
+  },
+  "445": {
+    "sitio_web_nuevo": "https://www.quintadetilcoco.cl",
+    "url_empleo": "https://www.quintadetilcoco.cl",
+    "plataforma": "Sitio propio",
+    "notas": "Dominio quintadetilcoco.cl"
+  },
+  "470": {
+    "sitio_web_nuevo": "https://mpencahue.cl",
+    "url_empleo": "https://mpencahue.cl",
+    "plataforma": "Sitio propio",
+    "notas": "mpencahue.cl (prefix 'm')"
+  },
+  "479": {
+    "sitio_web_nuevo": "https://mlicanten.cl",
+    "url_empleo": "https://mlicanten.cl",
+    "plataforma": "Sitio propio",
+    "notas": "mlicanten.cl (prefix 'm')"
+  },
+  "483": {
+    "sitio_web_nuevo": "https://www.sagradafamilia.cl",
+    "url_empleo": "https://www.sagradafamilia.cl",
+    "plataforma": "WordPress",
+    "notas": "sagradafamilia.cl (sin prefix muni)"
+  },
+  "492": {
+    "sitio_web_nuevo": "https://villalegre.cl",
+    "url_empleo": "https://villalegre.cl",
+    "plataforma": "WordPress",
+    "notas": "villalegre.cl (no munivillaalegre)"
+  },
+  "509": {
+    "sitio_web_nuevo": "https://www.trehuaco.com/Wordpress",
+    "url_empleo": "https://www.trehuaco.com/Wordpress/",
+    "plataforma": "WordPress",
+    "notas": "trehuaco.com (TLD .com) /Wordpress/ prefix"
+  },
+  "553": {
+    "sitio_web_nuevo": "https://www.galvarinochile.cl",
+    "url_empleo": "https://www.galvarinochile.cl/web/",
+    "plataforma": "WordPress",
+    "notas": "galvarinochile.cl con /web/ prefix"
+  },
+  "561": {
+    "sitio_web_nuevo": "https://www.mpitrufquen.cl",
+    "url_empleo": "https://www.mpitrufquen.cl",
+    "plataforma": "WordPress",
+    "notas": "mpitrufquen.cl (prefix 'm')"
+  },
+  "571": {
+    "sitio_web_nuevo": "https://www.mcuracautin.cl",
+    "url_empleo": "https://www.mcuracautin.cl",
+    "plataforma": "WordPress",
+    "notas": "mcuracautin.cl (prefix 'm')"
+  },
+  "573": {
+    "sitio_web_nuevo": "https://www.mlonquimay.cl/web",
+    "url_empleo": "https://www.mlonquimay.cl/web/",
+    "plataforma": "WordPress",
+    "notas": "mlonquimay.cl /web/ prefix"
+  },
+  "612": {
+    "sitio_web_nuevo": "https://munipuertoctay.cl",
+    "url_empleo": "https://munipuertoctay.cl",
+    "plataforma": "WordPress",
+    "notas": "munipuertoctay.cl (sin 'o' entre puerto y octay)"
+  },
+  "633": {
+    "sitio_web_nuevo": "https://www.mlagunablanca.cl",
+    "url_empleo": "https://www.mlagunablanca.cl",
+    "plataforma": "Sitio propio",
+    "notas": "mlagunablanca.cl (prefix 'm')"
+  },
+  "634": {
+    "sitio_web_nuevo": "https://www.rioverde.cl",
+    "url_empleo": "https://www.rioverde.cl",
+    "plataforma": "Sitio propio",
+    "notas": "rioverde.cl (no munirioverde)"
+  }
+}

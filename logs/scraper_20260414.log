@@ -1,0 +1,249 @@
+2026-04-14 23:48:31,041 [INFO] scrapers.run_all - evento=run_all_inicio instituciones=700 sector=None id=None dry_run=True max=10
+2026-04-14 23:48:31,093 [INFO] scraper.empleos_publicos - evento=inicio scraper=scraper.empleos_publicos dry_run=True
+2026-04-14 23:48:31,097 [INFO] scraper.empleos_publicos - evento=pagina_inicio scraper=scraper.empleos_publicos pagina=1 url=https://www.empleospublicos.cl/pub/convocatorias/convocatorias.aspx
+2026-04-14 23:48:34,207 [INFO] scraper.empleos_publicos - evento=listado_completo scraper=scraper.empleos_publicos paginas=1 ofertas=10
+2026-04-14 23:48:44,479 [INFO] scraper.empleos_publicos - evento=ofertas_obtenidas scraper=scraper.empleos_publicos cantidad=10
+2026-04-14 23:48:44,484 [INFO] scraper.empleos_publicos - evento=fin scraper=scraper.empleos_publicos status=OK found=10 parsed=10 nuevas=0 actualizadas=0 cerradas=0 errores=0 duracion=13.39
+2026-04-14 23:48:44,508 [INFO] scraper.wordpress.corporacion_municipal_de_valparaiso - evento=inicio scraper=scraper.wordpress.corporacion_municipal_de_valparaiso dry_run=True
+2026-04-14 23:48:50,788 [WARNING] scraper.wordpress.corporacion_municipal_de_valparaiso - evento=request_retry scraper=scraper.wordpress.corporacion_municipal_de_valparaiso url=https://cmvalparaiso.cl/category/concursos-publicos/feed/json intento=1 espera=1 error=404 Client Error: Not Found for url: https://cmvalparaiso.cl/category/concursos-publicos/feed/json
+2026-04-14 23:48:54,017 [WARNING] scraper.wordpress.corporacion_municipal_de_valparaiso - evento=request_retry scraper=scraper.wordpress.corporacion_municipal_de_valparaiso url=https://cmvalparaiso.cl/category/concursos-publicos/feed/json intento=2 espera=2 error=404 Client Error: Not Found for url: https://cmvalparaiso.cl/category/concursos-publicos/feed/json
+2026-04-14 23:48:59,132 [INFO] scraper.wordpress.corporacion_municipal_de_valparaiso - evento=wordpress_feed_skip scraper=scraper.wordpress.corporacion_municipal_de_valparaiso url=https://cmvalparaiso.cl/category/concursos-publicos/feed/json error=404 Client Error: Not Found for url: https://cmvalparaiso.cl/category/concursos-publicos/feed/json
+2026-04-14 23:49:01,372 [INFO] scraper.wordpress.corporacion_municipal_de_valparaiso - evento=ofertas_obtenidas scraper=scraper.wordpress.corporacion_municipal_de_valparaiso cantidad=10
+2026-04-14 23:49:01,390 [INFO] scraper.wordpress.corporacion_municipal_de_valparaiso - evento=fin scraper=scraper.wordpress.corporacion_municipal_de_valparaiso status=OK found=10 parsed=10 nuevas=0 actualizadas=0 cerradas=0 errores=0 duracion=16.88
+2026-04-14 23:49:01,409 [INFO] scraper.wordpress.municipalidad_de_colina - evento=inicio scraper=scraper.wordpress.municipalidad_de_colina dry_run=True
+2026-04-14 23:49:04,408 [INFO] scraper.wordpress.municipalidad_de_colina - evento=wordpress_feed_skip scraper=scraper.wordpress.municipalidad_de_colina url=https://www.colina.cl/category/concursos-publicos/feed/json error=Expecting value: line 1 column 1 (char 0)
+2026-04-14 23:49:09,179 [INFO] scraper.wordpress.municipalidad_de_colina - evento=ofertas_obtenidas scraper=scraper.wordpress.municipalidad_de_colina cantidad=0
+2026-04-14 23:49:09,180 [INFO] scraper.wordpress.municipalidad_de_colina - evento=fin scraper=scraper.wordpress.municipalidad_de_colina status=OK found=0 parsed=0 nuevas=0 actualizadas=0 cerradas=0 errores=0 duracion=7.77
+2026-04-14 23:49:09,199 [INFO] scraper.wordpress.municipalidad_de_concepcion - evento=inicio scraper=scraper.wordpress.municipalidad_de_concepcion dry_run=True
+2026-04-14 23:49:15,167 [WARNING] scraper.wordpress.municipalidad_de_concepcion - evento=request_retry scraper=scraper.wordpress.municipalidad_de_concepcion url=https://www.concepcion.cl/category/concursos-publicos/feed/json intento=1 espera=1 error=404 Client Error: Not Found for url: https://concepcion.cl/category/concursos-publicos/feed/json
+2026-04-14 23:49:18,278 [WARNING] scraper.wordpress.municipalidad_de_concepcion - evento=request_retry scraper=scraper.wordpress.municipalidad_de_concepcion url=https://www.concepcion.cl/category/concursos-publicos/feed/json intento=2 espera=2 error=404 Client Error: Not Found for url: https://concepcion.cl/category/concursos-publicos/feed/json
+2026-04-14 23:49:22,356 [INFO] scraper.wordpress.municipalidad_de_concepcion - evento=wordpress_feed_skip scraper=scraper.wordpress.municipalidad_de_concepcion url=https://www.concepcion.cl/category/concursos-publicos/feed/json error=404 Client Error: Not Found for url: https://concepcion.cl/category/concursos-publicos/feed/json
+2026-04-14 23:49:23,780 [WARNING] scraper.wordpress.municipalidad_de_concepcion - evento=request_retry scraper=scraper.wordpress.municipalidad_de_concepcion url=https://concepcion.cl/concurso-planta-municipal/ intento=1 espera=1 error=404 Client Error: Not Found for url: https://concepcion.cl/concurso-planta-municipal/
+2026-04-14 23:49:26,178 [WARNING] scraper.wordpress.municipalidad_de_concepcion - evento=request_retry scraper=scraper.wordpress.municipalidad_de_concepcion url=https://concepcion.cl/concurso-planta-municipal/ intento=2 espera=2 error=404 Client Error: Not Found for url: https://concepcion.cl/concurso-planta-municipal/
+2026-04-14 23:49:29,575 [INFO] scraper.wordpress.municipalidad_de_concepcion - evento=wordpress_html_skip scraper=scraper.wordpress.municipalidad_de_concepcion url=https://concepcion.cl/concurso-planta-municipal/ error=404 Client Error: Not Found for url: https://concepcion.cl/concurso-planta-municipal/
+2026-04-14 23:49:33,650 [ERROR] scraper.wordpress.municipalidad_de_concepcion - evento=run_error scraper=scraper.wordpress.municipalidad_de_concepcion error='NoneType' object has no attribute 'get_text'
+Traceback (most recent call last):
+  File "C:\proyectos\empleoestado\scrapers\base.py", line 285, in run
+    raw_ofertas = self.fetch_ofertas()
+  File "C:\proyectos\empleoestado\scrapers\plataformas\wordpress.py", line 64, in fetch_ofertas
+    return self._fetch_via_html()
+           ~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\proyectos\empleoestado\scrapers\plataformas\wordpress.py", line 187, in _fetch_via_html
+    ofertas = self._parse_html_listing(html, url)
+  File "C:\proyectos\empleoestado\scrapers\plataformas\wordpress.py", line 230, in _parse_html_listing
+    context = clean_text(anchor.find_parent(["li", "p", "div"]).get_text(" ", strip=True))
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'get_text'
+2026-04-14 23:49:33,655 [INFO] scraper.wordpress.municipalidad_de_concepcion - evento=fin scraper=scraper.wordpress.municipalidad_de_concepcion status=ERROR found=0 parsed=0 nuevas=0 actualizadas=0 cerradas=0 errores=1 duracion=24.46
+2026-04-14 23:49:33,660 [ERROR] scrapers.run_all - evento=run_wordpress_error institucion=Municipalidad de Concepción error='NoneType' object has no attribute 'get_text'
+Traceback (most recent call last):
+  File "C:\proyectos\empleoestado\scrapers\run_all.py", line 291, in run_wordpress
+    stats = scraper.run()
+  File "C:\proyectos\empleoestado\scrapers\base.py", line 285, in run
+    raw_ofertas = self.fetch_ofertas()
+  File "C:\proyectos\empleoestado\scrapers\plataformas\wordpress.py", line 64, in fetch_ofertas
+    return self._fetch_via_html()
+           ~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\proyectos\empleoestado\scrapers\plataformas\wordpress.py", line 187, in _fetch_via_html
+    ofertas = self._parse_html_listing(html, url)
+  File "C:\proyectos\empleoestado\scrapers\plataformas\wordpress.py", line 230, in _parse_html_listing
+    context = clean_text(anchor.find_parent(["li", "p", "div"]).get_text(" ", strip=True))
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'get_text'
+2026-04-14 23:49:33,679 [INFO] scraper.wordpress.municipalidad_de_conchali - evento=inicio scraper=scraper.wordpress.municipalidad_de_conchali dry_run=True
+2026-04-14 23:49:37,842 [WARNING] scraper.wordpress.municipalidad_de_conchali - evento=request_retry scraper=scraper.wordpress.municipalidad_de_conchali url=https://www.conchali.cl/category/concursos-publicos/feed/json intento=1 espera=1 error=404 Client Error: Not Found for url: https://conchali.cl/category/concursos-publicos/feed/json
+2026-04-14 23:49:39,808 [WARNING] scraper.wordpress.municipalidad_de_conchali - evento=request_retry scraper=scraper.wordpress.municipalidad_de_conchali url=https://www.conchali.cl/category/concursos-publicos/feed/json intento=2 espera=2 error=404 Client Error: Not Found for url: https://conchali.cl/category/concursos-publicos/feed/json
+2026-04-14 23:49:42,705 [INFO] scraper.wordpress.municipalidad_de_conchali - evento=wordpress_feed_skip scraper=scraper.wordpress.municipalidad_de_conchali url=https://www.conchali.cl/category/concursos-publicos/feed/json error=404 Client Error: Not Found for url: https://conchali.cl/category/concursos-publicos/feed/json
+2026-04-14 23:49:44,351 [WARNING] scraper.wordpress.municipalidad_de_conchali - evento=request_retry scraper=scraper.wordpress.municipalidad_de_conchali url=https://conchali.cl/llamado-a-concurso-publico/ intento=1 espera=1 error=404 Client Error: Not Found for url: https://conchali.cl/llamado-a-concurso-publico/
+2026-04-14 23:49:46,372 [WARNING] scraper.wordpress.municipalidad_de_conchali - evento=request_retry scraper=scraper.wordpress.municipalidad_de_conchali url=https://conchali.cl/llamado-a-concurso-publico/ intento=2 espera=2 error=404 Client Error: Not Found for url: https://conchali.cl/llamado-a-concurso-publico/
+2026-04-14 23:49:48,893 [INFO] scraper.wordpress.municipalidad_de_conchali - evento=wordpress_html_skip scraper=scraper.wordpress.municipalidad_de_conchali url=https://conchali.cl/llamado-a-concurso-publico/ error=404 Client Error: Not Found for url: https://conchali.cl/llamado-a-concurso-publico/
+2026-04-14 23:49:51,300 [ERROR] scraper.wordpress.municipalidad_de_conchali - evento=run_error scraper=scraper.wordpress.municipalidad_de_conchali error='NoneType' object has no attribute 'get_text'
+Traceback (most recent call last):
+  File "C:\proyectos\empleoestado\scrapers\base.py", line 285, in run
+    raw_ofertas = self.fetch_ofertas()
+  File "C:\proyectos\empleoestado\scrapers\plataformas\wordpress.py", line 64, in fetch_ofertas
+    return self._fetch_via_html()
+           ~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\proyectos\empleoestado\scrapers\plataformas\wordpress.py", line 187, in _fetch_via_html
+    ofertas = self._parse_html_listing(html, url)
+  File "C:\proyectos\empleoestado\scrapers\plataformas\wordpress.py", line 230, in _parse_html_listing
+    context = clean_text(anchor.find_parent(["li", "p", "div"]).get_text(" ", strip=True))
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'get_text'
+2026-04-14 23:49:51,302 [INFO] scraper.wordpress.municipalidad_de_conchali - evento=fin scraper=scraper.wordpress.municipalidad_de_conchali status=ERROR found=0 parsed=0 nuevas=0 actualizadas=0 cerradas=0 errores=1 duracion=17.62
+2026-04-14 23:49:51,308 [ERROR] scrapers.run_all - evento=run_wordpress_error institucion=Municipalidad de Conchalí error='NoneType' object has no attribute 'get_text'
+Traceback (most recent call last):
+  File "C:\proyectos\empleoestado\scrapers\run_all.py", line 291, in run_wordpress
+    stats = scraper.run()
+  File "C:\proyectos\empleoestado\scrapers\base.py", line 285, in run
+    raw_ofertas = self.fetch_ofertas()
+  File "C:\proyectos\empleoestado\scrapers\plataformas\wordpress.py", line 64, in fetch_ofertas
+    return self._fetch_via_html()
+           ~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\proyectos\empleoestado\scrapers\plataformas\wordpress.py", line 187, in _fetch_via_html
+    ofertas = self._parse_html_listing(html, url)
+  File "C:\proyectos\empleoestado\scrapers\plataformas\wordpress.py", line 230, in _parse_html_listing
+    context = clean_text(anchor.find_parent(["li", "p", "div"]).get_text(" ", strip=True))
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'get_text'
+2026-04-14 23:49:51,324 [INFO] scraper.wordpress.municipalidad_de_coronel - evento=inicio scraper=scraper.wordpress.municipalidad_de_coronel dry_run=True
+2026-04-14 23:49:57,914 [WARNING] scraper.wordpress.municipalidad_de_coronel - evento=request_retry scraper=scraper.wordpress.municipalidad_de_coronel url=https://www.coronel.cl/category/concursos-publicos/feed/json intento=1 espera=1 error=404 Client Error: Not Found for url: https://www.coronel.cl/category/concursos-publicos/feed/json
+2026-04-14 23:50:01,398 [WARNING] scraper.wordpress.municipalidad_de_coronel - evento=request_retry scraper=scraper.wordpress.municipalidad_de_coronel url=https://www.coronel.cl/category/concursos-publicos/feed/json intento=2 espera=2 error=404 Client Error: Not Found for url: https://www.coronel.cl/category/concursos-publicos/feed/json
+2026-04-14 23:50:05,892 [INFO] scraper.wordpress.municipalidad_de_coronel - evento=wordpress_feed_skip scraper=scraper.wordpress.municipalidad_de_coronel url=https://www.coronel.cl/category/concursos-publicos/feed/json error=404 Client Error: Not Found for url: https://www.coronel.cl/category/concursos-publicos/feed/json
+2026-04-14 23:50:13,146 [INFO] scraper.wordpress.municipalidad_de_coronel - evento=ofertas_obtenidas scraper=scraper.wordpress.municipalidad_de_coronel cantidad=2
+2026-04-14 23:50:13,148 [INFO] scraper.wordpress.municipalidad_de_coronel - evento=fin scraper=scraper.wordpress.municipalidad_de_coronel status=OK found=2 parsed=2 nuevas=0 actualizadas=0 cerradas=0 errores=0 duracion=21.82
+2026-04-14 23:50:13,162 [INFO] scraper.wordpress.municipalidad_de_curico - evento=inicio scraper=scraper.wordpress.municipalidad_de_curico dry_run=True
+2026-04-14 23:50:14,283 [WARNING] scraper.wordpress.municipalidad_de_curico - evento=request_retry scraper=scraper.wordpress.municipalidad_de_curico url=https://www.curico.cl/wp-json/wp/v2/posts?categories=concursos&per_page=20 intento=1 espera=1 error=404 Client Error: Not Found for url: https://www.curico.cl/wp-json/wp/v2/posts?categories=concursos&per_page=20
+2026-04-14 23:50:15,291 [WARNING] scraper.wordpress.municipalidad_de_curico - evento=request_retry scraper=scraper.wordpress.municipalidad_de_curico url=https://www.curico.cl/wp-json/wp/v2/posts?categories=concursos&per_page=20 intento=2 espera=2 error=404 Client Error: Not Found for url: https://www.curico.cl/wp-json/wp/v2/posts?categories=concursos&per_page=20
+2026-04-14 23:50:17,300 [INFO] scraper.wordpress.municipalidad_de_curico - evento=wordpress_rest_skip scraper=scraper.wordpress.municipalidad_de_curico url=https://www.curico.cl/wp-json/wp/v2/posts?categories=concursos&per_page=20 error=404 Client Error: Not Found for url: https://www.curico.cl/wp-json/wp/v2/posts?categories=concursos&per_page=20
+2026-04-14 23:50:19,300 [WARNING] scraper.wordpress.municipalidad_de_curico - evento=request_retry scraper=scraper.wordpress.municipalidad_de_curico url=https://www.curico.cl/category/concursos-publicos/feed/json intento=1 espera=1 error=404 Client Error: Not Found for url: https://www.curico.cl/category/concursos-publicos/feed/json
+2026-04-14 23:50:21,303 [WARNING] scraper.wordpress.municipalidad_de_curico - evento=request_retry scraper=scraper.wordpress.municipalidad_de_curico url=https://www.curico.cl/category/concursos-publicos/feed/json intento=2 espera=2 error=404 Client Error: Not Found for url: https://www.curico.cl/category/concursos-publicos/feed/json
+2026-04-14 23:50:23,313 [INFO] scraper.wordpress.municipalidad_de_curico - evento=wordpress_feed_skip scraper=scraper.wordpress.municipalidad_de_curico url=https://www.curico.cl/category/concursos-publicos/feed/json error=404 Client Error: Not Found for url: https://www.curico.cl/category/concursos-publicos/feed/json
+2026-04-14 23:50:26,242 [INFO] scraper.wordpress.municipalidad_de_curico - evento=ofertas_obtenidas scraper=scraper.wordpress.municipalidad_de_curico cantidad=6
+2026-04-14 23:50:26,248 [INFO] scraper.wordpress.municipalidad_de_curico - evento=fin scraper=scraper.wordpress.municipalidad_de_curico status=OK found=6 parsed=6 nuevas=0 actualizadas=0 cerradas=0 errores=0 duracion=13.09
+2026-04-14 23:50:26,266 [INFO] scraper.wordpress.municipalidad_de_los_angeles - evento=inicio scraper=scraper.wordpress.municipalidad_de_los_angeles dry_run=True
+2026-04-14 23:50:29,764 [WARNING] scraper.wordpress.municipalidad_de_los_angeles - evento=request_retry scraper=scraper.wordpress.municipalidad_de_los_angeles url=https://www.losangeles.cl/category/concursos-publicos/feed/json intento=1 espera=1 error=404 Client Error: Not Found for url: https://www.losangeles.cl/category/concursos-publicos/feed/json
+2026-04-14 23:50:31,308 [WARNING] scraper.wordpress.municipalidad_de_los_angeles - evento=request_retry scraper=scraper.wordpress.municipalidad_de_los_angeles url=https://www.losangeles.cl/category/concursos-publicos/feed/json intento=2 espera=2 error=404 Client Error: Not Found for url: https://www.losangeles.cl/category/concursos-publicos/feed/json
+2026-04-14 23:50:33,883 [INFO] scraper.wordpress.municipalidad_de_los_angeles - evento=wordpress_feed_skip scraper=scraper.wordpress.municipalidad_de_los_angeles url=https://www.losangeles.cl/category/concursos-publicos/feed/json error=404 Client Error: Not Found for url: https://www.losangeles.cl/category/concursos-publicos/feed/json
+2026-04-14 23:50:36,324 [INFO] scraper.wordpress.municipalidad_de_los_angeles - evento=ofertas_obtenidas scraper=scraper.wordpress.municipalidad_de_los_angeles cantidad=1
+2026-04-14 23:50:36,341 [INFO] scraper.wordpress.municipalidad_de_los_angeles - evento=fin scraper=scraper.wordpress.municipalidad_de_los_angeles status=OK found=1 parsed=1 nuevas=0 actualizadas=0 cerradas=0 errores=0 duracion=10.08
+2026-04-14 23:50:36,354 [INFO] scraper.wordpress.municipalidad_de_melipilla - evento=inicio scraper=scraper.wordpress.municipalidad_de_melipilla dry_run=True
+2026-04-14 23:50:44,787 [WARNING] scraper.wordpress.municipalidad_de_melipilla - evento=request_retry scraper=scraper.wordpress.municipalidad_de_melipilla url=https://www.melipilla.cl/category/concursos-publicos/feed/json intento=1 espera=1 error=404 Client Error: Not Found for url: https://melipilla.cl/category/concursos-publicos/feed/json
+2026-04-14 23:50:50,405 [WARNING] scraper.wordpress.municipalidad_de_melipilla - evento=request_retry scraper=scraper.wordpress.municipalidad_de_melipilla url=https://www.melipilla.cl/category/concursos-publicos/feed/json intento=2 espera=2 error=404 Client Error: Not Found for url: https://melipilla.cl/category/concursos-publicos/feed/json
+2026-04-14 23:50:56,815 [INFO] scraper.wordpress.municipalidad_de_melipilla - evento=wordpress_feed_skip scraper=scraper.wordpress.municipalidad_de_melipilla url=https://www.melipilla.cl/category/concursos-publicos/feed/json error=404 Client Error: Not Found for url: https://melipilla.cl/category/concursos-publicos/feed/json
+2026-04-14 23:50:57,225 [ERROR] scraper.wordpress.municipalidad_de_melipilla - evento=run_error scraper=scraper.wordpress.municipalidad_de_melipilla error='NoneType' object has no attribute 'get_text'
+Traceback (most recent call last):
+  File "C:\proyectos\empleoestado\scrapers\base.py", line 285, in run
+    raw_ofertas = self.fetch_ofertas()
+  File "C:\proyectos\empleoestado\scrapers\plataformas\wordpress.py", line 64, in fetch_ofertas
+    return self._fetch_via_html()
+           ~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\proyectos\empleoestado\scrapers\plataformas\wordpress.py", line 187, in _fetch_via_html
+    ofertas = self._parse_html_listing(html, url)
+  File "C:\proyectos\empleoestado\scrapers\plataformas\wordpress.py", line 230, in _parse_html_listing
+    context = clean_text(anchor.find_parent(["li", "p", "div"]).get_text(" ", strip=True))
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'get_text'
+2026-04-14 23:50:57,227 [INFO] scraper.wordpress.municipalidad_de_melipilla - evento=fin scraper=scraper.wordpress.municipalidad_de_melipilla status=ERROR found=0 parsed=0 nuevas=0 actualizadas=0 cerradas=0 errores=1 duracion=20.87
+2026-04-14 23:50:57,232 [ERROR] scrapers.run_all - evento=run_wordpress_error institucion=Municipalidad de Melipilla error='NoneType' object has no attribute 'get_text'
+Traceback (most recent call last):
+  File "C:\proyectos\empleoestado\scrapers\run_all.py", line 291, in run_wordpress
+    stats = scraper.run()
+  File "C:\proyectos\empleoestado\scrapers\base.py", line 285, in run
+    raw_ofertas = self.fetch_ofertas()
+  File "C:\proyectos\empleoestado\scrapers\plataformas\wordpress.py", line 64, in fetch_ofertas
+    return self._fetch_via_html()
+           ~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\proyectos\empleoestado\scrapers\plataformas\wordpress.py", line 187, in _fetch_via_html
+    ofertas = self._parse_html_listing(html, url)
+  File "C:\proyectos\empleoestado\scrapers\plataformas\wordpress.py", line 230, in _parse_html_listing
+    context = clean_text(anchor.find_parent(["li", "p", "div"]).get_text(" ", strip=True))
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'get_text'
+2026-04-14 23:50:57,249 [INFO] scraper.wordpress.municipalidad_de_puerto_montt - evento=inicio scraper=scraper.wordpress.municipalidad_de_puerto_montt dry_run=True
+2026-04-14 23:51:01,416 [WARNING] scraper.wordpress.municipalidad_de_puerto_montt - evento=request_retry scraper=scraper.wordpress.municipalidad_de_puerto_montt url=https://www.puertomontt.cl/category/concursos-publicos/feed/json intento=1 espera=1 error=404 Client Error: Not Found for url: https://www.puertomontt.cl/category/concursos-publicos/feed/json
+2026-04-14 23:51:04,018 [WARNING] scraper.wordpress.municipalidad_de_puerto_montt - evento=request_retry scraper=scraper.wordpress.municipalidad_de_puerto_montt url=https://www.puertomontt.cl/category/concursos-publicos/feed/json intento=2 espera=2 error=404 Client Error: Not Found for url: https://www.puertomontt.cl/category/concursos-publicos/feed/json
+2026-04-14 23:51:07,811 [INFO] scraper.wordpress.municipalidad_de_puerto_montt - evento=wordpress_feed_skip scraper=scraper.wordpress.municipalidad_de_puerto_montt url=https://www.puertomontt.cl/category/concursos-publicos/feed/json error=404 Client Error: Not Found for url: https://www.puertomontt.cl/category/concursos-publicos/feed/json
+2026-04-14 23:51:09,949 [INFO] scraper.wordpress.municipalidad_de_puerto_montt - evento=ofertas_obtenidas scraper=scraper.wordpress.municipalidad_de_puerto_montt cantidad=10
+2026-04-14 23:51:09,952 [INFO] scraper.wordpress.municipalidad_de_puerto_montt - evento=fin scraper=scraper.wordpress.municipalidad_de_puerto_montt status=OK found=10 parsed=10 nuevas=0 actualizadas=0 cerradas=0 errores=0 duracion=12.7
+2026-04-14 23:51:09,965 [INFO] scraper.wordpress.municipalidad_de_quilicura - evento=inicio scraper=scraper.wordpress.municipalidad_de_quilicura dry_run=True
+2026-04-14 23:51:11,033 [WARNING] scraper.wordpress.municipalidad_de_quilicura - evento=request_retry scraper=scraper.wordpress.municipalidad_de_quilicura url=https://www.quilicura.cl/wp-json/wp/v2/posts?categories=concursos&per_page=20 intento=1 espera=1 error=HTTPSConnectionPool(host='www.quilicura.cl', port=443): Max retries exceeded with url: /wp-json/wp/v2/posts?categories=concursos&per_page=20 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))
+2026-04-14 23:51:12,907 [WARNING] scraper.wordpress.municipalidad_de_quilicura - evento=request_retry scraper=scraper.wordpress.municipalidad_de_quilicura url=https://www.quilicura.cl/wp-json/wp/v2/posts?categories=concursos&per_page=20 intento=2 espera=2 error=HTTPSConnectionPool(host='www.quilicura.cl', port=443): Max retries exceeded with url: /wp-json/wp/v2/posts?categories=concursos&per_page=20 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))
+2026-04-14 23:51:15,805 [INFO] scraper.wordpress.municipalidad_de_quilicura - evento=wordpress_rest_skip scraper=scraper.wordpress.municipalidad_de_quilicura url=https://www.quilicura.cl/wp-json/wp/v2/posts?categories=concursos&per_page=20 error=HTTPSConnectionPool(host='www.quilicura.cl', port=443): Max retries exceeded with url: /wp-json/wp/v2/posts?categories=concursos&per_page=20 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))
+2026-04-14 23:51:17,850 [WARNING] scraper.wordpress.municipalidad_de_quilicura - evento=request_retry scraper=scraper.wordpress.municipalidad_de_quilicura url=https://www.quilicura.cl/category/concursos-publicos/feed/json intento=1 espera=1 error=HTTPSConnectionPool(host='www.quilicura.cl', port=443): Max retries exceeded with url: /category/concursos-publicos/feed/json (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))
+2026-04-14 23:51:19,779 [WARNING] scraper.wordpress.municipalidad_de_quilicura - evento=request_retry scraper=scraper.wordpress.municipalidad_de_quilicura url=https://www.quilicura.cl/category/concursos-publicos/feed/json intento=2 espera=2 error=HTTPSConnectionPool(host='www.quilicura.cl', port=443): Max retries exceeded with url: /category/concursos-publicos/feed/json (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))
+2026-04-14 23:51:22,692 [INFO] scraper.wordpress.municipalidad_de_quilicura - evento=wordpress_feed_skip scraper=scraper.wordpress.municipalidad_de_quilicura url=https://www.quilicura.cl/category/concursos-publicos/feed/json error=HTTPSConnectionPool(host='www.quilicura.cl', port=443): Max retries exceeded with url: /category/concursos-publicos/feed/json (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))
+2026-04-14 23:51:24,749 [WARNING] scraper.wordpress.municipalidad_de_quilicura - evento=request_retry scraper=scraper.wordpress.municipalidad_de_quilicura url=https://ww2.muniquilicura.cl/oportunidades-laborales/ intento=1 espera=1 error=403 Client Error: Forbidden for url: https://ww2.muniquilicura.cl/oportunidades-laborales/
+2026-04-14 23:51:25,812 [WARNING] scraper.wordpress.municipalidad_de_quilicura - evento=request_retry scraper=scraper.wordpress.municipalidad_de_quilicura url=https://ww2.muniquilicura.cl/oportunidades-laborales/ intento=2 espera=2 error=403 Client Error: Forbidden for url: https://ww2.muniquilicura.cl/oportunidades-laborales/
+2026-04-14 23:51:27,843 [INFO] scraper.wordpress.municipalidad_de_quilicura - evento=wordpress_html_skip scraper=scraper.wordpress.municipalidad_de_quilicura url=https://ww2.muniquilicura.cl/oportunidades-laborales/ error=403 Client Error: Forbidden for url: https://ww2.muniquilicura.cl/oportunidades-laborales/
+2026-04-14 23:51:30,741 [WARNING] scraper.wordpress.municipalidad_de_quilicura - evento=request_retry scraper=scraper.wordpress.municipalidad_de_quilicura url=https://www.quilicura.cl/?cat=concurso intento=1 espera=1 error=HTTPSConnectionPool(host='www.quilicura.cl', port=443): Max retries exceeded with url: /?cat=concurso (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))
+2026-04-14 23:51:32,757 [WARNING] scraper.wordpress.municipalidad_de_quilicura - evento=request_retry scraper=scraper.wordpress.municipalidad_de_quilicura url=https://www.quilicura.cl/?cat=concurso intento=2 espera=2 error=HTTPSConnectionPool(host='www.quilicura.cl', port=443): Max retries exceeded with url: /?cat=concurso (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))
+2026-04-14 23:51:35,683 [INFO] scraper.wordpress.municipalidad_de_quilicura - evento=wordpress_html_skip scraper=scraper.wordpress.municipalidad_de_quilicura url=https://www.quilicura.cl/?cat=concurso error=HTTPSConnectionPool(host='www.quilicura.cl', port=443): Max retries exceeded with url: /?cat=concurso (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)')))
+2026-04-14 23:51:35,684 [INFO] scraper.wordpress.municipalidad_de_quilicura - evento=ofertas_obtenidas scraper=scraper.wordpress.municipalidad_de_quilicura cantidad=0
+2026-04-14 23:51:35,686 [INFO] scraper.wordpress.municipalidad_de_quilicura - evento=fin scraper=scraper.wordpress.municipalidad_de_quilicura status=OK found=0 parsed=0 nuevas=0 actualizadas=0 cerradas=0 errores=0 duracion=25.72
+2026-04-14 23:51:35,700 [INFO] scraper.wordpress.municipalidad_de_rancagua - evento=inicio scraper=scraper.wordpress.municipalidad_de_rancagua dry_run=True
+2026-04-14 23:51:37,465 [INFO] scraper.wordpress.municipalidad_de_rancagua - evento=wordpress_rest_skip scraper=scraper.wordpress.municipalidad_de_rancagua url=https://www.rancagua.cl/wp-json/wp/v2/posts?categories=concursos&per_page=20 error=Expecting value: line 1 column 1 (char 0)
+2026-04-14 23:51:37,721 [INFO] scraper.wordpress.municipalidad_de_rancagua - evento=wordpress_feed_skip scraper=scraper.wordpress.municipalidad_de_rancagua url=https://www.rancagua.cl/category/concursos-publicos/feed/json error=Expecting value: line 1 column 1 (char 0)
+2026-04-14 23:51:41,731 [INFO] scraper.wordpress.municipalidad_de_rancagua - evento=ofertas_obtenidas scraper=scraper.wordpress.municipalidad_de_rancagua cantidad=0
+2026-04-14 23:51:41,731 [INFO] scraper.wordpress.municipalidad_de_rancagua - evento=fin scraper=scraper.wordpress.municipalidad_de_rancagua status=OK found=0 parsed=0 nuevas=0 actualizadas=0 cerradas=0 errores=0 duracion=6.03
+2026-04-14 23:51:41,753 [INFO] scraper.wordpress.municipalidad_de_renca - evento=inicio scraper=scraper.wordpress.municipalidad_de_renca dry_run=True
+2026-04-14 23:51:45,654 [WARNING] scraper.wordpress.municipalidad_de_renca - evento=request_retry scraper=scraper.wordpress.municipalidad_de_renca url=https://www.renca.cl/category/concursos-publicos/feed/json intento=1 espera=1 error=404 Client Error: Not Found for url: https://renca.cl/category/concursos-publicos/feed/json
+2026-04-14 23:51:46,801 [WARNING] scraper.wordpress.municipalidad_de_renca - evento=request_retry scraper=scraper.wordpress.municipalidad_de_renca url=https://www.renca.cl/category/concursos-publicos/feed/json intento=2 espera=2 error=404 Client Error: Not Found for url: https://renca.cl/category/concursos-publicos/feed/json
+2026-04-14 23:51:48,946 [INFO] scraper.wordpress.municipalidad_de_renca - evento=wordpress_feed_skip scraper=scraper.wordpress.municipalidad_de_renca url=https://www.renca.cl/category/concursos-publicos/feed/json error=404 Client Error: Not Found for url: https://renca.cl/category/concursos-publicos/feed/json
+2026-04-14 23:51:51,162 [INFO] scraper.wordpress.municipalidad_de_renca - evento=ofertas_obtenidas scraper=scraper.wordpress.municipalidad_de_renca cantidad=9
+2026-04-14 23:51:51,207 [INFO] scraper.wordpress.municipalidad_de_renca - evento=fin scraper=scraper.wordpress.municipalidad_de_renca status=OK found=9 parsed=9 nuevas=0 actualizadas=0 cerradas=0 errores=0 duracion=9.45
+2026-04-14 23:51:51,227 [INFO] scraper.wordpress.municipalidad_de_temuco - evento=inicio scraper=scraper.wordpress.municipalidad_de_temuco dry_run=True
+2026-04-14 23:51:54,187 [WARNING] scraper.wordpress.municipalidad_de_temuco - evento=request_retry scraper=scraper.wordpress.municipalidad_de_temuco url=https://www.temuco.cl/category/concursos-publicos/feed/json intento=1 espera=1 error=404 Client Error: Not Found for url: https://www.temuco.cl/category/concursos-publicos/feed/json
+2026-04-14 23:51:56,222 [WARNING] scraper.wordpress.municipalidad_de_temuco - evento=request_retry scraper=scraper.wordpress.municipalidad_de_temuco url=https://www.temuco.cl/category/concursos-publicos/feed/json intento=2 espera=2 error=404 Client Error: Not Found for url: https://www.temuco.cl/category/concursos-publicos/feed/json
+2026-04-14 23:51:59,195 [INFO] scraper.wordpress.municipalidad_de_temuco - evento=wordpress_feed_skip scraper=scraper.wordpress.municipalidad_de_temuco url=https://www.temuco.cl/category/concursos-publicos/feed/json error=404 Client Error: Not Found for url: https://www.temuco.cl/category/concursos-publicos/feed/json
+2026-04-14 23:52:01,426 [INFO] scraper.wordpress.municipalidad_de_temuco - evento=ofertas_obtenidas scraper=scraper.wordpress.municipalidad_de_temuco cantidad=7
+2026-04-14 23:52:01,428 [INFO] scraper.wordpress.municipalidad_de_temuco - evento=fin scraper=scraper.wordpress.municipalidad_de_temuco status=OK found=7 parsed=7 nuevas=0 actualizadas=0 cerradas=0 errores=0 duracion=10.2
+2026-04-14 23:52:01,575 [INFO] scrapers.run_all - evento=run_all_fin total_resultados=701 duracion_seg=210.41
+2026-04-14 23:54:53,459 [INFO] scrapers.run_all - evento=run_all_inicio instituciones=700 sector=None id=None dry_run=True max=10
+2026-04-14 23:54:53,469 [INFO] scraper.empleos_publicos - evento=inicio scraper=scraper.empleos_publicos dry_run=True
+2026-04-14 23:54:53,472 [INFO] scraper.empleos_publicos - evento=pagina_inicio scraper=scraper.empleos_publicos pagina=1 url=https://www.empleospublicos.cl/pub/convocatorias/convocatorias.aspx
+2026-04-14 23:54:56,002 [INFO] scraper.empleos_publicos - evento=listado_completo scraper=scraper.empleos_publicos paginas=1 ofertas=10
+2026-04-14 23:55:06,301 [INFO] scraper.empleos_publicos - evento=ofertas_obtenidas scraper=scraper.empleos_publicos cantidad=10
+2026-04-14 23:55:06,306 [INFO] scraper.empleos_publicos - evento=fin scraper=scraper.empleos_publicos status=OK found=10 parsed=10 nuevas=0 actualizadas=0 cerradas=0 errores=0 duracion=12.84
+2026-04-14 23:55:06,328 [INFO] scraper.wordpress.corporacion_municipal_de_valparaiso - evento=inicio scraper=scraper.wordpress.corporacion_municipal_de_valparaiso dry_run=True
+2026-04-14 23:55:12,460 [INFO] scraper.wordpress.corporacion_municipal_de_valparaiso - evento=wordpress_feed_skip scraper=scraper.wordpress.corporacion_municipal_de_valparaiso url=https://cmvalparaiso.cl/category/concursos-publicos/feed/json error=404 Client Error: Not Found for url: https://cmvalparaiso.cl/category/concursos-publicos/feed/json
+2026-04-14 23:55:14,903 [INFO] scraper.wordpress.corporacion_municipal_de_valparaiso - evento=ofertas_obtenidas scraper=scraper.wordpress.corporacion_municipal_de_valparaiso cantidad=10
+2026-04-14 23:55:14,920 [INFO] scraper.wordpress.corporacion_municipal_de_valparaiso - evento=fin scraper=scraper.wordpress.corporacion_municipal_de_valparaiso status=OK found=10 parsed=10 nuevas=0 actualizadas=0 cerradas=0 errores=0 duracion=8.59
+2026-04-14 23:55:14,939 [INFO] scraper.wordpress.municipalidad_de_colina - evento=inicio scraper=scraper.wordpress.municipalidad_de_colina dry_run=True
+2026-04-14 23:55:17,940 [INFO] scraper.wordpress.municipalidad_de_colina - evento=wordpress_feed_skip scraper=scraper.wordpress.municipalidad_de_colina url=https://www.colina.cl/category/concursos-publicos/feed/json error=Expecting value: line 1 column 1 (char 0)
+2026-04-14 23:55:22,726 [INFO] scraper.wordpress.municipalidad_de_colina - evento=ofertas_obtenidas scraper=scraper.wordpress.municipalidad_de_colina cantidad=0
+2026-04-14 23:55:22,727 [INFO] scraper.wordpress.municipalidad_de_colina - evento=fin scraper=scraper.wordpress.municipalidad_de_colina status=OK found=0 parsed=0 nuevas=0 actualizadas=0 cerradas=0 errores=0 duracion=7.79
+2026-04-14 23:55:22,750 [INFO] scraper.wordpress.municipalidad_de_concepcion - evento=inicio scraper=scraper.wordpress.municipalidad_de_concepcion dry_run=True
+2026-04-14 23:55:28,539 [INFO] scraper.wordpress.municipalidad_de_concepcion - evento=wordpress_feed_skip scraper=scraper.wordpress.municipalidad_de_concepcion url=https://www.concepcion.cl/category/concursos-publicos/feed/json error=404 Client Error: Not Found for url: https://concepcion.cl/category/concursos-publicos/feed/json
+2026-04-14 23:55:29,909 [INFO] scraper.wordpress.municipalidad_de_concepcion - evento=wordpress_html_skip scraper=scraper.wordpress.municipalidad_de_concepcion url=https://concepcion.cl/concurso-planta-municipal/ error=404 Client Error: Not Found for url: https://concepcion.cl/concurso-planta-municipal/
+2026-04-14 23:55:33,031 [INFO] scraper.wordpress.municipalidad_de_concepcion - evento=ofertas_obtenidas scraper=scraper.wordpress.municipalidad_de_concepcion cantidad=0
+2026-04-14 23:55:33,031 [INFO] scraper.wordpress.municipalidad_de_concepcion - evento=fin scraper=scraper.wordpress.municipalidad_de_concepcion status=OK found=0 parsed=0 nuevas=0 actualizadas=0 cerradas=0 errores=0 duracion=10.28
+2026-04-14 23:55:33,047 [INFO] scraper.wordpress.municipalidad_de_conchali - evento=inicio scraper=scraper.wordpress.municipalidad_de_conchali dry_run=True
+2026-04-14 23:55:36,846 [INFO] scraper.wordpress.municipalidad_de_conchali - evento=wordpress_feed_skip scraper=scraper.wordpress.municipalidad_de_conchali url=https://www.conchali.cl/category/concursos-publicos/feed/json error=404 Client Error: Not Found for url: https://conchali.cl/category/concursos-publicos/feed/json
+2026-04-14 23:55:37,619 [INFO] scraper.wordpress.municipalidad_de_conchali - evento=wordpress_html_skip scraper=scraper.wordpress.municipalidad_de_conchali url=https://conchali.cl/llamado-a-concurso-publico/ error=404 Client Error: Not Found for url: https://conchali.cl/llamado-a-concurso-publico/
+2026-04-14 23:55:39,990 [INFO] scraper.wordpress.municipalidad_de_conchali - evento=ofertas_obtenidas scraper=scraper.wordpress.municipalidad_de_conchali cantidad=2
+2026-04-14 23:55:39,991 [INFO] scraper.wordpress.municipalidad_de_conchali - evento=fin scraper=scraper.wordpress.municipalidad_de_conchali status=OK found=2 parsed=2 nuevas=0 actualizadas=0 cerradas=0 errores=0 duracion=6.94
+2026-04-14 23:55:40,011 [INFO] scraper.wordpress.municipalidad_de_coronel - evento=inicio scraper=scraper.wordpress.municipalidad_de_coronel dry_run=True
+2026-04-14 23:55:48,351 [INFO] scraper.wordpress.municipalidad_de_coronel - evento=wordpress_feed_skip scraper=scraper.wordpress.municipalidad_de_coronel url=https://www.coronel.cl/category/concursos-publicos/feed/json error=404 Client Error: Not Found for url: https://www.coronel.cl/category/concursos-publicos/feed/json
+2026-04-14 23:55:54,582 [INFO] scraper.wordpress.municipalidad_de_coronel - evento=ofertas_obtenidas scraper=scraper.wordpress.municipalidad_de_coronel cantidad=2
+2026-04-14 23:55:54,584 [INFO] scraper.wordpress.municipalidad_de_coronel - evento=fin scraper=scraper.wordpress.municipalidad_de_coronel status=OK found=2 parsed=2 nuevas=0 actualizadas=0 cerradas=0 errores=0 duracion=14.57
+2026-04-14 23:55:54,599 [INFO] scraper.wordpress.municipalidad_de_curico - evento=inicio scraper=scraper.wordpress.municipalidad_de_curico dry_run=True
+2026-04-14 23:55:55,430 [INFO] scraper.wordpress.municipalidad_de_curico - evento=wordpress_rest_skip scraper=scraper.wordpress.municipalidad_de_curico url=https://www.curico.cl/wp-json/wp/v2/posts?categories=concursos&per_page=20 error=404 Client Error: Not Found for url: https://www.curico.cl/wp-json/wp/v2/posts?categories=concursos&per_page=20
+2026-04-14 23:55:56,609 [INFO] scraper.wordpress.municipalidad_de_curico - evento=wordpress_feed_skip scraper=scraper.wordpress.municipalidad_de_curico url=https://www.curico.cl/category/concursos-publicos/feed/json error=404 Client Error: Not Found for url: https://www.curico.cl/category/concursos-publicos/feed/json
+2026-04-14 23:55:59,455 [INFO] scraper.wordpress.municipalidad_de_curico - evento=ofertas_obtenidas scraper=scraper.wordpress.municipalidad_de_curico cantidad=6
+2026-04-14 23:55:59,461 [INFO] scraper.wordpress.municipalidad_de_curico - evento=fin scraper=scraper.wordpress.municipalidad_de_curico status=OK found=6 parsed=6 nuevas=0 actualizadas=0 cerradas=0 errores=0 duracion=4.86
+2026-04-14 23:55:59,477 [INFO] scraper.wordpress.municipalidad_de_los_angeles - evento=inicio scraper=scraper.wordpress.municipalidad_de_los_angeles dry_run=True
+2026-04-14 23:56:02,911 [INFO] scraper.wordpress.municipalidad_de_los_angeles - evento=wordpress_feed_skip scraper=scraper.wordpress.municipalidad_de_los_angeles url=https://www.losangeles.cl/category/concursos-publicos/feed/json error=404 Client Error: Not Found for url: https://www.losangeles.cl/category/concursos-publicos/feed/json
+2026-04-14 23:56:04,490 [INFO] scraper.wordpress.municipalidad_de_los_angeles - evento=ofertas_obtenidas scraper=scraper.wordpress.municipalidad_de_los_angeles cantidad=1
+2026-04-14 23:56:04,505 [INFO] scraper.wordpress.municipalidad_de_los_angeles - evento=fin scraper=scraper.wordpress.municipalidad_de_los_angeles status=OK found=1 parsed=1 nuevas=0 actualizadas=0 cerradas=0 errores=0 duracion=5.03
+2026-04-14 23:56:04,518 [INFO] scraper.wordpress.municipalidad_de_melipilla - evento=inicio scraper=scraper.wordpress.municipalidad_de_melipilla dry_run=True
+2026-04-14 23:56:12,947 [INFO] scraper.wordpress.municipalidad_de_melipilla - evento=wordpress_feed_skip scraper=scraper.wordpress.municipalidad_de_melipilla url=https://www.melipilla.cl/category/concursos-publicos/feed/json error=404 Client Error: Not Found for url: https://melipilla.cl/category/concursos-publicos/feed/json
+2026-04-14 23:56:19,504 [INFO] scraper.wordpress.municipalidad_de_melipilla - evento=ofertas_obtenidas scraper=scraper.wordpress.municipalidad_de_melipilla cantidad=0
+2026-04-14 23:56:19,505 [INFO] scraper.wordpress.municipalidad_de_melipilla - evento=fin scraper=scraper.wordpress.municipalidad_de_melipilla status=OK found=0 parsed=0 nuevas=0 actualizadas=0 cerradas=0 errores=0 duracion=14.99
+2026-04-14 23:56:19,521 [INFO] scraper.wordpress.municipalidad_de_puerto_montt - evento=inicio scraper=scraper.wordpress.municipalidad_de_puerto_montt dry_run=True
+2026-04-14 23:56:23,240 [INFO] scraper.wordpress.municipalidad_de_puerto_montt - evento=wordpress_feed_skip scraper=scraper.wordpress.municipalidad_de_puerto_montt url=https://www.puertomontt.cl/category/concursos-publicos/feed/json error=404 Client Error: Not Found for url: https://www.puertomontt.cl/category/concursos-publicos/feed/json
+2026-04-14 23:56:25,606 [INFO] scraper.wordpress.municipalidad_de_puerto_montt - evento=ofertas_obtenidas scraper=scraper.wordpress.municipalidad_de_puerto_montt cantidad=10
+2026-04-14 23:56:25,610 [INFO] scraper.wordpress.municipalidad_de_puerto_montt - evento=fin scraper=scraper.wordpress.municipalidad_de_puerto_montt status=OK found=10 parsed=10 nuevas=0 actualizadas=0 cerradas=0 errores=0 duracion=6.09
+2026-04-14 23:56:25,627 [INFO] scraper.wordpress.municipalidad_de_quilicura - evento=inicio scraper=scraper.wordpress.municipalidad_de_quilicura dry_run=True
+2026-04-14 23:56:26,487 [WARNING] scraper.wordpress.municipalidad_de_quilicura - evento=request_ssl_insecure_retry scraper=scraper.wordpress.municipalidad_de_quilicura url=https://www.quilicura.cl/wp-json/wp/v2/posts?categories=concursos&per_page=20
+2026-04-14 23:56:28,065 [INFO] scraper.wordpress.municipalidad_de_quilicura - evento=wordpress_rest_skip scraper=scraper.wordpress.municipalidad_de_quilicura url=https://www.quilicura.cl/wp-json/wp/v2/posts?categories=concursos&per_page=20 error=404 Client Error: Not Found for url: https://decretoweb.quilicura.cl:5001/SeguimientoDecretoWeb/SDF/loginwp-json/wp/v2/posts?categories=concursos&per_page=20
+2026-04-14 23:56:30,490 [WARNING] scraper.wordpress.municipalidad_de_quilicura - evento=request_ssl_insecure_retry scraper=scraper.wordpress.municipalidad_de_quilicura url=https://www.quilicura.cl/category/concursos-publicos/feed/json
+2026-04-14 23:56:31,650 [INFO] scraper.wordpress.municipalidad_de_quilicura - evento=wordpress_feed_skip scraper=scraper.wordpress.municipalidad_de_quilicura url=https://www.quilicura.cl/category/concursos-publicos/feed/json error=404 Client Error: Not Found for url: https://decretoweb.quilicura.cl:5001/SeguimientoDecretoWeb/SDF/logincategory/concursos-publicos/feed/json
+2026-04-14 23:56:34,570 [INFO] scraper.wordpress.municipalidad_de_quilicura - evento=wordpress_html_skip scraper=scraper.wordpress.municipalidad_de_quilicura url=https://ww2.muniquilicura.cl/oportunidades-laborales/ error=403 Client Error: Forbidden for url: https://ww2.muniquilicura.cl/oportunidades-laborales/
+2026-04-14 23:56:36,507 [WARNING] scraper.wordpress.municipalidad_de_quilicura - evento=request_ssl_insecure_retry scraper=scraper.wordpress.municipalidad_de_quilicura url=https://www.quilicura.cl/?cat=concurso
+2026-04-14 23:56:38,006 [INFO] scraper.wordpress.municipalidad_de_quilicura - evento=ofertas_obtenidas scraper=scraper.wordpress.municipalidad_de_quilicura cantidad=0
+2026-04-14 23:56:38,007 [INFO] scraper.wordpress.municipalidad_de_quilicura - evento=fin scraper=scraper.wordpress.municipalidad_de_quilicura status=OK found=0 parsed=0 nuevas=0 actualizadas=0 cerradas=0 errores=0 duracion=12.38
+2026-04-14 23:56:38,022 [INFO] scraper.wordpress.municipalidad_de_rancagua - evento=inicio scraper=scraper.wordpress.municipalidad_de_rancagua dry_run=True
+2026-04-14 23:56:40,204 [INFO] scraper.wordpress.municipalidad_de_rancagua - evento=wordpress_rest_skip scraper=scraper.wordpress.municipalidad_de_rancagua url=https://www.rancagua.cl/wp-json/wp/v2/posts?categories=concursos&per_page=20 error=Expecting value: line 1 column 1 (char 0)
+2026-04-14 23:56:40,225 [INFO] scraper.wordpress.municipalidad_de_rancagua - evento=wordpress_feed_skip scraper=scraper.wordpress.municipalidad_de_rancagua url=https://www.rancagua.cl/category/concursos-publicos/feed/json error=Expecting value: line 1 column 1 (char 0)
+2026-04-14 23:56:44,234 [INFO] scraper.wordpress.municipalidad_de_rancagua - evento=ofertas_obtenidas scraper=scraper.wordpress.municipalidad_de_rancagua cantidad=0
+2026-04-14 23:56:44,234 [INFO] scraper.wordpress.municipalidad_de_rancagua - evento=fin scraper=scraper.wordpress.municipalidad_de_rancagua status=OK found=0 parsed=0 nuevas=0 actualizadas=0 cerradas=0 errores=0 duracion=6.21
+2026-04-14 23:56:44,255 [INFO] scraper.wordpress.municipalidad_de_renca - evento=inicio scraper=scraper.wordpress.municipalidad_de_renca dry_run=True
+2026-04-14 23:56:48,088 [INFO] scraper.wordpress.municipalidad_de_renca - evento=wordpress_feed_skip scraper=scraper.wordpress.municipalidad_de_renca url=https://www.renca.cl/category/concursos-publicos/feed/json error=404 Client Error: Not Found for url: https://renca.cl/category/concursos-publicos/feed/json
+2026-04-14 23:56:48,518 [INFO] scraper.wordpress.municipalidad_de_renca - evento=ofertas_obtenidas scraper=scraper.wordpress.municipalidad_de_renca cantidad=9
+2026-04-14 23:56:48,562 [INFO] scraper.wordpress.municipalidad_de_renca - evento=fin scraper=scraper.wordpress.municipalidad_de_renca status=OK found=9 parsed=9 nuevas=0 actualizadas=0 cerradas=0 errores=0 duracion=4.31
+2026-04-14 23:56:48,576 [INFO] scraper.wordpress.municipalidad_de_temuco - evento=inicio scraper=scraper.wordpress.municipalidad_de_temuco dry_run=True
+2026-04-14 23:56:51,591 [INFO] scraper.wordpress.municipalidad_de_temuco - evento=wordpress_feed_skip scraper=scraper.wordpress.municipalidad_de_temuco url=https://www.temuco.cl/category/concursos-publicos/feed/json error=404 Client Error: Not Found for url: https://www.temuco.cl/category/concursos-publicos/feed/json
+2026-04-14 23:56:53,818 [INFO] scraper.wordpress.municipalidad_de_temuco - evento=ofertas_obtenidas scraper=scraper.wordpress.municipalidad_de_temuco cantidad=7
+2026-04-14 23:56:53,822 [INFO] scraper.wordpress.municipalidad_de_temuco - evento=fin scraper=scraper.wordpress.municipalidad_de_temuco status=OK found=7 parsed=7 nuevas=0 actualizadas=0 cerradas=0 errores=0 duracion=5.25
+2026-04-14 23:56:53,850 [INFO] scrapers.run_all - evento=run_all_fin total_resultados=464 duracion_seg=120.38

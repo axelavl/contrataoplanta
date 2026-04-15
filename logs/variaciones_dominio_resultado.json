@@ -1,0 +1,2709 @@
+[
+  {
+    "id": 297,
+    "nombre": "Municipalidad de Putre",
+    "sitio_web_original": "https://www.muniputre.cl",
+    "candidatos": []
+  },
+  {
+    "id": 298,
+    "nombre": "Municipalidad de General Lagos",
+    "sitio_web_original": "https://www.munigenerallago.cl",
+    "candidatos": []
+  },
+  {
+    "id": 301,
+    "nombre": "Municipalidad de Pozo Almonte",
+    "sitio_web_original": "https://www.pozoalmonte.cl",
+    "candidatos": []
+  },
+  {
+    "id": 302,
+    "nombre": "Municipalidad de Camiña",
+    "sitio_web_original": "https://www.camina.cl",
+    "candidatos": []
+  },
+  {
+    "id": 303,
+    "nombre": "Municipalidad de Colchane",
+    "sitio_web_original": "https://www.colchane.cl",
+    "candidatos": []
+  },
+  {
+    "id": 304,
+    "nombre": "Municipalidad de Huara",
+    "sitio_web_original": "https://www.huara.cl",
+    "candidatos": []
+  },
+  {
+    "id": 307,
+    "nombre": "Municipalidad de Mejillones",
+    "sitio_web_original": "https://www.munimejillones.cl",
+    "candidatos": [
+      {
+        "url": "http://www.mejillones.cl",
+        "url_final": "https://www.mejillones.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://mejillones.cl",
+        "url_final": "https://mejillones.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://mejillones.cl",
+        "url_final": "https://mejillones.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 308,
+    "nombre": "Municipalidad de Sierra Gorda",
+    "sitio_web_original": "https://www.munisierragorda.cl",
+    "candidatos": []
+  },
+  {
+    "id": 309,
+    "nombre": "Municipalidad de Taltal",
+    "sitio_web_original": "https://www.munitaltal.cl",
+    "candidatos": [
+      {
+        "url": "http://www.taltal.cl",
+        "url_final": "https://portal.municipalidadtaltal.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://municipalidadtaltal.cl",
+        "url_final": "https://portal.municipalidadtaltal.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.taltal.cl",
+        "url_final": "https://portal.municipalidadtaltal.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 310,
+    "nombre": "Municipalidad de Calama",
+    "sitio_web_original": "https://www.calama.cl",
+    "candidatos": [
+      {
+        "url": "https://municipalidadcalama.cl",
+        "url_final": "https://municipalidadcalama.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.municipalidadcalama.cl",
+        "url_final": "https://www.municipalidadcalama.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 313,
+    "nombre": "Municipalidad de Tocopilla",
+    "sitio_web_original": "https://www.munitoropilla.cl",
+    "candidatos": []
+  },
+  {
+    "id": 315,
+    "nombre": "Municipalidad de Copiapó",
+    "sitio_web_original": "https://www.municopiapo.cl",
+    "candidatos": [
+      {
+        "url": "http://www.copiapo.cl",
+        "url_final": "https://copiapo.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.copiapo.cl",
+        "url_final": "https://copiapo.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://copiapo.cl",
+        "url_final": "https://copiapo.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 316,
+    "nombre": "Municipalidad de Caldera",
+    "sitio_web_original": "https://www.municaldera.cl",
+    "candidatos": [
+      {
+        "url": "https://www.caldera.cl",
+        "url_final": "https://www.caldera.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://www.caldera.cl",
+        "url_final": "https://www.caldera.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://caldera.cl",
+        "url_final": "https://caldera.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 317,
+    "nombre": "Municipalidad de Tierra Amarilla",
+    "sitio_web_original": "https://www.munitierraamarilla.cl",
+    "candidatos": []
+  },
+  {
+    "id": 318,
+    "nombre": "Municipalidad de Chañaral",
+    "sitio_web_original": "https://www.munichanal.cl",
+    "candidatos": [
+      {
+        "url": "https://www.munichanaral.cl",
+        "url_final": "https://www.munichanaral.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://munichanaral.cl",
+        "url_final": "https://munichanaral.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 319,
+    "nombre": "Municipalidad de Diego de Almagro",
+    "sitio_web_original": "https://www.munidiegoalmagro.cl",
+    "candidatos": []
+  },
+  {
+    "id": 320,
+    "nombre": "Municipalidad de Vallenar",
+    "sitio_web_original": "https://www.munivallenar.cl",
+    "candidatos": [
+      {
+        "url": "https://www.vallenar.cl",
+        "url_final": "https://www.vallenar.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://www.vallenar.cl",
+        "url_final": "https://www.vallenar.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 322,
+    "nombre": "Municipalidad de Freirina",
+    "sitio_web_original": "https://www.munifreirina.cl",
+    "candidatos": []
+  },
+  {
+    "id": 323,
+    "nombre": "Municipalidad de Huasco",
+    "sitio_web_original": "https://www.munihuasco.cl",
+    "candidatos": []
+  },
+  {
+    "id": 326,
+    "nombre": "Municipalidad de Andacollo",
+    "sitio_web_original": "https://www.muniandacollo.cl",
+    "candidatos": []
+  },
+  {
+    "id": 328,
+    "nombre": "Municipalidad de Paiguano",
+    "sitio_web_original": "https://www.munipaiguano.cl",
+    "candidatos": []
+  },
+  {
+    "id": 330,
+    "nombre": "Municipalidad de Illapel",
+    "sitio_web_original": "https://www.muniillapel.cl",
+    "candidatos": [
+      {
+        "url": "https://www.municipalidadillapel.cl",
+        "url_final": "https://municipalidadillapel.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://municipalidadillapel.cl",
+        "url_final": "https://municipalidadillapel.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 331,
+    "nombre": "Municipalidad de Canela",
+    "sitio_web_original": "https://www.municanela.cl",
+    "candidatos": [
+      {
+        "url": "https://canela.cl",
+        "url_final": "https://canela.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://canela.cl",
+        "url_final": "https://canela.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.canela.cl",
+        "url_final": "https://canela.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 332,
+    "nombre": "Municipalidad de Los Vilos",
+    "sitio_web_original": "https://www.munilosvilos.cl",
+    "candidatos": []
+  },
+  {
+    "id": 333,
+    "nombre": "Municipalidad de Salamanca",
+    "sitio_web_original": "https://www.munisalamanca.cl",
+    "candidatos": [
+      {
+        "url": "http://salamanca.cl",
+        "url_final": "https://salamanca.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://salamanca.cl",
+        "url_final": "https://salamanca.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://munisalamanca.cl",
+        "url_final": "https://salamanca.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 338,
+    "nombre": "Municipalidad de Río Hurtado",
+    "sitio_web_original": "https://www.muniriohurtado.cl",
+    "candidatos": [
+      {
+        "url": "https://riohurtado.cl",
+        "url_final": "https://riohurtado.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://www.riohurtado.cl",
+        "url_final": "https://riohurtado.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://riohurtado.cl",
+        "url_final": "https://riohurtado.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 340,
+    "nombre": "Municipalidad de Casablanca",
+    "sitio_web_original": "https://www.municasablanca.cl",
+    "candidatos": [
+      {
+        "url": "https://municipalidadcasablanca.cl",
+        "url_final": "https://municipalidadcasablanca.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.municipalidadcasablanca.cl",
+        "url_final": "https://www.municipalidadcasablanca.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 341,
+    "nombre": "Municipalidad de Concón",
+    "sitio_web_original": "https://www.muniConcon.cl",
+    "candidatos": [
+      {
+        "url": "https://concon.cl",
+        "url_final": "https://www.concon.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://www.concon.cl",
+        "url_final": "https://www.concon.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.concon.cl",
+        "url_final": "https://www.concon.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 342,
+    "nombre": "Municipalidad de Juan Fernández",
+    "sitio_web_original": "https://www.munijuanfernandez.cl",
+    "candidatos": []
+  },
+  {
+    "id": 346,
+    "nombre": "Municipalidad de Isla de Pascua",
+    "sitio_web_original": "https://www.munirapa-nui.cl",
+    "candidatos": [
+      {
+        "url": "https://www.municipalidaddeisladepascua.cl",
+        "url_final": "https://www.municipalidaddeisladepascua.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://municipalidaddeisladepascua.cl",
+        "url_final": "https://municipalidaddeisladepascua.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 351,
+    "nombre": "Municipalidad de La Ligua",
+    "sitio_web_original": "https://www.munilaliguachile.cl",
+    "candidatos": []
+  },
+  {
+    "id": 352,
+    "nombre": "Municipalidad de Cabildo",
+    "sitio_web_original": "https://www.municabildo.cl",
+    "candidatos": []
+  },
+  {
+    "id": 357,
+    "nombre": "Municipalidad de Calera",
+    "sitio_web_original": "https://www.municalera.cl",
+    "candidatos": []
+  },
+  {
+    "id": 358,
+    "nombre": "Municipalidad de Hijuelas",
+    "sitio_web_original": "https://www.munihijuelas.cl",
+    "candidatos": [
+      {
+        "url": "http://hijuelas.cl",
+        "url_final": "https://hijuelas.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://hijuelas.cl",
+        "url_final": "https://hijuelas.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.hijuelas.cl",
+        "url_final": "https://hijuelas.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 360,
+    "nombre": "Municipalidad de Limache",
+    "sitio_web_original": "https://www.munilimache.cl",
+    "candidatos": [
+      {
+        "url": "http://www.limache.cl",
+        "url_final": "https://limache.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://limache.cl",
+        "url_final": "https://limache.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.limache.cl",
+        "url_final": "https://limache.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 361,
+    "nombre": "Municipalidad de Nogales",
+    "sitio_web_original": "https://www.muninogales.cl",
+    "candidatos": [
+      {
+        "url": "http://muninogales.cl",
+        "url_final": "http://muninogales.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 363,
+    "nombre": "Municipalidad de Villa Alemana",
+    "sitio_web_original": "https://www.villaalemana.cl",
+    "candidatos": []
+  },
+  {
+    "id": 366,
+    "nombre": "Municipalidad de Cartagena",
+    "sitio_web_original": "https://www.municartagena.cl",
+    "candidatos": [
+      {
+        "url": "https://municipalidadcartagena.cl",
+        "url_final": "https://municipalidadcartagena.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.municipalidadcartagena.cl",
+        "url_final": "https://www.municipalidadcartagena.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 367,
+    "nombre": "Municipalidad de El Quisco",
+    "sitio_web_original": "https://www.munielquisco.cl",
+    "candidatos": []
+  },
+  {
+    "id": 368,
+    "nombre": "Municipalidad de El Tabo",
+    "sitio_web_original": "https://www.munieltabo.cl",
+    "candidatos": []
+  },
+  {
+    "id": 369,
+    "nombre": "Municipalidad de Santo Domingo",
+    "sitio_web_original": "https://www.munisantodomingo.cl",
+    "candidatos": [
+      {
+        "url": "https://santodomingo.cl",
+        "url_final": "https://santodomingo.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://santodomingo.cl",
+        "url_final": "https://santodomingo.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.santodomingo.cl",
+        "url_final": "https://santodomingo.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 372,
+    "nombre": "Municipalidad de Llaillay",
+    "sitio_web_original": "https://www.munillaillay.cl",
+    "candidatos": []
+  },
+  {
+    "id": 374,
+    "nombre": "Municipalidad de Putaendo",
+    "sitio_web_original": "https://www.muniputaendo.cl",
+    "candidatos": [
+      {
+        "url": "https://putaendo.cl",
+        "url_final": "https://www.putaendo.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.putaendo.cl",
+        "url_final": "https://www.putaendo.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://putaendo.cl",
+        "url_final": "https://www.putaendo.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 375,
+    "nombre": "Municipalidad de Santa María",
+    "sitio_web_original": "https://www.munisantamaria.cl",
+    "candidatos": []
+  },
+  {
+    "id": 377,
+    "nombre": "Municipalidad de Limache",
+    "sitio_web_original": "https://www.munilimache.cl",
+    "candidatos": [
+      {
+        "url": "http://www.limache.cl",
+        "url_final": "https://limache.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://limache.cl",
+        "url_final": "https://limache.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.limache.cl",
+        "url_final": "https://limache.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 379,
+    "nombre": "Municipalidad de Villa Alemana",
+    "sitio_web_original": "https://www.villaalemana.cl",
+    "candidatos": []
+  },
+  {
+    "id": 385,
+    "nombre": "Municipalidad de Estación Central",
+    "sitio_web_original": "https://www.muniecentral.cl",
+    "candidatos": [
+      {
+        "url": "https://www.municipalidaddeestacioncentral.cl",
+        "url_final": "https://www.municipalidaddeestacioncentral.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.muniestacioncentral.cl",
+        "url_final": "https://www.muniestacioncentral.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://municipalidaddeestacioncentral.cl",
+        "url_final": "https://www.municipalidaddeestacioncentral.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 397,
+    "nombre": "Municipalidad de Macul",
+    "sitio_web_original": "https://www.macul.cl",
+    "candidatos": []
+  },
+  {
+    "id": 423,
+    "nombre": "Municipalidad de Alhué",
+    "sitio_web_original": "https://www.munialhue.cl",
+    "candidatos": [
+      {
+        "url": "https://www.municipalidadalhue.cl",
+        "url_final": "https://municipalidadalhue.cl/portal/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://municipalidadalhue.cl",
+        "url_final": "https://municipalidadalhue.cl/portal/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 424,
+    "nombre": "Municipalidad de Curacaví",
+    "sitio_web_original": "https://www.municuracavi.cl",
+    "candidatos": [
+      {
+        "url": "https://municipalidadcuracavi.cl",
+        "url_final": "https://municipalidadcuracavi.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.municipalidadcuracavi.cl",
+        "url_final": "https://municipalidadcuracavi.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 425,
+    "nombre": "Municipalidad de María Pinto",
+    "sitio_web_original": "https://www.munimariapinto.cl",
+    "candidatos": []
+  },
+  {
+    "id": 427,
+    "nombre": "Municipalidad de Talagante",
+    "sitio_web_original": "https://www.talagante.cl",
+    "candidatos": []
+  },
+  {
+    "id": 428,
+    "nombre": "Municipalidad de El Monte",
+    "sitio_web_original": "https://www.elmonte.cl",
+    "candidatos": []
+  },
+  {
+    "id": 430,
+    "nombre": "Municipalidad de Padre Hurtado",
+    "sitio_web_original": "https://www.padrehurtado.cl",
+    "candidatos": []
+  },
+  {
+    "id": 433,
+    "nombre": "Municipalidad de Codegua",
+    "sitio_web_original": "https://www.municodegua.cl",
+    "candidatos": [
+      {
+        "url": "https://municipalidaddecodegua.cl",
+        "url_final": "https://municipalidaddecodegua.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.municipalidaddecodegua.cl",
+        "url_final": "https://www.municipalidaddecodegua.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 435,
+    "nombre": "Municipalidad de Coltauco",
+    "sitio_web_original": "https://www.municoltauco.cl",
+    "candidatos": [
+      {
+        "url": "https://www.coltauco.cl",
+        "url_final": "https://www.coltauco.cl/rsp/index.php",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://www.coltauco.cl",
+        "url_final": "https://www.coltauco.cl/rsp/index.php",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://coltauco.cl",
+        "url_final": "https://www.coltauco.cl/rsp/index.php",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 436,
+    "nombre": "Municipalidad de Doñihue",
+    "sitio_web_original": "https://www.munidonihue.cl",
+    "candidatos": []
+  },
+  {
+    "id": 437,
+    "nombre": "Municipalidad de Graneros",
+    "sitio_web_original": "https://www.munigraneros.cl",
+    "candidatos": [
+      {
+        "url": "https://municipalidadgraneros.cl",
+        "url_final": "https://municipalidadgraneros.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.municipalidadgraneros.cl",
+        "url_final": "https://www.municipalidadgraneros.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 439,
+    "nombre": "Municipalidad de Machalí",
+    "sitio_web_original": "https://www.munimachali.cl",
+    "candidatos": []
+  },
+  {
+    "id": 441,
+    "nombre": "Municipalidad de Mostazal",
+    "sitio_web_original": "https://www.munimostazal.cl",
+    "candidatos": [
+      {
+        "url": "http://mostazal.cl",
+        "url_final": "https://mostazal.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.mostazal.cl",
+        "url_final": "https://www.mostazal.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://mostazal.cl",
+        "url_final": "https://mostazal.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 443,
+    "nombre": "Municipalidad de Peumo",
+    "sitio_web_original": "https://www.munipeumo.cl",
+    "candidatos": []
+  },
+  {
+    "id": 444,
+    "nombre": "Municipalidad de Pichidegua",
+    "sitio_web_original": "https://www.munipichidegua.cl",
+    "candidatos": [
+      {
+        "url": "https://pichidegua.cl",
+        "url_final": "https://pichidegua.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://www.pichidegua.cl",
+        "url_final": "https://www.pichidegua.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.pichidegua.cl",
+        "url_final": "https://www.pichidegua.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 445,
+    "nombre": "Municipalidad de Quinta de Tilcoco",
+    "sitio_web_original": "https://www.muniquintadetilcoco.cl",
+    "candidatos": []
+  },
+  {
+    "id": 448,
+    "nombre": "Municipalidad de San Vicente",
+    "sitio_web_original": "https://www.munisanvicente.cl",
+    "candidatos": [
+      {
+        "url": "https://www.municipalidadsanvicente.cl",
+        "url_final": "https://www.municipalidadsanvicente.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://municipalidadsanvicente.cl",
+        "url_final": "https://municipalidadsanvicente.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 449,
+    "nombre": "Municipalidad de Pichilemu",
+    "sitio_web_original": "https://www.munipichilemu.cl",
+    "candidatos": [
+      {
+        "url": "https://pichilemu.cl",
+        "url_final": "https://pichilemu.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.pichilemu.cl",
+        "url_final": "https://pichilemu.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://www.pichilemu.cl",
+        "url_final": "http://pichilemu.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 451,
+    "nombre": "Municipalidad de Litueche",
+    "sitio_web_original": "https://www.munilitueche.cl",
+    "candidatos": [
+      {
+        "url": "http://www.litueche.cl",
+        "url_final": "https://litueche.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://litueche.cl",
+        "url_final": "https://litueche.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://litueche.cl",
+        "url_final": "https://litueche.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 458,
+    "nombre": "Municipalidad de Chimbarongo",
+    "sitio_web_original": "https://www.munichimbarongo.cl",
+    "candidatos": [
+      {
+        "url": "https://www.municipalidadchimbarongo.cl",
+        "url_final": "https://municipalidadchimbarongo.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://municipalidadchimbarongo.cl",
+        "url_final": "https://municipalidadchimbarongo.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 460,
+    "nombre": "Municipalidad de Nancagua",
+    "sitio_web_original": "https://www.muninancagua.cl",
+    "candidatos": [
+      {
+        "url": "https://www.municipalidadnancagua.cl",
+        "url_final": "https://www.municipalidadnancagua.cl/web/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://municipalidadnancagua.cl",
+        "url_final": "https://www.municipalidadnancagua.cl/web/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 464,
+    "nombre": "Municipalidad de Talca",
+    "sitio_web_original": "https://www.municipalidadtalca.cl",
+    "candidatos": [
+      {
+        "url": "http://www.talca.cl",
+        "url_final": "https://www.talca.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://munitalca.cl",
+        "url_final": "https://www.talcatransparente.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.talca.cl",
+        "url_final": "https://www.talca.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 465,
+    "nombre": "Municipalidad de Constitución",
+    "sitio_web_original": "https://www.municonstitucion.cl",
+    "candidatos": [
+      {
+        "url": "https://www.constitucion.cl",
+        "url_final": "https://www.constitucion.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://www.constitucion.cl",
+        "url_final": "https://www.constitucion.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://constitucion.cl",
+        "url_final": "https://www.constitucion.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 466,
+    "nombre": "Municipalidad de Curepto",
+    "sitio_web_original": "https://www.municurepto.cl",
+    "candidatos": [
+      {
+        "url": "http://curepto.cl",
+        "url_final": "http://www.curepto.cl/imcurepto_web/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://www.curepto.cl",
+        "url_final": "http://www.curepto.cl/imcurepto_web/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.curepto.cl",
+        "url_final": "http://www.curepto.cl/imcurepto_web/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 467,
+    "nombre": "Municipalidad de Empedrado",
+    "sitio_web_original": "https://www.muniempedrado.cl",
+    "candidatos": [
+      {
+        "url": "https://empedrado.cl",
+        "url_final": "https://empedrado.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.empedrado.cl",
+        "url_final": "https://empedrado.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://empedrado.cl",
+        "url_final": "https://empedrado.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 468,
+    "nombre": "Municipalidad de Maule",
+    "sitio_web_original": "https://www.munimaule.cl",
+    "candidatos": []
+  },
+  {
+    "id": 469,
+    "nombre": "Municipalidad de Pelarco",
+    "sitio_web_original": "https://www.munipelarco.cl",
+    "candidatos": [
+      {
+        "url": "https://municipalidaddepelarco.cl",
+        "url_final": "https://municipalidaddepelarco.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.municipalidaddepelarco.cl",
+        "url_final": "https://www.municipalidaddepelarco.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 470,
+    "nombre": "Municipalidad de Pencahue",
+    "sitio_web_original": "https://www.munipencahue.cl",
+    "candidatos": []
+  },
+  {
+    "id": 471,
+    "nombre": "Municipalidad de Río Claro",
+    "sitio_web_original": "https://www.munirioclaro.cl",
+    "candidatos": [
+      {
+        "url": "http://www.rioclaro.cl",
+        "url_final": "https://rioclaro.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://rioclaro.cl",
+        "url_final": "https://rioclaro.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.rioclaro.cl",
+        "url_final": "https://rioclaro.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 472,
+    "nombre": "Municipalidad de San Clemente",
+    "sitio_web_original": "https://www.munisanclemente.cl",
+    "candidatos": [
+      {
+        "url": "http://sanclemente.cl",
+        "url_final": "https://www.sanclemente.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://www.sanclemente.cl",
+        "url_final": "https://www.sanclemente.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://sanclemente.cl",
+        "url_final": "https://www.sanclemente.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 474,
+    "nombre": "Municipalidad de Cauquenes",
+    "sitio_web_original": "https://www.municauquenes.cl",
+    "candidatos": [
+      {
+        "url": "http://cauquenes.cl",
+        "url_final": "http://www.cauquenes.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.cauquenes.cl",
+        "url_final": "https://www.cauquenes.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://cauquenes.cl",
+        "url_final": "https://www.cauquenes.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 475,
+    "nombre": "Municipalidad de Chanco",
+    "sitio_web_original": "https://www.munichanco.cl",
+    "candidatos": [
+      {
+        "url": "https://www.chanco.cl",
+        "url_final": "https://chanco.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://chanco.cl",
+        "url_final": "https://chanco.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://chanco.cl",
+        "url_final": "https://chanco.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 478,
+    "nombre": "Municipalidad de Hualañé",
+    "sitio_web_original": "https://www.munihualane.cl",
+    "candidatos": [
+      {
+        "url": "https://hualane.cl",
+        "url_final": "https://hualane.cl/SitioMunicipal/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://hualane.cl",
+        "url_final": "https://hualane.cl/SitioMunicipal/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.hualane.cl",
+        "url_final": "https://hualane.cl/SitioMunicipal/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 479,
+    "nombre": "Municipalidad de Licantén",
+    "sitio_web_original": "https://www.munilicanten.cl",
+    "candidatos": []
+  },
+  {
+    "id": 480,
+    "nombre": "Municipalidad de Molina",
+    "sitio_web_original": "https://www.munimolina.cl",
+    "candidatos": [
+      {
+        "url": "https://www.molina.cl",
+        "url_final": "https://web.molina.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://molina.cl",
+        "url_final": "https://web.molina.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://molina.cl",
+        "url_final": "https://web.molina.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 483,
+    "nombre": "Municipalidad de Sagrada Familia",
+    "sitio_web_original": "https://www.munisagradafamilia.cl",
+    "candidatos": []
+  },
+  {
+    "id": 484,
+    "nombre": "Municipalidad de Teno",
+    "sitio_web_original": "https://www.muniteno.cl",
+    "candidatos": [
+      {
+        "url": "http://www.teno.cl",
+        "url_final": "https://www.teno.cl/portal2/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://teno.cl",
+        "url_final": "https://www.teno.cl/portal2/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.teno.cl",
+        "url_final": "https://www.teno.cl/portal2/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 487,
+    "nombre": "Municipalidad de Colbún",
+    "sitio_web_original": "https://www.municolbun.cl",
+    "candidatos": [
+      {
+        "url": "https://municipalidadcolbun.cl",
+        "url_final": "https://municipalidadcolbun.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.municipalidadcolbun.cl",
+        "url_final": "https://municipalidadcolbun.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 489,
+    "nombre": "Municipalidad de Parral",
+    "sitio_web_original": "https://www.muniparral.cl",
+    "candidatos": []
+  },
+  {
+    "id": 490,
+    "nombre": "Municipalidad de Retiro",
+    "sitio_web_original": "https://www.muniretiro.cl",
+    "candidatos": [
+      {
+        "url": "http://www.retiro.cl",
+        "url_final": "https://retiro.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.retiro.cl",
+        "url_final": "https://retiro.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://retiro.cl",
+        "url_final": "https://retiro.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 491,
+    "nombre": "Municipalidad de San Javier",
+    "sitio_web_original": "https://www.munisanjavier.cl",
+    "candidatos": []
+  },
+  {
+    "id": 492,
+    "nombre": "Municipalidad de Villa Alegre",
+    "sitio_web_original": "https://www.munivillaalegre.cl",
+    "candidatos": []
+  },
+  {
+    "id": 499,
+    "nombre": "Municipalidad de Pinto",
+    "sitio_web_original": "https://www.munipinto.cl",
+    "candidatos": [
+      {
+        "url": "https://municipalidaddepinto.cl",
+        "url_final": "https://municipalidaddepinto.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.municipalidaddepinto.cl",
+        "url_final": "https://www.municipalidaddepinto.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 500,
+    "nombre": "Municipalidad de Quillón",
+    "sitio_web_original": "https://www.muniquillon.cl",
+    "candidatos": [
+      {
+        "url": "http://www.quillon.cl",
+        "url_final": "https://home.quillon.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.quillon.cl",
+        "url_final": "https://home.quillon.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://quillon.cl",
+        "url_final": "https://home.quillon.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 502,
+    "nombre": "Municipalidad de Yungay",
+    "sitio_web_original": "https://www.muniyungay.cl",
+    "candidatos": [
+      {
+        "url": "http://www.yungay.cl",
+        "url_final": "https://www.yungay.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.yungay.cl",
+        "url_final": "https://www.yungay.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://yungay.cl",
+        "url_final": "https://www.yungay.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 504,
+    "nombre": "Municipalidad de Cobquecura",
+    "sitio_web_original": "https://www.municobquecura.cl",
+    "candidatos": [
+      {
+        "url": "https://cobquecura.cl",
+        "url_final": "https://cobquecura.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.cobquecura.cl",
+        "url_final": "https://cobquecura.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://www.cobquecura.cl",
+        "url_final": "https://cobquecura.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 507,
+    "nombre": "Municipalidad de Portezuelo",
+    "sitio_web_original": "https://www.muniportezuelo.cl",
+    "candidatos": [
+      {
+        "url": "https://municipalidaddeportezuelo.cl",
+        "url_final": "https://mportezuelo.cl/Inicio/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.municipalidaddeportezuelo.cl",
+        "url_final": "https://mportezuelo.cl/Inicio/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 508,
+    "nombre": "Municipalidad de Ránquil",
+    "sitio_web_original": "https://www.muniranquil.cl",
+    "candidatos": [
+      {
+        "url": "https://municipalidadranquil.cl",
+        "url_final": "https://municipalidadranquil.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.municipalidadranquil.cl",
+        "url_final": "https://www.municipalidadranquil.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 509,
+    "nombre": "Municipalidad de Treguaco",
+    "sitio_web_original": "https://www.munitreguaco.cl",
+    "candidatos": []
+  },
+  {
+    "id": 513,
+    "nombre": "Municipalidad de San Fabián",
+    "sitio_web_original": "https://www.munisanfabian.cl",
+    "candidatos": [
+      {
+        "url": "https://www.sanfabian.cl",
+        "url_final": "https://www.sanfabian.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://www.sanfabian.cl",
+        "url_final": "https://www.sanfabian.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://sanfabian.cl",
+        "url_final": "https://sanfabian.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 514,
+    "nombre": "Municipalidad de San Nicolás",
+    "sitio_web_original": "https://www.munisannicolas.cl",
+    "candidatos": [
+      {
+        "url": "https://www.sannicolas.cl",
+        "url_final": "https://municipalidadsannicolas.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://sannicolas.cl",
+        "url_final": "https://municipalidadsannicolas.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://municipalidadsannicolas.cl",
+        "url_final": "https://municipalidadsannicolas.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 520,
+    "nombre": "Municipalidad de Lota",
+    "sitio_web_original": "https://www.munilota.cl",
+    "candidatos": [
+      {
+        "url": "http://lota.cl",
+        "url_final": "https://lota.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.lota.cl",
+        "url_final": "https://lota.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://www.lota.cl",
+        "url_final": "https://lota.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 521,
+    "nombre": "Municipalidad de Penco",
+    "sitio_web_original": "https://www.munipenco.cl",
+    "candidatos": [
+      {
+        "url": "https://www.penco.cl",
+        "url_final": "https://penco.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://www.penco.cl",
+        "url_final": "https://penco.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://penco.cl",
+        "url_final": "https://penco.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 523,
+    "nombre": "Municipalidad de Santa Juana",
+    "sitio_web_original": "https://www.munisantajuana.cl",
+    "candidatos": [
+      {
+        "url": "https://www.santajuana.cl",
+        "url_final": "https://new.santajuana.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://santajuana.cl",
+        "url_final": "https://new.santajuana.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://www.santajuana.cl",
+        "url_final": "https://new.santajuana.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 525,
+    "nombre": "Municipalidad de Tomé",
+    "sitio_web_original": "https://www.munitome.cl",
+    "candidatos": [
+      {
+        "url": "https://www.tome.cl",
+        "url_final": "https://www.tome.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://www.tome.cl",
+        "url_final": "https://www.tome.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 526,
+    "nombre": "Municipalidad de Hualpén",
+    "sitio_web_original": "https://www.muniHualpen.cl",
+    "candidatos": [
+      {
+        "url": "https://hualpen.cl",
+        "url_final": "https://hualpen.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://www.hualpen.cl",
+        "url_final": "http://www.hualpen.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://hualpen.cl",
+        "url_final": "http://hualpen.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 528,
+    "nombre": "Municipalidad de Antuco",
+    "sitio_web_original": "https://www.muniAntuco.cl",
+    "candidatos": [
+      {
+        "url": "https://www.municipalidadantuco.cl",
+        "url_final": "https://municipalidadantuco.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://municipalidadantuco.cl",
+        "url_final": "https://municipalidadantuco.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 529,
+    "nombre": "Municipalidad de Cabrero",
+    "sitio_web_original": "https://www.municabrero.cl",
+    "candidatos": [
+      {
+        "url": "http://cabrero.cl",
+        "url_final": "https://cabrero.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://cabrero.cl",
+        "url_final": "https://cabrero.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.cabrero.cl",
+        "url_final": "https://www.cabrero.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 532,
+    "nombre": "Municipalidad de Nacimiento",
+    "sitio_web_original": "https://www.muninacimiento.cl",
+    "candidatos": []
+  },
+  {
+    "id": 534,
+    "nombre": "Municipalidad de Quilaco",
+    "sitio_web_original": "https://www.muniquilaco.cl",
+    "candidatos": [
+      {
+        "url": "https://municipalidadquilaco.cl",
+        "url_final": "https://municipalidadquilaco.cl/w/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.municipalidadquilaco.cl",
+        "url_final": "https://municipalidadquilaco.cl/w/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 535,
+    "nombre": "Municipalidad de Quilleco",
+    "sitio_web_original": "https://www.muniquilleco.cl",
+    "candidatos": [
+      {
+        "url": "https://municipalidadquilleco.cl",
+        "url_final": "https://municipalidadquilleco.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.municipalidadquilleco.cl",
+        "url_final": "https://municipalidadquilleco.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 536,
+    "nombre": "Municipalidad de San Rosendo",
+    "sitio_web_original": "https://www.munisanrosendo.cl",
+    "candidatos": [
+      {
+        "url": "https://municipalidadsanrosendo.cl",
+        "url_final": "https://municipalidadsanrosendo.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.municipalidadsanrosendo.cl",
+        "url_final": "https://municipalidadsanrosendo.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 537,
+    "nombre": "Municipalidad de Santa Bárbara",
+    "sitio_web_original": "https://www.munisantabarbara.cl",
+    "candidatos": [
+      {
+        "url": "http://santabarbara.cl",
+        "url_final": "https://www.santabarbara.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.santabarbara.cl",
+        "url_final": "https://www.santabarbara.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://santabarbara.cl",
+        "url_final": "https://www.santabarbara.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 539,
+    "nombre": "Municipalidad de Yumbel",
+    "sitio_web_original": "https://www.muniyumbel.cl",
+    "candidatos": [
+      {
+        "url": "http://yumbel.cl",
+        "url_final": "https://yumbel.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.yumbel.cl",
+        "url_final": "https://yumbel.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://www.yumbel.cl",
+        "url_final": "https://yumbel.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 544,
+    "nombre": "Municipalidad de Curanilahue",
+    "sitio_web_original": "https://www.municuranilahue.cl",
+    "candidatos": []
+  },
+  {
+    "id": 545,
+    "nombre": "Municipalidad de Lebu",
+    "sitio_web_original": "https://www.munilebu.cl",
+    "candidatos": [
+      {
+        "url": "http://lebu.cl",
+        "url_final": "https://lebu.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.lebu.cl",
+        "url_final": "https://lebu.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://www.lebu.cl",
+        "url_final": "https://lebu.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 547,
+    "nombre": "Municipalidad de Tirúa",
+    "sitio_web_original": "https://www.munitirua.cl",
+    "candidatos": []
+  },
+  {
+    "id": 549,
+    "nombre": "Municipalidad de Carahue",
+    "sitio_web_original": "https://www.municarahue.cl",
+    "candidatos": [
+      {
+        "url": "http://www.carahue.cl",
+        "url_final": "https://carahue.cl/web/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://carahue.cl",
+        "url_final": "https://carahue.cl/web/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://carahue.cl",
+        "url_final": "https://carahue.cl/web/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 551,
+    "nombre": "Municipalidad de Curarrehue",
+    "sitio_web_original": "https://www.municurarrehue.cl",
+    "candidatos": [
+      {
+        "url": "https://www.curarrehue.cl",
+        "url_final": "https://curarrehue.cl/on/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://curarrehue.cl",
+        "url_final": "https://curarrehue.cl/on/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://curarrehue.cl",
+        "url_final": "https://curarrehue.cl/on/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 553,
+    "nombre": "Municipalidad de Galvarino",
+    "sitio_web_original": "https://www.munigalvarino.cl",
+    "candidatos": []
+  },
+  {
+    "id": 554,
+    "nombre": "Municipalidad de Gorbea",
+    "sitio_web_original": "https://www.munigorbea.cl",
+    "candidatos": [
+      {
+        "url": "https://www.municipalidadgorbea.cl",
+        "url_final": "https://home.municipalidadgorbea.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://municipalidadgorbea.cl",
+        "url_final": "https://home.municipalidadgorbea.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 556,
+    "nombre": "Municipalidad de Loncoche",
+    "sitio_web_original": "https://www.muniloncoche.cl",
+    "candidatos": [
+      {
+        "url": "http://muniloncoche.cl",
+        "url_final": "https://muniloncoche.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://muniloncoche.cl",
+        "url_final": "https://muniloncoche.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://municipalidaddeloncoche.cl",
+        "url_final": "https://muniloncoche.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 557,
+    "nombre": "Municipalidad de Melipeuco",
+    "sitio_web_original": "https://www.munimelipeuco.cl",
+    "candidatos": [
+      {
+        "url": "https://municipalidadmelipeuco.cl",
+        "url_final": "https://municipalidadmelipeuco.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.municipalidadmelipeuco.cl",
+        "url_final": "https://municipalidadmelipeuco.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 558,
+    "nombre": "Municipalidad de Nueva Imperial",
+    "sitio_web_original": "https://www.muninuevaimperial.cl",
+    "candidatos": []
+  },
+  {
+    "id": 559,
+    "nombre": "Municipalidad de Padre Las Casas",
+    "sitio_web_original": "https://www.munipadrelascasas.cl",
+    "candidatos": []
+  },
+  {
+    "id": 560,
+    "nombre": "Municipalidad de Perquenco",
+    "sitio_web_original": "https://www.muniperquenco.cl",
+    "candidatos": [
+      {
+        "url": "http://www.perquenco.cl",
+        "url_final": "https://www.perquenco.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.perquenco.cl",
+        "url_final": "https://www.perquenco.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://perquenco.cl",
+        "url_final": "https://www.perquenco.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 561,
+    "nombre": "Municipalidad de Pitrufquén",
+    "sitio_web_original": "https://www.munipitrufquen.cl",
+    "candidatos": []
+  },
+  {
+    "id": 563,
+    "nombre": "Municipalidad de Saavedra",
+    "sitio_web_original": "https://www.munisaavedra.cl",
+    "candidatos": [
+      {
+        "url": "https://munisaavedra.cl",
+        "url_final": "https://munisaavedra.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://munisaavedra.cl",
+        "url_final": "https://munisaavedra.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 564,
+    "nombre": "Municipalidad de Teodoro Schmidt",
+    "sitio_web_original": "https://www.muniTeodoroSchmidt.cl",
+    "candidatos": [
+      {
+        "url": "https://teodoroschmidt.cl",
+        "url_final": "https://teodoroschmidt.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://www.teodoroschmidt.cl",
+        "url_final": "http://www.teodoroschmidt.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://teodoroschmidt.cl",
+        "url_final": "http://teodoroschmidt.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 565,
+    "nombre": "Municipalidad de Toltén",
+    "sitio_web_original": "https://www.munitolten.cl",
+    "candidatos": [
+      {
+        "url": "https://tolten.cl",
+        "url_final": "https://tolten.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://www.tolten.cl",
+        "url_final": "https://www.tolten.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.tolten.cl",
+        "url_final": "https://www.tolten.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 566,
+    "nombre": "Municipalidad de Vilcún",
+    "sitio_web_original": "https://www.munivilcun.cl",
+    "candidatos": [
+      {
+        "url": "https://www.vilcun.cl",
+        "url_final": "https://www.vilcun.cl/web/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://vilcun.cl",
+        "url_final": "https://www.vilcun.cl/web/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://www.vilcun.cl",
+        "url_final": "https://www.vilcun.cl/web/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 569,
+    "nombre": "Municipalidad de Angol",
+    "sitio_web_original": "https://www.muniangol.cl",
+    "candidatos": []
+  },
+  {
+    "id": 571,
+    "nombre": "Municipalidad de Curacautín",
+    "sitio_web_original": "https://www.municuracautin.cl",
+    "candidatos": []
+  },
+  {
+    "id": 573,
+    "nombre": "Municipalidad de Lonquimay",
+    "sitio_web_original": "https://www.munilonquimay.cl",
+    "candidatos": []
+  },
+  {
+    "id": 576,
+    "nombre": "Municipalidad de Purén",
+    "sitio_web_original": "https://www.munipuren.cl",
+    "candidatos": [
+      {
+        "url": "https://munipuren.cl",
+        "url_final": "https://munipuren.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://munipuren.cl",
+        "url_final": "https://munipuren.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 577,
+    "nombre": "Municipalidad de Renaico",
+    "sitio_web_original": "https://www.munirenaico.cl",
+    "candidatos": [
+      {
+        "url": "http://www.renaico.cl",
+        "url_final": "http://www.renaico.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://municipalidadrenaico.cl",
+        "url_final": "https://municipalidadrenaico.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://renaico.cl",
+        "url_final": "http://renaico.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 578,
+    "nombre": "Municipalidad de Traiguén",
+    "sitio_web_original": "https://www.munitraiguen.cl",
+    "candidatos": []
+  },
+  {
+    "id": 579,
+    "nombre": "Municipalidad de Victoria",
+    "sitio_web_original": "https://www.munivictoria.cl",
+    "candidatos": []
+  },
+  {
+    "id": 581,
+    "nombre": "Municipalidad de Corral",
+    "sitio_web_original": "https://www.municorral.cl",
+    "candidatos": [
+      {
+        "url": "https://www.municipalidadcorral.cl",
+        "url_final": "https://www.municipalidadcorral.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://municipalidadcorral.cl",
+        "url_final": "https://municipalidadcorral.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 583,
+    "nombre": "Municipalidad de La Unión",
+    "sitio_web_original": "https://www.municipalidadlaunion.cl",
+    "candidatos": []
+  },
+  {
+    "id": 584,
+    "nombre": "Municipalidad de Lago Ranco",
+    "sitio_web_original": "https://www.munilagoranco.cl",
+    "candidatos": [
+      {
+        "url": "https://municipalidadlagoranco.cl",
+        "url_final": "https://municipalidadlagoranco.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://lagoranco.cl",
+        "url_final": "http://www.lagoranco.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.municipalidadlagoranco.cl",
+        "url_final": "https://www.municipalidadlagoranco.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 590,
+    "nombre": "Municipalidad de Panguipulli",
+    "sitio_web_original": "https://www.munipanguipulli.cl",
+    "candidatos": [
+      {
+        "url": "https://municipalidadpanguipulli.cl",
+        "url_final": "https://municipalidadpanguipulli.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.municipalidadpanguipulli.cl",
+        "url_final": "https://municipalidadpanguipulli.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 593,
+    "nombre": "Municipalidad de Calbuco",
+    "sitio_web_original": "https://www.municalbuco.cl",
+    "candidatos": [
+      {
+        "url": "https://www.municipalidadcalbuco.cl",
+        "url_final": "https://www.municipalidadcalbuco.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://municipalidadcalbuco.cl",
+        "url_final": "https://www.municipalidadcalbuco.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 597,
+    "nombre": "Municipalidad de Los Muermos",
+    "sitio_web_original": "https://www.munilosmuermos.cl",
+    "candidatos": [
+      {
+        "url": "http://muermos.cl",
+        "url_final": "https://muermos.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.muermos.cl",
+        "url_final": "https://www.muermos.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://muermos.cl",
+        "url_final": "https://muermos.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 600,
+    "nombre": "Municipalidad de Puerto Varas",
+    "sitio_web_original": "https://www.municipalidadpuertovaras.cl",
+    "candidatos": []
+  },
+  {
+    "id": 603,
+    "nombre": "Municipalidad de Chonchi",
+    "sitio_web_original": "https://www.munichonchi.cl",
+    "candidatos": [
+      {
+        "url": "https://www.municipalidadchonchi.cl",
+        "url_final": "https://municipalidadchonchi.cl/web/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://municipalidadchonchi.cl",
+        "url_final": "https://municipalidadchonchi.cl/web/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 604,
+    "nombre": "Municipalidad de Curaco de Vélez",
+    "sitio_web_original": "https://www.municuracodeVelez.cl",
+    "candidatos": [
+      {
+        "url": "http://www.curacodevelez.cl",
+        "url_final": "https://curacodevelez.cl/web/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.curacodevelez.cl",
+        "url_final": "https://curacodevelez.cl/web/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://curacodevelez.cl",
+        "url_final": "https://curacodevelez.cl/web/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 607,
+    "nombre": "Municipalidad de Queilén",
+    "sitio_web_original": "https://www.muniquillen.cl",
+    "candidatos": [
+      {
+        "url": "https://www.muniqueilen.cl",
+        "url_final": "https://muniqueilen.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://muniqueilen.cl",
+        "url_final": "https://muniqueilen.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 611,
+    "nombre": "Municipalidad de Osorno",
+    "sitio_web_original": "https://www.munosorno.cl",
+    "candidatos": [
+      {
+        "url": "https://municipalidadosorno.cl",
+        "url_final": "https://municipalidadosorno.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.municipalidadosorno.cl",
+        "url_final": "https://www.municipalidadosorno.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 612,
+    "nombre": "Municipalidad de Puerto Octay",
+    "sitio_web_original": "https://www.munipuertooctay.cl",
+    "candidatos": []
+  },
+  {
+    "id": 613,
+    "nombre": "Municipalidad de Purranque",
+    "sitio_web_original": "https://www.munipurranque.cl",
+    "candidatos": [
+      {
+        "url": "https://www.purranque.cl",
+        "url_final": "https://www.purranque.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://www.purranque.cl",
+        "url_final": "http://www.purranque.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://purranque.cl",
+        "url_final": "http://purranque.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 614,
+    "nombre": "Municipalidad de Puyehue",
+    "sitio_web_original": "https://www.munipuyehue.cl",
+    "candidatos": [
+      {
+        "url": "https://www.municipalidaddepuyehue.cl",
+        "url_final": "https://municipalidaddepuyehue.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://municipalidaddepuyehue.cl",
+        "url_final": "https://municipalidaddepuyehue.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 616,
+    "nombre": "Municipalidad de San Juan de la Costa",
+    "sitio_web_original": "https://www.munisanjuandelacosta.cl",
+    "candidatos": [
+      {
+        "url": "http://www.sanjuandelacosta.cl",
+        "url_final": "https://sanjuandelacosta.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://sanjuandelacosta.cl",
+        "url_final": "https://sanjuandelacosta.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://sanjuandelacosta.cl",
+        "url_final": "https://sanjuandelacosta.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 617,
+    "nombre": "Municipalidad de San Pablo",
+    "sitio_web_original": "https://www.munisanpablo.cl",
+    "candidatos": [
+      {
+        "url": "https://sanpablo.cl",
+        "url_final": "https://municipalidadsanpablo.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://municipalidadsanpablo.cl",
+        "url_final": "https://municipalidadsanpablo.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.sanpablo.cl",
+        "url_final": "https://municipalidadsanpablo.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 618,
+    "nombre": "Municipalidad de Chaitén",
+    "sitio_web_original": "https://www.munichaiten.cl",
+    "candidatos": [
+      {
+        "url": "https://www.municipalidadchaiten.cl",
+        "url_final": "https://www.municipalidadchaiten.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://municipalidadchaiten.cl",
+        "url_final": "https://www.municipalidadchaiten.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 619,
+    "nombre": "Municipalidad de Futaleufú",
+    "sitio_web_original": "https://www.munifutaleufu.cl",
+    "candidatos": [
+      {
+        "url": "https://www.futaleufu.cl",
+        "url_final": "https://www.futaleufu.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 620,
+    "nombre": "Municipalidad de Hualaihué",
+    "sitio_web_original": "https://www.munihualaihue.cl",
+    "candidatos": [
+      {
+        "url": "https://www.municipalidadhualaihue.cl",
+        "url_final": "https://municipalidadhualaihue.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://municipalidadhualaihue.cl",
+        "url_final": "https://municipalidadhualaihue.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 621,
+    "nombre": "Municipalidad de Palena",
+    "sitio_web_original": "https://www.munipalena.cl",
+    "candidatos": [
+      {
+        "url": "https://www.municipalidadpalena.cl",
+        "url_final": "https://municipalidadpalena.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://municipalidadpalena.cl",
+        "url_final": "https://municipalidadpalena.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 623,
+    "nombre": "Municipalidad de Lago Verde",
+    "sitio_web_original": "https://www.munilagoverde.cl",
+    "candidatos": []
+  },
+  {
+    "id": 625,
+    "nombre": "Municipalidad de Cisnes",
+    "sitio_web_original": "https://www.municisnes.cl",
+    "candidatos": [
+      {
+        "url": "https://www.municipalidadcisnes.cl",
+        "url_final": "https://www.municipalidadcisnes.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://municipalidadcisnes.cl",
+        "url_final": "https://municipalidadcisnes.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 628,
+    "nombre": "Municipalidad de O'Higgins",
+    "sitio_web_original": "https://www.muniohiggins-aysen.cl",
+    "candidatos": [
+      {
+        "url": "https://municipalidadohiggins.cl",
+        "url_final": "https://www.municipalidadohiggins.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.municipalidadohiggins.cl",
+        "url_final": "https://www.municipalidadohiggins.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 629,
+    "nombre": "Municipalidad de Tortel",
+    "sitio_web_original": "https://www.munitratel.cl",
+    "candidatos": []
+  },
+  {
+    "id": 630,
+    "nombre": "Municipalidad de Chile Chico",
+    "sitio_web_original": "https://www.munichilechico.cl",
+    "candidatos": [
+      {
+        "url": "http://chilechico.cl",
+        "url_final": "https://chilechico.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://www.chilechico.cl",
+        "url_final": "https://www.chilechico.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.chilechico.cl",
+        "url_final": "https://www.chilechico.cl",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 631,
+    "nombre": "Municipalidad de Río Ibáñez",
+    "sitio_web_original": "https://www.muniribanez.cl",
+    "candidatos": [
+      {
+        "url": "https://rioibanez.cl",
+        "url_final": "https://rioibanez.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://rioibanez.cl",
+        "url_final": "https://rioibanez.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.rioibanez.cl",
+        "url_final": "https://rioibanez.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 633,
+    "nombre": "Municipalidad de Laguna Blanca",
+    "sitio_web_original": "https://www.munilagunablanca.cl",
+    "candidatos": []
+  },
+  {
+    "id": 634,
+    "nombre": "Municipalidad de Río Verde",
+    "sitio_web_original": "https://www.munirioverde-magallanes.cl",
+    "candidatos": []
+  },
+  {
+    "id": 635,
+    "nombre": "Municipalidad de San Gregorio",
+    "sitio_web_original": "https://www.munisangregorio.cl",
+    "candidatos": [
+      {
+        "url": "https://sangregorio.cl",
+        "url_final": "https://sangregorio.cl",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "https://www.sangregorio.cl",
+        "url_final": "https://sangregorio.cl/",
+        "status": 200,
+        "has_muni": true
+      },
+      {
+        "url": "http://sangregorio.cl",
+        "url_final": "https://sangregorio.cl/",
+        "status": 200,
+        "has_muni": true
+      }
+    ]
+  },
+  {
+    "id": 636,
+    "nombre": "Municipalidad de Cabo de Hornos",
+    "sitio_web_original": "https://www.municabodehornos.cl",
+    "candidatos": []
+  },
+  {
+    "id": 637,
+    "nombre": "Municipalidad de Antártica",
+    "sitio_web_original": "https://www.muniAntartica.cl",
+    "candidatos": []
+  },
+  {
+    "id": 657,
+    "nombre": "Corporación Municipal de Chonchi",
+    "sitio_web_original": "https://www.munichonchi.cl",
+    "candidatos": []
+  },
+  {
+    "id": 658,
+    "nombre": "Corporación Municipal de Queilén",
+    "sitio_web_original": "https://www.muniquillen.cl",
+    "candidatos": []
+  },
+  {
+    "id": 661,
+    "nombre": "Corporación Municipal de Curaco de Vélez",
+    "sitio_web_original": "https://www.municuracodeVelez.cl",
+    "candidatos": []
+  }
+]

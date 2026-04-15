@@ -1,0 +1,320 @@
+[
+  {
+    "id": 300,
+    "nombre": "Municipalidad de Alto Hospicio",
+    "sitio_web": "https://www.altohospicio.cl",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 305,
+    "nombre": "Municipalidad de Pica",
+    "sitio_web": "https://www.pica.cl",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 312,
+    "nombre": "Municipalidad de San Pedro de Atacama",
+    "sitio_web": "https://www.sanpedrodeatacama.cl",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 314,
+    "nombre": "Municipalidad de María Elena",
+    "sitio_web": "https://mariaelena.cl/",
+    "plataforma_detectada": "WordPress"
+  },
+  {
+    "id": 327,
+    "nombre": "Municipalidad de La Higuera",
+    "sitio_web": "https://www.munilahiguera.cl",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 329,
+    "nombre": "Municipalidad de Vicuña",
+    "sitio_web": "https://munivicuna.cl/",
+    "plataforma_detectada": "WordPress"
+  },
+  {
+    "id": 348,
+    "nombre": "Municipalidad de Calle Larga",
+    "sitio_web": "https://www.municallelarga.cl",
+    "plataforma_detectada": "Sitio propio Joomla"
+  },
+  {
+    "id": 350,
+    "nombre": "Municipalidad de San Esteban",
+    "sitio_web": "https://www.munisanesteban.cl",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 356,
+    "nombre": "Municipalidad de Quillota",
+    "sitio_web": "https://www.muniquillota.cl",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 359,
+    "nombre": "Municipalidad de La Cruz",
+    "sitio_web": "https://www.munilacruz.cl",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 370,
+    "nombre": "Municipalidad de San Felipe",
+    "sitio_web": "https://munisanfelipe.cl/",
+    "plataforma_detectada": "WordPress"
+  },
+  {
+    "id": 373,
+    "nombre": "Municipalidad de Panquehue",
+    "sitio_web": "http://www.impanquehue.cl/",
+    "plataforma_detectada": "WordPress"
+  },
+  {
+    "id": 376,
+    "nombre": "Municipalidad de Quilpué",
+    "sitio_web": "https://www.quilpue.cl",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 384,
+    "nombre": "Municipalidad de El Bosque",
+    "sitio_web": "https://www.dominios.cl/comprar-dominio?param=elbosque.cl",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 388,
+    "nombre": "Municipalidad de La Cisterna",
+    "sitio_web": "https://lacisterna.cl/",
+    "plataforma_detectada": "WordPress"
+  },
+  {
+    "id": 390,
+    "nombre": "Municipalidad de La Granja",
+    "sitio_web": "https://lagranja.cl/",
+    "plataforma_detectada": "WordPress"
+  },
+  {
+    "id": 391,
+    "nombre": "Municipalidad de La Pintana",
+    "sitio_web": "https://lapintana.cl/",
+    "plataforma_detectada": "WordPress"
+  },
+  {
+    "id": 405,
+    "nombre": "Municipalidad de Quinta Normal",
+    "sitio_web": "https://www.quintanormal.cl",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 409,
+    "nombre": "Municipalidad de San Miguel",
+    "sitio_web": "https://www.sanmiguel.cl",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 410,
+    "nombre": "Municipalidad de San Ramón",
+    "sitio_web": "https://sanramon.cl/",
+    "plataforma_detectada": "WordPress"
+  },
+  {
+    "id": 434,
+    "nombre": "Municipalidad de Coinco",
+    "sitio_web": "https://www.municoinco.cl",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 446,
+    "nombre": "Municipalidad de Rengo",
+    "sitio_web": "http://www.munirengo.cl/",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 450,
+    "nombre": "Municipalidad de La Estrella",
+    "sitio_web": "https://munilaestrella.cl/",
+    "plataforma_detectada": "WordPress"
+  },
+  {
+    "id": 454,
+    "nombre": "Municipalidad de Palmilla",
+    "sitio_web": "https://www.munipalmilla.cl",
+    "plataforma_detectada": "WordPress"
+  },
+  {
+    "id": 457,
+    "nombre": "Municipalidad de Chépica",
+    "sitio_web": "https://www.munichepica.cl",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 461,
+    "nombre": "Municipalidad de Placilla",
+    "sitio_web": "https://www.muniplacilla.cl",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 476,
+    "nombre": "Municipalidad de Pelluhue",
+    "sitio_web": "https://munipelluhue.cl/",
+    "plataforma_detectada": "WordPress"
+  },
+  {
+    "id": 482,
+    "nombre": "Municipalidad de Romeral",
+    "sitio_web": "https://www.muniromeral.cl",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 488,
+    "nombre": "Municipalidad de Longaví",
+    "sitio_web": "https://www.munilongavi.cl",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 493,
+    "nombre": "Municipalidad de Yerbas Buenas",
+    "sitio_web": "https://www.muniyerbasbuenas.cl",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 501,
+    "nombre": "Municipalidad de San Ignacio",
+    "sitio_web": "https://www.munisanignacio.cl",
+    "plataforma_detectada": "WordPress"
+  },
+  {
+    "id": 512,
+    "nombre": "Municipalidad de Ñiquén",
+    "sitio_web": "https://www.muniniquen.cl/Sitio_Municipalidad/web/",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 522,
+    "nombre": "Municipalidad de San Pedro de la Paz",
+    "sitio_web": "https://www.sanpedro.cl",
+    "plataforma_detectada": "WordPress"
+  },
+  {
+    "id": 530,
+    "nombre": "Municipalidad de Laja",
+    "sitio_web": "https://munilaja.cl/",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 543,
+    "nombre": "Municipalidad de Contulmo",
+    "sitio_web": "https://www.municontulmo.cl",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 562,
+    "nombre": "Municipalidad de Pucón",
+    "sitio_web": "https://www.munipucon.cl",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 568,
+    "nombre": "Municipalidad de Cholchol",
+    "sitio_web": "https://www.municholchol.cl",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 572,
+    "nombre": "Municipalidad de Ercilla",
+    "sitio_web": "https://muniercilla.cl/",
+    "plataforma_detectada": "WordPress"
+  },
+  {
+    "id": 574,
+    "nombre": "Municipalidad de Los Sauces",
+    "sitio_web": "https://www.munilossauces.cl",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 585,
+    "nombre": "Municipalidad de Lanco",
+    "sitio_web": "https://www.munilanco.cl",
+    "plataforma_detectada": "Sitio propio Joomla"
+  },
+  {
+    "id": 595,
+    "nombre": "Municipalidad de Fresia",
+    "sitio_web": "https://www.munifresia.cl",
+    "plataforma_detectada": "WordPress"
+  },
+  {
+    "id": 602,
+    "nombre": "Municipalidad de Ancud",
+    "sitio_web": "https://www.muniancud.cl",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 605,
+    "nombre": "Municipalidad de Dalcahue",
+    "sitio_web": "https://www.munidalcahue.cl/portal/",
+    "plataforma_detectada": "WordPress"
+  },
+  {
+    "id": 609,
+    "nombre": "Municipalidad de Quemchi",
+    "sitio_web": "https://www.muniquemchi.cl",
+    "plataforma_detectada": "WordPress"
+  },
+  {
+    "id": 610,
+    "nombre": "Municipalidad de Quinchao",
+    "sitio_web": "https://www.muniquinchao.cl",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 615,
+    "nombre": "Municipalidad de Río Negro",
+    "sitio_web": "https://www.munirionegro.cl",
+    "plataforma_detectada": "WordPress"
+  },
+  {
+    "id": 624,
+    "nombre": "Municipalidad de Aysén",
+    "sitio_web": "https://www.muniaysen.cl",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 644,
+    "nombre": "Corporación Municipal de Desarrollo Social de Pozo Almonte",
+    "sitio_web": "https://cormudespa.cl/",
+    "plataforma_detectada": "WordPress"
+  },
+  {
+    "id": 651,
+    "nombre": "Corporación Municipal de Rancagua",
+    "sitio_web": "https://www.educormun.cl",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 655,
+    "nombre": "Corporación Municipal de Ancud",
+    "sitio_web": "https://www.muniancud.cl",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 656,
+    "nombre": "Corporación Municipal de Dalcahue",
+    "sitio_web": "https://www.munidalcahue.cl/portal/",
+    "plataforma_detectada": "WordPress"
+  },
+  {
+    "id": 660,
+    "nombre": "Corporación Municipal de Quinchao",
+    "sitio_web": "https://www.muniquinchao.cl",
+    "plataforma_detectada": "Sitio propio"
+  },
+  {
+    "id": 669,
+    "nombre": "Corporación de Desarrollo Social de Providencia",
+    "sitio_web": "https://j4.cdsprovidencia.cl",
+    "plataforma_detectada": "Sitio propio Joomla"
+  }
+]

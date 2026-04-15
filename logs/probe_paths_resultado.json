@@ -1,0 +1,567 @@
+[
+  {
+    "id": 300,
+    "nombre": "Municipalidad de Alto Hospicio",
+    "base": "https://www.altohospicio.cl",
+    "hits": []
+  },
+  {
+    "id": 305,
+    "nombre": "Municipalidad de Pica",
+    "base": "https://www.pica.cl",
+    "hits": []
+  },
+  {
+    "id": 311,
+    "nombre": "Municipalidad de Ollagüe",
+    "base": "https://www.municipalidadollague.cl",
+    "hits": [
+      {
+        "url": "https://www.municipalidadollague.cl/ofertas-de-empleo/",
+        "path": "/ofertas-de-empleo/",
+        "kw_hits": 2,
+        "len": 15566
+      }
+    ]
+  },
+  {
+    "id": 312,
+    "nombre": "Municipalidad de San Pedro de Atacama",
+    "base": "https://www.sanpedrodeatacama.cl",
+    "hits": []
+  },
+  {
+    "id": 314,
+    "nombre": "Municipalidad de María Elena",
+    "base": "https://mariaelena.cl/",
+    "hits": []
+  },
+  {
+    "id": 327,
+    "nombre": "Municipalidad de La Higuera",
+    "base": "https://www.munilahiguera.cl",
+    "hits": []
+  },
+  {
+    "id": 329,
+    "nombre": "Municipalidad de Vicuña",
+    "base": "https://munivicuna.cl/",
+    "hits": []
+  },
+  {
+    "id": 335,
+    "nombre": "Municipalidad de Combarbalá",
+    "base": "https://www.municombarbala.cl",
+    "hits": [
+      {
+        "url": "https://www.municombarbala.cl/bolsa-de-empleo/",
+        "path": "/bolsa-de-empleo/",
+        "kw_hits": 6,
+        "len": 43233
+      }
+    ]
+  },
+  {
+    "id": 347,
+    "nombre": "Municipalidad de Los Andes",
+    "base": "https://www.losandes.cl/",
+    "hits": [
+      {
+        "url": "https://www.losandes.cl/category/concursos-publicos/",
+        "path": "/category/concursos-publicos/",
+        "kw_hits": 3,
+        "len": 114706
+      }
+    ]
+  },
+  {
+    "id": 348,
+    "nombre": "Municipalidad de Calle Larga",
+    "base": "https://www.municallelarga.cl",
+    "hits": []
+  },
+  {
+    "id": 349,
+    "nombre": "Municipalidad de Rinconada",
+    "base": "https://munirinconada.cl/",
+    "hits": [
+      {
+        "url": "https://munirinconada.cl/omil-rinconada-abre-postulaciones-para-cursos-gratuitos-de-capacitacion/",
+        "path": "/omil/",
+        "kw_hits": 10,
+        "len": 118705
+      },
+      {
+        "url": "https://munirinconada.cl/trabaja-con-nosotros/",
+        "path": "/trabaja-con-nosotros/",
+        "kw_hits": 5,
+        "len": 114830
+      },
+      {
+        "url": "https://munirinconada.cl/trabaja-con-nosotros/",
+        "path": "/trabaja/",
+        "kw_hits": 5,
+        "len": 114599
+      }
+    ]
+  },
+  {
+    "id": 350,
+    "nombre": "Municipalidad de San Esteban",
+    "base": "https://www.munisanesteban.cl",
+    "hits": []
+  },
+  {
+    "id": 356,
+    "nombre": "Municipalidad de Quillota",
+    "base": "https://www.muniquillota.cl",
+    "hits": []
+  },
+  {
+    "id": 359,
+    "nombre": "Municipalidad de La Cruz",
+    "base": "https://www.munilacruz.cl",
+    "hits": []
+  },
+  {
+    "id": 362,
+    "nombre": "Municipalidad de Olmué",
+    "base": "https://www.muniolmue.cl",
+    "hits": [
+      {
+        "url": "https://www.muniolmue.cl/index.php/concursos-publicos",
+        "path": "/index.php/concursos-publicos",
+        "kw_hits": 4,
+        "len": 15374
+      },
+      {
+        "url": "https://www.muniolmue.cl/index.php/concursos",
+        "path": "/index.php/concursos",
+        "kw_hits": 4,
+        "len": 15374
+      },
+      {
+        "url": "https://www.muniolmue.cl/index.php/empleos",
+        "path": "/index.php/empleos",
+        "kw_hits": 4,
+        "len": 15374
+      }
+    ]
+  },
+  {
+    "id": 370,
+    "nombre": "Municipalidad de San Felipe",
+    "base": "https://munisanfelipe.cl/",
+    "hits": []
+  },
+  {
+    "id": 373,
+    "nombre": "Municipalidad de Panquehue",
+    "base": "http://www.impanquehue.cl/",
+    "hits": []
+  },
+  {
+    "id": 376,
+    "nombre": "Municipalidad de Quilpué",
+    "base": "https://www.quilpue.cl",
+    "hits": []
+  },
+  {
+    "id": 378,
+    "nombre": "Municipalidad de Olmué",
+    "base": "https://www.muniolmue.cl",
+    "hits": [
+      {
+        "url": "https://www.muniolmue.cl/index.php/concursos-publicos",
+        "path": "/index.php/concursos-publicos",
+        "kw_hits": 4,
+        "len": 15374
+      },
+      {
+        "url": "https://www.muniolmue.cl/index.php/concursos",
+        "path": "/index.php/concursos",
+        "kw_hits": 4,
+        "len": 15374
+      },
+      {
+        "url": "https://www.muniolmue.cl/index.php/empleos",
+        "path": "/index.php/empleos",
+        "kw_hits": 4,
+        "len": 15374
+      }
+    ]
+  },
+  {
+    "id": 384,
+    "nombre": "Municipalidad de El Bosque",
+    "base": "https://www.dominios.cl/comprar-dominio?param=elbosque.cl",
+    "hits": []
+  },
+  {
+    "id": 387,
+    "nombre": "Municipalidad de Independencia",
+    "base": "https://www.independencia.cl",
+    "hits": [
+      {
+        "url": "https://www.independencia.cl/trabaja-con-nosotros/",
+        "path": "/trabaja-con-nosotros/",
+        "kw_hits": 12,
+        "len": 45961
+      }
+    ]
+  },
+  {
+    "id": 388,
+    "nombre": "Municipalidad de La Cisterna",
+    "base": "https://lacisterna.cl/",
+    "hits": []
+  },
+  {
+    "id": 390,
+    "nombre": "Municipalidad de La Granja",
+    "base": "https://lagranja.cl/",
+    "hits": []
+  },
+  {
+    "id": 391,
+    "nombre": "Municipalidad de La Pintana",
+    "base": "https://lapintana.cl/",
+    "hits": []
+  },
+  {
+    "id": 405,
+    "nombre": "Municipalidad de Quinta Normal",
+    "base": "https://www.quintanormal.cl",
+    "hits": []
+  },
+  {
+    "id": 409,
+    "nombre": "Municipalidad de San Miguel",
+    "base": "https://www.sanmiguel.cl",
+    "hits": []
+  },
+  {
+    "id": 410,
+    "nombre": "Municipalidad de San Ramón",
+    "base": "https://sanramon.cl/",
+    "hits": []
+  },
+  {
+    "id": 426,
+    "nombre": "Municipalidad de San Pedro",
+    "base": "https://www.munisanpedro.gob.cl/",
+    "hits": [
+      {
+        "url": "https://www.munisanpedro.gob.cl/noticias/omil-informa-de-cursos-de-capacitacion-gratuitos-del-sence/",
+        "path": "/servicios/omil",
+        "kw_hits": 3,
+        "len": 141966
+      }
+    ]
+  },
+  {
+    "id": 429,
+    "nombre": "Municipalidad de Isla de Maipo",
+    "base": "https://www.islademaipo.cl",
+    "hits": [
+      {
+        "url": "https://www.islademaipo.cl/omil-cesfam-y-empresas-coordinan-plan-de-vacunacion-a-trabajadores/",
+        "path": "/omil/",
+        "kw_hits": 8,
+        "len": 34073
+      },
+      {
+        "url": "https://www.islademaipo.cl/omil-cesfam-y-empresas-coordinan-plan-de-vacunacion-a-trabajadores/",
+        "path": "/servicios/omil",
+        "kw_hits": 8,
+        "len": 34073
+      },
+      {
+        "url": "https://www.islademaipo.cl/concursos-culturales-2015-extiende-plazo-de-entrega-al-7-de-diciembre/",
+        "path": "/concursos/",
+        "kw_hits": 4,
+        "len": 35082
+      }
+    ]
+  },
+  {
+    "id": 434,
+    "nombre": "Municipalidad de Coinco",
+    "base": "https://www.municoinco.cl",
+    "hits": []
+  },
+  {
+    "id": 446,
+    "nombre": "Municipalidad de Rengo",
+    "base": "http://www.munirengo.cl/",
+    "hits": []
+  },
+  {
+    "id": 450,
+    "nombre": "Municipalidad de La Estrella",
+    "base": "https://munilaestrella.cl/",
+    "hits": []
+  },
+  {
+    "id": 454,
+    "nombre": "Municipalidad de Palmilla",
+    "base": "https://www.munipalmilla.cl",
+    "hits": []
+  },
+  {
+    "id": 457,
+    "nombre": "Municipalidad de Chépica",
+    "base": "https://www.munichepica.cl",
+    "hits": []
+  },
+  {
+    "id": 461,
+    "nombre": "Municipalidad de Placilla",
+    "base": "https://www.muniplacilla.cl",
+    "hits": []
+  },
+  {
+    "id": 476,
+    "nombre": "Municipalidad de Pelluhue",
+    "base": "https://munipelluhue.cl/",
+    "hits": []
+  },
+  {
+    "id": 482,
+    "nombre": "Municipalidad de Romeral",
+    "base": "https://www.muniromeral.cl",
+    "hits": []
+  },
+  {
+    "id": 488,
+    "nombre": "Municipalidad de Longaví",
+    "base": "https://www.munilongavi.cl",
+    "hits": []
+  },
+  {
+    "id": 493,
+    "nombre": "Municipalidad de Yerbas Buenas",
+    "base": "https://www.muniyerbasbuenas.cl",
+    "hits": []
+  },
+  {
+    "id": 501,
+    "nombre": "Municipalidad de San Ignacio",
+    "base": "https://www.munisanignacio.cl",
+    "hits": []
+  },
+  {
+    "id": 512,
+    "nombre": "Municipalidad de Ñiquén",
+    "base": "https://www.muniniquen.cl/Sitio_Municipalidad/web/",
+    "hits": []
+  },
+  {
+    "id": 522,
+    "nombre": "Municipalidad de San Pedro de la Paz",
+    "base": "https://www.sanpedro.cl",
+    "hits": []
+  },
+  {
+    "id": 530,
+    "nombre": "Municipalidad de Laja",
+    "base": "https://munilaja.cl/",
+    "hits": []
+  },
+  {
+    "id": 542,
+    "nombre": "Municipalidad de Cañete",
+    "base": "https://municanete.cl/v2/",
+    "hits": [
+      {
+        "url": "https://municanete.cl/v2/fagaf/concursos/",
+        "path": "/concursos/",
+        "kw_hits": 9,
+        "len": 78309
+      },
+      {
+        "url": "https://municanete.cl/v2/fagaf/concursos/",
+        "path": "/index.php/concursos",
+        "kw_hits": 9,
+        "len": 78309
+      },
+      {
+        "url": "https://municanete.cl/v2/fagaf/concursos/",
+        "path": "/concursos",
+        "kw_hits": 9,
+        "len": 78309
+      }
+    ]
+  },
+  {
+    "id": 543,
+    "nombre": "Municipalidad de Contulmo",
+    "base": "https://www.municontulmo.cl",
+    "hits": []
+  },
+  {
+    "id": 562,
+    "nombre": "Municipalidad de Pucón",
+    "base": "https://www.munipucon.cl",
+    "hits": []
+  },
+  {
+    "id": 568,
+    "nombre": "Municipalidad de Cholchol",
+    "base": "https://www.municholchol.cl",
+    "hits": []
+  },
+  {
+    "id": 572,
+    "nombre": "Municipalidad de Ercilla",
+    "base": "https://muniercilla.cl/",
+    "hits": []
+  },
+  {
+    "id": 574,
+    "nombre": "Municipalidad de Los Sauces",
+    "base": "https://www.munilossauces.cl",
+    "hits": []
+  },
+  {
+    "id": 585,
+    "nombre": "Municipalidad de Lanco",
+    "base": "https://www.munilanco.cl",
+    "hits": []
+  },
+  {
+    "id": 595,
+    "nombre": "Municipalidad de Fresia",
+    "base": "https://www.munifresia.cl",
+    "hits": []
+  },
+  {
+    "id": 599,
+    "nombre": "Municipalidad de Maullín",
+    "base": "https://munimaullin.cl/",
+    "hits": [
+      {
+        "url": "https://munimaullin.cl/concursos/",
+        "path": "/concursos/",
+        "kw_hits": 14,
+        "len": 240387
+      }
+    ]
+  },
+  {
+    "id": 602,
+    "nombre": "Municipalidad de Ancud",
+    "base": "https://www.muniancud.cl",
+    "hits": []
+  },
+  {
+    "id": 605,
+    "nombre": "Municipalidad de Dalcahue",
+    "base": "https://www.munidalcahue.cl/portal/",
+    "hits": []
+  },
+  {
+    "id": 609,
+    "nombre": "Municipalidad de Quemchi",
+    "base": "https://www.muniquemchi.cl",
+    "hits": []
+  },
+  {
+    "id": 610,
+    "nombre": "Municipalidad de Quinchao",
+    "base": "https://www.muniquinchao.cl",
+    "hits": []
+  },
+  {
+    "id": 615,
+    "nombre": "Municipalidad de Río Negro",
+    "base": "https://www.munirionegro.cl",
+    "hits": []
+  },
+  {
+    "id": 624,
+    "nombre": "Municipalidad de Aysén",
+    "base": "https://www.muniaysen.cl",
+    "hits": []
+  },
+  {
+    "id": 641,
+    "nombre": "Municipalidad de Primavera",
+    "base": "https://www.muniprimavera.cl",
+    "hits": [
+      {
+        "url": "https://www.muniprimavera.cl/noticias/concursos-publicos-dom-y-administrativo-oficina-de-partes/",
+        "path": "/concursos-publicos/",
+        "kw_hits": 4,
+        "len": 45565
+      },
+      {
+        "url": "https://www.muniprimavera.cl/noticias/concursos-publicos-dom-y-administrativo-oficina-de-partes/",
+        "path": "/concursos/",
+        "kw_hits": 4,
+        "len": 45565
+      },
+      {
+        "url": "https://www.muniprimavera.cl/noticias/oferta-laboral-departamento-de-educacion/",
+        "path": "/oferta-laboral/",
+        "kw_hits": 4,
+        "len": 46999
+      }
+    ]
+  },
+  {
+    "id": 644,
+    "nombre": "Corporación Municipal de Desarrollo Social de Pozo Almonte",
+    "base": "https://cormudespa.cl/",
+    "hits": []
+  },
+  {
+    "id": 651,
+    "nombre": "Corporación Municipal de Rancagua",
+    "base": "https://www.educormun.cl",
+    "hits": []
+  },
+  {
+    "id": 655,
+    "nombre": "Corporación Municipal de Ancud",
+    "base": "https://www.muniancud.cl",
+    "hits": []
+  },
+  {
+    "id": 656,
+    "nombre": "Corporación Municipal de Dalcahue",
+    "base": "https://www.munidalcahue.cl/portal/",
+    "hits": []
+  },
+  {
+    "id": 660,
+    "nombre": "Corporación Municipal de Quinchao",
+    "base": "https://www.muniquinchao.cl",
+    "hits": []
+  },
+  {
+    "id": 669,
+    "nombre": "Corporación de Desarrollo Social de Providencia",
+    "base": "https://j4.cdsprovidencia.cl",
+    "hits": []
+  },
+  {
+    "id": 447,
+    "nombre": "Municipalidad de Requínoa",
+    "base": "https://www.munirequinoa.cl",
+    "hits": []
+  },
+  {
+    "id": 652,
+    "nombre": "Corporación Municipal de San Fernando",
+    "base": "https://cormusaf.cl",
+    "hits": [
+      {
+        "url": "https://cormusaf.cl/concursos/",
+        "path": "/concursos/",
+        "kw_hits": 12,
+        "len": 5965
+      }
+    ]
+  }
+]
