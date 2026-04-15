@@ -1,0 +1,33 @@
+# EmpleoEstado.cl — Dependencias Python
+
+# HTTP y scraping
+requests==2.31.0
+aiohttp==3.11.13
+beautifulsoup4==4.12.3
+lxml==5.1.0             # parser HTML más rápido para BeautifulSoup
+playwright==1.42.0      # para sitios con JavaScript dinámico
+
+# Base de datos
+sqlalchemy==2.0.27
+psycopg2-binary==2.9.9  # driver PostgreSQL
+
+# Utilidades de datos
+pandas==2.2.1           # limpieza y análisis de datos
+python-dateutil==2.9.0  # parsing flexible de fechas
+
+# Variables de entorno
+python-dotenv==1.0.1
+
+# Scheduling (automatización local)
+apscheduler==3.10.4
+
+# API (próxima fase)
+fastapi==0.110.0
+uvicorn==0.27.1
+pydantic==2.6.3
+
+# Email (alertas)
+resend==0.8.0
+
+# Logging y monitoreo
+rich==13.7.1            # logs con colores en consola

@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mis Favoritos — contrata o planta .cl</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --azul:#0A2E6E; --azul-m:#1557C0; --cielo:#1A6BCC; --cielo-l:#D6E6F8;
+  --acento:#E8A820; --acento-l:#FFF4D6;
+  --bg:#F5F4EF; --bg2:#EDECEA; --borde:#D9D7CF;
+  --texto:#111827; --texto2:#4B5563; --texto3:#9CA3AF;
+  --blanco:#FAFAF8;
+  --verde:#16A34A; --verde-l:#DCFCE7;
+  --naran:#D97706; --naran-l:#FEF3C7;
+  --rojo:#DC2626; --rojo-l:#FEE2E2;
+  --sombra:0 1px 3px rgba(0,0,0,0.08),0 4px 16px rgba(0,0,0,0.06);
+  --r:10px; --r-l:16px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--texto);-webkit-font-smoothing:antialiased;min-height:100vh}
+
+/* ── NAV ─────────────────────────────────────────────────────────── */
+nav{position:sticky;top:0;z-index:100;background:rgba(10,46,110,0.97);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,0.08)}
+.nav-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;gap:32px;height:56px}
+.logo{font-family:'Lora',Georgia,serif;font-size:18px;color:white;letter-spacing:-.3px;white-space:nowrap;text-decoration:none}
+.logo em{color:var(--acento);font-style:italic}
+.nav-links{display:flex;gap:4px;align-items:center;flex:1}
+.nav-links a{font-size:13px;color:rgba(255,255,255,0.55);text-decoration:none;padding:6px 12px;border-radius:6px;transition:all .15s;font-weight:500}
+.nav-links a:hover,.nav-links a.active{color:white;background:rgba(255,255,255,0.1)}
+.nav-link-favs { color: #E8A820 !important; }
+.nav-link-favs:hover, .nav-link-favs.active { background: rgba(232,168,32,0.15) !important; }
+.nav-alerta{font-size:12px;font-weight:600;background:var(--acento);color:var(--azul);padding:7px 16px;border-radius:6px;cursor:pointer;white-space:nowrap;text-decoration:none}
+
+/* ── HERO SECCIÓN ─────────────────────────────────────────────────── */
+.page-hero{background:var(--azul);padding:40px 24px 36px;position:relative;overflow:hidden}
+.page-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 80% at 100% 0%,rgba(26,107,204,0.3) 0%,transparent 60%);pointer-events:none}
+.page-hero-inner{max-width:1200px;margin:0 auto;position:relative;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.page-hero-kicker{font-size:11px;color:var(--acento);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;font-weight:600}
+.page-hero h1{font-family:'Lora',Georgia,serif;font-size:clamp(28px,4vw,44px);color:white;line-height:1.1;letter-spacing:-.5px}
+.page-hero h1 em{color:var(--acento);font-style:italic}
+.fav-count{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15);border-radius:var(--r);padding:14px 20px;text-align:center;min-width:100px}
+.fav-count-num{font-family:'Lora',Georgia,serif;font-size:32px;color:white;font-weight:600;display:block}
+.fav-count-label{font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:1px}
+
+/* ── CONTENIDO ────────────────────────────────────────────────────── */
+.page-body{max-width:1200px;margin:0 auto;padding:32px 24px 64px}
+
+/* ── ESTADO VACÍO ─────────────────────────────────────────────────── */
+.empty-state{text-align:center;padding:80px 24px}
+.empty-icon{font-size:64px;margin-bottom:24px;opacity:.4}
+.empty-title{font-family:'Lora',Georgia,serif;font-size:26px;color:var(--texto);margin-bottom:12px}
+.empty-sub{color:var(--texto2);font-size:15px;line-height:1.6;max-width:400px;margin:0 auto 28px}
+.btn-primary{display:inline-block;padding:12px 24px;background:var(--azul);color:white;border-radius:var(--r);text-decoration:none;font-weight:600;font-size:14px;transition:background .15s}
+.btn-primary:hover{background:var(--azul-m)}
+
+/* ── GRID DE FAVORITOS ────────────────────────────────────────────── */
+.favs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+
+/* ── TARJETA FAVORITA ─────────────────────────────────────────────── */
+.fav-card{background:var(--blanco);border-radius:var(--r-l);box-shadow:var(--sombra);border:1px solid var(--borde);overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .2s,transform .2s}
+.fav-card:hover{box-shadow:0 6px 32px rgba(10,46,110,0.12);transform:translateY(-2px)}
+.fav-card-body{padding:20px;flex:1}
+.fav-card-kicker{font-size:11px;color:var(--texto3);font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px}
+.fav-card-cargo{font-family:'Lora',Georgia,serif;font-size:17px;color:var(--texto);line-height:1.3;margin-bottom:12px;font-weight:600}
+.fav-badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.fav-badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.fav-badge-region{background:var(--bg2);color:var(--texto2)}
+.fav-cierre{font-size:12px;font-weight:600;padding:6px 10px;border-radius:8px;display:inline-flex;align-items:center;gap:6px}
+.fav-cierre--ok{background:var(--verde-l);color:var(--verde)}
+.fav-cierre--pronto{background:var(--naran-l);color:var(--naran)}
+.fav-cierre--urgente{background:var(--rojo-l);color:var(--rojo)}
+.fav-cierre--sin{background:var(--bg2);color:var(--texto3)}
+.fav-guardado{font-size:11px;color:var(--texto3);margin-top:10px}
+
+/* ── ACCIONES TARJETA ─────────────────────────────────────────────── */
+.fav-card-actions{padding:14px 20px;border-top:1px solid var(--bg2);display:flex;gap:8px;background:var(--bg)}
+.btn-fav-detail{flex:1;height:38px;background:var(--azul);color:white;border:none;border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:background .15s}
+.btn-fav-detail:hover{background:var(--azul-m)}
+.btn-fav-postular{height:38px;padding:0 14px;background:white;color:var(--cielo);border:1.5px solid var(--cielo);border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;text-decoration:none;display:inline-flex;align-items:center;transition:all .15s;white-space:nowrap}
+.btn-fav-postular:hover{background:var(--cielo);color:white}
+.btn-fav-remove{width:38px;height:38px;background:white;color:var(--texto3);border:1.5px solid var(--borde);border-radius:var(--r);font-size:16px;cursor:pointer;display:grid;place-items:center;transition:all .15s;flex-shrink:0}
+.btn-fav-remove:hover{background:var(--rojo-l);color:var(--rojo);border-color:var(--rojo)}
+
+/* ── MODAL DETALLE ────────────────────────────────────────────────── */
+.modal-overlay{position:fixed;inset:0;z-index:200;background:rgba(10,46,110,0.6);backdrop-filter:blur(4px);display:none;place-items:center;padding:24px}
+.modal-overlay.open{display:grid}
+.modal{background:var(--blanco);border-radius:var(--r-l);width:100%;max-width:680px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(10,46,110,0.3);animation:slideUp .25s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+.modal-header{background:var(--azul);padding:24px 28px;border-radius:var(--r-l) var(--r-l) 0 0;position:sticky;top:0;z-index:1}
+.modal-close{position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.15);border:none;color:white;font-size:16px;cursor:pointer;display:grid;place-items:center;transition:background .15s}
+.modal-close:hover{background:rgba(255,255,255,0.25)}
+.modal-body{padding:24px 28px}
+.modal-seccion{margin-bottom:24px}
+.modal-seccion-titulo{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--texto3);margin-bottom:10px;font-family:'Inter',sans-serif}
+.modal-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal-info-item{background:var(--bg2);border-radius:8px;padding:12px 14px}
+.modal-info-label{font-size:11px;color:var(--texto3);font-family:'Inter',sans-serif;margin-bottom:4px}
+.modal-info-val{font-size:14px;font-weight:600;color:var(--texto)}
+.requisitos-lista{display:flex;flex-direction:column;gap:6px}
+.requisito-item{display:flex;gap:10px;font-size:13px;color:var(--texto2);line-height:1.5}
+.requisito-item::before{content:'→';color:var(--cielo);flex-shrink:0;margin-top:1px;font-size:12px}
+.modal-actions{display:flex;gap:10px;padding:20px 28px;border-top:1px solid var(--bg2);background:var(--blanco);position:sticky;bottom:0;border-radius:0 0 var(--r-l) var(--r-l)}
+.btn-modal-primary{flex:1;height:44px;background:var(--azul);color:white;border:none;border-radius:var(--r);font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:background .15s}
+.btn-modal-primary:hover{background:var(--azul-m)}
+.btn-modal-sec{height:44px;padding:0 20px;background:white;color:var(--texto);border:1.5px solid var(--borde);border-radius:var(--r);font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s}
+.btn-modal-sec:hover{border-color:var(--cielo);color:var(--cielo)}
+.btn-modal-sec--activo{background:#FEF2F2;color:#DC2626;border-color:#FCA5A5}
+.btn-modal-sec--activo:hover{background:#FEE2E2;color:#DC2626;border-color:#F87171}
+
+/* ── FOOTER ───────────────────────────────────────────────────────── */
+footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
+.footer-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 40px;
+}
+.footer-brand .logo { font-size: 20px; }
+.footer-desc { font-size: 13px; color: rgba(255,255,255,0.35); line-height: 1.7; max-width: 280px; font-weight: 300; }
+.footer-col-titulo { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; font-family: 'Inter', sans-serif; }
+.footer-link { display: block; font-size: 13px; color: rgba(255,255,255,0.5); text-decoration: none; margin-bottom: 8px; transition: color .15s; }
+.footer-link:hover { color: white; }
+.footer-bottom { max-width: 1200px; margin: 28px auto 0; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; font-size: 12px; color: rgba(255,255,255,0.25); }
+@media (max-width: 768px) { .footer-inner { grid-template-columns: 1fr 1fr; gap: 24px; } }
+@media (max-width: 480px) { .footer-inner { grid-template-columns: 1fr; } }
+
+/* ── RESPONSIVE ───────────────────────────────────────────────────── */
+@media(max-width:600px){
+  .favs-grid{grid-template-columns:1fr}
+  .page-hero-inner{flex-direction:column;align-items:flex-start}
+  .modal-info-grid{grid-template-columns:1fr}
+  .modal-actions{flex-wrap:wrap}
+  .btn-modal-primary{width:100%}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ NAV ═══════════════════════════════════════════════════════════ -->
+<nav>
+  <div class="nav-inner">
+    <a href="index_contrataoplanta.html" class="logo">contrata <em>o</em> planta <em style="font-style:normal;color:rgba(255,255,255,0.3)">.cl</em></a>
+    <div class="nav-links">
+      <a href="index_contrataoplanta.html">Buscar empleos</a>
+      <a href="favoritos.html" id="nav-favoritos" class="nav-link-favs active">♡ Mis favoritos</a>
+      <a href="instituciones.html">Instituciones</a>
+      <a href="estadisticas.html">Estadísticas</a>
+      <a href="faq.html">Preguntas frecuentes</a>
+    </div>
+    <a href="index_contrataoplanta.html#alertas" class="nav-alerta">+ Crear alerta</a>
+  </div>
+</nav>
+
+<!-- ══ HERO ══════════════════════════════════════════════════════════ -->
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <div>
+      <div class="page-hero-kicker">♥ Guardados</div>
+      <h1>Mis <em>favoritos</em></h1>
+    </div>
+    <div class="fav-count">
+      <span class="fav-count-num" id="hero-count">0</span>
+      <span class="fav-count-label">ofertas guardadas</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CONTENIDO ═════════════════════════════════════════════════════ -->
+<div class="page-body">
+  <!-- Estado vacío -->
+  <div class="empty-state" id="empty-state" style="display:none">
+    <div class="empty-icon">♡</div>
+    <div class="empty-title">Aún no tienes favoritos</div>
+    <p class="empty-sub">Cuando encuentres una oferta que te interese, presiona <strong>♡ Guardar</strong> en el detalle para agregarla aquí.</p>
+    <a href="index_contrataoplanta.html" class="btn-primary">Explorar ofertas →</a>
+  </div>
+
+  <!-- Grid de favoritos -->
+  <div class="favs-grid" id="favs-grid"></div>
+</div>
+
+<!-- ══ MODAL DETALLE OFERTA ══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal" onclick="cerrarModal(event)">
+  <div class="modal">
+    <div class="modal-header" style="position:relative">
+      <button class="modal-close" onclick="cerrarModal(null,true)">✕</button>
+      <div style="font-size:11px;color:rgba(255,255,255,0.4);font-family:'Inter',sans-serif;font-weight:600;letter-spacing:1px;margin-bottom:8px" id="modal-kicker"></div>
+      <div style="font-family:'Lora',Georgia,serif;font-size:24px;color:white;margin-bottom:8px" id="modal-cargo">Cargando…</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap" id="modal-badges"></div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-seccion">
+        <div class="modal-seccion-titulo">Detalles del cargo</div>
+        <div class="modal-info-grid">
+          <div class="modal-info-item"><div class="modal-info-label">Renta bruta</div><div class="modal-info-val" id="modal-renta">—</div></div>
+          <div class="modal-info-item"><div class="modal-info-label">Tipo de contrato</div><div class="modal-info-val" id="modal-tipo-contrato">—</div></div>
+          <div class="modal-info-item"><div class="modal-info-label">Jornada</div><div class="modal-info-val" id="modal-jornada">—</div></div>
+          <div class="modal-info-item"><div class="modal-info-label">Fecha de cierre</div><div class="modal-info-val" id="modal-cierre">—</div></div>
+        </div>
+      </div>
+      <div class="modal-seccion">
+        <div class="modal-seccion-titulo">Requisitos principales</div>
+        <div class="requisitos-lista" id="modal-requisitos"></div>
+      </div>
+      <div class="modal-seccion">
+        <div class="modal-seccion-titulo">Descripción</div>
+        <p id="modal-descripcion" style="font-size:14px;color:var(--texto2);line-height:1.7"></p>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-primary" id="modal-btn-postular">Ir a postular →</button>
+      <button class="btn-modal-sec" id="modal-btn-favorito">♥ Guardado</button>
+      <button class="btn-modal-sec" id="modal-btn-compartir">↗ Compartir</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FOOTER ════════════════════════════════════════════════════════ -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <a href="index_contrataoplanta.html" class="logo" style="display:block;margin-bottom:10px">contrata <em>o</em> planta <em style="font-style:normal;color:rgba(255,255,255,0.3)">.cl</em></a>
+      <p class="footer-desc">La plataforma laboral del sector público chileno. 700+ instituciones registradas.</p>
+    </div>
+    <div>
+      <div class="footer-col-titulo">Explorar</div>
+      <a href="index_contrataoplanta.html" class="footer-link">Buscar empleos</a>
+      <a href="instituciones.html" class="footer-link">Por institución</a>
+      <a href="estadisticas.html" class="footer-link">Estadísticas</a>
+    </div>
+    <div>
+      <div class="footer-col-titulo">Comunidad</div>
+      <a href="faq.html" class="footer-link">Preguntas frecuentes</a>
+      <a href="favoritos.html" class="footer-link">Mis favoritos</a>
+    </div>
+    <div>
+      <div class="footer-col-titulo">Legal</div>
+      <a href="terminos.html" class="footer-link">Términos de uso</a>
+      <a href="privacidad.html" class="footer-link">Privacidad</a>
+      <a href="descargo.html" class="footer-link">Descargo</a>
+      <a href="mailto:hola@contrataoplanta.cl" class="footer-link">Contacto</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 contrata o planta .cl</span>
+    <span>Datos actualizados cada 6 horas · No somos el Estado</span>
+  </div>
+</footer>
+
+<!-- ══ JAVASCRIPT ════════════════════════════════════════════════════ -->
+<script>
+const API_BASE = (
+  window.location.hostname === 'localhost' ||
+  window.location.hostname === '' ||
+  window.location.hostname === '127.0.0.1'
+) ? 'http://localhost:8000' : 'https://api.contrataoplanta.cl';
+
+const FAV_KEY = 'fav_contrataoplanta';
+
+// ── Helpers ────────────────────────────────────────────────────────
+function getFavs() {
+  return JSON.parse(localStorage.getItem(FAV_KEY) || '[]');
+}
+function setFavs(favs) {
+  localStorage.setItem(FAV_KEY, JSON.stringify(favs));
+}
+
+function diasRestantes(fechaStr) {
+  if (!fechaStr) return null;
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const cierre = new Date(fechaStr + 'T00:00:00');
+  return Math.round((cierre - hoy) / 86400000);
+}
+
+function formatFecha(fechaStr) {
+  if (!fechaStr) return null;
+  const [y, m, d] = fechaStr.split('-');
+  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  return `${parseInt(d)} de ${meses[parseInt(m)-1]} de ${y}`;
+}
+
+function formatGuardado(isoStr) {
+  const d = new Date(isoStr);
+  return `Guardado el ${d.getDate()} de ${['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][d.getMonth()]}`;
+}
+
+// ── Renderizar grid ────────────────────────────────────────────────
+function renderFavs() {
+  const favs = getFavs();
+  document.getElementById('hero-count').textContent = favs.length;
+
+  if (favs.length === 0) {
+    document.getElementById('empty-state').style.display = 'block';
+    document.getElementById('favs-grid').innerHTML = '';
+    return;
+  }
+  document.getElementById('empty-state').style.display = 'none';
+
+  document.getElementById('favs-grid').innerHTML = favs.map(f => {
+    const dias = diasRestantes(f.fecha_cierre);
+    let cierreHtml = '';
+    if (dias === null) {
+      cierreHtml = `<span class="fav-cierre fav-cierre--sin">Sin fecha de cierre</span>`;
+    } else if (dias < 0) {
+      cierreHtml = `<span class="fav-cierre fav-cierre--urgente">✕ Proceso cerrado</span>`;
+    } else if (dias <= 2) {
+      cierreHtml = `<span class="fav-cierre fav-cierre--urgente">⚡ Cierra en ${dias === 0 ? 'hoy' : dias + (dias===1?' día':' días')}</span>`;
+    } else if (dias <= 7) {
+      cierreHtml = `<span class="fav-cierre fav-cierre--pronto">⏱ Cierra en ${dias} días</span>`;
+    } else {
+      cierreHtml = `<span class="fav-cierre fav-cierre--ok">📅 ${formatFecha(f.fecha_cierre)}</span>`;
+    }
+
+    return `
+    <div class="fav-card" id="fav-card-${f.id}">
+      <div class="fav-card-body">
+        <div class="fav-card-kicker">${f.institucion || 'Institución pública'}</div>
+        <div class="fav-card-cargo">${f.cargo || 'Cargo'}</div>
+        <div class="fav-badges">
+          ${f.region ? `<span class="fav-badge fav-badge-region">🗺 ${f.region}</span>` : ''}
+        </div>
+        ${cierreHtml}
+        <div class="fav-guardado">${f.guardado_en ? formatGuardado(f.guardado_en) : ''}</div>
+      </div>
+      <div class="fav-card-actions">
+        <button class="btn-fav-detail" onclick="abrirModal(${f.id})">Ver detalle</button>
+        <a class="btn-fav-postular" href="${f.url_oferta || '#'}" target="_blank" rel="noopener">Postular →</a>
+        <button class="btn-fav-remove" title="Eliminar de favoritos" onclick="eliminarFav(${f.id})">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function eliminarFav(id) {
+  let favs = getFavs().filter(f => f.id !== id);
+  setFavs(favs);
+  renderFavs();
+}
+
+// ── Modal ──────────────────────────────────────────────────────────
+async function abrirModal(ofertaId) {
+  const modal = document.getElementById('modal');
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  // Reset
+  document.getElementById('modal-kicker').textContent = '…';
+  document.getElementById('modal-cargo').textContent = 'Cargando…';
+  document.getElementById('modal-badges').innerHTML = '';
+  document.getElementById('modal-renta').textContent = '…';
+  document.getElementById('modal-tipo-contrato').textContent = '…';
+  document.getElementById('modal-jornada').textContent = '…';
+  document.getElementById('modal-cierre').textContent = '…';
+  document.getElementById('modal-requisitos').innerHTML = '';
+  document.getElementById('modal-descripcion').textContent = '';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/ofertas/${ofertaId}`);
+    if (!res.ok) throw new Error(res.status);
+    const o = await res.json();
+
+    document.getElementById('modal-kicker').textContent =
+      [o.institucion, o.sector].filter(Boolean).join(' · ').toUpperCase();
+    document.getElementById('modal-cargo').textContent = o.cargo || '—';
+
+    // Badges
+    const tipoClase = { planta:'badge-planta', contrata:'badge-contrata', honorarios:'badge-honorarios', adp:'badge-adp' };
+    const badgesHTML = [
+      o.tipo_contrato ? `<span class="badge ${tipoClase[o.tipo_contrato?.toLowerCase()] || 'badge-contrata'}">${o.tipo_contrato}</span>` : '',
+      o.region        ? `<span class="badge badge-region">🗺 ${o.region}${o.ciudad ? ' · ' + o.ciudad : ''}</span>` : '',
+    ].filter(Boolean).join('');
+    document.getElementById('modal-badges').innerHTML = badgesHTML;
+
+    // Info grid
+    const fmtRenta = (min, max) => {
+      if (!min && !max) return 'Ver bases';
+      const fmt = n => '$' + Number(n).toLocaleString('es-CL');
+      return max && max !== min ? `${fmt(min)} – ${fmt(max)}` : fmt(min || max);
+    };
+    document.getElementById('modal-renta').textContent = fmtRenta(o.renta_bruta_min, o.renta_bruta_max);
+    document.getElementById('modal-tipo-contrato').textContent = o.tipo_contrato || 'Sin dato';
+    document.getElementById('modal-jornada').textContent = o.jornada || '—';
+
+    const diasR = diasRestantes(o.fecha_cierre);
+    const cierreEl = document.getElementById('modal-cierre');
+    if (!o.fecha_cierre) {
+      cierreEl.textContent = 'Sin fecha'; cierreEl.style.color = '';
+    } else if (diasR < 0) {
+      cierreEl.textContent = 'Proceso cerrado'; cierreEl.style.color = 'var(--rojo)';
+    } else if (diasR <= 2) {
+      cierreEl.textContent = `${formatFecha(o.fecha_cierre)} (¡${diasR === 0 ? 'hoy' : diasR + ' días'}!)`;
+      cierreEl.style.color = 'var(--rojo)';
+    } else if (diasR <= 7) {
+      cierreEl.textContent = formatFecha(o.fecha_cierre);
+      cierreEl.style.color = 'var(--naran)';
+    } else {
+      cierreEl.textContent = formatFecha(o.fecha_cierre);
+      cierreEl.style.color = 'var(--verde)';
+    }
+
+    // Requisitos
+    if (o.requisitos_texto) {
+      const items = o.requisitos_texto.split(/\n|\.(?=\s[A-Z])/).filter(s => s.trim().length > 10).slice(0, 8);
+      document.getElementById('modal-requisitos').innerHTML =
+        items.map(i => `<div class="requisito-item">${i.trim()}</div>`).join('');
+    } else {
+      document.getElementById('modal-requisitos').innerHTML =
+        '<div class="requisito-item">Ver bases del concurso para requisitos completos.</div>';
+    }
+
+    document.getElementById('modal-descripcion').textContent = o.descripcion || '—';
+
+    // Botones
+    const urlPostular = o.url_oferta || o.url_bases || '#';
+    document.getElementById('modal-btn-postular').onclick = () => window.open(urlPostular, '_blank');
+
+    // Favorito — en esta página siempre está guardado, se puede eliminar
+    const btnFav = document.getElementById('modal-btn-favorito');
+    const favs = getFavs();
+    const yaGuardado = favs.some(f => f.id === o.id);
+    btnFav.textContent = yaGuardado ? '♥ Guardado' : '♡ Guardar';
+    btnFav.classList.toggle('btn-modal-sec--activo', yaGuardado);
+    btnFav.onclick = () => {
+      toggleFavorito(o);
+      // Actualizar la tarjeta si fue eliminada
+      if (!getFavs().some(f => f.id === o.id)) {
+        cerrarModal(null, true);
+        renderFavs();
+      }
+    };
+
+    document.getElementById('modal-btn-compartir').onclick = () => compartirOferta(o);
+
+  } catch (err) {
+    document.getElementById('modal-cargo').textContent = 'No se pudo cargar el detalle.';
+  }
+}
+
+function cerrarModal(e, force) {
+  if (force || e?.target === document.getElementById('modal')) {
+    document.getElementById('modal').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+}
+
+function compartirOferta(oferta) {
+  const url  = oferta.url_oferta || window.location.href;
+  const titulo = oferta.cargo || 'Oferta laboral';
+  const texto  = `${titulo} — ${oferta.institucion || 'Institución pública'}`;
+  if (navigator.share) {
+    navigator.share({ title: titulo, text: texto, url }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(url).then(() => {
+      const btn = document.getElementById('modal-btn-compartir');
+      const orig = btn.textContent;
+      btn.textContent = '✓ Enlace copiado';
+      setTimeout(() => btn.textContent = orig, 2000);
+    }).catch(() => prompt('Copia este enlace:', url));
+  }
+}
+
+function toggleFavorito(oferta) {
+  let favs = getFavs();
+  const idx = favs.findIndex(f => f.id === oferta.id);
+  const btn = document.getElementById('modal-btn-favorito');
+  if (idx >= 0) {
+    favs.splice(idx, 1);
+    btn.textContent = '♡ Guardar';
+    btn.classList.remove('btn-modal-sec--activo');
+  } else {
+    favs.push({
+      id: oferta.id,
+      cargo: oferta.cargo,
+      institucion: oferta.institucion,
+      region: oferta.region,
+      fecha_cierre: oferta.fecha_cierre,
+      url_oferta: oferta.url_oferta,
+      guardado_en: new Date().toISOString(),
+    });
+    btn.textContent = '♥ Guardado';
+    btn.classList.add('btn-modal-sec--activo');
+  }
+  setFavs(favs);
+}
+
+// ── Init ───────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarModal(null, true); });
+renderFavs();
+</script>
+
+<script>
+(function(){
+  const favs = JSON.parse(localStorage.getItem('fav_contrataoplanta')||'[]');
+  const link = document.getElementById('nav-favoritos');
+  if(link && favs.length > 0){ link.textContent = '♥ Mis favoritos ('+favs.length+')'; link.style.color='white'; }
+})();
+</script>
+</body>
+</html>
