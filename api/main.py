@@ -62,6 +62,8 @@ ALLOW_ORIGINS = [
     "http://127.0.0.1:5500",
     "https://contrataoplanta.cl",
     "https://www.contrataoplanta.cl",
+    "https://contrataoplanta.netlify.app",
+    "https://www.contrataoplanta.netlify.app",
 ]
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
