@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacidad — contrata o planta .cl</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --azul:   #0A2E6E; --azul-m: #1557C0; --cielo: #1A6BCC; --cielo-l:#D6E6F8;
+  --bg:     #F5F4EF; --bg2:   #EDECEA; --borde: #D9D7CF;
+  --texto:  #111827; --texto2:#4B5563; --texto3:#9CA3AF;
+  --blanco: #FAFAF8; --r:10px; --r-l:16px;
+  --sombra: 0 1px 3px rgba(0,0,0,0.08),0 4px 16px rgba(0,0,0,0.06);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--texto);-webkit-font-smoothing:antialiased;min-height:100vh}
+
+/* NAV */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(10,46,110,0.97);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.nav-inner {
+  max-width: 1200px; margin: 0 auto;
+  padding: 0 24px;
+  display: flex; align-items: center; gap: 32px;
+  height: 56px;
+}
+.logo {
+  font-family: 'Lora', Georgia, serif;
+  font-size: 18px; color: white;
+  letter-spacing: -0.3px; white-space: nowrap;
+  text-decoration: none;
+}
+.logo em { color: #E8A820; font-style: italic; }
+.nav-links {
+  display: flex; gap: 4px; align-items: center; flex: 1;
+}
+.nav-links a {
+  font-size: 13px; color: rgba(255,255,255,0.55);
+  text-decoration: none; padding: 6px 12px;
+  border-radius: 6px; transition: all .15s;
+  font-weight: 500;
+}
+.nav-links a:hover, .nav-links a.active {
+  color: white; background: rgba(255,255,255,0.1);
+}
+.nav-link-favs { color: #E8A820 !important; }
+.nav-link-favs:hover, .nav-link-favs.active { background: rgba(232,168,32,0.15) !important; }
+.nav-alerta {
+  font-size: 12px; font-weight: 600;
+  background: #E8A820; color: #0A2E6E;
+  padding: 7px 16px; border-radius: 6px;
+  cursor: pointer; white-space: nowrap;
+  transition: opacity .15s; text-decoration: none;
+}
+.nav-alerta:hover { opacity: .9; }
+
+/* PÁGINA */
+.page-hero{background:var(--azul);padding:48px 24px 40px;text-align:center}
+.page-hero-inner{max-width:700px;margin:0 auto}
+.page-kicker{font-size:11px;font-weight:700;color:rgba(255,255,255,.45);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px}
+.page-titulo{font-family:'Lora',Georgia,serif;font-size:32px;color:white;line-height:1.2;margin-bottom:10px}
+.page-sub{font-size:15px;color:rgba(255,255,255,.55);line-height:1.7;font-weight:300}
+
+.page-content{max-width:740px;margin:0 auto;padding:48px 24px 80px}
+
+/* PROSA */
+.prose h2{font-family:'Lora',Georgia,serif;font-size:20px;color:var(--azul);margin:36px 0 10px;padding-bottom:8px;border-bottom:1.5px solid var(--borde)}
+.prose h2:first-child{margin-top:0}
+.prose h3{font-size:15px;font-weight:700;color:var(--texto);margin:20px 0 6px}
+.prose p{font-size:15px;color:var(--texto2);line-height:1.8;margin-bottom:12px}
+.prose ul{margin:8px 0 14px 0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.prose ul li{font-size:15px;color:var(--texto2);line-height:1.6}
+.prose a{color:var(--cielo);text-decoration:underline;text-decoration-color:rgba(26,107,204,.3)}
+.prose a:hover{text-decoration-color:var(--cielo)}
+.prose .nota{background:var(--cielo-l);border-left:3px solid var(--cielo);border-radius:0 8px 8px 0;padding:12px 16px;margin:16px 0;font-size:14px;color:var(--texto)}
+.actualizado{font-size:12px;color:var(--texto3);margin-bottom:32px}
+
+/* FOOTER */
+footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
+.footer-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 40px;
+}
+.footer-brand .logo { font-size: 20px; }
+.footer-desc { font-size: 13px; color: rgba(255,255,255,0.35); line-height: 1.7; max-width: 280px; font-weight: 300; }
+.footer-col-titulo { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; font-family: 'Inter', sans-serif; }
+.footer-link { display: block; font-size: 13px; color: rgba(255,255,255,0.5); text-decoration: none; margin-bottom: 8px; transition: color .15s; }
+.footer-link:hover { color: white; }
+.footer-bottom { max-width: 1200px; margin: 28px auto 0; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; font-size: 12px; color: rgba(255,255,255,0.25); }
+@media (max-width: 768px) { .footer-inner { grid-template-columns: 1fr 1fr; gap: 24px; } }
+@media (max-width: 480px) { .footer-inner { grid-template-columns: 1fr; } }
+@media(max-width:600px){.nav-links{display:none}.page-titulo{font-size:26px}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="logo">contrata <em>o</em> planta <em style="font-style:normal;color:rgba(255,255,255,0.3)">.cl</em></a>
+    <div class="nav-links">
+      <a href="index.html">Buscar empleos</a>
+      <a href="favoritos.html" id="nav-favoritos" class="nav-link-favs">♡ Mis favoritos</a>
+      <a href="instituciones.html">Instituciones</a>
+      <a href="estadisticas.html">Estadísticas</a>
+      <a href="faq.html">Preguntas frecuentes</a>
+    </div>
+    <a href="index.html#alertas" class="nav-alerta">+ Crear alerta</a>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <div class="page-kicker">Legal</div>
+    <h1 class="page-titulo">Política de privacidad</h1>
+    <p class="page-sub">Cómo tratamos los datos que pasan por la plataforma contrata o planta .cl</p>
+  </div>
+</div>
+
+<div class="page-content">
+  <p class="actualizado">Última actualización: abril de 2026</p>
+
+  <div class="prose">
+
+    <h2>1. Datos que recopilamos</h2>
+    <p>contrata o planta .cl recopila únicamente los datos estrictamente necesarios para funcionar:</p>
+    <ul>
+      <li><strong>Correo electrónico</strong> — solo si te suscribes voluntariamente a las alertas de empleo. No es obligatorio para usar el sitio.</li>
+      <li><strong>Preferencias de alerta</strong> — región, términos de búsqueda y tipo de contrato que indicas al crear una alerta.</li>
+      <li><strong>Datos de navegación</strong> — registros del servidor (dirección IP, URL solicitada, navegador) con fines técnicos. Se eliminan automáticamente a los 30 días.</li>
+    </ul>
+    <div class="nota">No recopilamos nombre, RUT, teléfono ni ningún otro dato personal fuera de lo descrito.</div>
+
+    <h2>2. Cookies y rastreo</h2>
+    <p>El sitio utiliza únicamente cookies técnicas necesarias para su funcionamiento (por ejemplo, preferencias de idioma). No usamos cookies publicitarias, no hay píxeles de seguimiento y no integramos redes de publicidad de terceros.</p>
+    <p>Las fuentes externas que cargamos (Google Fonts) pueden establecer cookies propias. Puedes bloquearlas desde la configuración de tu navegador sin afectar la funcionalidad principal del sitio.</p>
+
+    <h2>3. Cómo usamos tu correo</h2>
+    <p>Si te suscribes a las alertas, tu correo se usa exclusivamente para:</p>
+    <ul>
+      <li>Enviarte notificaciones de nuevas ofertas que coincidan con tus filtros.</li>
+      <li>Enviarte ocasionalmente anuncios de cambios importantes en el servicio.</li>
+    </ul>
+    <p>No cedemos, vendemos ni compartimos correos con terceros bajo ninguna circunstancia.</p>
+
+    <h2>4. Cancelar la suscripción</h2>
+    <p>Cada correo de alerta incluye un enlace de cancelación inmediata. También puedes escribirnos a <a href="mailto:hola@contrataoplanta.cl">hola@contrataoplanta.cl</a> para eliminar tu suscripción y todos los datos asociados.</p>
+
+    <h2>5. Almacenamiento y seguridad</h2>
+    <p>Los datos se almacenan en servidores ubicados dentro de la Unión Europea o en Chile. Aplicamos medidas estándar de seguridad: conexiones cifradas (HTTPS), acceso restringido a la base de datos y revisiones periódicas de vulnerabilidades.</p>
+    <p>Ningún sistema es infalible. En caso de incidente de seguridad que afecte tus datos, te informaremos dentro de las 72 horas siguientes a tomar conocimiento del hecho.</p>
+
+    <h2>6. Datos de terceros (ofertas laborales)</h2>
+    <p>Las ofertas de empleo que mostramos provienen de fuentes públicas del Estado chileno. No controlamos cómo esas instituciones tratan los datos de los postulantes. Si tienes dudas sobre una oferta específica, contacta directamente a la institución convocante.</p>
+
+    <h2>7. Tus derechos</h2>
+    <p>Tienes derecho a:</p>
+    <ul>
+      <li>Saber qué datos tenemos sobre ti.</li>
+      <li>Solicitar la corrección de datos incorrectos.</li>
+      <li>Solicitar la eliminación de tus datos.</li>
+      <li>Oponerte al tratamiento de tus datos.</li>
+    </ul>
+    <p>Para ejercer cualquiera de estos derechos escríbenos a <a href="mailto:hola@contrataoplanta.cl">hola@contrataoplanta.cl</a> indicando tu solicitud. Responderemos dentro de 15 días hábiles.</p>
+
+    <h2>8. Cambios a esta política</h2>
+    <p>Cualquier cambio relevante se publicará en esta página con fecha actualizada. Si los cambios afectan materialmente el tratamiento de tu correo, te notificaremos directamente.</p>
+
+    <h2>9. Contacto</h2>
+    <p>Para consultas sobre privacidad: <a href="mailto:hola@contrataoplanta.cl">hola@contrataoplanta.cl</a></p>
+
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <a href="index.html" class="logo" style="display:block;margin-bottom:10px">contrata <em>o</em> planta <em style="font-style:normal;color:rgba(255,255,255,0.3)">.cl</em></a>
+      <p class="footer-desc">La plataforma laboral del sector público chileno. 700+ instituciones registradas.</p>
+    </div>
+    <div>
+      <div class="footer-col-titulo">Explorar</div>
+      <a href="index.html" class="footer-link">Buscar empleos</a>
+      <a href="instituciones.html" class="footer-link">Por institución</a>
+      <a href="estadisticas.html" class="footer-link">Estadísticas</a>
+    </div>
+    <div>
+      <div class="footer-col-titulo">Comunidad</div>
+      <a href="faq.html" class="footer-link">Preguntas frecuentes</a>
+      <a href="favoritos.html" class="footer-link">Mis favoritos</a>
+    </div>
+    <div>
+      <div class="footer-col-titulo">Legal</div>
+      <a href="terminos.html" class="footer-link">Términos de uso</a>
+      <a href="privacidad.html" class="footer-link">Privacidad</a>
+      <a href="descargo.html" class="footer-link">Descargo</a>
+      <a href="mailto:hola@contrataoplanta.cl" class="footer-link">Contacto</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 contrata o planta .cl</span>
+    <span>Datos actualizados cada 6 horas · No somos el Estado</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  const favs = JSON.parse(localStorage.getItem('fav_contrataoplanta')||'[]');
+  const link = document.getElementById('nav-favoritos');
+  if(link && favs.length > 0){ link.textContent = '♥ Mis favoritos ('+favs.length+')'; link.style.color='white'; }
+})();
+</script>
+
+</body>
+</html>
