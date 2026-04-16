@@ -1768,8 +1768,6 @@ function isIsoDate(iso) {
 }
 
 function jsonLdScript(payload) {
-  // \/ escapes the / so the outer HTML parser doesn't see </script> in the JS source,
-  // while the runtime string is "</script>" — required to properly close the injected tag.
   return `<script type="application/ld+json">${JSON.stringify(payload).replace(/</g, '\\u003c')}<\/script>`;
 }
 
