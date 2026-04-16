@@ -2251,8 +2251,16 @@ async function cargarOfertas() {
 
     // Renderizar items según vista activa (con cabecera ordenable en modo compacto)
     const header = estado.vista === 'compacta' ? renderHeaderCompacta() : '';
-    lista.innerHTML = header + data.ofertas.map(renderItem).join('');
+const itemsHtml = data.ofertas.map((oferta, i) => {
+  try {
+    return renderItem(oferta);
+  } catch (err) {
+    console.error('Error renderizando oferta', i, oferta, err);
+    return '';
+  }
+}).join('');
 
+lista.innerHTML = header + itemsHtml;
     // Paginación
     renderPaginacion(data.total, data.paginas);
 
