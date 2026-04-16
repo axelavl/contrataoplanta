@@ -145,13 +145,19 @@ class FFAAScraper(GenericSiteScraper):
 
     # ──────────────── Warmup de sesion ──────────────────────────────
 
-    def _warmup_session(self) -> None:
-        """Visita las paginas principales para obtener cookies de sesion."""
+    def _warmup_session(self) -> bool:
+        """Visita las paginas principales para obtener cookies de sesion.
+
+        Returns True si al menos un warmup tuvo exito, False si todos fallaron.
+        """
         if self._warmed_up:
-            return
+            return True
         self._warmed_up = True
         inst_id = self.institucion.get("id")
         warmup_urls = _WARMUP_URLS.get(inst_id, [])
+        if not warmup_urls:
+            return True
+        any_ok = False
         for url in warmup_urls:
             try:
                 self.logger.info(
@@ -160,6 +166,7 @@ class FFAAScraper(GenericSiteScraper):
                     url,
                 )
                 self.request(url, timeout=10)
+                any_ok = True
             except Exception as exc:
                 self.logger.info(
                     "evento=ffaa_warmup_fail scraper=%s url=%s error=%s",
@@ -168,6 +175,47 @@ class FFAAScraper(GenericSiteScraper):
                     type(exc).__name__,
                 )
             time.sleep(0.5)
+        return any_ok
+
+    # ──────────────── Override: parse_oferta sin pipeline ─────────────
+
+    def parse_oferta(self, raw: dict[str, Any]) -> dict[str, Any] | None:
+        """Construye la oferta directamente sin pasar por el pipeline.
+
+        Los portales militares publican concursos con URLs especificas
+        (ej: /concursos/tecnico-audiovisual-2026/) pero el contenido
+        extraido de la pagina listado es demasiado escueto para el
+        pipeline generico. Como la fuente es verificada, aceptamos
+        la oferta si tiene al menos un titulo y una URL.
+        """
+        title = clean_text(raw.get("title"))
+        url = clean_text(raw.get("url"))
+        if not title or not url:
+            return None
+        content = clean_text(raw.get("content_text"))
+
+        renta_min, renta_max, grado = parse_renta(content)
+        oferta = {
+            "institucion_id": self.institucion.get("id"),
+            "institucion_nombre": self.institucion.get("nombre"),
+            "cargo": title,
+            "descripcion": content or None,
+            "requisitos": None,
+            "tipo_contrato": normalize_tipo_contrato(content),
+            "region": normalize_region(self.institucion.get("region")),
+            "ciudad": None,
+            "renta_bruta_min": renta_min,
+            "renta_bruta_max": renta_max,
+            "grado_eus": grado,
+            "jornada": None,
+            "area_profesional": None,
+            "fecha_publicacion": parse_date(raw.get("date")),
+            "fecha_cierre": parse_date(raw.get("fecha_cierre")),
+            "url_oferta": url,
+            "url_bases": (raw.get("pdf_links") or [None])[0],
+            "estado": "activo",
+        }
+        return self.normalize_offer(oferta)
 
     # ──────────────── Override: URLs candidatas ──────────────────────
 
@@ -193,7 +241,13 @@ class FFAAScraper(GenericSiteScraper):
     # ──────────────── Override: fetch con warmup ────────────────────
 
     def fetch_ofertas(self) -> list[dict[str, Any]]:
-        self._warmup_session()
+        warmup_ok = self._warmup_session()
+        if not warmup_ok:
+            self.logger.warning(
+                "evento=ffaa_abort_warmup scraper=%s motivo=todos_los_warmup_fallaron",
+                self.nombre,
+            )
+            return []
 
         ofertas: list[dict[str, Any]] = []
         seen: set[str] = set()
