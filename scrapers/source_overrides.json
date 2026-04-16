@@ -507,6 +507,79 @@
       "kind": "generic",
       "reason": "CFT Estatal Magallanes — portal propio trabaja-con-nosotros, también publica en EP",
       "notes": "https://cftdemagallanes.cl/trabaja-con-nosotros/"
+    },
+
+    {"_comment": "=== Gobiernos Regionales y Delegaciones Presidenciales ==="},
+
+    {
+      "id": 169,
+      "status": "active",
+      "kind": "generic",
+      "reason": "GORE Arica y Parinacota — portal propio concursos-publicos, también publica en EP",
+      "notes": "https://gorearicayparinacota.gov.cl/index.php/concursos-publicos"
+    },
+    {
+      "id": 170,
+      "status": "experimental",
+      "kind": "generic",
+      "reason": "DPR Arica y Parinacota — publica concursos en sección noticias, también publica en EP",
+      "notes": "https://dpraricayparinacota.dpr.gob.cl/noticias/"
+    },
+    {
+      "id": 175,
+      "status": "active",
+      "kind": "generic",
+      "reason": "GORE Atacama — portal propio concursos-publicos, también publica en EP",
+      "notes": "https://goreatacama.gob.cl/concursos-publicos/"
+    },
+    {
+      "id": 179,
+      "status": "active",
+      "kind": "generic",
+      "reason": "GORE Valparaíso — portal propio concursosPersonal.php, también publica en EP",
+      "notes": "https://www.gobiernovalparaiso.cl/concursosPersonal.php"
+    },
+    {
+      "id": 185,
+      "status": "active",
+      "kind": "generic",
+      "reason": "GORE Maule — portal propio concursos-publicos, también publica en EP",
+      "notes": "https://www.goremaule.cl/goremauleVII/concursos-publicos/"
+    },
+    {
+      "id": 187,
+      "status": "active",
+      "kind": "generic",
+      "reason": "GORE Ñuble — portal propio trabaje-con-nosotros, también publica en EP",
+      "notes": "https://goredenuble.cl/trabaje-con-nosotros/"
+    },
+    {
+      "id": 189,
+      "status": "active",
+      "kind": "generic",
+      "reason": "GORE Biobío — portal propio concursopublicoplanta, también publica en EP",
+      "notes": "https://gorebiobio.cl/concursopublicoplanta/"
+    },
+    {
+      "id": 195,
+      "status": "active",
+      "kind": "generic",
+      "reason": "GORE Los Lagos — portal propio concurso_publico.html, también publica en EP",
+      "notes": "https://www.goreloslagos.cl/gobierno_regional/concurso_publico.html"
+    },
+    {
+      "id": 197,
+      "status": "active",
+      "kind": "generic",
+      "reason": "GORE Aysén — portal propio trabaje-con-nosotros, también publica en EP",
+      "notes": "https://www.goreaysen.cl/trabaje-con-nosotros-2/"
+    },
+    {
+      "id": 199,
+      "status": "active",
+      "kind": "generic",
+      "reason": "GORE Magallanes — portal propio trabaja-en-el-gore, también publica en EP",
+      "notes": "https://www.goremagallanes.cl/trabaja-en-el-gore/"
     }
   ]
 }
