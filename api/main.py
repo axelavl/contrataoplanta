@@ -77,6 +77,7 @@ ALLOW_ORIGINS = [
     "https://www.contrataoplanta.cl",
     "https://contrataoplanta.netlify.app",
     "https://www.contrataoplanta.netlify.app",
+    "https://estadoemplea.pages.dev",
 ]
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
