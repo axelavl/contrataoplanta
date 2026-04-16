@@ -135,10 +135,10 @@
     },
     {
       "id": 247,
-      "status": "broken",
-      "kind": "skip",
-      "reason": "Universidad de La Serena — URL es copia errada de UFRO (personas.ufro.cl). Requiere verificación manual de la URL correcta",
-      "notes": "URL duplicada de ID 246. El portal real de ULS no está identificado"
+      "status": "active",
+      "kind": "empleos_publicos",
+      "reason": "Universidad de La Serena — no tiene portal propio, publica solo en empleospublicos.cl",
+      "notes": "Cubierto por batch empleospublicos.cl"
     },
     {
       "id": 248,
@@ -170,10 +170,10 @@
     },
     {
       "id": 252,
-      "status": "broken",
-      "kind": "skip",
-      "reason": "Universidad de Tarapacá — URL es copia errada de UNAP (portal.unap.cl). Requiere verificación manual",
-      "notes": "URL duplicada de ID 251. El portal real de UTA no está identificado"
+      "status": "active",
+      "kind": "generic",
+      "reason": "Universidad de Tarapacá — portal RRHH propio en zapahuira.uta.cl",
+      "notes": "https://zapahuira.uta.cl/negocio/RRHH/MantLaboral/"
     },
     {
       "id": 253,
