@@ -410,4 +410,4 @@ FROM ofertas o
 LEFT JOIN instituciones i ON o.institucion_id = i.id
 WHERE o.activa = TRUE
   AND (o.fecha_cierre IS NULL OR o.fecha_cierre >= CURRENT_DATE)
-ORDER BY o.fecha_cierre ASC NULLS LAST;
+ORDER BY CASE WHEN o.fecha_cierre IS NULL AND o.fecha_inicio IS NULL THEN 1 ELSE 0 END ASC, o.fecha_cierre ASC NULLS LAST;

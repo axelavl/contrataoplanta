@@ -216,6 +216,7 @@ def ofertas_select_sql() -> str:
         o.area_profesional,
         o.fecha_publicacion,
         o.fecha_cierre,
+        o.fecha_inicio,
         COALESCE(o.url_oferta, o.url_original) AS url_oferta,
         COALESCE(o.url_bases, o.url_original, o.url_oferta) AS url_bases,
         {ESTADO_SQL} AS estado,
@@ -343,11 +344,12 @@ def get_ofertas(
         nuevas=nuevas,
         solo_activas=True,
     )
+    sin_fechas = "CASE WHEN fecha_cierre IS NULL AND fecha_inicio IS NULL THEN 1 ELSE 0 END ASC"
     order_sql = {
-        "recientes": "fecha_scraped DESC NULLS LAST, id DESC",
-        "cierre": "fecha_cierre ASC NULLS LAST, id DESC",
-        "renta": "renta_bruta_max DESC NULLS LAST, renta_bruta_min DESC NULLS LAST, id DESC",
-    }.get(orden, "fecha_scraped DESC NULLS LAST, id DESC")
+        "recientes": f"{sin_fechas}, fecha_scraped DESC NULLS LAST, id DESC",
+        "cierre": f"{sin_fechas}, fecha_cierre ASC NULLS LAST, id DESC",
+        "renta": f"{sin_fechas}, renta_bruta_max DESC NULLS LAST, renta_bruta_min DESC NULLS LAST, id DESC",
+    }.get(orden, f"{sin_fechas}, fecha_scraped DESC NULLS LAST, id DESC")
 
     select_sql = f"""
     WITH base AS (
@@ -537,7 +539,7 @@ def get_institucion_ofertas(
         {where_sql}
     )
     SELECT * FROM base
-    ORDER BY fecha_cierre ASC NULLS LAST, fecha_scraped DESC NULLS LAST
+    ORDER BY CASE WHEN fecha_cierre IS NULL AND fecha_inicio IS NULL THEN 1 ELSE 0 END ASC, fecha_cierre ASC NULLS LAST, fecha_scraped DESC NULLS LAST
     LIMIT %s OFFSET %s
     """
     count_sql = f"SELECT COUNT(*) AS total {ofertas_base_sql()} {where_sql}"
