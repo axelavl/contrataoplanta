@@ -469,10 +469,11 @@ def get_ofertas(
         nuevas=nuevas,
         solo_activas=True,
     )
-    # Ofertas sin fecha_cierre ni fecha_inicio van al final;
+
+    # Ofertas sin fecha_cierre van al final;
     # dentro de cada grupo se ordena normalmente.
-        sin_fechas = "CASE WHEN fecha_cierre IS NULL THEN 1 ELSE 0 END ASC"    
-        order_sql = {
+    sin_fechas = "CASE WHEN fecha_cierre IS NULL THEN 1 ELSE 0 END ASC"
+    order_sql = {
         "recientes":  f"{sin_fechas}, fecha_scraped DESC NULLS LAST, id DESC",
         "cierre":     f"{sin_fechas}, fecha_cierre ASC NULLS LAST, id DESC",
         "renta_desc": f"{sin_fechas}, renta_bruta_max DESC NULLS LAST, renta_bruta_min DESC NULLS LAST, id DESC",
