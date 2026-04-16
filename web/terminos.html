@@ -3,9 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="canonical" href="https://contrataoplanta.cl/web/terminos.html">
-<link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="shortcut icon" href="favicon.svg">
+<script>document.documentElement.classList.add('js-nav');</script>
 <title>Términos de uso — contrata o planta .cl</title>
 <meta name="description" content="Lee los términos y condiciones de uso de contrata o planta .cl para comprender reglas, responsabilidades y límites.">
 <link rel="canonical" href="https://contrataoplanta.cl/terminos.html">
@@ -38,6 +36,50 @@ html{scroll-behavior:smooth;font-size:16px}
 body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--texto);-webkit-font-smoothing:antialiased;min-height:100vh}
 
 /* NAV */
+.skip-link{position:absolute;left:12px;top:-48px;z-index:1000;background:var(--azul, #0A2E6E);color:var(--blanco, #FAFAF8);padding:10px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;transition:top .2s}
+.skip-link:focus{top:10px}
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(10,46,110,0.97);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.nav-inner {
+  max-width: 1200px; margin: 0 auto;
+  padding: 0 24px;
+  display: flex; align-items: center; gap: 32px;
+  height: 56px;
+}
+.logo {
+  font-family: 'Lora', Georgia, serif;
+  font-size: 18px; color: white;
+  letter-spacing: -0.3px; white-space: nowrap;
+  text-decoration: none;
+}
+.logo em { color: #E8A820; font-style: italic; }
+.nav-links {
+  display: flex; gap: 4px; align-items: center; flex: 1;
+}
+.nav-links a {
+  font-size: 13px; color: rgba(255,255,255,0.55);
+  text-decoration: none; padding: 6px 12px;
+  border-radius: 6px; transition: all .15s;
+  font-weight: 500;
+}
+.nav-links a:hover, .nav-links a.active {
+  color: white; background: rgba(255,255,255,0.1);
+}
+.nav-link-favs { color: #E8A820 !important; }
+.nav-link-favs:hover, .nav-link-favs.active { background: rgba(232,168,32,0.15) !important; }
+.nav-alerta {
+  font-size: 12px; font-weight: 600;
+  background: #E8A820; color: #0A2E6E;
+  padding: 7px 16px; border-radius: 6px;
+  cursor: pointer; white-space: nowrap;
+  transition: opacity .15s; text-decoration: none;
+}
+.nav-alerta:hover { opacity: .9; }
 
 /* PÁGINA */
 
@@ -47,10 +89,28 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .actualizado{font-size:12px;color:var(--texto3);margin-bottom:32px}
 
 /* FOOTER */
+footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
+.footer-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 40px;
+}
+.footer-brand .logo { font-size: 20px; }
+.footer-desc { font-size: 13px; color: rgba(255,255,255,0.35); line-height: 1.7; max-width: 280px; font-weight: 300; }
+.footer-col-titulo { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; font-family: 'Inter', sans-serif; }
+.footer-link { display: block; font-size: 13px; color: rgba(255,255,255,0.5); text-decoration: none; margin-bottom: 8px; transition: color .15s; }
+.footer-link:hover { color: white; }
+.footer-bottom { max-width: 1200px; margin: 28px auto 0; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; font-size: 12px; color: rgba(255,255,255,0.25); }
+@media (max-width: 768px) { .footer-inner { grid-template-columns: 1fr 1fr; gap: 24px; } }
+@media (max-width: 480px) { .footer-inner { grid-template-columns: 1fr; } }
+@media(max-width:600px){.js-nav .nav-links{display:none}.page-titulo{font-size:26px}}
 </style>
 </head>
 <body>
+<a class="skip-link" href="#contenido-principal">Saltar al contenido</a>
 
+
+<header>
 <nav>
   <div class="nav-inner">
     <a href="index.html" class="logo">contrata <em>o</em> planta <em class="logo-domain-muted">.cl</em></a>
@@ -64,6 +124,9 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
     <a href="index.html#alertas" class="nav-alerta">+ Crear alerta</a>
   </div>
 </nav>
+</header>
+
+<main id="contenido-principal">
 
 <div class="page-hero">
   <div class="page-hero-inner">
@@ -125,6 +188,8 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 
   </div>
 </div>
+
+</main>
 
 <footer>
   <div class="footer-inner">
