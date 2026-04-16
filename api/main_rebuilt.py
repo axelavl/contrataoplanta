@@ -398,6 +398,13 @@ def get_oferta(oferta_id: int) -> dict[str, Any]:
 
 @app.get("/api/estadisticas")
 def get_estadisticas() -> dict[str, Any]:
+    ultima_actualizacion_row = execute_fetch_one(
+        """
+        SELECT MAX(COALESCE(fecha_scraped, detectada_en, actualizada_en, creada_en)) AS ultima_actualizacion
+        FROM ofertas
+        """
+    ) or {}
+
     conteos = execute_fetch_one(
         f"""
         SELECT
@@ -462,6 +469,7 @@ def get_estadisticas() -> dict[str, Any]:
         "nuevas_48h": int(conteos.get("nuevas_48h") or 0),
         "cierran_hoy": int(conteos.get("cierran_hoy") or 0),
         "instituciones_activas": int(conteos.get("instituciones_activas") or 0),
+        "ultima_actualizacion": ultima_actualizacion_row.get("ultima_actualizacion"),
         "por_sector": por_sector,
         "historico_mensual": historico_mensual,
         "mas_activas": mas_activas,
