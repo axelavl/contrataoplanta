@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet">
+<!-- Umami Analytics — sin cookies, sin banner GDPR -->
+<script defer data-website-id="UMAMI_WEBSITE_ID" src="https://analytics.contrataoplanta.cl/script.js"></script>
 <style>
 :root {
   --azul:   #0A2E6E; --azul-m: #1557C0; --cielo: #1A6BCC; --cielo-l:#D6E6F8;
@@ -161,22 +163,7 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
       <label for="f-region">Región</label>
       <select id="f-region" onchange="buscar()">
         <option value="">Todas las regiones</option>
-        <option>Metropolitana de Santiago</option>
-        <option>Valparaíso</option>
-        <option>Biobío</option>
-        <option>La Araucanía</option>
-        <option>O'Higgins</option>
-        <option>Maule</option>
-        <option>Los Lagos</option>
-        <option>Antofagasta</option>
-        <option>Coquimbo</option>
-        <option>Atacama</option>
-        <option>Tarapacá</option>
-        <option>Arica y Parinacota</option>
-        <option>Los Ríos</option>
-        <option>Aysén</option>
-        <option>Magallanes</option>
-        <option>Ñuble</option>
+        <!-- Se carga dinámicamente desde API DPA -->
       </select>
     </div>
     <div class="filtro-campo">
@@ -353,6 +340,24 @@ async function cargar() {
     document.getElementById('total-label').textContent = '';
   }
 }
+
+// Cargar regiones dinámicamente desde API DPA
+(async function() {
+  try {
+    const resp = await fetch(`${API_BASE}/api/regiones`);
+    if (!resp.ok) return;
+    const regiones = await resp.json();
+    const sel = document.getElementById('f-region');
+    if (!sel) return;
+    while (sel.options.length > 1) sel.remove(1);
+    regiones.forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r.nombre;
+      opt.textContent = r.nombre;
+      sel.appendChild(opt);
+    });
+  } catch {}
+})();
 
 cargar();
 </script>

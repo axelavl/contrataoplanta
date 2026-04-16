@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet">
+<!-- Umami Analytics — sin cookies, sin banner GDPR -->
+<script defer data-website-id="UMAMI_WEBSITE_ID" src="https://analytics.contrataoplanta.cl/script.js"></script>
 <style>
 /* ═══ VARIABLES ══════════════════════════════════════════════════════ */
 :root {
@@ -1137,22 +1139,7 @@ footer {
           <label>Región</label>
           <select id="filtro-region">
             <option value="">Todas las regiones</option>
-            <option>Metropolitana de Santiago</option>
-            <option>Valparaíso</option>
-            <option>Biobío</option>
-            <option>La Araucanía</option>
-            <option>Los Lagos</option>
-            <option>O'Higgins</option>
-            <option>Maule</option>
-            <option>Los Ríos</option>
-            <option>Antofagasta</option>
-            <option>Coquimbo</option>
-            <option>Tarapacá</option>
-            <option>Ñuble</option>
-            <option>Atacama</option>
-            <option>Magallanes</option>
-            <option>Aysén</option>
-            <option>Arica y Parinacota</option>
+            <!-- Se carga dinámicamente desde API DPA -->
           </select>
         </div>
         <div class="campo">
@@ -1183,7 +1170,10 @@ footer {
         </div>
         <div class="campo">
           <label>Ciudad / Comuna</label>
-          <input type="text" id="filtro-ciudad" placeholder="Ej: Valparaíso, Temuco..." autocomplete="off" oninput="debounceBuscar()">
+          <select id="filtro-ciudad" onchange="debounceBuscar()">
+            <option value="">Todas las comunas</option>
+            <!-- Se carga dinámicamente al seleccionar región -->
+          </select>
         </div>
         <div class="campo">
           <label>Renta mínima</label>
@@ -1304,22 +1294,7 @@ footer {
               <div class="alerta-label">Región</div>
               <select id="alerta-region">
                 <option value="">Todas</option>
-                <option>Metropolitana de Santiago</option>
-                <option>Valparaíso</option>
-                <option>Biobío</option>
-                <option>La Araucanía</option>
-                <option>Los Lagos</option>
-                <option>O'Higgins</option>
-                <option>Maule</option>
-                <option>Los Ríos</option>
-                <option>Antofagasta</option>
-                <option>Coquimbo</option>
-                <option>Tarapacá</option>
-                <option>Ñuble</option>
-                <option>Atacama</option>
-                <option>Magallanes</option>
-                <option>Aysén</option>
-                <option>Arica y Parinacota</option>
+                <!-- Se carga dinámicamente desde API DPA -->
               </select>
             </div>
             <div>
@@ -2490,16 +2465,29 @@ async function enviarAlerta() {
     });
 
     if (resp.ok) {
+      const data = await resp.json();
       btn.textContent = '✓ ¡Alerta activada!';
       btn.style.background = 'var(--verde)';
       // Limpiar el formulario
       document.getElementById('alerta-email').value = '';
       document.getElementById('alerta-keywords').value = '';
+      // Umami: track alert subscription
+      trackUmami('alert-subscribe', { region: region || 'todas', frecuencia });
+      // Show email typo suggestion if any
+      if (data.sugerencia_email) {
+        const sugDiv = document.getElementById('mailcheck-suggestion');
+        if (sugDiv) {
+          sugDiv.innerHTML = `Nota: ¿Tu email correcto es <strong>${escHtml(data.sugerencia_email)}</strong>?`;
+          sugDiv.style.color = 'var(--naran)';
+          sugDiv.style.display = 'block';
+        }
+      }
     } else {
-      throw new Error(`HTTP ${resp.status}`);
+      const errData = await resp.json().catch(() => ({}));
+      throw new Error(errData.detail || `HTTP ${resp.status}`);
     }
-  } catch {
-    btn.textContent = '⚠️ Error al activar';
+  } catch (err) {
+    btn.textContent = '⚠️ ' + (err.message || 'Error al activar');
     setTimeout(() => {
       btn.textContent = 'Activar alerta gratuita';
       btn.style.background = '';
@@ -2718,6 +2706,214 @@ document.addEventListener('filtros:cambio', actualizarAriaPressed);
 
 // ── 8. Restaurar filtros antes de la primera carga ──
 restaurarFiltrosDesdeURL();
+
+// ═══ REGIONES DINÁMICAS (API DPA del Estado) ════════════════════════════════
+async function cargarRegiones() {
+  try {
+    const resp = await fetch(`${API_BASE}/api/regiones`);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const regiones = await resp.json();
+
+    // Poblar todos los selects de región
+    ['filtro-region', 'alerta-region'].forEach(id => {
+      const sel = document.getElementById(id);
+      if (!sel) return;
+      const valorActual = sel.value;
+      // Keep first option (placeholder)
+      while (sel.options.length > 1) sel.remove(1);
+      regiones.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.nombre;
+        opt.textContent = r.nombre;
+        opt.dataset.codigo = r.codigo;
+        sel.appendChild(opt);
+      });
+      // Restore previous value if any
+      if (valorActual) sel.value = valorActual;
+    });
+
+    // Store region codes for comuna loading
+    window._regionesDPA = regiones;
+  } catch (err) {
+    console.warn('Error cargando regiones DPA:', err);
+  }
+}
+
+// Cargar comunas al cambiar de región
+async function cargarComunas(codigoRegion) {
+  const sel = document.getElementById('filtro-ciudad');
+  if (!sel) return;
+  while (sel.options.length > 1) sel.remove(1);
+  if (!codigoRegion) return;
+
+  try {
+    const resp = await fetch(`${API_BASE}/api/regiones/${codigoRegion}/comunas`);
+    if (!resp.ok) return;
+    const comunas = await resp.json();
+    comunas.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.nombre;
+      opt.textContent = c.nombre;
+      sel.appendChild(opt);
+    });
+  } catch (err) {
+    console.warn('Error cargando comunas:', err);
+  }
+}
+
+// Listener para cargar comunas cuando cambia la región
+document.getElementById('filtro-region')?.addEventListener('change', function() {
+  const selected = this.options[this.selectedIndex];
+  const codigo = selected?.dataset?.codigo || '';
+  cargarComunas(codigo);
+  debounceBuscar();
+});
+
+// ═══ MAILCHECK — Validación de email en tiempo real ═══════════════════════
+let _mailcheckTimer = null;
+function initMailcheck() {
+  const emailInput = document.getElementById('alerta-email');
+  if (!emailInput) return;
+
+  // Create suggestion element
+  const sugDiv = document.createElement('div');
+  sugDiv.id = 'mailcheck-suggestion';
+  sugDiv.style.cssText = 'font-size:12px;color:var(--naran);margin-top:4px;display:none;cursor:pointer';
+  emailInput.parentNode.insertBefore(sugDiv, emailInput.nextSibling);
+
+  emailInput.addEventListener('blur', async function() {
+    const email = this.value.trim();
+    if (!email || !email.includes('@')) { sugDiv.style.display = 'none'; return; }
+
+    try {
+      const resp = await fetch(`${API_BASE}/api/validar-email?email=${encodeURIComponent(email)}`);
+      if (!resp.ok) return;
+      const data = await resp.json();
+
+      if (data.desechable) {
+        sugDiv.innerHTML = '⚠️ Este dominio es temporal. Usa un email permanente.';
+        sugDiv.style.color = 'var(--rojo)';
+        sugDiv.style.display = 'block';
+        sugDiv.style.cursor = 'default';
+      } else if (data.sugerencia) {
+        sugDiv.innerHTML = `¿Quisiste decir <strong>${escHtml(data.sugerencia)}</strong>? <u>Corregir</u>`;
+        sugDiv.style.color = 'var(--naran)';
+        sugDiv.style.display = 'block';
+        sugDiv.style.cursor = 'pointer';
+        sugDiv.onclick = () => {
+          emailInput.value = data.sugerencia;
+          sugDiv.style.display = 'none';
+        };
+      } else if (!data.valido) {
+        sugDiv.innerHTML = `⚠️ ${escHtml(data.motivo || 'Email inválido')}`;
+        sugDiv.style.color = 'var(--rojo)';
+        sugDiv.style.display = 'block';
+        sugDiv.style.cursor = 'default';
+      } else {
+        sugDiv.style.display = 'none';
+      }
+    } catch {
+      sugDiv.style.display = 'none';
+    }
+  });
+
+  emailInput.addEventListener('input', () => { sugDiv.style.display = 'none'; });
+}
+
+// ═══ MEILISEARCH — Autocompletado de cargos ═══════════════════════════════
+let _meiliTimer = null;
+function initMeilisearchAutocomplete() {
+  const input = document.getElementById('input-cargo');
+  if (!input) return;
+
+  // Create dropdown container
+  const wrap = input.parentNode;
+  wrap.style.position = 'relative';
+  const dropdown = document.createElement('div');
+  dropdown.id = 'meili-autocomplete';
+  dropdown.style.cssText = `
+    position:absolute;top:100%;left:0;right:0;z-index:50;
+    background:var(--blanco);border:1px solid var(--borde);border-top:none;
+    border-radius:0 0 8px 8px;box-shadow:var(--sombra);
+    max-height:280px;overflow-y:auto;display:none;
+  `;
+  wrap.appendChild(dropdown);
+
+  input.addEventListener('input', function() {
+    const q = this.value.trim();
+    clearTimeout(_meiliTimer);
+    if (q.length < 2) { dropdown.style.display = 'none'; return; }
+
+    _meiliTimer = setTimeout(async () => {
+      try {
+        const resp = await fetch(`${API_BASE}/api/autocompletar?q=${encodeURIComponent(q)}&limite=8`);
+        if (!resp.ok) { dropdown.style.display = 'none'; return; }
+        const sugerencias = await resp.json();
+
+        if (!sugerencias.length) { dropdown.style.display = 'none'; return; }
+
+        dropdown.innerHTML = sugerencias.map(s => `
+          <div class="meili-item" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--bg2);
+            font-size:13px;transition:background .1s"
+            onmouseenter="this.style.background='var(--bg2)'"
+            onmouseleave="this.style.background=''"
+            data-cargo="${escAttr(s.cargo)}">
+            <div style="font-weight:500;color:var(--texto)">${s.cargo_highlight || escHtml(s.cargo)}</div>
+            <div style="font-size:11px;color:var(--texto3);margin-top:2px">${escHtml(s.institucion)}${s.region ? ' · ' + escHtml(s.region) : ''}</div>
+          </div>
+        `).join('');
+        dropdown.style.display = 'block';
+
+        dropdown.querySelectorAll('.meili-item').forEach(item => {
+          item.addEventListener('click', () => {
+            input.value = item.dataset.cargo;
+            dropdown.style.display = 'none';
+            buscar();
+            // Umami: track search selection
+            if (typeof umami !== 'undefined') umami.track('search-autocomplete', { cargo: item.dataset.cargo });
+          });
+        });
+      } catch {
+        dropdown.style.display = 'none';
+      }
+    }, 150);
+  });
+
+  // Hide dropdown on blur (with delay for click)
+  input.addEventListener('blur', () => setTimeout(() => dropdown.style.display = 'none', 200));
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') dropdown.style.display = 'none';
+  });
+}
+
+// ═══ UMAMI — Eventos personalizados ═══════════════════════════════════════
+function trackUmami(evento, datos) {
+  if (typeof umami !== 'undefined') {
+    try { umami.track(evento, datos); } catch {}
+  }
+}
+
+// Track search events
+const _originalBuscar = typeof buscar === 'function' ? buscar : null;
+
+// Wrap buscar to add analytics
+(function() {
+  const realBuscar = window.buscar;
+  if (!realBuscar) return;
+  window.buscar = function() {
+    const q = document.getElementById('input-cargo')?.value?.trim();
+    const region = document.getElementById('filtro-region')?.value;
+    if (q || region) {
+      trackUmami('search', { query: q || '', region: region || '' });
+    }
+    return realBuscar.apply(this, arguments);
+  };
+})();
+
+// ═══ INICIALIZACIÓN DE INTEGRACIONES ══════════════════════════════════════
+cargarRegiones();
+initMailcheck();
+initMeilisearchAutocomplete();
 
 // Carga inicial
 initAutocompletarInstitucion();

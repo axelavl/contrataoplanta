@@ -37,10 +37,19 @@ class Config:
         "(KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36",
     ]
 
-    # ── Email (alertas) ──
-    EMAIL_PROVIDER: str = os.getenv("EMAIL_PROVIDER", "resend")  # resend | mailersend
+    # ── Email (alertas vía Resend) ──
+    EMAIL_PROVIDER: str = os.getenv("EMAIL_PROVIDER", "resend")
     EMAIL_API_KEY: str  = os.getenv("EMAIL_API_KEY", "")
-    EMAIL_FROM: str     = os.getenv("EMAIL_FROM", "alertas@empleoestado.cl")
+    RESEND_API_KEY: str = os.getenv("RESEND_API_KEY", os.getenv("EMAIL_API_KEY", ""))
+    EMAIL_FROM: str     = os.getenv("EMAIL_FROM", "alertas@contrataoplanta.cl")
+
+    # ── Meilisearch ──
+    MEILISEARCH_URL: str     = os.getenv("MEILISEARCH_URL", "http://localhost:7700")
+    MEILISEARCH_API_KEY: str = os.getenv("MEILISEARCH_API_KEY", "")
+
+    # ── Umami Analytics ──
+    UMAMI_SCRIPT_URL: str = os.getenv("UMAMI_SCRIPT_URL", "")
+    UMAMI_WEBSITE_ID: str = os.getenv("UMAMI_WEBSITE_ID", "")
 
     # ── Logging ──
     LOG_DIR: str  = os.getenv("LOG_DIR", "logs")

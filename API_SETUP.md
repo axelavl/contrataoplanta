@@ -55,6 +55,40 @@ Abrir el navegador en:
 Debe responder:
   {"status": "ok", "db": "2026-04-14 ..."}
 
+## Variables de entorno
+
+```bash
+# Base de datos
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=empleospublicos
+DB_USER=postgres
+DB_PASSWORD=tu_password
+
+# Resend — alertas de email
+RESEND_API_KEY=re_xxxxxxxxxxxx
+EMAIL_FROM=alertas@contrataoplanta.cl
+
+# Meilisearch — búsqueda rápida
+MEILISEARCH_URL=http://localhost:7700
+MEILISEARCH_API_KEY=tu_master_key
+
+# Umami — analytics
+UMAMI_SCRIPT_URL=https://analytics.contrataoplanta.cl/script.js
+UMAMI_WEBSITE_ID=tu_website_id
+```
+
+## APIs externas integradas
+
+| API | Propósito | Endpoint |
+|-----|-----------|----------|
+| DPA (apis.digital.gob.cl) | Regiones y comunas oficiales | `GET /api/regiones`, `GET /api/regiones/{codigo}/comunas` |
+| BCN LeyChile | Ley orgánica por institución | `GET /api/instituciones/{id}/ley`, `GET /api/leyes/buscar` |
+| Resend | Alertas automáticas por email | `POST /api/alertas/enviar` |
+| Mailcheck | Validación de email + typos | `GET /api/validar-email` |
+| Meilisearch | Búsqueda rápida con sinónimos | `GET /api/buscar`, `GET /api/autocompletar` |
+| Umami | Analytics sin cookies | Script en frontend |
+
 ## Conectar el frontend
 
 En el archivo index_contrataoplanta.html, reemplazar los datos
@@ -70,8 +104,5 @@ fetch('http://localhost:8000/api/ofertas')
 ## Requirements.txt
 
 ```
-fastapi==0.111.0
-uvicorn==0.29.0
-psycopg2-binary==2.9.9
-python-dotenv==1.0.1
+pip install -r requirements.txt
 ```

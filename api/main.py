@@ -1,5 +1,6 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import math
@@ -42,6 +43,18 @@ try:
     _SOURCE_STATUS_AVAILABLE = True
 except Exception:  # pragma: no cover
     _SOURCE_STATUS_AVAILABLE = False
+
+# ── Service integrations ──
+from api.services.regiones import get_comunas, get_regiones
+from api.services.leyes import buscar_ley_bcn, get_ley_institucion
+from api.services.mailcheck import validar_email as mailcheck_validar
+from api.services.email_alerts import enviar_alerta_ofertas, enviar_verificacion
+from api.services.meilisearch_svc import (
+    autocompletar as meili_autocompletar,
+    buscar as meili_buscar,
+    configurar_indice as meili_configurar,
+    indexar_ofertas as meili_indexar,
+)
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -792,6 +805,11 @@ def crear_alerta(payload: AlertaPayload) -> dict[str, Any]:
     if frecuencia not in ("diaria", "semanal"):
         frecuencia = "diaria"
 
+    # Mailcheck: validate email quality
+    check = mailcheck_validar(email)
+    if not check["valido"]:
+        raise HTTPException(status_code=422, detail=check["motivo"])
+
     with get_cursor() as (connection, cursor):
         cursor.execute(
             """
@@ -817,7 +835,10 @@ def crear_alerta(payload: AlertaPayload) -> dict[str, Any]:
             )
         connection.commit()
 
-    return {"ok": True, "mensaje": "Alerta registrada correctamente"}
+    response: dict[str, Any] = {"ok": True, "mensaje": "Alerta registrada correctamente"}
+    if check.get("sugerencia"):
+        response["sugerencia_email"] = check["sugerencia"]
+    return response
 
 
 # ──────────────────── Scraper sources (catálogo + clasificación) ───────────
@@ -930,6 +951,207 @@ def get_scraper_fuentes(
     }
 
 
+# ──────────────────── Regiones y Comunas (DPA API) ──────────────────────────
+
+@app.get("/api/regiones")
+async def api_regiones() -> list[dict[str, Any]]:
+    """Regiones de Chile con nombres oficiales (API DPA del Estado)."""
+    return await get_regiones()
+
+
+@app.get("/api/regiones/{codigo_region}/comunas")
+async def api_comunas(codigo_region: str) -> list[dict[str, Any]]:
+    """Comunas de una región específica (API DPA del Estado)."""
+    return await get_comunas(codigo_region)
+
+
+# ──────────────────── Leyes por institución (BCN Ley Chile) ─────────────────
+
+@app.get("/api/instituciones/{institucion_id}/ley")
+def api_institucion_ley(institucion_id: int) -> dict[str, Any]:
+    """Ley orgánica que rige a una institución, con enlace a BCN LeyChile."""
+    inst = execute_fetch_one(
+        """
+        SELECT i.nombre, COALESCE(i.sigla, i.nombre_corto) AS sigla,
+               COALESCE(i.sector, i.tipo) AS sector
+        FROM instituciones i WHERE i.id = %s
+        """,
+        [institucion_id],
+    )
+    if not inst:
+        raise HTTPException(status_code=404, detail="Institución no encontrada")
+
+    ley = get_ley_institucion(
+        nombre=inst["nombre"],
+        sigla=inst.get("sigla"),
+        sector=inst.get("sector"),
+    )
+    return {
+        "institucion_id": institucion_id,
+        "institucion": inst["nombre"],
+        **ley,
+    }
+
+
+@app.get("/api/leyes/buscar")
+async def api_buscar_ley(q: str = Query(..., min_length=2, max_length=200)) -> list[dict[str, Any]]:
+    """Buscar normativa en BCN LeyChile."""
+    return await buscar_ley_bcn(q)
+
+
+# ──────────────────── Validación de email (Mailcheck) ───────────────────────
+
+@app.get("/api/validar-email")
+def api_validar_email(email: str = Query(..., min_length=3, max_length=200)) -> dict[str, Any]:
+    """
+    Valida un email: detecta dominios temporales/desechables y sugiere
+    correcciones de typos comunes (gmial→gmail, hotnail→hotmail).
+    """
+    return mailcheck_validar(email)
+
+
+# ──────────────────── Búsqueda rápida (Meilisearch) ─────────────────────────
+
+@app.get("/api/buscar")
+def api_buscar_meili(
+    q: str = Query(..., min_length=1, max_length=200),
+    region: str | None = Query(None),
+    sector: str | None = Query(None),
+    tipo: str | None = Query(None),
+    limite: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+) -> dict[str, Any]:
+    """
+    Búsqueda rápida con Meilisearch (~10ms).
+    Soporta sinónimos ("RRHH" → "Recursos Humanos"), tolerancia a typos,
+    y resultados con highlights.
+    """
+    filtros = {}
+    if region:
+        filtros["region"] = region
+    if sector:
+        filtros["sector"] = sector
+    if tipo:
+        filtros["tipo_contrato"] = tipo
+    filtros["activo"] = "true"
+
+    return meili_buscar(q, filtros=filtros, limite=limite, offset=offset)
+
+
+@app.get("/api/autocompletar")
+def api_autocompletar(
+    q: str = Query(..., min_length=1, max_length=100),
+    limite: int = Query(8, ge=1, le=20),
+) -> list[dict[str, str]]:
+    """
+    Autocompletado instantáneo de cargos con Meilisearch.
+    Retorna sugerencias con highlights y contexto.
+    """
+    return meili_autocompletar(q, limite=limite)
+
+
+@app.post("/api/meilisearch/reindexar")
+def api_reindexar_meili() -> dict[str, Any]:
+    """Re-indexa todas las ofertas activas en Meilisearch."""
+    ofertas = execute_fetch_all(
+        f"""
+        {ofertas_select_sql()}
+        {ofertas_base_sql()}
+        WHERE {ESTADO_SQL} = 'activo'
+        ORDER BY o.id
+        LIMIT 10000
+        """
+    )
+    if not ofertas:
+        return {"ok": False, "mensaje": "No hay ofertas para indexar"}
+
+    meili_configurar()
+    ok = meili_indexar(ofertas)
+    return {
+        "ok": ok,
+        "indexadas": len(ofertas) if ok else 0,
+        "mensaje": f"{len(ofertas)} ofertas indexadas" if ok else "Error al indexar",
+    }
+
+
+# ──────────────────── Alertas mejoradas con Resend ──────────────────────────
+
+@app.post("/api/alertas/enviar")
+def api_enviar_alertas_pendientes() -> dict[str, Any]:
+    """
+    Procesa y envía alertas pendientes a los suscriptores.
+    Busca ofertas nuevas (últimas 24h) que coincidan con los filtros
+    de cada suscriptor y les envía un email via Resend.
+    """
+    suscripciones = execute_fetch_all(
+        "SELECT * FROM alertas_suscripciones WHERE activa = TRUE"
+    )
+    if not suscripciones:
+        return {"ok": True, "enviados": 0, "mensaje": "Sin suscripciones activas"}
+
+    enviados = 0
+    errores = 0
+
+    for sub in suscripciones:
+        where_parts = [f"{ESTADO_SQL} = 'activo'"]
+        params: list[Any] = []
+
+        # Only offers from last 24h
+        where_parts.append(
+            "COALESCE(o.fecha_scraped, o.detectada_en, o.actualizada_en, o.creada_en) >= NOW() - INTERVAL '24 hours'"
+        )
+
+        if sub.get("region"):
+            where_parts.append("COALESCE(o.region, i.region, '') ILIKE %s")
+            params.append(f"%{sub['region']}%")
+        if sub.get("termino"):
+            where_parts.append("(o.cargo ILIKE %s OR COALESCE(o.descripcion, '') ILIKE %s)")
+            params.extend([f"%{sub['termino']}%", f"%{sub['termino']}%"])
+        if sub.get("tipo_contrato"):
+            where_parts.append("COALESCE(NULLIF(o.tipo_contrato, ''), NULLIF(o.tipo_cargo, '')) ILIKE %s")
+            params.append(f"%{sub['tipo_contrato']}%")
+        if sub.get("sector"):
+            where_parts.append("COALESCE(i.sector, o.sector, i.tipo, '') ILIKE %s")
+            params.append(f"%{sub['sector']}%")
+
+        where_sql = " AND ".join(where_parts)
+        ofertas = execute_fetch_all(
+            f"""
+            {ofertas_select_sql()}
+            {ofertas_base_sql()}
+            WHERE {where_sql}
+            ORDER BY fecha_scraped DESC NULLS LAST
+            LIMIT 20
+            """,
+            params,
+        )
+
+        if ofertas:
+            result = enviar_alerta_ofertas(
+                email=sub["email"],
+                ofertas=ofertas,
+                filtros={
+                    "region": sub.get("region"),
+                    "termino": sub.get("termino"),
+                    "tipo_contrato": sub.get("tipo_contrato"),
+                    "sector": sub.get("sector"),
+                },
+            )
+            if result.get("ok"):
+                enviados += 1
+            else:
+                errores += 1
+
+    return {
+        "ok": True,
+        "total_suscripciones": len(suscripciones),
+        "enviados": enviados,
+        "errores": errores,
+    }
+
+
+# ──────────────────── Health & Root ─────────────────────────────────────────
+
 @app.get("/health", response_model=None)
 def health() -> dict[str, Any] | JSONResponse:
     try:
@@ -943,7 +1165,7 @@ def health() -> dict[str, Any] | JSONResponse:
 def root() -> dict[str, Any]:
     return {
         "nombre": "contrata o planta .cl - API",
-        "version": "2.1.0",
+        "version": "3.0.0",
         "docs": "/docs",
         "db_host": DB_CONFIG["host"],
         "endpoints": [
@@ -953,11 +1175,20 @@ def root() -> dict[str, Any]:
             "GET /api/instituciones",
             "GET /api/instituciones/{id}/ofertas",
             "GET /api/instituciones/{id}/estadisticas",
+            "GET /api/instituciones/{id}/ley",
             "GET /api/historial",
             "GET /api/sugerencias",
+            "GET /api/regiones",
+            "GET /api/regiones/{codigo}/comunas",
+            "GET /api/leyes/buscar",
+            "GET /api/validar-email",
+            "GET /api/buscar",
+            "GET /api/autocompletar",
             "GET /api/scraper/resumen",
             "GET /api/scraper/fuentes",
             "POST /api/alertas",
+            "POST /api/alertas/enviar",
+            "POST /api/meilisearch/reindexar",
             "GET /health",
         ],
     }
