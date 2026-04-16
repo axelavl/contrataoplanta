@@ -1662,9 +1662,11 @@ async function fetchApi(path, options = {}) {
     try {
       const resp = await fetch(url, options);
 
-      // Si el endpoint responde (ok o 4xx de negocio), usamos esta base.
-      // Solo se intenta fallback en 5xx.
-      if (resp.status < 500) {
+      // Solo aceptar respuestas que vengan de la API real (Content-Type JSON).
+      // Si nginx u otro servidor devuelve HTML (ej. 404 de archivos estáticos),
+      // intentamos la siguiente base en vez de aceptar la respuesta inválida.
+      const ct = (resp.headers.get('content-type') || '').toLowerCase();
+      if (resp.status < 500 && ct.includes('application/json')) {
         API_BASE_ACTIVA = base;
         return resp;
       }
