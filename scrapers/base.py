@@ -41,17 +41,32 @@ DB_CONFIG = {
 USER_AGENTS = [
     (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-        "(KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
+        "(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
     ),
     (
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
-        "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        "(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
     ),
     (
         "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-        "(KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
+        "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     ),
 ]
+
+# Headers estándar que un navegador real envía en cada request.
+# Su ausencia es señal fuerte para WAFs/anti-bot (Cloudflare, Sucuri, etc.).
+DEFAULT_BROWSER_HEADERS: dict[str, str] = {
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept-Language": "es-CL,es;q=0.9,en;q=0.8",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Sec-Fetch-User": "?1",
+    "Cache-Control": "max-age=0",
+}
 
 TIPO_MAP = {
     "planta": "planta",
@@ -681,8 +696,9 @@ class BaseScraper(abc.ABC):
                 self._respect_rate_limit()
                 request_kwargs = dict(base_kwargs)
                 headers = dict(request_kwargs.pop("headers", {}) or {})
+                for key, value in DEFAULT_BROWSER_HEADERS.items():
+                    headers.setdefault(key, value)
                 headers.setdefault("User-Agent", next(self.user_agents))
-                headers.setdefault("Accept-Language", "es-CL,es;q=0.9,en;q=0.8")
                 response = self.session.request(
                     method=method.upper(),
                     url=url,

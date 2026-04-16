@@ -78,6 +78,7 @@ PLATFORM_MODULES: dict[ScraperKind, str] = {
     ScraperKind.CUSTOM_TRABAJANDO: "scrapers.plataformas.trabajando_cl",
     ScraperKind.CUSTOM_HIRINGROOM: "scrapers.plataformas.hiringroom",
     ScraperKind.CUSTOM_BUK: "scrapers.plataformas.buk",
+    ScraperKind.CUSTOM_POLICIA: "scrapers.plataformas.policia",
 }
 
 

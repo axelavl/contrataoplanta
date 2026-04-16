@@ -51,6 +51,7 @@ class ScraperKind(str, Enum):
     CUSTOM_TRABAJANDO = "custom_trabajando"
     CUSTOM_HIRINGROOM = "custom_hiringroom"
     CUSTOM_BUK = "custom_buk"
+    CUSTOM_POLICIA = "custom_policia"
     SKIP = "skip"
 
 
@@ -72,6 +73,7 @@ RUNNABLE_KINDS: frozenset[ScraperKind] = frozenset(
         ScraperKind.CUSTOM_TRABAJANDO,
         ScraperKind.CUSTOM_HIRINGROOM,
         ScraperKind.CUSTOM_BUK,
+        ScraperKind.CUSTOM_POLICIA,
     }
 )
 

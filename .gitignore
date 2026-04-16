@@ -1,7 +1,5 @@
 __pycache__/
 *.pyc
-*.pyo
+logs/
+*.log
 .env
-*.egg-info/
-dist/
-build/
