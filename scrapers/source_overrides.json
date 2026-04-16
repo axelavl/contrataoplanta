@@ -1,6 +1,29 @@
 {
-  "_doc": "Overrides manuales de estado/kind por institución. Tiene prioridad absoluta sobre la clasificación automática de source_status.classify_source. Cada entrada: {id, status, kind, reason?, notes?}. status ∈ active|experimental|manual_review|js_required|blocked|broken|no_data|disabled. kind ∈ empleos_publicos|wordpress|generic|custom_trabajando|custom_hiringroom|custom_buk|custom_policia|skip.",
+  "_doc": "Overrides manuales de estado/kind por institución. Tiene prioridad absoluta sobre la clasificación automática de source_status.classify_source. Cada entrada: {id, status, kind, reason?, notes?}. status ∈ active|experimental|manual_review|js_required|blocked|broken|no_data|disabled. kind ∈ empleos_publicos|wordpress|generic|custom_trabajando|custom_hiringroom|custom_buk|custom_policia|custom_ffaa|skip.",
   "overrides": [
+    {"_comment": "=== FF.AA. y Orden ==="},
+
+    {
+      "id": 157,
+      "status": "active",
+      "kind": "custom_ffaa",
+      "reason": "Ejercito de Chile — scraper dedicado con warmup de sesion y URLs especificas",
+      "notes": "https://ingreso.ejercito.cl/ + fallback transparencia ejercito.cl"
+    },
+    {
+      "id": 158,
+      "status": "active",
+      "kind": "custom_ffaa",
+      "reason": "Armada de Chile — scraper dedicado con warmup de sesion y URLs especificas",
+      "notes": "https://www.admisionarmada.cl/ + fallback transparencia armada.cl"
+    },
+    {
+      "id": 159,
+      "status": "active",
+      "kind": "custom_trabajando",
+      "reason": "FACH — portal en Trabajando.cl (fach.trabajando.cl)",
+      "notes": "https://fach.trabajando.cl/"
+    },
     {
       "id": 161,
       "status": "active",
@@ -14,6 +37,27 @@
       "kind": "custom_policia",
       "reason": "PDI — scraper dedicado con warmup de sesion y URLs especificas",
       "notes": "https://postulaciones.investigaciones.cl/ + fallback transparencia pdichile.cl"
+    },
+    {
+      "id": 164,
+      "status": "active",
+      "kind": "generic",
+      "reason": "ASMAR — portal propio trabaja-con-nosotros. No publica en EP",
+      "notes": "https://www.asmar.cl/trabaja-con-nosotros/"
+    },
+    {
+      "id": 165,
+      "status": "active",
+      "kind": "generic",
+      "reason": "FAMAE — portal propio trabaja-con-nosotros. No publica en EP",
+      "notes": "https://www.famae.cl/trabaja-con-nosotros/"
+    },
+    {
+      "id": 166,
+      "status": "active",
+      "kind": "generic",
+      "reason": "ENAER — portal propio bolsa-de-trabajo. No publica en EP",
+      "notes": "https://www.enaer.cl/bolsa-de-trabajo/"
     },
 
     {"_comment": "=== Ejecutivo Central ==="},

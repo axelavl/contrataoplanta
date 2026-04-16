@@ -2874,7 +2874,7 @@
       "region": "Nacional",
       "sitio_web": "https://fach.mil.cl/",
       "url_empleo": "https://fach.trabajando.cl/",
-      "plataforma_empleo": "Sitio propio",
+      "plataforma_empleo": "Trabajando.cl",
       "publica_en_empleospublicos": "No",
       "dificultad_scraping": "Media",
       "requiere_js": "No",

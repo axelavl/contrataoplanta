@@ -80,6 +80,7 @@ PLATFORM_MODULES: dict[ScraperKind, str] = {
     ScraperKind.CUSTOM_BUK: "scrapers.plataformas.buk",
     ScraperKind.CUSTOM_PLAYWRIGHT: "scrapers.plataformas.playwright_scraper",
     ScraperKind.CUSTOM_POLICIA: "scrapers.plataformas.policia",
+    ScraperKind.CUSTOM_FFAA: "scrapers.plataformas.ffaa",
 }
 
 
