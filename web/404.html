@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>document.documentElement.classList.add('js-nav');</script>
 <title>Página no encontrada — contrata o planta .cl</title>
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,6 +22,9 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;font-size:16px}
 body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--texto);-webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
+
+.skip-link{position:absolute;left:12px;top:-48px;z-index:1000;background:var(--azul, #0A2E6E);color:var(--blanco, #FAFAF8);padding:10px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;transition:top .2s}
+.skip-link:focus{top:10px}
 
 nav {
   position: sticky; top: 0; z-index: 100;
@@ -142,7 +146,7 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
 
 @media (max-width: 768px) { .footer-inner { grid-template-columns: 1fr 1fr; gap: 24px; } }
 @media (max-width: 600px) {
-  .nav-links{display:none}
+  .js-nav .nav-links{display:none}
   .error-card { padding: 40px 24px; }
   .error-num { font-size: 72px; }
   .error-titulo { font-size: 22px; }
@@ -152,7 +156,10 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
 </style>
 </head>
 <body>
+<a class="skip-link" href="#contenido-principal">Saltar al contenido</a>
 
+
+<header>
 <nav>
   <div class="nav-inner">
     <a href="index.html" class="logo">contrata <em>o</em> planta <em style="font-style:normal;color:rgba(255,255,255,0.3)">.cl</em></a>
@@ -166,6 +173,9 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
     <a href="index.html#alertas" class="nav-alerta">+ Crear alerta</a>
   </div>
 </nav>
+</header>
+
+<main id="contenido-principal">
 
 <div class="error-wrap">
   <div class="error-card">
@@ -193,6 +203,8 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
     </div>
   </div>
 </div>
+
+</main>
 
 <footer>
   <div class="footer-inner">

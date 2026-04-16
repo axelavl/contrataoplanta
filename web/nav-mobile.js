@@ -11,10 +11,13 @@
  */
 (function () {
   'use strict';
+  document.documentElement.classList.add('js-nav');
 
   // ── 1. Inject mobile CSS ──────────────────────────────────────────
   var css = [
     'html, body { overflow-x: hidden; }',
+    '.skip-link { position:absolute; left:12px; top:-48px; z-index:1000; background:#0A2E6E; color:#FAFAF8; padding:10px 14px; border-radius:8px; text-decoration:none; font-size:13px; font-weight:600; transition:top .2s; }',
+    '.skip-link:focus { top:10px; }',
 
     /* Hamburger button */
     '.hamburger { display:none; background:none; border:none; cursor:pointer;',
@@ -52,10 +55,10 @@
 
     /* Show only on mobile */
     '@media (max-width:600px) {',
-    '  .hamburger { display:flex; }',
-    '  .nav-mobile-overlay, .nav-mobile-panel { display:flex; }',
-    '  .nav-links { display:none !important; }',
-    '  .nav-alerta { display:none !important; }',
+    '  .js-nav .hamburger { display:flex; }',
+    '  .js-nav .nav-mobile-overlay, .js-nav .nav-mobile-panel { display:flex; }',
+    '  .js-nav .nav-links { display:none !important; }',
+    '  .js-nav .nav-alerta { display:none !important; }',
     '  .footer-inner { grid-template-columns:1fr !important; gap:24px !important; }',
     '  .footer-bottom { flex-direction:column; gap:4px; text-align:center; }',
     '}',
@@ -96,6 +99,7 @@
   btn.id = 'hamburger-btn';
   btn.setAttribute('aria-label', 'Abrir men\u00fa');
   btn.setAttribute('aria-expanded', 'false');
+  btn.setAttribute('aria-controls', 'nav-mobile-panel');
   btn.innerHTML = '<span></span><span></span><span></span>';
   navInner.appendChild(btn);
 
@@ -136,27 +140,32 @@
   function abrirMenu() {
     btn.classList.add('abierto');
     btn.setAttribute('aria-expanded', 'true');
+    btn.setAttribute('aria-label', 'Cerrar menú');
     panel.classList.add('visible');
     overlay.classList.add('visible');
     document.body.style.overflow = 'hidden';
+    var firstLink = panel.querySelector('a');
+    if (firstLink) firstLink.focus();
   }
-  function cerrarMenu() {
+  function cerrarMenu(devolverFoco) {
     btn.classList.remove('abierto');
     btn.setAttribute('aria-expanded', 'false');
+    btn.setAttribute('aria-label', 'Abrir menú');
     panel.classList.remove('visible');
     overlay.classList.remove('visible');
     document.body.style.overflow = '';
+    if (devolverFoco) btn.focus();
   }
 
   btn.addEventListener('click', function () {
     btn.classList.contains('abierto') ? cerrarMenu() : abrirMenu();
   });
-  overlay.addEventListener('click', cerrarMenu);
+  overlay.addEventListener('click', function () { cerrarMenu(true); });
   panel.querySelectorAll('a').forEach(function (a) {
-    a.addEventListener('click', cerrarMenu);
+    a.addEventListener('click', function () { cerrarMenu(false); });
   });
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && btn.classList.contains('abierto')) cerrarMenu();
+    if (e.key === 'Escape' && btn.classList.contains('abierto')) cerrarMenu(true);
   });
 
   // ── 7. Favorites counter ──────────────────────────────────────────
