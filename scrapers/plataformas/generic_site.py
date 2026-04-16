@@ -25,6 +25,7 @@ from scrapers.base import (
     parse_renta,
 )
 
+from scrapers.job_pipeline import JobExtractionPipeline, build_raw_page_from_generic
 
 KEYWORDS_OFERTA = (
     "concurso",
@@ -120,6 +121,7 @@ class GenericSiteScraper(BaseScraper):
             if pattern and pattern not in patterns:
                 patterns.append(pattern)
         self.scope_url_patterns = patterns
+        self.pipeline = JobExtractionPipeline()
 
     def fetch_ofertas(self) -> list[dict[str, Any]]:
         ofertas: list[dict[str, Any]] = []
@@ -175,36 +177,42 @@ class GenericSiteScraper(BaseScraper):
         return ofertas[: self.max_results] if self.max_results else ofertas
 
     def parse_oferta(self, raw: dict[str, Any]) -> dict[str, Any] | None:
-        content_text = clean_text(raw.get("content_text"))
-        title = clean_text(raw.get("title"))
-        url_oferta = clean_text(raw.get("url"))
-        pdf_links = raw.get("pdf_links") or []
-
-        fecha_publicacion = parse_date(raw.get("date"))
-        fecha_cierre = parse_date(raw.get("fecha_cierre")) or self._extract_fecha_cierre(
-            content_text
+        raw_page = build_raw_page_from_generic(
+            source_id=str(self.institucion.get("id") or self.nombre),
+            source_name=str(self.institucion.get("nombre") or self.nombre),
+            source_url=self.url_empleo or self.sitio_web or "",
+            raw=raw,
+            platform="generic_site",
         )
-        renta_min, renta_max, grado_eus = parse_renta(content_text)
+        posting, trace = self.pipeline.run(raw_page)
+        if not posting:
+            self.logger.info(
+                "evento=generic_reject scraper=%s url=%s reasons=%s",
+                self.nombre,
+                raw_page.url,
+                trace.get("rejection_reasons"),
+            )
+            return None
 
         oferta = {
             "institucion_id": self.institucion.get("id"),
             "institucion_nombre": self.institucion.get("nombre"),
-            "cargo": title or self._crop_title(content_text),
-            "descripcion": content_text or None,
-            "requisitos": content_text or None,
-            "tipo_contrato": normalize_tipo_contrato(f"{title} {content_text}"),
+            "cargo": posting.get("job_title") or raw.get("title") or self._crop_title(raw.get("content_text")),
+            "descripcion": posting.get("description") or raw.get("content_text"),
+            "requisitos": "\n".join(posting.get("requirements") or []) or raw.get("content_text"),
+            "tipo_contrato": posting.get("contract_type") or normalize_tipo_contrato(raw.get("content_text")),
             "region": normalize_region(self.institucion.get("region")),
             "ciudad": self._infer_city(self.institucion.get("nombre")),
-            "renta_bruta_min": renta_min,
-            "renta_bruta_max": renta_max,
-            "grado_eus": grado_eus,
-            "jornada": self._extract_jornada(content_text),
-            "area_profesional": self._infer_area(title or content_text),
-            "fecha_publicacion": fecha_publicacion,
-            "fecha_cierre": fecha_cierre,
-            "url_oferta": url_oferta,
-            "url_bases": pdf_links[0] if pdf_links else url_oferta,
-            "estado": "activo",
+            "renta_bruta_min": int(posting.get("salary_amount")) if posting.get("salary_amount") else None,
+            "renta_bruta_max": int(posting.get("salary_amount")) if posting.get("salary_amount") else None,
+            "grado_eus": None,
+            "jornada": posting.get("workday") or self._extract_jornada(raw.get("content_text")),
+            "area_profesional": self._infer_area(posting.get("job_title") or raw.get("content_text")),
+            "fecha_publicacion": posting.get("published_at") or parse_date(raw.get("date")),
+            "fecha_cierre": posting.get("application_end_at") or parse_date(raw.get("fecha_cierre")),
+            "url_oferta": posting.get("job_url") or raw.get("url"),
+            "url_bases": (posting.get("attachments") or [raw.get("url")])[0],
+            "estado": "cerrado" if posting.get("is_expired") else "activo",
         }
         return self.normalize_offer(oferta)
 
