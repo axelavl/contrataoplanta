@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet">
+<!-- Umami Analytics — sin cookies, sin banner GDPR -->
+<script defer data-website-id="UMAMI_WEBSITE_ID" src="https://analytics.contrataoplanta.cl/script.js"></script>
 <style>
 :root {
   --azul:   #0A2E6E; --azul-m: #1557C0; --cielo: #1A6BCC; --cielo-l:#D6E6F8;
@@ -97,6 +99,10 @@ nav {
 .col-link{text-align:right}
 .link-externo{font-size:12px;color:var(--cielo);text-decoration:none}
 .link-externo:hover{text-decoration:underline}
+.col-ley{max-width:180px}
+.ley-link{font-size:11px;color:var(--cielo);text-decoration:none;display:inline-block;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ley-link:hover{text-decoration:underline}
+.ley-nombre{font-size:10px;color:var(--texto3);display:block;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px}
 
 /* PAGINACIÓN */
 .paginacion{display:flex;gap:6px;justify-content:center;margin-top:28px;flex-wrap:wrap}
@@ -181,22 +187,7 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
       <label for="inp-region">Región</label>
       <select id="inp-region" onchange="buscar()">
         <option value="">Todas las regiones</option>
-        <option>Metropolitana de Santiago</option>
-        <option>Valparaíso</option>
-        <option>Biobío</option>
-        <option>La Araucanía</option>
-        <option>O'Higgins</option>
-        <option>Maule</option>
-        <option>Los Lagos</option>
-        <option>Antofagasta</option>
-        <option>Coquimbo</option>
-        <option>Atacama</option>
-        <option>Tarapacá</option>
-        <option>Arica y Parinacota</option>
-        <option>Los Ríos</option>
-        <option>Aysén</option>
-        <option>Magallanes</option>
-        <option>Ñuble</option>
+        <!-- Se carga dinámicamente desde API DPA -->
       </select>
     </div>
     <button class="busq-btn" onclick="buscar()">Buscar</button>
@@ -211,6 +202,7 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
           <th>Institución</th>
           <th>Sector</th>
           <th class="col-region">Región</th>
+          <th class="col-ley">Ley que la rige</th>
           <th class="col-num">Ofertas activas</th>
           <th class="col-link">Sitio de empleo</th>
         </tr>
@@ -287,10 +279,52 @@ function renderFila(inst) {
       </td>
       <td>${sector}</td>
       <td class="col-region">${region}</td>
+      <td class="col-ley" id="ley-${inst.id}"><span style="color:var(--texto3);font-size:11px">cargando…</span></td>
       <td class="col-num">${activas}</td>
       <td class="col-link">${linkEmpleo}</td>
     </tr>
   `;
+}
+
+// Cargar ley para cada institución visible
+async function cargarLeyesInstituciones(instituciones) {
+  for (const inst of instituciones) {
+    const celda = document.getElementById(`ley-${inst.id}`);
+    if (!celda) continue;
+    try {
+      const resp = await fetch(`${API_BASE}/api/instituciones/${inst.id}/ley`);
+      if (!resp.ok) { celda.innerHTML = '<span style="color:var(--texto3);font-size:11px">—</span>'; continue; }
+      const data = await resp.json();
+      celda.innerHTML = `
+        <a href="${data.url}" target="_blank" rel="noopener" class="ley-link" title="${data.titulo}">${data.ley}</a>
+        <span class="ley-nombre">${data.titulo}</span>
+      `;
+    } catch {
+      celda.innerHTML = '<span style="color:var(--texto3);font-size:11px">—</span>';
+    }
+  }
+}
+
+// Cargar regiones dinámicamente desde API DPA
+async function cargarRegiones() {
+  try {
+    const resp = await fetch(`${API_BASE}/api/regiones`);
+    if (!resp.ok) return;
+    const regiones = await resp.json();
+    const sel = document.getElementById('inp-region');
+    if (!sel) return;
+    const valorActual = sel.value;
+    while (sel.options.length > 1) sel.remove(1);
+    regiones.forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r.nombre;
+      opt.textContent = r.nombre;
+      sel.appendChild(opt);
+    });
+    if (valorActual) sel.value = valorActual;
+  } catch (err) {
+    console.warn('Error cargando regiones:', err);
+  }
 }
 
 function renderPaginacion(total, paginas) {
@@ -348,13 +382,16 @@ async function cargar() {
     tbody.innerHTML = d.instituciones.map(renderFila).join('');
     document.getElementById('total-label').textContent = `${fmt(d.total)} institución${d.total !== 1 ? 'es' : ''} encontrada${d.total !== 1 ? 's' : ''}`;
     renderPaginacion(d.total, d.paginas);
+    // Load laws for visible institutions (BCN LeyChile)
+    cargarLeyesInstituciones(d.instituciones);
   } catch (e) {
     tbody.innerHTML = `<tr><td colspan="5"><div class="estado-vacio">No se pudo conectar con el servidor. Verifica que la API esté corriendo.</div></td></tr>`;
     document.getElementById('total-label').textContent = '';
   }
 }
 
-// Cargar al inicio (o filtrar por parámetro URL ?id=)
+// Cargar regiones dinámicamente y luego la tabla
+cargarRegiones();
 const params = new URLSearchParams(window.location.search);
 cargar();
 </script>
