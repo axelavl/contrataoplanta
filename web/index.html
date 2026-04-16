@@ -1897,27 +1897,27 @@ function renderPaginacion(total, paginas) {
   let html = '';
 
   // Botón anterior
-  html += `<button class="pag-btn" ${p <= 1 ? 'disabled' : ''} onclick="irPagina(${p-1})">‹</button>`;
+  html += '<button class="pag-btn" ' + (p <= 1 ? 'disabled' : '') + ' onclick="irPagina(' + (p - 1) + ')">‹</button>';
 
   // Páginas (ventana de 5 alrededor de la actual)
   const desde = Math.max(1, p - 2);
   const hasta = Math.min(paginas, p + 2);
-  if (desde > 1) { html += `<button class="pag-btn" onclick="irPagina(1)">1</button>`; }
+  if (desde > 1) { html += '<button class="pag-btn" onclick="irPagina(1)">1</button>'; }
   if (desde > 2) {
     const mid = Math.round((1 + desde) / 2);
-    html += `<button class="pag-btn pag-ellipsis" onclick="abrirInputPagina(this,${mid},${paginas})" title="Ir a página…">…</button>`;
+    html += '<button class="pag-btn pag-ellipsis" onclick="abrirInputPagina(this,' + mid + ',' + paginas + ')" title="Ir a página…">…</button>';
   }
   for (let i = desde; i <= hasta; i++) {
-    html += `<button class="pag-btn ${i === p ? 'activo' : ''}" onclick="irPagina(${i})">${i}</button>`;
+    html += '<button class="pag-btn ' + (i === p ? 'activo' : '') + '" onclick="irPagina(' + i + ')">' + i + '</button>';
   }
   if (hasta < paginas - 1) {
     const mid = Math.round((hasta + paginas) / 2);
-    html += `<button class="pag-btn pag-ellipsis" onclick="abrirInputPagina(this,${mid},${paginas})" title="Ir a página…">…</button>`;
+    html += '<button class="pag-btn pag-ellipsis" onclick="abrirInputPagina(this,' + mid + ',' + paginas + ')" title="Ir a página…">…</button>';
   }
-  if (hasta < paginas) { html += `<button class="pag-btn" onclick="irPagina(${paginas})">${paginas}</button>`; }
+  if (hasta < paginas) { html += '<button class="pag-btn" onclick="irPagina(' + paginas + ')">' + paginas + '</button>'; }
 
   // Botón siguiente
-  html += `<button class="pag-btn" ${p >= paginas ? 'disabled' : ''} onclick="irPagina(${p+1})">›</button>`;
+  html += '<button class="pag-btn" ' + (p >= paginas ? 'disabled' : '') + ' onclick="irPagina(' + (p + 1) + ')">›</button>';
 
   cont.innerHTML = html;
 }
