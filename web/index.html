@@ -23,6 +23,36 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet">
 <!-- Umami Analytics — sin cookies, sin banner GDPR -->
 <script defer data-website-id="UMAMI_WEBSITE_ID" src="https://analytics.contrataoplanta.cl/script.js"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "contrata o planta .cl",
+  "url": "https://contrataoplanta.cl/",
+  "logo": "https://contrataoplanta.cl/assets/logo-512.png",
+  "contactPoint": [
+    {
+      "@type": "ContactPoint",
+      "contactType": "customer support",
+      "email": "contacto@contrataoplanta.cl",
+      "availableLanguage": ["es"]
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "contrata o planta .cl",
+  "url": "https://contrataoplanta.cl/",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "https://contrataoplanta.cl/?q={search_term_string}",
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>
 <style>
 /* ═══ VARIABLES ══════════════════════════════════════════════════════ */
 :root {
@@ -1662,6 +1692,86 @@ function escHtml(s) {
   return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+function isValidHttpUrl(url) {
+  if (!url || typeof url !== 'string') return false;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function isIsoDate(iso) {
+  if (!iso || typeof iso !== 'string') return false;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+  const d = new Date(`${iso}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === iso;
+}
+
+function jsonLdScript(payload) {
+  return `<script type="application/ld+json">${JSON.stringify(payload).replace(/</g, '\\u003c')}</script>`;
+}
+
+function buildJobPostingJsonLd(oferta) {
+  const titulo = (oferta?.cargo || '').trim();
+  const institucion = (oferta?.institucion || '').trim();
+  const fechaValida = isIsoDate(oferta?.fecha_cierre) ? oferta.fecha_cierre : null;
+  const region = (oferta?.region || '').trim();
+  const ciudad = ciudadValida(oferta?.ciudad || '', institucion).trim();
+  const urlOficial = (oferta?.url_oferta || '').trim();
+
+  const errores = [];
+  if (!titulo) errores.push('cargo');
+  if (!institucion) errores.push('institucion');
+  if (!fechaValida) errores.push('fecha_cierre (YYYY-MM-DD)');
+  if (!region && !ciudad) errores.push('ubicacion');
+  if (!isValidHttpUrl(urlOficial)) errores.push('url_oferta');
+  if (errores.length) return { valido: false, markup: '', errores };
+
+  const location = {
+    "@type": "Place",
+    "address": {
+      "@type": "PostalAddress",
+      "addressCountry": "CL",
+      ...(ciudad ? { "addressLocality": ciudad } : {}),
+      ...(region ? { "addressRegion": region } : {})
+    }
+  };
+
+  const payload = {
+    "@context": "https://schema.org",
+    "@type": "JobPosting",
+    "title": titulo,
+    "hiringOrganization": {
+      "@type": "Organization",
+      "name": institucion
+    },
+    "jobLocation": [location],
+    "validThrough": `${fechaValida}T23:59:59-04:00`,
+    "datePosted": isIsoDate(oferta?.fecha_publicacion) ? oferta.fecha_publicacion : fechaValida,
+    "url": urlOficial
+  };
+
+  if (typeof oferta?.renta_bruta_min === 'number' && oferta.renta_bruta_min > 0) {
+    payload.baseSalary = {
+      "@type": "MonetaryAmount",
+      "currency": "CLP",
+      "value": {
+        "@type": "QuantitativeValue",
+        "value": oferta.renta_bruta_min,
+        "unitText": "MONTH"
+      }
+    };
+  }
+
+  if (oferta?.jornada) payload.workHours = oferta.jornada;
+  if (oferta?.tipo_contrato) payload.employmentType = oferta.tipo_contrato.toUpperCase();
+  if (oferta?.descripcion) payload.description = oferta.descripcion;
+
+  return { valido: true, markup: jsonLdScript(payload), errores: [] };
+}
+
 // ── Utilidades de formato ──────────────────────────────────────────────────
 function formatRenta(min, max, grado) {
   if (min) {
@@ -1752,6 +1862,10 @@ function renderCard(oferta) {
 
   const favs = JSON.parse(localStorage.getItem('fav_contrataoplanta') || '[]');
   const esFav = favs.some(f => f.id === oferta.id);
+  const jobPosting = buildJobPostingJsonLd(oferta);
+  if (!jobPosting.valido) {
+    console.debug('[SEO] JobPosting omitido en card por campos faltantes:', jobPosting.errores, oferta?.id);
+  }
 
   return `
   <div class="oferta-card${esFav ? ' favorita' : ''}" data-oferta-id="${oferta.id}" role="button" tabindex="0" aria-label="Ver detalle: ${escAttr(oferta.cargo)}">
@@ -1799,6 +1913,7 @@ function renderCard(oferta) {
         <button class="btn-postular" onclick="event.stopPropagation();window.open('${escAttr(oferta.url_oferta)}','_blank')">Postular →</button>
       </div>
     </div>
+    ${jobPosting.markup}
   </div>`;
 }
 
@@ -1846,6 +1961,10 @@ function renderRowCompacta(oferta) {
   const renta = formatRenta(oferta.renta_bruta_min, oferta.renta_bruta_max, oferta.grado_eus);
   const favs  = JSON.parse(localStorage.getItem('fav_contrataoplanta') || '[]');
   const esFav = favs.some(f => f.id === oferta.id);
+  const jobPosting = buildJobPostingJsonLd(oferta);
+  if (!jobPosting.valido) {
+    console.debug('[SEO] JobPosting omitido en row por campos faltantes:', jobPosting.errores, oferta?.id);
+  }
   return `
   <div class="oferta-row${esFav ? ' favorita' : ''}" data-oferta-id="${oferta.id}" role="button" tabindex="0" aria-label="Ver detalle: ${escAttr(oferta.cargo)}">
     <div class="row-main">
@@ -1871,6 +1990,7 @@ function renderRowCompacta(oferta) {
       onclick="event.stopPropagation();toggleFavCard(this)"
       title="${esFav ? 'Quitar de favoritos' : 'Guardar como favorito'}"
     >${esFav ? '♥' : '♡'}</button>
+    ${jobPosting.markup}
   </div>`;
 }
 
