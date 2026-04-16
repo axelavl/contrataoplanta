@@ -37,7 +37,7 @@
 
 /* ═══ RESET ═══════════════════════════════════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; font-size: 16px; }
+html { scroll-behavior: smooth; font-size: 16px; overflow-x: hidden; }
 body {
   font-family: 'Inter', system-ui, sans-serif;
   background: var(--bg);
@@ -45,6 +45,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* ═══ NAVBAR ══════════════════════════════════════════════════════════ */
@@ -89,6 +90,72 @@ nav {
   transition: opacity .15s;
 }
 .nav-alerta:hover { opacity: .9; }
+
+/* ═══ HAMBURGER MENU ═════════════════════════════════════════════════ */
+.hamburger {
+  display: none;
+  background: none; border: none; cursor: pointer;
+  width: 36px; height: 36px;
+  flex-direction: column; align-items: center; justify-content: center;
+  gap: 5px; padding: 0; margin-left: auto;
+}
+.hamburger span {
+  display: block; width: 22px; height: 2px;
+  background: white; border-radius: 2px;
+  transition: transform .3s, opacity .3s;
+}
+.hamburger.abierto span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger.abierto span:nth-child(2) { opacity: 0; }
+.hamburger.abierto span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+.nav-mobile-overlay {
+  display: none;
+  position: fixed; inset: 0; top: 56px;
+  background: rgba(0,0,0,0.5);
+  z-index: 98;
+  opacity: 0;
+  transition: opacity .3s;
+}
+.nav-mobile-overlay.visible { opacity: 1; }
+
+.nav-mobile-panel {
+  display: none;
+  position: fixed; top: 56px; right: 0;
+  width: 280px; max-width: 85vw;
+  height: calc(100vh - 56px); height: calc(100dvh - 56px);
+  background: var(--azul);
+  z-index: 99;
+  flex-direction: column;
+  padding: 16px 0;
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform .3s cubic-bezier(.4,0,.2,1);
+}
+.nav-mobile-panel.visible { transform: translateX(0); }
+.nav-mobile-panel a {
+  display: block; padding: 14px 24px;
+  font-size: 15px; color: rgba(255,255,255,0.7);
+  text-decoration: none; font-weight: 500;
+  transition: background .15s, color .15s;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.nav-mobile-panel a:hover, .nav-mobile-panel a.active {
+  background: rgba(255,255,255,0.1); color: white;
+}
+.nav-mobile-panel .nav-link-favs { color: var(--acento) !important; }
+.nav-mobile-panel .nav-mobile-alerta {
+  margin: 16px 24px 0;
+  display: inline-block;
+  font-size: 13px; font-weight: 600;
+  background: var(--acento); color: var(--azul);
+  padding: 10px 20px; border-radius: 8px;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .hamburger { display: flex; }
+  .nav-mobile-overlay, .nav-mobile-panel { display: flex; }
+}
 
 /* ═══ HERO ════════════════════════════════════════════════════════════ */
 .hero {
@@ -974,11 +1041,13 @@ footer {
 /* ═══ RESPONSIVE ══════════════════════════════════════════════════════ */
 @media (max-width: 900px) {
   .main { grid-template-columns: 1fr; }
+  .main > * { min-width: 0; }
   .sidebar { order: -1; }
-  .buscador-form { grid-template-columns: 1fr; }
+  .buscador-form { grid-template-columns: 1fr 1fr; }
+  .buscador-form > .campo:first-child { grid-column: 1 / -1; }
+  .buscador-form > .btn-buscar { margin-top: 0; grid-column: 1 / -1; }
   .buscador-fila2 { grid-template-columns: 1fr 1fr; }
   .buscador-fila2 > .campo:first-child { grid-column: 1 / -1; }
-  .btn-buscar { margin-top: 0; }
   .footer-inner { grid-template-columns: 1fr 1fr; }
   .modal-info-grid { grid-template-columns: 1fr; }
   .ofertas-lista.cuadricula { grid-template-columns: 1fr; }
@@ -990,15 +1059,27 @@ footer {
 }
 @media (max-width: 600px) {
   .nav-links { display: none; }
+  .nav-alerta { display: none; }
   .hero-h1 { font-size: 28px; }
   .hero-stats-bar { display: none; }
+  .buscador-form { grid-template-columns: 1fr; }
+  .buscador-form > .campo:first-child { grid-column: auto; }
+  .buscador-form > .btn-buscar { grid-column: auto; }
+  .buscador-fila2 { grid-template-columns: 1fr; }
+  .buscador-fila2 > .campo:first-child { grid-column: auto; }
   .footer-inner { grid-template-columns: 1fr; gap: 24px; }
+  .footer-bottom { flex-direction: column; gap: 4px; text-align: center; }
   .stat-grid { grid-template-columns: 1fr 1fr; }
   .resultados-controles { gap: 4px; }
   .ctrl-select { font-size: 11px; padding: 0 22px 0 8px; }
+  /* Sidebar: hide heavy widgets on mobile */
+  .sidebar .widget:has(.hist-bar-wrap) { display: none; }
+  .sidebar .widget:has(#masactivas-lista) { display: none; }
   /* Compacta: solo main + plazo en móvil */
   .row-meta { display: none; }
   .oferta-row-header > :nth-child(2) { display: none; }
+  .filtros-rapidos { gap: 6px; }
+  .filtro-tag { font-size: 11px; padding: 3px 10px; }
 }
 
 </style>
@@ -1008,17 +1089,29 @@ footer {
 <!-- ══ NAVBAR ══════════════════════════════════════════════════════ -->
 <nav>
   <div class="nav-inner">
-    <a href="index_contrataoplanta.html" class="logo">contrata <em>o</em> planta <em style="font-style:normal;color:rgba(255,255,255,0.3)">.cl</em></a>
+    <a href="index.html" class="logo">contrata <em>o</em> planta <em style="font-style:normal;color:rgba(255,255,255,0.3)">.cl</em></a>
     <div class="nav-links">
-      <a href="index_contrataoplanta.html" class="active">Buscar empleos</a>
+      <a href="index.html" class="active">Buscar empleos</a>
       <a href="favoritos.html" id="nav-favoritos" class="nav-link-favs">♡ Mis favoritos</a>
       <a href="instituciones.html">Instituciones</a>
       <a href="estadisticas.html">Estadísticas</a>
       <a href="faq.html">Preguntas frecuentes</a>
     </div>
     <a href="#alertas" class="nav-alerta">+ Crear alerta</a>
+    <button class="hamburger" id="hamburger-btn" aria-label="Abrir menú" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </nav>
+<div class="nav-mobile-overlay" id="nav-mobile-overlay"></div>
+<div class="nav-mobile-panel" id="nav-mobile-panel">
+  <a href="index.html" class="active">Buscar empleos</a>
+  <a href="favoritos.html" class="nav-link-favs" id="nav-mobile-favoritos">♡ Mis favoritos</a>
+  <a href="instituciones.html">Instituciones</a>
+  <a href="estadisticas.html">Estadísticas</a>
+  <a href="faq.html">Preguntas frecuentes</a>
+  <a href="#alertas" class="nav-mobile-alerta">+ Crear alerta</a>
+</div>
 
 <!-- ══ HERO ════════════════════════════════════════════════════════ -->
 <div class="hero">
@@ -1343,12 +1436,12 @@ footer {
 <footer>
   <div class="footer-inner">
     <div class="footer-brand">
-      <a href="index_contrataoplanta.html" class="logo" style="display:block;margin-bottom:10px">contrata <em>o</em> planta <em style="font-style:normal;color:rgba(255,255,255,0.3)">.cl</em></a>
+      <a href="index.html" class="logo" style="display:block;margin-bottom:10px">contrata <em>o</em> planta <em style="font-style:normal;color:rgba(255,255,255,0.3)">.cl</em></a>
       <p class="footer-desc">La plataforma laboral del sector público chileno. <span id="footer-fuentes-total">700</span> instituciones registradas, <span id="footer-fuentes-activas">—</span> con scraping activo.</p>
     </div>
     <div>
       <div class="footer-col-titulo">Explorar</div>
-      <a href="index_contrataoplanta.html" class="footer-link">Buscar empleos</a>
+      <a href="index.html" class="footer-link">Buscar empleos</a>
       <a href="instituciones.html" class="footer-link">Por institución</a>
       <a href="estadisticas.html" class="footer-link">Estadísticas</a>
       <a href="historial.html" class="footer-link">Historial</a>
@@ -2633,6 +2726,46 @@ cargarEstadisticas();
 cargarResumenFuentes();
 mostrarUltimaActualizacion();
 setInterval(mostrarUltimaActualizacion, 5 * 60 * 1000); // refrescar cada 5 min
+
+// ═══ HAMBURGER MENU ═══════════════════════════════════════════════════
+(function() {
+  const btn = document.getElementById('hamburger-btn');
+  const panel = document.getElementById('nav-mobile-panel');
+  const overlay = document.getElementById('nav-mobile-overlay');
+  if (!btn || !panel || !overlay) return;
+
+  function abrirMenu() {
+    btn.classList.add('abierto');
+    btn.setAttribute('aria-expanded', 'true');
+    panel.classList.add('visible');
+    overlay.classList.add('visible');
+    document.body.style.overflow = 'hidden';
+  }
+  function cerrarMenu() {
+    btn.classList.remove('abierto');
+    btn.setAttribute('aria-expanded', 'false');
+    panel.classList.remove('visible');
+    overlay.classList.remove('visible');
+    document.body.style.overflow = '';
+  }
+  btn.addEventListener('click', function() {
+    btn.classList.contains('abierto') ? cerrarMenu() : abrirMenu();
+  });
+  overlay.addEventListener('click', cerrarMenu);
+  panel.querySelectorAll('a').forEach(function(a) {
+    a.addEventListener('click', cerrarMenu);
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && btn.classList.contains('abierto')) cerrarMenu();
+  });
+
+  // Update favorites count in mobile menu
+  var favCount = JSON.parse(localStorage.getItem('favoritos') || '[]').length;
+  var mobileFav = document.getElementById('nav-mobile-favoritos');
+  if (mobileFav && favCount > 0) {
+    mobileFav.textContent = '\u2661 Mis favoritos (' + favCount + ')';
+  }
+})();
 </script>
 </body>
 </html>
