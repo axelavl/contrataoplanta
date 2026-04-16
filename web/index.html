@@ -1957,9 +1957,9 @@ function renderCard(oferta) {
       <div style="display:flex;gap:8px">
         <a class="meta-link" href="#metodologia" onclick="event.stopPropagation()">Metodología</a>
         ${oferta.url_bases && oferta.url_bases !== oferta.url_oferta
-          ? `<button class="btn-ver" onclick="event.stopPropagation();window.open('${escAttr(oferta.url_bases)}','_blank')">Ver bases</button>`
-          : ''}
-        <button class="btn-postular" onclick="event.stopPropagation();window.open('${escAttr(oferta.url_oferta)}','_blank')">Postular →</button>
+  ? `<a class="btn-ver" href="${escAttr(oferta.url_bases)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">Ver bases</a>`
+  : ''}
+<a class="btn-postular" href="${escAttr(oferta.url_oferta)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">Postular →</a>
       </div>
     </div>
     ${jobPosting.markup}
