@@ -1121,7 +1121,8 @@ footer {
 @media (max-width: 900px) {
   .main { grid-template-columns: 1fr; }
   .main > * { min-width: 0; }
-  .sidebar { order: -1; }
+  /* Sidebar al final en móvil: el listado queda inmediatamente bajo los filtros */
+  .sidebar { order: 2; }
   .pasos-grid,.casos-grid { grid-template-columns: 1fr; }
   .buscador-form { grid-template-columns: 1fr 1fr; }
   .buscador-form > .campo:first-child { grid-column: 1 / -1; }
@@ -1140,13 +1141,23 @@ footer {
 @media (max-width: 600px) {
   .js-nav .nav-links { display: none; }
   .js-nav .nav-alerta { display: none; }
-  .hero-h1 { font-size: 28px; }
+  /* Compactar el hero para que los filtros queden cerca del listado */
+  .hero { padding: 20px 16px 0; }
+  .hero-h1 { font-size: 28px; margin-bottom: 10px; letter-spacing: -0.5px; }
+  .hero-kicker { margin-bottom: 10px; }
+  .hero-sub { font-size: 14px; line-height: 1.5; margin-bottom: 12px; }
+  .hero-left { padding-bottom: 12px; }
   .hero-stats-bar { display: none; }
-  .buscador-form { grid-template-columns: 1fr; }
+  .buscador-wrap { padding: 16px 16px 0; margin-top: 4px; border-radius: var(--r) var(--r) 0 0; }
+  .buscador-form { grid-template-columns: 1fr; gap: 8px; margin-bottom: 10px; }
   .buscador-form > .campo:first-child { grid-column: auto; }
   .buscador-form > .btn-buscar { grid-column: auto; }
-  .buscador-fila2 { grid-template-columns: 1fr; }
+  .buscador-fila2 { grid-template-columns: 1fr; gap: 8px; margin-bottom: 8px; }
   .buscador-fila2 > .campo:first-child { grid-column: auto; }
+  .filtros-rapidos { gap: 6px; padding-bottom: 12px; }
+  .filtro-tag { font-size: 11px; padding: 3px 10px; }
+  /* Reducir espacio entre filtros y listado */
+  .main { padding: 16px 16px 48px; gap: 16px; }
   .footer-inner { grid-template-columns: 1fr; gap: 24px; }
   .footer-bottom { flex-direction: column; gap: 4px; text-align: center; }
   .stat-grid { grid-template-columns: 1fr 1fr; }
@@ -1158,8 +1169,6 @@ footer {
   /* Compacta: solo main + plazo en móvil */
   .row-meta { display: none; }
   .oferta-row-header > :nth-child(2) { display: none; }
-  .filtros-rapidos { gap: 6px; }
-  .filtro-tag { font-size: 11px; padding: 3px 10px; }
 }
 
 </style>
@@ -1759,7 +1768,9 @@ function isIsoDate(iso) {
 }
 
 function jsonLdScript(payload) {
-  return `<script type="application/ld+json">${JSON.stringify(payload).replace(/</g, '\\u003c')}<\\/script>`;
+  // \/ escapes the / so the outer HTML parser doesn't see </script> in the JS source,
+  // while the runtime string is "</script>" — required to properly close the injected tag.
+  return `<script type="application/ld+json">${JSON.stringify(payload).replace(/</g, '\\u003c')}<\/script>`;
 }
 
 function buildJobPostingJsonLd(oferta) {
@@ -2847,8 +2858,8 @@ document.getElementById('lista-ofertas')?.addEventListener('keydown', (e) => {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     const modal = document.getElementById('modal');
-    if (modal && modal.classList.contains('abierto')) {
-      cerrarModal();
+    if (modal && modal.classList.contains('open')) {
+      cerrarModal(null, true);
     }
   }
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
