@@ -1732,7 +1732,7 @@ function isIsoDate(iso) {
 }
 
 function jsonLdScript(payload) {
-  return `<script type="application/ld+json">${JSON.stringify(payload).replace(/</g, '\\u003c')}</script>`;
+  return `<script type="application/ld+json">${JSON.stringify(payload).replace(/</g, '\\u003c')}<\\/script>`;
 }
 
 function buildJobPostingJsonLd(oferta) {
