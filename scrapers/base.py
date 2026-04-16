@@ -1016,6 +1016,8 @@ class BaseScraper(abc.ABC):
                 institution.get("nombre"),
                 institution.get("sigla"),
             }
+            for alias in institution.get("aliases", []):
+                candidates.add(alias)
             for candidate in candidates:
                 key = normalize_key(candidate)
                 if key:

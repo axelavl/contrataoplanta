@@ -4,7 +4,7 @@
     "proyecto": "EmpleoEstado.cl",
     "version": "3.0",
     "fecha_generacion": "2026-04-15",
-    "total_instituciones": 700,
+    "total_instituciones": 705,
     "sectores_cubiertos": [
       "Autónomo/Regulador",
       "Ejecutivo Central",
@@ -1386,7 +1386,25 @@
       "requiere_js": "No",
       "notas_tecnicas": null,
       "poblacion_censo2024": null,
-      "estado_verificacion": "Por verificar"
+      "estado_verificacion": "Por verificar",
+      "aliases": [
+        "Dirección Regional Metropolitana Servicio de Protección",
+        "Dirección Regional Valparaíso Servicio de Protección",
+        "Dirección Regional de La Araucanía Servicio de Protección",
+        "Dirección Regional de Arica y Parinacota Servicio de Protección",
+        "Dirección Regional del Biobío Servicio de Protección",
+        "Dirección Regional de Coquimbo Servicio de Protección",
+        "Dirección Regional de Tarapacá Servicio de Protección",
+        "Dirección Regional de Antofagasta Servicio de Protección",
+        "Dirección Regional de Atacama Servicio de Protección",
+        "Dirección Regional de O'Higgins Servicio de Protección",
+        "Dirección Regional del Maule Servicio de Protección",
+        "Dirección Regional de Ñuble Servicio de Protección",
+        "Dirección Regional de Los Ríos Servicio de Protección",
+        "Dirección Regional de Los Lagos Servicio de Protección",
+        "Dirección Regional de Aysén Servicio de Protección",
+        "Dirección Regional de Magallanes Servicio de Protección"
+      ]
     },
     {
       "id": 77,
@@ -1404,7 +1422,25 @@
       "requiere_js": "No",
       "notas_tecnicas": null,
       "poblacion_censo2024": null,
-      "estado_verificacion": "Por verificar"
+      "estado_verificacion": "Por verificar",
+      "aliases": [
+        "Dirección Regional del Biobío SNRSJ",
+        "Dirección Regional de Coquimbo SNRSJ",
+        "Dirección Regional Metropolitana SNRSJ",
+        "Dirección Regional de Valparaíso SNRSJ",
+        "Dirección Regional de La Araucanía SNRSJ",
+        "Dirección Regional de Arica y Parinacota SNRSJ",
+        "Dirección Regional de Tarapacá SNRSJ",
+        "Dirección Regional de Antofagasta SNRSJ",
+        "Dirección Regional de Atacama SNRSJ",
+        "Dirección Regional de O'Higgins SNRSJ",
+        "Dirección Regional del Maule SNRSJ",
+        "Dirección Regional de Ñuble SNRSJ",
+        "Dirección Regional de Los Ríos SNRSJ",
+        "Dirección Regional de Los Lagos SNRSJ",
+        "Dirección Regional de Aysén SNRSJ",
+        "Dirección Regional de Magallanes SNRSJ"
+      ]
     },
     {
       "id": 78,
@@ -1710,7 +1746,14 @@
       "requiere_js": "No",
       "notas_tecnicas": null,
       "poblacion_censo2024": null,
-      "estado_verificacion": "Por verificar"
+      "estado_verificacion": "Por verificar",
+      "aliases": [
+        "Dirección Regional de Obras Hidráulicas Región de Coquimbo",
+        "Dirección Regional de Obras Hidráulicas Región de Valparaíso",
+        "Dirección Regional de Obras Hidráulicas Región Metropolitana",
+        "Dirección Regional de Obras Hidráulicas Región del Biobío",
+        "Dirección Regional de Obras Hidráulicas Región de La Araucanía"
+      ]
     },
     {
       "id": 95,
@@ -4356,7 +4399,10 @@
       "requiere_js": "No",
       "notas_tecnicas": null,
       "poblacion_censo2024": null,
-      "estado_verificacion": "Por verificar"
+      "estado_verificacion": "Por verificar",
+      "aliases": [
+        "Complejo Asistencial Dr. Sótero del Río"
+      ]
     },
     {
       "id": 242,
@@ -4374,7 +4420,15 @@
       "requiere_js": "No",
       "notas_tecnicas": "Cada universidad tiene su propio portal. Algunos también publican en empleospublicos.cl",
       "poblacion_censo2024": null,
-      "estado_verificacion": "Por verificar"
+      "estado_verificacion": "Por verificar",
+      "aliases": [
+        "Facultad de Ciencias Físicas y Matemáticas",
+        "Facultad de Medicina",
+        "Facultad de Derecho",
+        "Facultad de Ciencias",
+        "Facultad de Filosofía y Humanidades",
+        "Facultad de Ciencias Sociales"
+      ]
     },
     {
       "id": 243,
@@ -4770,7 +4824,11 @@
       "requiere_js": "No",
       "notas_tecnicas": "Publican principalmente en empleospublicos.cl",
       "poblacion_censo2024": null,
-      "estado_verificacion": "Por verificar"
+      "estado_verificacion": "Por verificar",
+      "aliases": [
+        "Centro de Formación Técnica de la Región de Coquimbo",
+        "Centro de Formación Técnica Estatal de la Región de Coquimbo"
+      ]
     },
     {
       "id": 265,
@@ -4878,7 +4936,11 @@
       "requiere_js": "No",
       "notas_tecnicas": "Publican principalmente en empleospublicos.cl",
       "poblacion_censo2024": null,
-      "estado_verificacion": "Por verificar"
+      "estado_verificacion": "Por verificar",
+      "aliases": [
+        "Centro de Formación Técnica de la Región de La Araucanía",
+        "Centro de Formación Técnica Estatal de la Región de La Araucanía"
+      ]
     },
     {
       "id": 271,
@@ -12619,6 +12681,101 @@
       "notas_tecnicas": "Personal bajo Código del Trabajo — NO usa empleospublicos.cl. Portal de selección propio.",
       "poblacion_censo2024": null,
       "estado_verificacion": "Verificado"
+    },
+    {
+      "id": 701,
+      "nombre": "Centro Oncológico del Norte",
+      "sigla": null,
+      "categoria": "Hospital",
+      "sector": "Salud Pública",
+      "dependencia": "SS Antofagasta",
+      "region": "Antofagasta",
+      "sitio_web": null,
+      "url_empleo": "https://www.empleospublicos.cl",
+      "plataforma_empleo": "empleospublicos.cl",
+      "publica_en_empleospublicos": "Sí",
+      "dificultad_scraping": "Media",
+      "requiere_js": "No",
+      "notas_tecnicas": null,
+      "poblacion_censo2024": null,
+      "estado_verificacion": "Por verificar"
+    },
+    {
+      "id": 702,
+      "nombre": "Centro de Referencia de Salud Dr. Salvador Allende Gossens",
+      "sigla": "CRS Salvador Allende",
+      "categoria": "Hospital",
+      "sector": "Salud Pública",
+      "dependencia": "SS Metro Central",
+      "region": "Metropolitana de Santiago",
+      "sitio_web": null,
+      "url_empleo": "https://www.empleospublicos.cl",
+      "plataforma_empleo": "empleospublicos.cl",
+      "publica_en_empleospublicos": "Sí",
+      "dificultad_scraping": "Media",
+      "requiere_js": "No",
+      "notas_tecnicas": null,
+      "poblacion_censo2024": null,
+      "estado_verificacion": "Por verificar",
+      "aliases": [
+        "CRS \"Dr. Salvador Allende Gossens\"",
+        "CRS Dr. Salvador Allende Gossens",
+        "Centro de Referencia de Salud Salvador Allende"
+      ]
+    },
+    {
+      "id": 703,
+      "nombre": "Centro de Referencia de Salud Peñalolén Cordillera Oriente",
+      "sigla": "CRS Peñalolén",
+      "categoria": "Hospital",
+      "sector": "Salud Pública",
+      "dependencia": "SS Metro Oriente",
+      "region": "Metropolitana de Santiago",
+      "sitio_web": null,
+      "url_empleo": "https://www.empleospublicos.cl",
+      "plataforma_empleo": "empleospublicos.cl",
+      "publica_en_empleospublicos": "Sí",
+      "dificultad_scraping": "Media",
+      "requiere_js": "No",
+      "notas_tecnicas": null,
+      "poblacion_censo2024": null,
+      "estado_verificacion": "Por verificar"
+    },
+    {
+      "id": 704,
+      "nombre": "Instituto de Neurocirugía Dr. Alfonso Asenjo",
+      "sigla": "INCA",
+      "categoria": "Instituto",
+      "sector": "Salud Pública",
+      "dependencia": "SS Metro Oriente",
+      "region": "Metropolitana de Santiago",
+      "sitio_web": null,
+      "url_empleo": "https://www.empleospublicos.cl",
+      "plataforma_empleo": "empleospublicos.cl",
+      "publica_en_empleospublicos": "Sí",
+      "dificultad_scraping": "Media",
+      "requiere_js": "No",
+      "notas_tecnicas": null,
+      "poblacion_censo2024": null,
+      "estado_verificacion": "Por verificar"
+    },
+    {
+      "id": 705,
+      "nombre": "Instituto Psiquiátrico Dr. José Horwitz Barak",
+      "sigla": "IPH",
+      "categoria": "Instituto",
+      "sector": "Salud Pública",
+      "dependencia": "SS Metro Norte",
+      "region": "Metropolitana de Santiago",
+      "sitio_web": null,
+      "url_empleo": "https://www.empleospublicos.cl",
+      "plataforma_empleo": "empleospublicos.cl",
+      "publica_en_empleospublicos": "Sí",
+      "dificultad_scraping": "Media",
+      "requiere_js": "No",
+      "notas_tecnicas": null,
+      "poblacion_censo2024": null,
+      "estado_verificacion": "Por verificar"
     }
   ]
 }
