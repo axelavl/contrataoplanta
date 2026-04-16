@@ -14,9 +14,166 @@
       "kind": "custom_policia",
       "reason": "PDI — scraper dedicado con warmup de sesion y URLs especificas",
       "notes": "https://postulaciones.investigaciones.cl/ + fallback transparencia pdichile.cl"
+    },
+
+    {"_comment": "=== Ejecutivo Central ==="},
+
+    {
+      "id": 43,
+      "status": "active",
       "kind": "generic",
-      "reason": "PDI — portal de postulaciones verificado, publica cargos a contrata",
-      "notes": "https://postulaciones.investigaciones.cl/"
+      "reason": "SII — portal propio en_postulacion.html, también publica en EP",
+      "notes": "https://www.sii.cl/sobre_el_sii/en_postulacion.html"
+    },
+    {
+      "id": 132,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Fundación Integra — portal propio trabajaconnosotros.integra.cl. No publica en EP",
+      "notes": "https://trabajaconnosotros.integra.cl/"
+    },
+
+    {"_comment": "=== Empresas del Estado ==="},
+
+    {
+      "id": 275,
+      "status": "active",
+      "kind": "custom_playwright",
+      "reason": "CODELCO — empleos.codelco.cl requiere JS. Gran volumen de cargos",
+      "notes": "https://empleos.codelco.cl/search/"
+    },
+    {
+      "id": 276,
+      "status": "active",
+      "kind": "custom_trabajando",
+      "reason": "ENAP — portal en Trabajando.cl",
+      "notes": "https://enap.trabajando.cl/trabajo-empleo"
+    },
+    {
+      "id": 277,
+      "status": "active",
+      "kind": "custom_trabajando",
+      "reason": "BancoEstado — portal en Trabajando.cl (plataforma propia con JS)",
+      "notes": "https://bancoestado.trabajando.cl/trabajo-empleo"
+    },
+    {
+      "id": 278,
+      "status": "active",
+      "kind": "custom_trabajando",
+      "reason": "Metro S.A. — portal en Trabajando.cl",
+      "notes": "https://metro.trabajando.cl/trabajo-empleo"
+    },
+    {
+      "id": 279,
+      "status": "experimental",
+      "kind": "generic",
+      "reason": "EFE — portal en Laborum (sin módulo dedicado). GenericSiteScraper como fallback",
+      "notes": "https://www.laborum.cl/perfiles/empresa_efe-trenes-de-chile_12041027.html"
+    },
+    {
+      "id": 280,
+      "status": "active",
+      "kind": "custom_playwright",
+      "reason": "TVN — empleos.tvn.cl requiere JS",
+      "notes": "https://empleos.tvn.cl"
+    },
+    {
+      "id": 281,
+      "status": "active",
+      "kind": "custom_trabajando",
+      "reason": "Correos de Chile — portal en Trabajando.cl",
+      "notes": "https://correos.trabajando.cl"
+    },
+    {
+      "id": 282,
+      "status": "broken",
+      "kind": "skip",
+      "reason": "Polla Chilena — solo publica en LinkedIn (no scrapeable)",
+      "notes": "https://www.linkedin.com/company/polla-chilena-de-beneficencia-s.a./"
+    },
+    {
+      "id": 283,
+      "status": "active",
+      "kind": "custom_trabajando",
+      "reason": "ZOFRI — portal en Trabajando.cl",
+      "notes": "https://zofri.trabajando.cl"
+    },
+    {
+      "id": 284,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Empresa Portuaria de Arica — portal propio portal.tpa.cl",
+      "notes": "https://portal.tpa.cl/trabaje-con-nosotros/"
+    },
+    {
+      "id": 285,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Empresa Portuaria Iquique — portal propio epi.cl/postulaciones",
+      "notes": "https://epi.cl/postulaciones/"
+    },
+    {
+      "id": 286,
+      "status": "active",
+      "kind": "custom_buk",
+      "reason": "Empresa Portuaria Antofagasta — portal en Buk",
+      "notes": "https://puertoantofagasta.buk.cl/trabaja-con-nosotros"
+    },
+    {
+      "id": 287,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Empresa Portuaria Coquimbo — portal propio puertocoquimbo.cl",
+      "notes": "https://puertocoquimbo.cl/"
+    },
+    {
+      "id": 288,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Empresa Portuaria Valparaíso — portal propio puertovalparaiso.cl",
+      "notes": "https://www.puertovalparaiso.cl"
+    },
+    {
+      "id": 289,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Empresa Portuaria San Antonio — portal propio trabaja-con-nosotros",
+      "notes": "https://www.puertosanantonio.com/trabaja-con-nosotros"
+    },
+    {
+      "id": 290,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Empresa Portuaria Talcahuano — portal propio llamado-a-concurso",
+      "notes": "https://www.puertotalcahuano.cl/llamado-a-concurso/"
+    },
+    {
+      "id": 291,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Empresa Portuaria Puerto Montt — portal propio vacantes",
+      "notes": "https://www.empormontt.cl/vacantes"
+    },
+    {
+      "id": 292,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Empresa Portuaria Chacabuco — portal propio trabaja-con-nosotros",
+      "notes": "https://chacabucoport.cl/index.php/trabaja-con-nosotros/"
+    },
+    {
+      "id": 293,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Empresa Portuaria Austral — portal propio trabaje-con-nosotros",
+      "notes": "https://www.epustral.cl/trabaje-con-nosotros"
+    },
+    {
+      "id": 294,
+      "status": "active",
+      "kind": "custom_buk",
+      "reason": "SASIPA — portal Buk, también publica en EP",
+      "notes": "https://www.sasipa.cl/nosotros/ofertas-de-empleo/"
     },
 
     {"_comment": "=== Autónomos / Reguladores ==="},
@@ -30,10 +187,10 @@
     },
     {
       "id": 145,
-      "status": "js_required",
-      "kind": "skip",
-      "reason": "Banco Central — plataforma empleos.bcentral.cl requiere JS. Alta calidad de datos pero no scrapeable con requests",
-      "notes": "https://www.bcentral.cl/el-banco/trabaja-en-el-bc/oportunidades-de-trabajo"
+      "status": "active",
+      "kind": "custom_playwright",
+      "reason": "Banco Central — scraper Playwright dedicado (empleos.bcentral.cl requiere JS)",
+      "notes": "https://empleos.bcentral.cl/ + https://www.bcentral.cl/el-banco/trabaja-en-el-bc/oportunidades-de-trabajo"
     },
     {
       "id": 146,
@@ -138,10 +295,10 @@
     },
     {
       "id": 247,
-      "status": "broken",
-      "kind": "skip",
-      "reason": "Universidad de La Serena — URL es copia errada de UFRO (personas.ufro.cl). Requiere verificación manual de la URL correcta",
-      "notes": "URL duplicada de ID 246. El portal real de ULS no está identificado"
+      "status": "active",
+      "kind": "empleos_publicos",
+      "reason": "Universidad de La Serena — no tiene portal propio, publica solo en empleospublicos.cl",
+      "notes": "Cubierto por batch empleospublicos.cl"
     },
     {
       "id": 248,
@@ -173,10 +330,10 @@
     },
     {
       "id": 252,
-      "status": "broken",
-      "kind": "skip",
-      "reason": "Universidad de Tarapacá — URL es copia errada de UNAP (portal.unap.cl). Requiere verificación manual",
-      "notes": "URL duplicada de ID 251. El portal real de UTA no está identificado"
+      "status": "active",
+      "kind": "generic",
+      "reason": "Universidad de Tarapacá — portal RRHH propio en zapahuira.uta.cl",
+      "notes": "https://zapahuira.uta.cl/negocio/RRHH/MantLaboral/"
     },
     {
       "id": 253,
