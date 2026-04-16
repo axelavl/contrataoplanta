@@ -1643,13 +1643,38 @@ footer {
 
 <!-- ══ JAVASCRIPT ══════════════════════════════════════════════════ -->
 <script>
-// ── Base URL de la API: localhost en desarrollo, dominio real en producción ──
+// ── Base URL de la API: prioriza mismo origen y hace fallback automático ──
 // hostname === '' cuando el archivo se abre como file:// en vez de un servidor HTTP
-const API_BASE = (
+const _esLocalhost = (
   window.location.hostname === 'localhost' ||
   window.location.hostname === '127.0.0.1' ||
   window.location.hostname === ''
-) ? 'http://localhost:8000' : 'https://contrataoplanta-production.up.railway.app';
+);
+const API_BASES = _esLocalhost
+  ? ['http://localhost:8000', 'https://contrataoplanta-production.up.railway.app']
+  : ['', 'https://contrataoplanta-production.up.railway.app'];
+let API_BASE_ACTIVA = API_BASES[0];
+
+async function fetchApi(path, options = {}) {
+  let ultimoError = null;
+  for (const base of API_BASES) {
+    const url = `${base}${path}`;
+    try {
+      const resp = await fetch(url, options);
+
+      // Si el endpoint responde (ok o 4xx de negocio), usamos esta base.
+      // Solo se intenta fallback en 5xx.
+      if (resp.status < 500) {
+        API_BASE_ACTIVA = base;
+        return resp;
+      }
+      ultimoError = new Error(`HTTP ${resp.status} en ${url}`);
+    } catch (err) {
+      ultimoError = err;
+    }
+  }
+  throw ultimoError || new Error(`No se pudo contactar la API para ${path}`);
+}
 
 // ── Estado global de filtros y paginación ──────────────────────────────────
 const PREFS_KEY = 'prefs_contrataoplanta';
@@ -2200,7 +2225,7 @@ async function cargarOfertas() {
   else if (estado.tipos.length === 2) params.set('tipo', estado.tipos.join(','));
 
   try {
-    const resp = await fetch(`${API_BASE}/api/ofertas?${params}`);
+    const resp = await fetchApi(`/api/ofertas?${params}`);
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
 
@@ -2236,7 +2261,7 @@ async function cargarOfertas() {
 // ── Estadísticas del sidebar ───────────────────────────────────────────────
 async function cargarEstadisticas() {
   try {
-    const resp = await fetch(`${API_BASE}/api/estadisticas`);
+    const resp = await fetchApi(`/api/estadisticas`);
     if (!resp.ok) return;
     const data = await resp.json();
 
@@ -2271,7 +2296,7 @@ async function cargarEstadisticas() {
 // ── Resumen de fuentes (cuántas están realmente activas en el scraper) ─
 async function cargarResumenFuentes() {
   try {
-    const resp = await fetch(`${API_BASE}/api/scraper/resumen`);
+    const resp = await fetchApi(`/api/scraper/resumen`);
     if (!resp.ok) return;
     const data = await resp.json();
     if (!data.disponible) return;
@@ -2375,7 +2400,7 @@ async function abrirModal(ofertaId) {
   document.getElementById('modal-btn-postular').onclick = null;
 
   try {
-    const resp = await fetch(`${API_BASE}/api/ofertas/${ofertaId}`);
+    const resp = await fetchApi(`/api/ofertas/${ofertaId}`);
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const o = await resp.json();
 
@@ -2544,7 +2569,7 @@ function initAutocompletarInstitucion() {
 
 async function _buscarInstituciones(q) {
   try {
-    const resp = await fetch(`${API_BASE}/api/instituciones?q=${encodeURIComponent(q)}&por_pagina=8`);
+    const resp = await fetchApi(`/api/instituciones?q=${encodeURIComponent(q)}&por_pagina=8`);
     if (!resp.ok) return;
     const data = await resp.json();
     _autocompleteData = data.instituciones || data || [];
@@ -2691,7 +2716,7 @@ async function enviarAlerta() {
     if (tipo)      body.tipo_contrato = tipo;
     if (sector)    body.sector        = sector;
 
-    const resp = await fetch(`${API_BASE}/api/alertas`, {
+    const resp = await fetchApi(`/api/alertas`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -2892,7 +2917,7 @@ window.formatFechaCL = function(iso) {
 // ── 5. "Última actualización" basada en estadisticas.ultima_actualizacion ──
 async function mostrarUltimaActualizacion() {
   try {
-    const resp = await fetch(`${API_BASE}/api/estadisticas`);
+    const resp = await fetchApi(`/api/estadisticas`);
     if (!resp.ok) return;
     const data = await resp.json();
     if (!data.ultima_actualizacion) return;
@@ -2947,7 +2972,7 @@ restaurarFiltrosDesdeURL();
 // ═══ REGIONES DINÁMICAS (API DPA del Estado) ════════════════════════════════
 async function cargarRegiones() {
   try {
-    const resp = await fetch(`${API_BASE}/api/regiones`);
+    const resp = await fetchApi(`/api/regiones`);
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const regiones = await resp.json();
 
@@ -2984,7 +3009,7 @@ async function cargarComunas(codigoRegion) {
   if (!codigoRegion) return;
 
   try {
-    const resp = await fetch(`${API_BASE}/api/regiones/${codigoRegion}/comunas`);
+    const resp = await fetchApi(`/api/regiones/${codigoRegion}/comunas`);
     if (!resp.ok) return;
     const comunas = await resp.json();
     comunas.forEach(c => {
@@ -3023,7 +3048,7 @@ function initMailcheck() {
     if (!email || !email.includes('@')) { sugDiv.style.display = 'none'; return; }
 
     try {
-      const resp = await fetch(`${API_BASE}/api/validar-email?email=${encodeURIComponent(email)}`);
+      const resp = await fetchApi(`/api/validar-email?email=${encodeURIComponent(email)}`);
       if (!resp.ok) return;
       const data = await resp.json();
 
@@ -3083,7 +3108,7 @@ function initMeilisearchAutocomplete() {
 
     _meiliTimer = setTimeout(async () => {
       try {
-        const resp = await fetch(`${API_BASE}/api/autocompletar?q=${encodeURIComponent(q)}&limite=8`);
+        const resp = await fetchApi(`/api/autocompletar?q=${encodeURIComponent(q)}&limite=8`);
         if (!resp.ok) { dropdown.style.display = 'none'; return; }
         const sugerencias = await resp.json();
 
