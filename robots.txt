@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /web/
+Disallow: /index_contrataoplanta.html
+Disallow: /instituciones.html
+Disallow: /estadisticas.html
+Disallow: /favoritos.html
+Disallow: /faq.html
+Disallow: /terminos.html
+Disallow: /privacidad.html
+Disallow: /descargo.html
+
+Sitemap: https://contrataoplanta.cl/sitemap.xml

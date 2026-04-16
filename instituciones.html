@@ -1,9 +1,31 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <meta charset="UTF-8">
+  <meta http-equiv="refresh" content="0;url=/web/instituciones.html">
+  <meta name="robots" content="noindex,follow">
+  <link rel="canonical" href="https://contrataoplanta.cl/web/instituciones.html">
+  <title>Redirigiendo…</title>
+  <script>
+    window.location.replace('/web/instituciones.html');
+  </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="shortcut icon" href="favicon.svg">
 <title>Instituciones — contrata o planta .cl</title>
+<meta name="description" content="Explora instituciones públicas de Chile y revisa sus concursos, vacantes y datos laborales en un solo listado.">
+<link rel="canonical" href="https://contrataoplanta.cl/instituciones.html">
+<meta property="og:title" content="Instituciones públicas — contrata o planta .cl">
+<meta property="og:description" content="Listado de instituciones públicas con acceso a concursos y oportunidades laborales del Estado.">
+<meta property="og:url" content="https://contrataoplanta.cl/instituciones.html">
+<meta property="og:image" content="https://contrataoplanta.cl/og-default.jpg">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_CL">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Instituciones públicas — contrata o planta .cl">
+<meta name="twitter:description" content="Revisa instituciones públicas y sus concursos laborales vigentes.">
+<meta name="twitter:image" content="https://contrataoplanta.cl/og-default.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet">
@@ -134,238 +156,6 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
 </style>
 </head>
 <body>
-
-<nav>
-  <div class="nav-inner">
-    <a href="index_contrataoplanta.html" class="logo">contrata <em>o</em> planta <em style="font-style:normal;color:rgba(255,255,255,0.3)">.cl</em></a>
-    <div class="nav-links">
-      <a href="index_contrataoplanta.html">Buscar empleos</a>
-      <a href="favoritos.html" id="nav-favoritos" class="nav-link-favs">♡ Mis favoritos</a>
-      <a href="instituciones.html" class="active">Instituciones</a>
-      <a href="estadisticas.html">Estadísticas</a>
-      <a href="faq.html">Preguntas frecuentes</a>
-    </div>
-    <a href="index_contrataoplanta.html#alertas" class="nav-alerta">+ Crear alerta</a>
-  </div>
-</nav>
-
-<div class="page-hero">
-  <div class="page-hero-inner">
-    <div class="page-kicker">Directorio</div>
-    <h1 class="page-titulo">Instituciones del sector público</h1>
-    <p class="page-sub">Organismos e instituciones con concursos activos en el Estado de Chile</p>
-  </div>
-</div>
-
-<div class="page-content">
-
-  <div class="busq-wrap">
-    <div class="busq-campo" style="flex:2">
-      <label for="inp-q">Buscar institución</label>
-      <input type="text" id="inp-q" placeholder="Nombre o sigla…" onkeydown="if(event.key==='Enter')buscar()">
-    </div>
-    <div class="busq-campo">
-      <label for="inp-sector">Sector</label>
-      <select id="inp-sector" onchange="buscar()">
-        <option value="">Todos los sectores</option>
-        <option>Salud</option>
-        <option>Educación</option>
-        <option>Municipalidad</option>
-        <option>Seguridad</option>
-        <option>Justicia</option>
-        <option>Obras Públicas</option>
-        <option>Gobierno</option>
-      </select>
-    </div>
-    <div class="busq-campo">
-      <label for="inp-region">Región</label>
-      <select id="inp-region" onchange="buscar()">
-        <option value="">Todas las regiones</option>
-        <option>Metropolitana de Santiago</option>
-        <option>Valparaíso</option>
-        <option>Biobío</option>
-        <option>La Araucanía</option>
-        <option>O'Higgins</option>
-        <option>Maule</option>
-        <option>Los Lagos</option>
-        <option>Antofagasta</option>
-        <option>Coquimbo</option>
-        <option>Atacama</option>
-        <option>Tarapacá</option>
-        <option>Arica y Parinacota</option>
-        <option>Los Ríos</option>
-        <option>Aysén</option>
-        <option>Magallanes</option>
-        <option>Ñuble</option>
-      </select>
-    </div>
-    <button class="busq-btn" onclick="buscar()">Buscar</button>
-  </div>
-
-  <p class="busq-total" id="total-label">Cargando…</p>
-
-  <div class="tabla-wrap">
-    <table class="inst-tabla">
-      <thead>
-        <tr>
-          <th>Institución</th>
-          <th>Sector</th>
-          <th class="col-region">Región</th>
-          <th class="col-num">Ofertas activas</th>
-          <th class="col-link">Sitio de empleo</th>
-        </tr>
-      </thead>
-      <tbody id="tabla-body">
-        <tr class="skeleton-row"><td colspan="5"><div class="skeleton" style="height:14px;width:70%;margin-bottom:4px"></div><div class="skeleton" style="height:10px;width:40%"></div></td></tr>
-        <tr class="skeleton-row"><td colspan="5"><div class="skeleton" style="height:14px;width:80%;margin-bottom:4px"></div><div class="skeleton" style="height:10px;width:30%"></div></td></tr>
-        <tr class="skeleton-row"><td colspan="5"><div class="skeleton" style="height:14px;width:60%;margin-bottom:4px"></div><div class="skeleton" style="height:10px;width:45%"></div></td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="paginacion" id="paginacion"></div>
-
-</div>
-
-<footer>
-  <div class="footer-inner">
-    <div class="footer-brand">
-      <a href="index_contrataoplanta.html" class="logo" style="display:block;margin-bottom:10px">contrata <em>o</em> planta <em style="font-style:normal;color:rgba(255,255,255,0.3)">.cl</em></a>
-      <p class="footer-desc">La plataforma laboral del sector público chileno. 700+ instituciones registradas.</p>
-    </div>
-    <div>
-      <div class="footer-col-titulo">Explorar</div>
-      <a href="index_contrataoplanta.html" class="footer-link">Buscar empleos</a>
-      <a href="instituciones.html" class="footer-link">Por institución</a>
-      <a href="estadisticas.html" class="footer-link">Estadísticas</a>
-    </div>
-    <div>
-      <div class="footer-col-titulo">Comunidad</div>
-      <a href="faq.html" class="footer-link">Preguntas frecuentes</a>
-      <a href="favoritos.html" class="footer-link">Mis favoritos</a>
-    </div>
-    <div>
-      <div class="footer-col-titulo">Legal</div>
-      <a href="terminos.html" class="footer-link">Términos de uso</a>
-      <a href="privacidad.html" class="footer-link">Privacidad</a>
-      <a href="descargo.html" class="footer-link">Descargo</a>
-      <a href="mailto:hola@contrataoplanta.cl" class="footer-link">Contacto</a>
-    </div>
-  </div>
-  <div class="footer-bottom">
-    <span>© 2026 contrata o planta .cl</span>
-    <span>Datos actualizados cada 6 horas · No somos el Estado</span>
-  </div>
-</footer>
-
-<script>
-const API_BASE = (
-  window.location.hostname === 'localhost' ||
-  window.location.hostname === '127.0.0.1' ||
-  window.location.hostname === ''
-) ? 'http://localhost:8000' : 'https://api.contrataoplanta.cl';
-
-const state = { pagina: 1, q: '', sector: '', region: '' };
-
-function fmt(n) { return (n ?? 0).toLocaleString('es-CL'); }
-
-function renderFila(inst) {
-  const sigla = inst.sigla ? `<span class="inst-sigla">${inst.sigla}</span>` : '';
-  const sector = inst.sector ? `<span class="badge-sector">${inst.sector}</span>` : '<span style="color:var(--texto3);font-size:12px">—</span>';
-  const region = inst.region || '—';
-  const activas = inst.activas > 0
-    ? `<span class="badge-activas">${fmt(inst.activas)}</span>`
-    : `<span style="color:var(--texto3);font-size:12px">0</span>`;
-  const linkEmpleo = inst.url_empleo
-    ? `<a href="${inst.url_empleo}" target="_blank" rel="noopener" class="link-externo">Ver sitio ↗</a>`
-    : '<span style="color:var(--texto3);font-size:12px">—</span>';
-  return `
-    <tr>
-      <td>
-        <a href="index_contrataoplanta.html?institucion=${inst.id}" class="inst-nombre-link">${inst.nombre}</a>
-        ${sigla}
-      </td>
-      <td>${sector}</td>
-      <td class="col-region">${region}</td>
-      <td class="col-num">${activas}</td>
-      <td class="col-link">${linkEmpleo}</td>
-    </tr>
-  `;
-}
-
-function renderPaginacion(total, paginas) {
-  const el = document.getElementById('paginacion');
-  if (paginas <= 1) { el.innerHTML = ''; return; }
-  let html = '';
-  const desde = Math.max(1, state.pagina - 2);
-  const hasta = Math.min(paginas, state.pagina + 2);
-  if (desde > 1) html += `<button class="pag-btn" onclick="irPagina(1)">1</button>`;
-  if (desde > 2) html += `<span style="color:var(--texto3);padding:0 4px">…</span>`;
-  for (let i = desde; i <= hasta; i++) {
-    html += `<button class="pag-btn ${i === state.pagina ? 'activa' : ''}" onclick="irPagina(${i})">${i}</button>`;
-  }
-  if (hasta < paginas - 1) html += `<span style="color:var(--texto3);padding:0 4px">…</span>`;
-  if (hasta < paginas) html += `<button class="pag-btn" onclick="irPagina(${paginas})">${paginas}</button>`;
-  el.innerHTML = html;
-}
-
-function irPagina(p) {
-  state.pagina = p;
-  cargar();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function buscar() {
-  state.q = document.getElementById('inp-q').value.trim();
-  state.sector = document.getElementById('inp-sector').value;
-  state.region = document.getElementById('inp-region').value;
-  state.pagina = 1;
-  cargar();
-}
-
-async function cargar() {
-  const tbody = document.getElementById('tabla-body');
-  tbody.innerHTML = '<tr><td colspan="5"><div class="skeleton" style="height:14px;width:60%;margin:4px 0"></div></td></tr>'.repeat(5);
-  document.getElementById('total-label').textContent = 'Cargando…';
-  document.getElementById('paginacion').innerHTML = '';
-
-  const params = new URLSearchParams({ pagina: state.pagina, por_pagina: 50 });
-  if (state.q) params.set('q', state.q);
-  if (state.sector) params.set('sector', state.sector);
-  if (state.region) params.set('region', state.region);
-
-  try {
-    const res = await fetch(`${API_BASE}/api/instituciones?${params}`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const d = await res.json();
-
-    if (!d.instituciones || d.instituciones.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5"><div class="estado-vacio">No se encontraron instituciones con los filtros seleccionados.</div></td></tr>`;
-      document.getElementById('total-label').textContent = '0 instituciones';
-      return;
-    }
-
-    tbody.innerHTML = d.instituciones.map(renderFila).join('');
-    document.getElementById('total-label').textContent = `${fmt(d.total)} institución${d.total !== 1 ? 'es' : ''} encontrada${d.total !== 1 ? 's' : ''}`;
-    renderPaginacion(d.total, d.paginas);
-  } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="5"><div class="estado-vacio">No se pudo conectar con el servidor. Verifica que la API esté corriendo.</div></td></tr>`;
-    document.getElementById('total-label').textContent = '';
-  }
-}
-
-// Cargar al inicio (o filtrar por parámetro URL ?id=)
-const params = new URLSearchParams(window.location.search);
-cargar();
-</script>
-
-<script>
-(function(){
-  const favs = JSON.parse(localStorage.getItem('fav_contrataoplanta')||'[]');
-  const link = document.getElementById('nav-favoritos');
-  if(link && favs.length > 0){ link.textContent = '♥ Mis favoritos ('+favs.length+')'; link.style.color='white'; }
-})();
-</script>
-
+  <p>Redirigiendo a la versión canónica: <a href="/web/instituciones.html">/web/instituciones.html</a></p>
 </body>
 </html>

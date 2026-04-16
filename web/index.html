@@ -5,11 +5,53 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script>document.documentElement.classList.add('js-nav');</script>
 <title>contrata o planta .cl — La plataforma laboral del sector público chileno</title>
+<meta name="description" content="Encuentra empleos públicos en Chile, filtra por institución y revisa oportunidades del sector público en un solo buscador.">
+<link rel="canonical" href="https://contrataoplanta.cl/">
+<meta property="og:title" content="contrata o planta .cl — Empleo público en Chile">
+<meta property="og:description" content="Buscador laboral del sector público chileno con vacantes, filtros y acceso directo a concursos vigentes.">
+<meta property="og:url" content="https://contrataoplanta.cl/">
+<meta property="og:image" content="https://contrataoplanta.cl/og-default.jpg">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_CL">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="contrata o planta .cl — Empleo público en Chile">
+<meta name="twitter:description" content="Busca vacantes del sector público chileno con filtros por institución, región y tipo de cargo.">
+<meta name="twitter:image" content="https://contrataoplanta.cl/og-default.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet">
 <!-- Umami Analytics — sin cookies, sin banner GDPR -->
 <script defer data-website-id="UMAMI_WEBSITE_ID" src="https://analytics.contrataoplanta.cl/script.js"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "contrata o planta .cl",
+  "url": "https://contrataoplanta.cl/",
+  "logo": "https://contrataoplanta.cl/assets/logo-512.png",
+  "contactPoint": [
+    {
+      "@type": "ContactPoint",
+      "contactType": "customer support",
+      "email": "contacto@contrataoplanta.cl",
+      "availableLanguage": ["es"]
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "contrata o planta .cl",
+  "url": "https://contrataoplanta.cl/",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "https://contrataoplanta.cl/?q={search_term_string}",
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>
 <style>
 /* ═══ VARIABLES ══════════════════════════════════════════════════════ */
 :root {
@@ -90,7 +132,7 @@ nav {
   display: flex; gap: 4px; align-items: center; flex: 1;
 }
 .nav-links a {
-  font-size: 13px; color: rgba(255,255,255,0.55);
+  font-size: 14px; color: rgba(255,255,255,0.70);
   text-decoration: none; padding: 6px 12px;
   border-radius: 6px; transition: all .15s;
   font-weight: 500;
@@ -213,7 +255,7 @@ nav {
 }
 .hero-h1 em { color: var(--acento); font-style: italic; }
 .hero-sub {
-  font-size: 15px; color: rgba(255,255,255,0.45);
+  font-size: 16px; color: rgba(255,255,255,0.72);
   line-height: 1.7;
   margin-bottom: 20px; font-weight: 300;
 }
@@ -366,6 +408,25 @@ nav {
 /* Previene que columnas de grid expandan el contenedor */
 .main > * { min-width: 0; }
 .sidebar { min-width: 0; overflow: hidden; }
+
+.data-update-global{
+  max-width:1200px;margin:18px auto 0;padding:0 24px;
+  font-size:13px;color:var(--texto3);
+}
+.data-update-global strong{color:var(--texto2)}
+.info-wrap{max-width:1200px;margin:0 auto;padding:0 24px 28px;display:grid;gap:18px}
+.info-section{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--r-l);padding:24px;box-shadow:var(--sombra)}
+.info-title{font-family:'Lora',Georgia,serif;font-size:26px;color:var(--azul);margin-bottom:10px}
+.info-sub{font-size:14px;color:var(--texto2);line-height:1.7;margin-bottom:16px}
+.pasos-grid,.casos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.paso-card,.caso-card{background:var(--bg);border:1px solid var(--borde);border-radius:12px;padding:14px}
+.paso-num{font-size:11px;font-weight:700;letter-spacing:.8px;color:var(--cielo);text-transform:uppercase;margin-bottom:6px}
+.paso-card h3,.caso-card h3{font-size:15px;color:var(--texto);margin-bottom:6px}
+.paso-card p,.caso-card p{font-size:13px;color:var(--texto2);line-height:1.6}
+.metodo-lista{margin:10px 0 0 18px;color:var(--texto2);font-size:13px;line-height:1.7}
+.metodo-lista li{margin-bottom:4px}
+.meta-link{font-size:12px;color:var(--cielo);text-decoration:none}
+.meta-link:hover{text-decoration:underline}
 
 /* ═══ BARRA DE RESULTADOS Y CONTROLES ════════════════════════════════ */
 .resultados-header {
@@ -1061,6 +1122,7 @@ footer {
   .main { grid-template-columns: 1fr; }
   .main > * { min-width: 0; }
   .sidebar { order: -1; }
+  .pasos-grid,.casos-grid { grid-template-columns: 1fr; }
   .buscador-form { grid-template-columns: 1fr 1fr; }
   .buscador-form > .campo:first-child { grid-column: 1 / -1; }
   .buscador-form > .btn-buscar { margin-top: 0; grid-column: 1 / -1; }
@@ -1117,6 +1179,7 @@ footer {
       <a href="instituciones.html">Instituciones</a>
       <a href="estadisticas.html">Estadísticas</a>
       <a href="faq.html">Preguntas frecuentes</a>
+      <a href="editorial.html">Editorial</a>
     </div>
     <a href="#alertas" class="nav-alerta">+ Crear alerta</a>
     <button class="hamburger" id="hamburger-btn" aria-label="Abrir menú" aria-expanded="false" aria-controls="nav-mobile-panel">
@@ -1131,6 +1194,7 @@ footer {
   <a href="instituciones.html">Instituciones</a>
   <a href="estadisticas.html">Estadísticas</a>
   <a href="faq.html">Preguntas frecuentes</a>
+      <a href="editorial.html">Editorial</a>
   <a href="#alertas" class="nav-mobile-alerta">+ Crear alerta</a>
 </div>
 </header>
@@ -1142,8 +1206,8 @@ footer {
   <div class="hero-inner">
     <div class="hero-left">
       <div class="hero-kicker">La plataforma laboral del sector público chileno</div>
-      <h1 class="hero-h1">Todos los empleos del<br>Estado, en un <em>solo lugar</em></h1>
-      <p class="hero-sub"><span id="hero-fuentes-activas">—</span> fuentes activas de <span id="hero-fuentes-total">700</span> instituciones monitoreadas. Municipios, ministerios, hospitales, universidades y más.</p>
+      <h1 class="hero-h1">Encuentra trabajo público<br>sin perderte entre <em>portales</em></h1>
+      <p class="hero-sub">Reunimos avisos oficiales para que postules con calma y mejor información: <span id="hero-fuentes-activas">—</span> fuentes activas de <span id="hero-fuentes-total">700</span> instituciones, desde municipios hasta hospitales y universidades.</p>
       <div class="hero-stats-bar">
         <div class="hero-stat-pill"><strong id="hs-activas">—</strong>&nbsp;ofertas activas</div>
         <div class="hero-stat-pill"><strong id="hs-nuevas">—</strong>&nbsp;nuevas 48h</div>
@@ -1429,6 +1493,59 @@ footer {
   </div><!-- /sidebar -->
 </div><!-- /main -->
 
+<div class="data-update-global">Última actualización de datos: <strong id="data-last-update">cargando…</strong></div>
+
+<section class="info-wrap">
+  <article class="info-section">
+    <h2 class="info-title">Cómo te ayudamos</h2>
+    <p class="info-sub">3 pasos simples para postular mejor en empleos públicos.</p>
+    <div class="pasos-grid">
+      <div class="paso-card">
+        <div class="paso-num">Paso 1</div>
+        <h3>Filtra por perfil y territorio</h3>
+        <p>Encuentra avisos por cargo, institución, región y renta para enfocarte en vacantes realmente pertinentes.</p>
+      </div>
+      <div class="paso-card">
+        <div class="paso-num">Paso 2</div>
+        <h3>Prioriza por plazo y oportunidad</h3>
+        <p>Revisa cierres próximos, ofertas nuevas y guarda favoritos para no perder concursos relevantes.</p>
+      </div>
+      <div class="paso-card">
+        <div class="paso-num">Paso 3</div>
+        <h3>Postula directo en fuente oficial</h3>
+        <p>Accede al enlace original de cada convocatoria para validar bases, documentos y requisitos finales.</p>
+      </div>
+    </div>
+  </article>
+
+  <article class="info-section" id="metodologia">
+    <h2 class="info-title">Metodología</h2>
+    <ul class="metodo-lista">
+      <li><strong>Fuentes:</strong> portales oficiales de empleo público y sitios institucionales del Estado de Chile.</li>
+      <li><strong>Frecuencia:</strong> monitoreo e integración varias veces al día, según disponibilidad de cada fuente.</li>
+      <li><strong>Limitaciones:</strong> puede haber desfases o cambios posteriores; siempre manda la publicación original y sus bases.</li>
+    </ul>
+  </article>
+
+  <article class="info-section">
+    <h2 class="info-title">Casos de uso reales</h2>
+    <div class="casos-grid">
+      <div class="caso-card">
+        <h3>Primer empleo público</h3>
+        <p>“Usé filtros por región y nivel de renta para ordenar mis primeras postulaciones sin perder fechas clave.”</p>
+      </div>
+      <div class="caso-card">
+        <h3>Cambio de región</h3>
+        <p>“Comparé concursos en mi región actual y la de destino para planificar mi transición laboral.”</p>
+      </div>
+      <div class="caso-card">
+        <h3>Reorientación profesional</h3>
+        <p>“Con estadísticas por sector pude elegir áreas con mayor movimiento y ajustar mejor mi CV.”</p>
+      </div>
+    </div>
+  </article>
+</section>
+
 <!-- ══ FOOTER ══════════════════════════════════════════════════════ -->
 </main>
 
@@ -1448,6 +1565,7 @@ footer {
     <div>
       <div class="footer-col-titulo">Comunidad</div>
       <a href="faq.html" class="footer-link">Preguntas frecuentes</a>
+      <a href="editorial.html" class="footer-link">Editorial laboral</a>
     </div>
     <div>
       <div class="footer-col-titulo">Legal</div>
@@ -1596,6 +1714,86 @@ function escHtml(s) {
   return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+function isValidHttpUrl(url) {
+  if (!url || typeof url !== 'string') return false;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function isIsoDate(iso) {
+  if (!iso || typeof iso !== 'string') return false;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+  const d = new Date(`${iso}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === iso;
+}
+
+function jsonLdScript(payload) {
+  return `<script type="application/ld+json">${JSON.stringify(payload).replace(/</g, '\\u003c')}</script>`;
+}
+
+function buildJobPostingJsonLd(oferta) {
+  const titulo = (oferta?.cargo || '').trim();
+  const institucion = (oferta?.institucion || '').trim();
+  const fechaValida = isIsoDate(oferta?.fecha_cierre) ? oferta.fecha_cierre : null;
+  const region = (oferta?.region || '').trim();
+  const ciudad = ciudadValida(oferta?.ciudad || '', institucion).trim();
+  const urlOficial = (oferta?.url_oferta || '').trim();
+
+  const errores = [];
+  if (!titulo) errores.push('cargo');
+  if (!institucion) errores.push('institucion');
+  if (!fechaValida) errores.push('fecha_cierre (YYYY-MM-DD)');
+  if (!region && !ciudad) errores.push('ubicacion');
+  if (!isValidHttpUrl(urlOficial)) errores.push('url_oferta');
+  if (errores.length) return { valido: false, markup: '', errores };
+
+  const location = {
+    "@type": "Place",
+    "address": {
+      "@type": "PostalAddress",
+      "addressCountry": "CL",
+      ...(ciudad ? { "addressLocality": ciudad } : {}),
+      ...(region ? { "addressRegion": region } : {})
+    }
+  };
+
+  const payload = {
+    "@context": "https://schema.org",
+    "@type": "JobPosting",
+    "title": titulo,
+    "hiringOrganization": {
+      "@type": "Organization",
+      "name": institucion
+    },
+    "jobLocation": [location],
+    "validThrough": `${fechaValida}T23:59:59-04:00`,
+    "datePosted": isIsoDate(oferta?.fecha_publicacion) ? oferta.fecha_publicacion : fechaValida,
+    "url": urlOficial
+  };
+
+  if (typeof oferta?.renta_bruta_min === 'number' && oferta.renta_bruta_min > 0) {
+    payload.baseSalary = {
+      "@type": "MonetaryAmount",
+      "currency": "CLP",
+      "value": {
+        "@type": "QuantitativeValue",
+        "value": oferta.renta_bruta_min,
+        "unitText": "MONTH"
+      }
+    };
+  }
+
+  if (oferta?.jornada) payload.workHours = oferta.jornada;
+  if (oferta?.tipo_contrato) payload.employmentType = oferta.tipo_contrato.toUpperCase();
+  if (oferta?.descripcion) payload.description = oferta.descripcion;
+
+  return { valido: true, markup: jsonLdScript(payload), errores: [] };
+}
+
 // ── Utilidades de formato ──────────────────────────────────────────────────
 function formatRenta(min, max, grado) {
   if (min) {
@@ -1686,6 +1884,10 @@ function renderCard(oferta) {
 
   const favs = JSON.parse(localStorage.getItem('fav_contrataoplanta') || '[]');
   const esFav = favs.some(f => f.id === oferta.id);
+  const jobPosting = buildJobPostingJsonLd(oferta);
+  if (!jobPosting.valido) {
+    console.debug('[SEO] JobPosting omitido en card por campos faltantes:', jobPosting.errores, oferta?.id);
+  }
 
   return `
   <div class="oferta-card${esFav ? ' favorita' : ''}" data-oferta-id="${oferta.id}" role="button" tabindex="0" aria-label="Ver detalle: ${escAttr(oferta.cargo)}">
@@ -1726,12 +1928,14 @@ function renderCard(oferta) {
         ${oferta.fecha_cierre ? `<span style="color:var(--texto3);margin-left:4px">· ${formatFecha(oferta.fecha_cierre)}</span>` : ''}
       </div>
       <div style="display:flex;gap:8px">
+        <a class="meta-link" href="#metodologia" onclick="event.stopPropagation()">Metodología</a>
         ${oferta.url_bases && oferta.url_bases !== oferta.url_oferta
           ? `<button class="btn-ver" onclick="event.stopPropagation();window.open('${escAttr(oferta.url_bases)}','_blank')">Ver bases</button>`
           : ''}
         <button class="btn-postular" onclick="event.stopPropagation();window.open('${escAttr(oferta.url_oferta)}','_blank')">Postular →</button>
       </div>
     </div>
+    ${jobPosting.markup}
   </div>`;
 }
 
@@ -1779,6 +1983,10 @@ function renderRowCompacta(oferta) {
   const renta = formatRenta(oferta.renta_bruta_min, oferta.renta_bruta_max, oferta.grado_eus);
   const favs  = JSON.parse(localStorage.getItem('fav_contrataoplanta') || '[]');
   const esFav = favs.some(f => f.id === oferta.id);
+  const jobPosting = buildJobPostingJsonLd(oferta);
+  if (!jobPosting.valido) {
+    console.debug('[SEO] JobPosting omitido en row por campos faltantes:', jobPosting.errores, oferta?.id);
+  }
   return `
   <div class="oferta-row${esFav ? ' favorita' : ''}" data-oferta-id="${oferta.id}" role="button" tabindex="0" aria-label="Ver detalle: ${escAttr(oferta.cargo)}">
     <div class="row-main">
@@ -1804,6 +2012,7 @@ function renderRowCompacta(oferta) {
       onclick="event.stopPropagation();toggleFavCard(this)"
       title="${esFav ? 'Quitar de favoritos' : 'Guardar como favorito'}"
     >${esFav ? '♥' : '♡'}</button>
+    ${jobPosting.markup}
   </div>`;
 }
 
@@ -2688,6 +2897,10 @@ async function mostrarUltimaActualizacion() {
     const data = await resp.json();
     if (!data.ultima_actualizacion) return;
     const fecha = new Date(data.ultima_actualizacion);
+    const absoluta = document.getElementById('data-last-update');
+    if (absoluta) {
+      absoluta.textContent = fecha.toLocaleString('es-CL', { dateStyle: 'medium', timeStyle: 'short' });
+    }
     const ahora = new Date();
     const minutos = Math.max(0, Math.floor((ahora - fecha) / 60000));
     let txt;

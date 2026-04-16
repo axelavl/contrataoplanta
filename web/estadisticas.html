@@ -5,6 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script>document.documentElement.classList.add('js-nav');</script>
 <title>Estadísticas — contrata o planta .cl</title>
+<meta name="description" content="Consulta estadísticas del empleo público en Chile: concursos, instituciones activas y tendencias del sector.">
+<link rel="canonical" href="https://contrataoplanta.cl/estadisticas.html">
+<meta property="og:title" content="Estadísticas del empleo público — contrata o planta .cl">
+<meta property="og:description" content="Métricas y tendencias de concursos públicos e instituciones del Estado chileno.">
+<meta property="og:url" content="https://contrataoplanta.cl/estadisticas.html">
+<meta property="og:image" content="https://contrataoplanta.cl/og-default.jpg">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_CL">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Estadísticas del empleo público — contrata o planta .cl">
+<meta name="twitter:description" content="Datos y tendencias de vacantes y concursos en el sector público chileno.">
+<meta name="twitter:image" content="https://contrataoplanta.cl/og-default.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet">
@@ -74,6 +86,8 @@ nav {
 .page-sub{font-size:15px;color:rgba(255,255,255,.55);line-height:1.7;font-weight:300}
 
 .page-content{max-width:1100px;margin:0 auto;padding:40px 24px 80px}
+.data-update{font-size:13px;color:var(--texto3);margin:-8px 0 22px}
+.data-update strong{color:var(--texto2)}
 
 /* KPI CARDS */
 .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:40px}
@@ -121,6 +135,19 @@ nav {
 /* ERROR */
 .error-estado{text-align:center;padding:40px;color:var(--texto3);font-size:14px}
 
+.info-section{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--r-l);padding:24px;box-shadow:var(--sombra);margin-top:24px}
+.info-title{font-family:'Lora',Georgia,serif;font-size:24px;color:var(--azul);margin-bottom:10px}
+.info-sub{font-size:14px;color:var(--texto2);line-height:1.7;margin-bottom:16px}
+.pasos-grid,.casos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.paso-card,.caso-card{background:var(--bg);border:1px solid var(--borde);border-radius:12px;padding:14px}
+.paso-num{font-size:11px;font-weight:700;letter-spacing:.8px;color:var(--cielo);text-transform:uppercase;margin-bottom:6px}
+.paso-card h3,.caso-card h3{font-size:15px;color:var(--texto);margin-bottom:6px}
+.paso-card p,.caso-card p{font-size:13px;color:var(--texto2);line-height:1.6}
+.metodo-lista{margin:10px 0 0 18px;color:var(--texto2);font-size:13px;line-height:1.7}
+.metodo-lista li{margin-bottom:4px}
+.meta-link{font-size:12px;color:var(--cielo);text-decoration:none}
+.meta-link:hover{text-decoration:underline}
+
 footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
 .footer-inner {
   max-width: 1200px; margin: 0 auto;
@@ -147,6 +174,7 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
   .footer-inner{grid-template-columns:1fr;gap:24px}
   .page-titulo{font-size:26px}
 }
+@media(max-width:900px){.pasos-grid,.casos-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -180,6 +208,7 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
 </div>
 
 <div class="page-content">
+  <p class="data-update">Última actualización de datos: <strong id="data-last-update">cargando…</strong></p>
 
   <!-- KPIs -->
   <div class="kpi-grid" id="kpi-grid">
@@ -194,13 +223,13 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
 
     <!-- Por sector -->
     <div class="stats-card">
-      <div class="stats-titulo">Por sector</div>
+      <div class="stats-titulo">Por sector · <a class="meta-link" href="#metodologia">metodología</a></div>
       <div id="sector-contenido"><div class="skeleton" style="height:14px;margin-bottom:10px"></div><div class="skeleton" style="height:14px;margin-bottom:10px"></div><div class="skeleton" style="height:14px"></div></div>
     </div>
 
     <!-- Instituciones más activas -->
     <div class="stats-card">
-      <div class="stats-titulo">Instituciones con más ofertas</div>
+      <div class="stats-titulo">Instituciones con más ofertas · <a class="meta-link" href="#metodologia">metodología</a></div>
       <div id="mas-activas-contenido"><div class="skeleton" style="height:14px;margin-bottom:10px"></div><div class="skeleton" style="height:14px;margin-bottom:10px"></div><div class="skeleton" style="height:14px"></div></div>
     </div>
 
@@ -211,6 +240,55 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
     </div>
 
   </div>
+
+  <section class="info-section">
+    <h2 class="info-title">Cómo te ayudamos</h2>
+    <p class="info-sub">3 pasos simples para postular mejor usando datos comparables del empleo público.</p>
+    <div class="pasos-grid">
+      <article class="paso-card">
+        <div class="paso-num">Paso 1</div>
+        <h3>Define foco por sector y región</h3>
+        <p>Visualiza dónde hay más movimiento para orientar tu búsqueda según tu perfil y ubicación objetivo.</p>
+      </article>
+      <article class="paso-card">
+        <div class="paso-num">Paso 2</div>
+        <h3>Detecta ventanas de postulación</h3>
+        <p>Revisa tendencias mensuales y variaciones recientes para preparar documentos antes de los picos de oferta.</p>
+      </article>
+      <article class="paso-card">
+        <div class="paso-num">Paso 3</div>
+        <h3>Prioriza instituciones activas</h3>
+        <p>Identifica organismos con mayor recurrencia de concursos y planifica postulaciones de mediano plazo.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="info-section" id="metodologia">
+    <h2 class="info-title">Metodología</h2>
+    <ul class="metodo-lista">
+      <li><strong>Fuentes:</strong> publicaciones oficiales de empleo público y portales institucionales.</li>
+      <li><strong>Frecuencia:</strong> integración periódica durante el día, según disponibilidad de cada fuente.</li>
+      <li><strong>Limitaciones:</strong> los indicadores son referenciales; prevalece siempre la información del aviso original y sus bases.</li>
+    </ul>
+  </section>
+
+  <section class="info-section">
+    <h2 class="info-title">Casos de uso reales</h2>
+    <div class="casos-grid">
+      <article class="caso-card">
+        <h3>Primer empleo público</h3>
+        <p>“Usé el histórico para ver en qué meses se abrían más vacantes junior y preparé mi postulación con anticipación.”</p>
+      </article>
+      <article class="caso-card">
+        <h3>Cambio de región</h3>
+        <p>“Comparé instituciones activas por zona y pude decidir en qué regiones me convenía concentrar mis postulaciones.”</p>
+      </article>
+      <article class="caso-card">
+        <h3>Reconversión laboral</h3>
+        <p>“Al mirar sectores con más actividad, enfoqué cursos y CV en perfiles que efectivamente estaban publicando concursos.”</p>
+      </article>
+    </div>
+  </section>
 
 </div>
 
@@ -256,6 +334,12 @@ const API_BASE = (
 
 function fmt(n) {
   return (n ?? 0).toLocaleString('es-CL');
+}
+
+function renderUltimaActualizacion(ts) {
+  const el = document.getElementById('data-last-update');
+  if (!el || !ts) return;
+  el.textContent = new Date(ts).toLocaleString('es-CL', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 function renderKpis(d) {
@@ -352,6 +436,7 @@ async function cargar() {
     const res = await fetch(`${API_BASE}/api/estadisticas`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const d = await res.json();
+    renderUltimaActualizacion(d.ultima_actualizacion);
     renderKpis(d);
     renderSectores(d.por_sector);
     renderHistorico(d.historico_mensual);

@@ -5,6 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script>document.documentElement.classList.add('js-nav');</script>
 <title>Instituciones — contrata o planta .cl</title>
+<meta name="description" content="Explora instituciones públicas de Chile y revisa sus concursos, vacantes y datos laborales en un solo listado.">
+<link rel="canonical" href="https://contrataoplanta.cl/instituciones.html">
+<meta property="og:title" content="Instituciones públicas — contrata o planta .cl">
+<meta property="og:description" content="Listado de instituciones públicas con acceso a concursos y oportunidades laborales del Estado.">
+<meta property="og:url" content="https://contrataoplanta.cl/instituciones.html">
+<meta property="og:image" content="https://contrataoplanta.cl/og-default.jpg">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_CL">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Instituciones públicas — contrata o planta .cl">
+<meta name="twitter:description" content="Revisa instituciones públicas y sus concursos laborales vigentes.">
+<meta name="twitter:image" content="https://contrataoplanta.cl/og-default.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet">
@@ -74,6 +86,21 @@ nav {
 .page-sub{font-size:15px;color:rgba(255,255,255,.55);line-height:1.7;font-weight:300}
 
 .page-content{max-width:1100px;margin:0 auto;padding:40px 24px 80px}
+.data-update{font-size:13px;color:var(--texto3);margin:-8px 0 18px}
+.data-update strong{color:var(--texto2)}
+
+.info-section{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--r-l);padding:24px;box-shadow:var(--sombra);margin-top:24px}
+.info-title{font-family:'Lora',Georgia,serif;font-size:24px;color:var(--azul);margin-bottom:10px}
+.info-sub{font-size:14px;color:var(--texto2);line-height:1.7;margin-bottom:16px}
+.pasos-grid,.casos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.paso-card,.caso-card{background:var(--bg);border:1px solid var(--borde);border-radius:12px;padding:14px}
+.paso-num{font-size:11px;font-weight:700;letter-spacing:.8px;color:var(--cielo);text-transform:uppercase;margin-bottom:6px}
+.paso-card h3,.caso-card h3{font-size:15px;color:var(--texto);margin-bottom:6px}
+.paso-card p,.caso-card p{font-size:13px;color:var(--texto2);line-height:1.6}
+.metodo-lista{margin:10px 0 0 18px;color:var(--texto2);font-size:13px;line-height:1.7}
+.metodo-lista li{margin-bottom:4px}
+.meta-link{display:inline-block;margin-top:4px;font-size:11px;color:var(--cielo);text-decoration:none}
+.meta-link:hover{text-decoration:underline}
 
 /* BUSCADOR */
 .busq-wrap{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--r-l);padding:20px;margin-bottom:28px;box-shadow:var(--sombra);display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
@@ -204,6 +231,7 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
   </div>
 
   <p class="busq-total" id="total-label">Cargando…</p>
+  <p class="data-update">Última actualización de datos: <strong id="data-last-update">cargando…</strong></p>
 
   <div class="tabla-wrap">
     <table class="inst-tabla">
@@ -226,6 +254,56 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
   </div>
 
   <div class="paginacion" id="paginacion"></div>
+
+  <section class="info-section">
+    <h2 class="info-title">Cómo te ayudamos</h2>
+    <p class="info-sub">3 pasos simples para postular mejor sin perder tiempo en portales dispersos.</p>
+    <div class="pasos-grid">
+      <article class="paso-card">
+        <div class="paso-num">Paso 1</div>
+        <h3>Filtra por lo que sí te sirve</h3>
+        <p>Busca por institución, sector o región para concentrarte en concursos compatibles con tu perfil.</p>
+      </article>
+      <article class="paso-card">
+        <div class="paso-num">Paso 2</div>
+        <h3>Prioriza las vacantes activas</h3>
+        <p>Ordena por ofertas activas y revisa la ley aplicable para entender bases, requisitos y marco normativo.</p>
+      </article>
+      <article class="paso-card">
+        <div class="paso-num">Paso 3</div>
+        <h3>Confirma y postula en la fuente</h3>
+        <p>Usa el enlace directo al portal oficial y verifica cierres, anexos y documentos antes de enviar tu postulación.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="info-section" id="metodologia">
+    <h2 class="info-title">Metodología</h2>
+    <p class="info-sub">Cómo construimos este directorio y qué debes considerar al interpretar los datos.</p>
+    <ul class="metodo-lista">
+      <li><strong>Fuentes:</strong> portales oficiales de empleo público y sitios institucionales del Estado de Chile.</li>
+      <li><strong>Frecuencia:</strong> consolidación automática varias veces al día según disponibilidad de cada fuente.</li>
+      <li><strong>Limitaciones:</strong> puede existir desfase entre publicación oficial y detección; siempre prevalecen las bases y el portal de origen.</li>
+    </ul>
+  </section>
+
+  <section class="info-section">
+    <h2 class="info-title">Casos de uso reales</h2>
+    <div class="casos-grid">
+      <article class="caso-card">
+        <h3>Primer empleo público</h3>
+        <p>“Filtré por región y salud, y encontré concursos de entrada con plazos vigentes para postular con tiempo.”</p>
+      </article>
+      <article class="caso-card">
+        <h3>Cambio de región</h3>
+        <p>“Comparé instituciones en la zona a la que me mudaba y pude armar una estrategia de postulación por prioridad.”</p>
+      </article>
+      <article class="caso-card">
+        <h3>Transición desde el sector privado</h3>
+        <p>“Revisar la ley que rige cada organismo me ayudó a entender mejor perfiles y exigencias del sistema público.”</p>
+      </article>
+    </div>
+  </section>
 
 </div>
 
@@ -288,6 +366,7 @@ function renderFila(inst) {
       <td>
         <a href="index.html?institucion=${inst.id}" class="inst-nombre-link">${inst.nombre}</a>
         ${sigla}
+        <a href="#metodologia" class="meta-link">Metodología ↗</a>
       </td>
       <td>${sector}</td>
       <td class="col-region">${region}</td>
@@ -402,10 +481,22 @@ async function cargar() {
   }
 }
 
+async function cargarUltimaActualizacion() {
+  try {
+    const res = await fetch(`${API_BASE}/api/estadisticas`);
+    if (!res.ok) return;
+    const data = await res.json();
+    const el = document.getElementById('data-last-update');
+    if (!el || !data.ultima_actualizacion) return;
+    el.textContent = new Date(data.ultima_actualizacion).toLocaleString('es-CL', { dateStyle: 'medium', timeStyle: 'short' });
+  } catch {}
+}
+
 // Cargar regiones dinámicamente y luego la tabla
 cargarRegiones();
 const params = new URLSearchParams(window.location.search);
 cargar();
+cargarUltimaActualizacion();
 </script>
 
 <script>
