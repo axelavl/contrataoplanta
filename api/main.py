@@ -310,7 +310,6 @@ def ofertas_select_sql() -> str:
         o.area_profesional,
         o.fecha_publicacion,
         o.fecha_cierre,
-        o.fecha_inicio,
         COALESCE(o.url_oferta, o.url_original) AS url_oferta,
         COALESCE(o.url_bases, o.url_original, o.url_oferta) AS url_bases,
         {ESTADO_SQL} AS estado,
@@ -472,8 +471,7 @@ def get_ofertas(
     )
     # Ofertas sin fecha_cierre ni fecha_inicio van al final;
     # dentro de cada grupo se ordena normalmente.
-    sin_fechas = "CASE WHEN fecha_cierre IS NULL AND fecha_inicio IS NULL THEN 1 ELSE 0 END ASC"
-    order_sql = {
+sin_fechas = "CASE WHEN fecha_cierre IS NULL THEN 1 ELSE 0 END ASC"    order_sql = {
         "recientes":  f"{sin_fechas}, fecha_scraped DESC NULLS LAST, id DESC",
         "cierre":     f"{sin_fechas}, fecha_cierre ASC NULLS LAST, id DESC",
         "renta_desc": f"{sin_fechas}, renta_bruta_max DESC NULLS LAST, renta_bruta_min DESC NULLS LAST, id DESC",
