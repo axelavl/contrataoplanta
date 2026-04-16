@@ -14,6 +14,295 @@
       "kind": "generic",
       "reason": "PDI — portal de postulaciones verificado, publica cargos a contrata",
       "notes": "https://postulaciones.investigaciones.cl/"
+    },
+
+    {"_comment": "=== Autónomos / Reguladores ==="},
+
+    {
+      "id": 46,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Contraloría General de la República — portal trabaje-con-nosotros propio",
+      "notes": "https://www.contraloria.cl/web/cgr/trabaje-con-nosotros"
+    },
+    {
+      "id": 145,
+      "status": "js_required",
+      "kind": "skip",
+      "reason": "Banco Central — plataforma empleos.bcentral.cl requiere JS. Alta calidad de datos pero no scrapeable con requests",
+      "notes": "https://www.bcentral.cl/el-banco/trabaja-en-el-bc/oportunidades-de-trabajo"
+    },
+    {
+      "id": 146,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Fiscalía de Chile — portal trabaja-con-nosotros propio",
+      "notes": "https://www.fiscaliadechile.cl/trabaja-con-nosotros"
+    },
+    {
+      "id": 148,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Defensoría Penal Pública — portal /concursos propio, también publica en EP",
+      "notes": "https://www.dpp.cl/concursos"
+    },
+    {
+      "id": 149,
+      "status": "active",
+      "kind": "custom_trabajando",
+      "reason": "Comisión para el Mercado Financiero — portal en Trabajando.cl",
+      "notes": "https://cmfchile.trabajando.cl"
+    },
+    {
+      "id": 150,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Consejo para la Transparencia — portal trabaja-con-nosotros propio",
+      "notes": "https://www.consejotransparencia.cl/trabaja-con-nosotros/"
+    },
+    {
+      "id": 151,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Comisión Nacional de Acreditación — portal Trabaje-con-nosotros (aspx)",
+      "notes": "https://www.cnachile.cl/Paginas/Trabaje-con-nosotros.aspx"
+    },
+    {
+      "id": 154,
+      "status": "experimental",
+      "kind": "custom_buk",
+      "reason": "Coordinador Eléctrico Nacional — Buk RRHH, requiere JS. Experimental hasta verificar si responde sin JS",
+      "notes": "https://coordinador.buk.cl/trabaja-con-nosotros"
+    },
+    {
+      "id": 155,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Consejo Nacional de Educación — portal propio novedades-y-eventos, también publica en EP",
+      "notes": "https://cned.cl/novedades-y-eventos/"
+    },
+    {
+      "id": 698,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Defensoría de los Derechos de la Niñez — portal propio verificado, también publica en EP",
+      "notes": "https://www.defensorianinez.cl/trabaja-con-nosotros/"
+    },
+    {
+      "id": 700,
+      "status": "active",
+      "kind": "generic",
+      "reason": "INDH — portal de selección propio verificado. No usa empleospublicos.cl",
+      "notes": "https://seleccionpersonal.indh.cl/"
+    },
+
+    {"_comment": "=== Universidades del Estado ==="},
+
+    {
+      "id": 242,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Universidad de Chile — portal empleos.uchile.cl propio",
+      "notes": "https://empleos.uchile.cl/"
+    },
+    {
+      "id": 243,
+      "status": "experimental",
+      "kind": "generic",
+      "reason": "USACH — URL de empleo no es un enlace válido, se usará sitio_web como fallback",
+      "notes": "URL original era un título de página, no una URL"
+    },
+    {
+      "id": 244,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Universidad de Valparaíso — portal cyl.uv.cl/cargos propio",
+      "notes": "https://cyl.uv.cl/cargos"
+    },
+    {
+      "id": 245,
+      "status": "experimental",
+      "kind": "generic",
+      "reason": "Universidad de Antofagasta — URL apunta a intranet/asp, puede no responder externamente",
+      "notes": "https://intranetua.uantof.cl/academicos/pages/academicos.asp?ID=concurso2018"
+    },
+    {
+      "id": 246,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Universidad de La Frontera — portal personas.ufro.cl propio",
+      "notes": "https://personas.ufro.cl/servicio/convocatorias/"
+    },
+    {
+      "id": 247,
+      "status": "broken",
+      "kind": "skip",
+      "reason": "Universidad de La Serena — URL es copia errada de UFRO (personas.ufro.cl). Requiere verificación manual de la URL correcta",
+      "notes": "URL duplicada de ID 246. El portal real de ULS no está identificado"
+    },
+    {
+      "id": 248,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Universidad del Bío-Bío — portal ubiobio.cl/concursos propio",
+      "notes": "https://ubiobio.cl/concursos/"
+    },
+    {
+      "id": 249,
+      "status": "active",
+      "kind": "custom_trabajando",
+      "reason": "Universidad de Magallanes — portal en Trabajando.cl",
+      "notes": "https://umag.trabajando.cl/"
+    },
+    {
+      "id": 250,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Universidad de Los Lagos — portal ulagos.cl/concursos-publicos propio",
+      "notes": "https://www.ulagos.cl/concursos-publicos/"
+    },
+    {
+      "id": 251,
+      "status": "experimental",
+      "kind": "generic",
+      "reason": "Universidad Arturo Prat — portal PHP legacy (sispartime/llamado.php), puede no ser parseable",
+      "notes": "http://portal.unap.cl/kb/dewey/app/sispartime/llamado.php"
+    },
+    {
+      "id": 252,
+      "status": "broken",
+      "kind": "skip",
+      "reason": "Universidad de Tarapacá — URL es copia errada de UNAP (portal.unap.cl). Requiere verificación manual",
+      "notes": "URL duplicada de ID 251. El portal real de UTA no está identificado"
+    },
+    {
+      "id": 253,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Universidad de Atacama — portal uda.cl/concursos-publicos propio",
+      "notes": "https://uda.cl/concursos-publicos/"
+    },
+    {
+      "id": 254,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Universidad Tecnológica Metropolitana — portal empleos.utem.cl propio",
+      "notes": "https://empleos.utem.cl/"
+    },
+    {
+      "id": 255,
+      "status": "experimental",
+      "kind": "generic",
+      "reason": "UMCE — URL apunta a Joomla legacy (umceold.umce.cl), puede estar obsoleto",
+      "notes": "https://umceold.umce.cl/index.php?option=com_content&view=article&id=1126"
+    },
+    {
+      "id": 256,
+      "status": "experimental",
+      "kind": "generic",
+      "reason": "UPLA — URL usa búsqueda interna de noticias, resultados pueden ser inestables",
+      "notes": "https://upla.cl/noticias/?s=concurso+p%C3%Bablico"
+    },
+    {
+      "id": 257,
+      "status": "active",
+      "kind": "custom_trabajando",
+      "reason": "Universidad de Talca — portal en Trabajando.cl",
+      "notes": "https://utalca.trabajando.cl/"
+    },
+    {
+      "id": 258,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Universidad de O'Higgins — portal uoh.cl/trabaja-con-nosotros propio",
+      "notes": "https://www.uoh.cl/trabaja-con-nosotros/"
+    },
+    {
+      "id": 259,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Universidad de Aysén — portal uaysen.cl/trabaja-con-nosotros propio",
+      "notes": "https://uaysen.cl/trabaja-con-nosotros/"
+    },
+
+    {"_comment": "=== CFTs Estatales ==="},
+
+    {
+      "id": 260,
+      "status": "active",
+      "kind": "generic",
+      "reason": "CFT Estatal Arica y Parinacota — portal propio, también publica en EP",
+      "notes": "https://cftestatalaricayparinacota.cl/postulacion-docente-primer-semestre-2026/"
+    },
+    {
+      "id": 261,
+      "status": "active",
+      "kind": "generic",
+      "reason": "CFT Estatal Tarapacá — portal propio trabaja-con-nosotros, también publica en EP",
+      "notes": "https://www.cftestataltarapaca.cl/inicio/trabaja-con-nosotros/"
+    },
+    {
+      "id": 263,
+      "status": "active",
+      "kind": "generic",
+      "reason": "CFT Estatal Atacama — portal propio trabajaconnosotros.html, también publica en EP",
+      "notes": "https://www.cftdeatacama.cl/trabajaconnosotros.html"
+    },
+    {
+      "id": 265,
+      "status": "active",
+      "kind": "generic",
+      "reason": "CFT Estatal Valparaíso — portal propio trabaja-con-nosotros, también publica en EP",
+      "notes": "https://tecnologicovalparaiso.cl/trabaja-con-nosotros/"
+    },
+    {
+      "id": 268,
+      "status": "broken",
+      "kind": "skip",
+      "reason": "CFT Estatal del Maule — solo publica en LinkedIn (no scrapeable). Usar EP como fuente",
+      "notes": "https://www.linkedin.com/company/cft-del-maule/"
+    },
+    {
+      "id": 269,
+      "status": "active",
+      "kind": "generic",
+      "reason": "CFT Estatal Biobío — portal propio ofertas-laborales, también publica en EP",
+      "notes": "https://cftestatalbiobio.cl/ofertas-laborales/"
+    },
+    {
+      "id": 270,
+      "status": "active",
+      "kind": "generic",
+      "reason": "CFT Estatal La Araucanía — portal propio trabaja-con-nosotros, también publica en EP",
+      "notes": "https://cftaraucania.cl/trabaja-con-nosotros/"
+    },
+    {
+      "id": 271,
+      "status": "active",
+      "kind": "generic",
+      "reason": "CFT Estatal Los Ríos — portal propio postulaciondocente, también publica en EP",
+      "notes": "https://postulaciondocente.cftdelosrios.cl"
+    },
+    {
+      "id": 272,
+      "status": "broken",
+      "kind": "skip",
+      "reason": "CFT Estatal de Los Lagos — solo publica en LinkedIn (no scrapeable). Usar EP como fuente",
+      "notes": "https://www.linkedin.com/school/cftregionloslagos/"
+    },
+    {
+      "id": 273,
+      "status": "active",
+      "kind": "generic",
+      "reason": "CFT Estatal Aysén — portal propio concursoscft, también publica en EP",
+      "notes": "https://cftestataldeaysen.cl/concursoscft/"
+    },
+    {
+      "id": 274,
+      "status": "active",
+      "kind": "generic",
+      "reason": "CFT Estatal Magallanes — portal propio trabaja-con-nosotros, también publica en EP",
+      "notes": "https://cftdemagallanes.cl/trabaja-con-nosotros/"
     }
   ]
 }
