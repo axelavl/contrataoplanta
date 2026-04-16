@@ -1,0 +1,15 @@
+{
+  "name": "contrata o planta",
+  "short_name": "contrataoplanta",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "theme_color": "#0A2E6E",
+  "background_color": "#F5F4EF",
+  "display": "standalone"
+}
