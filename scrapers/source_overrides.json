@@ -73,8 +73,8 @@
       "id": 132,
       "status": "active",
       "kind": "generic",
-      "reason": "Fundación Integra — portal propio trabajaconnosotros.integra.cl. No publica en EP",
-      "notes": "https://trabajaconnosotros.integra.cl/"
+      "reason": "Fundación Integra — portal propio integra.cl/trabaje-con-nosotros. No publica en EP",
+      "notes": "https://www.integra.cl/trabaje-con-nosotros/ (trabajaconnosotros.integra.cl requiere JS)"
     },
 
     {"_comment": "=== Empresas del Estado ==="},
@@ -226,8 +226,8 @@
       "id": 46,
       "status": "active",
       "kind": "generic",
-      "reason": "Contraloría General de la República — portal trabaje-con-nosotros propio",
-      "notes": "https://www.contraloria.cl/web/cgr/trabaje-con-nosotros"
+      "reason": "Contraloría General de la República — portal trabajar-con-nosotros propio",
+      "notes": "https://www.contraloria.cl/web/cgr/trabajar-con-nosotros"
     },
     {
       "id": 145,

@@ -154,8 +154,8 @@ class RuleEngine:
 
     @staticmethod
     def _is_historical(text: str) -> bool:
-        old_year = re.search(r"\b(2020|2021|2022|2023)\b", text)
-        current_hint = re.search(r"\b2025|2026|vigente|abierto|postulaciones hasta\b", text)
+        old_year = re.search(r"\b(2020|2021|2022|2023|2024)\b", text)
+        current_hint = re.search(r"\b(2025|2026|vigente|abierto|postulaciones hasta)\b", text)
         return bool(old_year and not current_hint)
 
     @staticmethod
