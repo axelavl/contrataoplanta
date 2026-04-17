@@ -20,9 +20,9 @@ def extract_dates_from_text(text: str) -> list[DateEvidence]:
     evidences: list[DateEvidence] = []
     source = text or ""
     patterns = {
-        "application_end": r"hasta el\s+[^\n\.]{0,40}|cierre de postulaci[oó]n[^\n\.]{0,50}",
-        "application_start": r"desde el\s+[^\n\.]{0,40}|inicio de postulaci[oó]n[^\n\.]{0,50}",
-        "published": r"publicad[oa]\s+[^\n\.]{0,30}|fecha de publicaci[oó]n[^\n\.]{0,40}",
+        "application_end": r"(?:hasta el|cierre de postulaci[oó]n|plazo de postulaci[oó]n|recepci[oó]n de antecedentes hasta|postulaciones hasta)\s+[^\n\.]{0,60}",
+        "application_start": r"(?:desde el|inicio de postulaci[oó]n|apertura de postulaci[oó]n|recepci[oó]n de antecedentes desde)\s+[^\n\.]{0,60}",
+        "published": r"(?:publicad[oa]|fecha de publicaci[oó]n|publicaci[oó]n)\s+[^\n\.]{0,60}",
     }
     for label, pattern in patterns.items():
         for chunk in re.findall(pattern, source, flags=re.IGNORECASE):
@@ -76,7 +76,7 @@ def resolve_best_dates(evidences: list[DateEvidence], now: datetime | None = Non
         expiration_reason = "explicit_closed_signal"
         confidence = "high"
 
-    if re.search(r"\b(2020|2021|2022|2023)\b", texts) and not re.search(r"\b2025|2026|vigente\b", texts):
+    if re.search(r"\b(2020|2021|2022|2023|2024)\b", texts) and not re.search(r"\b2025|2026|vigente|abierto|en proceso\b", texts):
         is_expired = True
         expiration_reason = "historical_year_without_current_signals"
         confidence = "medium"
