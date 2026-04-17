@@ -459,7 +459,7 @@
     </div>
     <div class="modal-actions">
       <button class="btn-modal-primary" id="modal-btn-postular">Ir a postular →</button>
-      <a class="btn-modal-sec" id="modal-btn-bases" target="_blank" rel="noopener noreferrer" style="display:none">📄 Ver bases</a>
+      <button class="btn-modal-sec" id="modal-btn-bases" style="display:none">📄 Ver bases</button>
       <button class="btn-modal-sec" id="modal-btn-favorito">♡ Guardar</button>
       <button class="btn-modal-sec" id="modal-btn-alerta">🔔 Alertarme</button>
     </div>
@@ -492,6 +492,40 @@
       <button class="share-btn share-btn--copy" id="share-copy" type="button" title="Copiar enlace" aria-label="Copiar enlace">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ VISOR DE BASES (PDF) ═══════════════════════════════════════ -->
+<div id="bases-viewer" class="bases-viewer-overlay" role="dialog" aria-modal="true" aria-labelledby="bases-viewer-title" hidden>
+  <div class="bases-viewer-panel">
+    <header class="bases-viewer-header">
+      <div class="bases-viewer-meta">
+        <div class="bases-viewer-kicker">Bases del concurso</div>
+        <h3 id="bases-viewer-title">Visualizador interno</h3>
+      </div>
+      <button class="bases-viewer-close" type="button" aria-label="Cerrar visor de bases" onclick="cerrarVisorBases()">✕</button>
+    </header>
+
+    <div class="bases-viewer-actions" role="group" aria-label="Acciones del documento">
+      <a id="bases-action-open" class="btn-modal-sec" target="_blank" rel="noopener noreferrer">Abrir original ↗</a>
+      <a id="bases-action-download" class="btn-modal-sec" target="_blank" rel="noopener noreferrer" download>Descargar PDF</a>
+      <button id="bases-action-copy" class="btn-modal-sec" type="button">Copiar enlace</button>
+      <button id="bases-action-back" class="btn-modal-sec" type="button">Volver al detalle</button>
+    </div>
+
+    <div class="bases-viewer-status" id="bases-viewer-status" aria-live="polite">Cargando bases…</div>
+
+    <div class="bases-viewer-content">
+      <iframe id="bases-viewer-frame" class="bases-viewer-frame" title="Visualizador de bases del concurso" loading="lazy"></iframe>
+      <div id="bases-viewer-fallback" class="bases-viewer-fallback" hidden>
+        <p class="bases-fallback-title">No pudimos mostrar este PDF dentro del sitio.</p>
+        <p class="bases-fallback-copy">Algunos portales bloquean la visualización embebida. Puedes continuar con una de estas opciones:</p>
+        <div class="bases-fallback-actions">
+          <a id="bases-fallback-open" class="btn-modal-primary" target="_blank" rel="noopener noreferrer">Abrir PDF original</a>
+          <a id="bases-fallback-download" class="btn-modal-sec" target="_blank" rel="noopener noreferrer" download>Descargar PDF</a>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -662,6 +696,7 @@ const estado = {
   ciudad: '',
   vista_listado: 'vigentes',
 };
+let _ofertasPorId = new Map();
 
 function getConfigPorPagina(vista = estado.vista) {
   return POR_PAGINA_CONFIG[vista] || POR_PAGINA_CONFIG.cards;
@@ -1001,7 +1036,7 @@ function renderBtnBases(oferta) {
   if (!valida) {
     return `<span class="btn-ver btn-ver-off" title="Enlace de bases no disponible" onclick="event.stopPropagation()">Bases no disponibles</span>`;
   }
-  return `<a class="btn-ver" href="${escAttr(oferta.url_bases)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">Ver bases</a>`;
+  return `<button class="btn-ver" onclick="event.stopPropagation();abrirVisorBasesPorId(${Number(oferta.id) || 0})">Ver bases</button>`;
 }
 
 // ── ¿La oferta tiene una URL de postulación utilizable? ─────────────────
@@ -1673,6 +1708,7 @@ async function cargarOfertas() {
       const key = getOfertaEstado(oferta).key;
       return estado.vista_listado === 'cerradas' ? key === 'closed' : key !== 'closed';
     });
+    _ofertasPorId = new Map(ofertasFiltradas.map((o) => [Number(o.id), o]));
 
     // Actualizar contador
     const totalContador = data.total ?? ofertasFiltradas.length;
@@ -2046,11 +2082,11 @@ async function abrirModal(ofertaId) {
     // Botón Ver bases (solo si es distinto y válido por backend o cliente)
     const btnBases = document.getElementById('modal-btn-bases');
     if (o.url_bases && o.url_bases !== o.url_oferta && basesOk) {
-      btnBases.href = o.url_bases;
       btnBases.style.display = 'inline-flex';
+      btnBases.onclick = () => abrirVisorBases(o);
     } else {
       btnBases.style.display = 'none';
-      btnBases.removeAttribute('href');
+      btnBases.onclick = null;
     }
 
     // Botón favorito
@@ -2079,6 +2115,7 @@ async function abrirModal(ofertaId) {
 
 function cerrarModal(e, force) {
   if (force || e.target === document.getElementById('modal')) {
+    cerrarVisorBases({ mantenerScroll: true });
     document.getElementById('modal').classList.remove('open');
     document.body.style.overflow = '';
     _desinstalarFocusTrap();
@@ -2088,6 +2125,103 @@ function cerrarModal(e, force) {
     }
     _modalLastFocus = null;
   }
+}
+
+let _basesViewerTimeout = null;
+let _basesViewerUrl = '';
+let _basesViewerLastFocus = null;
+
+function _resetVisorBases() {
+  const frame = document.getElementById('bases-viewer-frame');
+  const fallback = document.getElementById('bases-viewer-fallback');
+  const status = document.getElementById('bases-viewer-status');
+  clearTimeout(_basesViewerTimeout);
+  _basesViewerTimeout = null;
+  frame.removeAttribute('src');
+  fallback.hidden = true;
+  status.textContent = 'Cargando bases…';
+}
+
+function _setVisorBasesFallback(mensaje = 'No pudimos abrir este documento dentro del sitio.') {
+  const fallback = document.getElementById('bases-viewer-fallback');
+  const status = document.getElementById('bases-viewer-status');
+  const frame = document.getElementById('bases-viewer-frame');
+  fallback.hidden = false;
+  frame.classList.add('is-hidden');
+  status.textContent = mensaje;
+}
+
+function cerrarVisorBases(opts = {}) {
+  const { mantenerScroll = false } = opts;
+  const overlay = document.getElementById('bases-viewer');
+  if (overlay.hidden) return;
+  overlay.hidden = true;
+  _resetVisorBases();
+  document.getElementById('bases-viewer-frame').classList.remove('is-hidden');
+  if (!mantenerScroll && !document.getElementById('modal').classList.contains('open')) {
+    document.body.style.overflow = '';
+  }
+  if (_basesViewerLastFocus && typeof _basesViewerLastFocus.focus === 'function') {
+    try { _basesViewerLastFocus.focus(); } catch { /* noop */ }
+  }
+  _basesViewerLastFocus = null;
+}
+
+async function copiarEnlaceBases() {
+  if (!_basesViewerUrl) return;
+  const btn = document.getElementById('bases-action-copy');
+  try {
+    await navigator.clipboard.writeText(_basesViewerUrl);
+    btn.textContent = 'Enlace copiado ✓';
+    setTimeout(() => { btn.textContent = 'Copiar enlace'; }, 1800);
+  } catch {
+    prompt('Copia este enlace:', _basesViewerUrl);
+  }
+}
+
+function abrirVisorBases(oferta) {
+  if (!oferta) return;
+  const basesUrl = (oferta.url_bases && oferta.url_bases !== oferta.url_oferta) ? oferta.url_bases : oferta.url_oferta;
+  if (!esUrlValida(basesUrl)) return;
+
+  _basesViewerLastFocus = document.activeElement;
+  _basesViewerUrl = basesUrl;
+
+  const titulo = normalizarTituloOferta(oferta.cargo) || 'Bases del concurso';
+  document.getElementById('bases-viewer-title').textContent = titulo;
+  document.getElementById('bases-action-open').href = basesUrl;
+  document.getElementById('bases-action-download').href = basesUrl;
+  document.getElementById('bases-fallback-open').href = basesUrl;
+  document.getElementById('bases-fallback-download').href = basesUrl;
+  document.getElementById('bases-action-copy').onclick = copiarEnlaceBases;
+  document.getElementById('bases-action-back').onclick = () => cerrarVisorBases({ mantenerScroll: true });
+
+  const frame = document.getElementById('bases-viewer-frame');
+  const status = document.getElementById('bases-viewer-status');
+
+  _resetVisorBases();
+  frame.classList.remove('is-hidden');
+  frame.onload = () => {
+    clearTimeout(_basesViewerTimeout);
+    _basesViewerTimeout = null;
+    document.getElementById('bases-viewer-status').textContent = 'Visualización interna activa.';
+  };
+  frame.onerror = () => {
+    _setVisorBasesFallback('No pudimos cargar el PDF embebido. Puedes abrirlo o descargarlo.');
+  };
+
+  document.getElementById('bases-viewer').hidden = false;
+  document.body.style.overflow = 'hidden';
+  status.textContent = 'Cargando bases…';
+  frame.src = `${basesUrl}#view=FitH`;
+  _basesViewerTimeout = setTimeout(() => {
+    _setVisorBasesFallback('La carga está tardando más de lo normal. Te dejamos opciones rápidas para continuar.');
+  }, 9000);
+}
+
+function abrirVisorBasesPorId(ofertaId) {
+  const oferta = _ofertasPorId.get(Number(ofertaId)) || null;
+  if (oferta) abrirVisorBases(oferta);
 }
 
 // Construye el deep-link a esta oferta dentro del dominio actual.
@@ -2604,7 +2738,13 @@ async function enviarAlerta() {
 document.getElementById('btn-alerta-submit').addEventListener('click', enviarAlerta);
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') cerrarModal(null, true);
+  if (e.key !== 'Escape') return;
+  const visorAbierto = !document.getElementById('bases-viewer').hidden;
+  if (visorAbierto) {
+    cerrarVisorBases({ mantenerScroll: true });
+    return;
+  }
+  cerrarModal(null, true);
 });
 
 // Activar todos los tipos del catálogo al cargar. Los filtros de cierre/nuevos/
@@ -2742,6 +2882,11 @@ document.getElementById('lista-ofertas')?.addEventListener('keydown', (e) => {
 // ── 2. Escape cierra el modal + Ctrl/Cmd+K enfoca el buscador ──
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
+    const visorAbierto = !document.getElementById('bases-viewer').hidden;
+    if (visorAbierto) {
+      cerrarVisorBases({ mantenerScroll: true });
+      return;
+    }
     const modal = document.getElementById('modal');
     if (modal && modal.classList.contains('open')) {
       cerrarModal(null, true);
@@ -2750,6 +2895,12 @@ document.addEventListener('keydown', (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
     e.preventDefault();
     document.getElementById('input-cargo')?.focus();
+  }
+});
+
+document.getElementById('bases-viewer')?.addEventListener('click', (e) => {
+  if (e.target === document.getElementById('bases-viewer')) {
+    cerrarVisorBases({ mantenerScroll: true });
   }
 });
 
