@@ -310,6 +310,34 @@
     return HEADER_TOKENS.has(clean);
   }
 
+  var KNOWN_HEADERS_BY_LENGTH = KNOWN_HEADERS.slice().sort(function (a, b) {
+    return b.length - a.length;
+  });
+
+  function splitLeadingKnownHeader(line) {
+    var lower = line.toLowerCase();
+    for (var i = 0; i < KNOWN_HEADERS_BY_LENGTH.length; i++) {
+      var token = KNOWN_HEADERS_BY_LENGTH[i];
+      if (lower.indexOf(token) !== 0) continue;
+      var rest = line.slice(token.length);
+      if (!rest) return null;
+      // Separadores típicos entre subtítulo y contenido.
+      if (/^\s*[:\-–—]\s+/.test(rest)) {
+        rest = rest.replace(/^\s*[:\-–—]\s+/, '');
+      } else if (/^\s{2,}/.test(rest)) {
+        rest = rest.replace(/^\s+/, '');
+      } else {
+        return null;
+      }
+      if (rest.length < 4) return null;
+      return {
+        header: line.slice(0, token.length),
+        content: rest
+      };
+    }
+    return null;
+  }
+
   function classifyHeaderTone(text) {
     var low = text.toLowerCase();
     for (var i = 0; i < EXCLUYENTE_NEEDLES.length; i++) {
@@ -335,6 +363,12 @@
       if (m && isKnownHeader(m[1] + ':')) {
         out.push(m[1] + ':');
         out.push(m[2]);
+        continue;
+      }
+      var splitKnown = splitLeadingKnownHeader(line);
+      if (splitKnown) {
+        out.push(splitKnown.header + ':');
+        out.push(splitKnown.content);
       } else {
         out.push(line);
       }
@@ -439,8 +473,12 @@
   function renderInline(s) {
     var esc = escHtml(s);
     esc = esc.replace(
-      /(^|[\s\(\[¿¡\.;])([A-ZÁÉÍÓÚÑ][A-Za-zÁÉÍÓÚÑáéíóúñ0-9][A-Za-zÁÉÍÓÚÑáéíóúñ0-9\s\/\-]{0,58}?):(?=\s|$)/g,
-      function (m, pre, label) { return pre + '<strong>' + label + ':</strong>'; }
+      /(^|[\s\(\[¿¡\.;])([A-ZÁÉÍÓÚÑ][A-Za-zÁÉÍÓÚÑáéíóúñ0-9][A-Za-zÁÉÍÓÚÑáéíóúñ0-9\s\/\-]{0,34}?):(?=\s|$)/g,
+      function (m, pre, label) {
+        var words = label.trim().split(/\s+/).length;
+        if (words > 4) return m;
+        return pre + '<strong>' + label + ':</strong>';
+      }
     );
     // Conserva énfasis inline pero evita negritas heredadas largas e invasivas.
     esc = esc.replace(/(?:\*\*|__)([^*_]{2,120})(?:\*\*|__)/g, '<strong>$1</strong>');

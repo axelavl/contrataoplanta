@@ -1154,23 +1154,24 @@ footer {
   transition: background .15s;
 }
 .modal-close:hover { background: rgba(255,255,255,0.25); }
-.modal-body { padding: 14px 20px; }
-.modal-seccion { margin-bottom: 14px; }
+.modal-body { padding: 20px 22px 18px; }
+.modal-seccion { margin-bottom: 24px; }
+.modal-seccion:last-child { margin-bottom: 10px; }
 .modal-seccion-titulo {
-  font-size: 11px; font-weight: 800;
+  font-size: 12px; font-weight: 800;
   text-transform: uppercase; letter-spacing: 1px;
-  color: var(--texto); margin-bottom: 11px;
+  color: var(--texto);
+  margin: 0 0 12px 0;
   font-family: 'Inter', sans-serif;
-  line-height: 1.35;
+  line-height: 1.25;
 }
 .modal-info-grid {
   display: grid; grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 10px;
 }
 .modal-info-item {
   background: var(--bg2); border-radius: 7px;
-  padding: 8px 10px;
-  border: 1px solid #e8eef6;
+  padding: 10px 12px;
 }
 .modal-info-label {
   font-size: 10px; color: var(--texto3);
@@ -1199,12 +1200,17 @@ footer {
 }
 .modal-rich-text h4,
 .modal-rich-text .rt-heading {
-  font-size: 14px; font-weight: 700;
-  color: var(--texto); margin: 18px 0 8px 0;
-  letter-spacing: 0; line-height: 1.4;
+  font-size: 14.5px;
+  font-weight: 650;
+  color: #1F2937;
+  margin: 18px 0 8px 0;
+  letter-spacing: -0.1px; line-height: 1.35;
   display: block;
 }
 .modal-rich-text > .rt-heading:first-child { margin-top: 0; }
+.modal-rich-text p + .rt-heading,
+.modal-rich-text ul + .rt-heading,
+.modal-rich-text ol + .rt-heading { margin-top: 20px; }
 .modal-rich-text .rt-heading--excluyente {
   color: #991B1B;
 }
@@ -1288,30 +1294,31 @@ footer {
   }
 }
 
-/* Jerarquía tipográfica reforzada en escritorio */
-@media (min-width: 901px) {
-  .modal-body { padding: 24px 28px; }
-  .modal-seccion { margin-bottom: 28px; }
+@media (min-width: 900px) {
+  .modal {
+    max-width: 760px;
+  }
+  .modal-body {
+    padding: 24px 28px 22px;
+  }
+  .modal-seccion {
+    margin-bottom: 28px;
+  }
   .modal-seccion-titulo {
-    font-size: 12px;
+    font-size: 12.5px;
     margin-bottom: 14px;
-    letter-spacing: 1.1px;
   }
   .modal-rich-text {
     font-size: 14.5px;
-    line-height: 1.76;
+    line-height: 1.75;
   }
   .modal-rich-text .rt-heading {
     font-size: 15px;
-    font-weight: 700;
-    margin-top: 22px;
-    margin-bottom: 9px;
+    margin: 22px 0 9px;
   }
-  .modal-rich-text p { margin-bottom: 11px; }
-  .modal-rich-text ul,
-  .modal-rich-text ol { margin-bottom: 14px; }
-  .modal-rich-text strong,
-  .modal-rich-text b { font-weight: 600; }
+  .modal-rich-text p {
+    margin-bottom: 11px;
+  }
 }
 
 /* Compatibilidad con clases antiguas */
