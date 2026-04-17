@@ -158,7 +158,11 @@ def indexar_ofertas(ofertas: list[dict[str, Any]]) -> bool:
                 "fecha_cierre": str(o["fecha_cierre"]) if o.get("fecha_cierre") else None,
                 "fecha_scraped": str(o["fecha_scraped"]) if o.get("fecha_scraped") else None,
                 "url_oferta": o.get("url_oferta", ""),
-                "activo": o.get("estado") == "activo" if o.get("estado") else o.get("activa", True),
+                "activo": (
+                    str(o.get("estado", "")).lower() in {"activo", "active", "closing_today", "cierra_hoy"}
+                    if o.get("estado") is not None
+                    else bool(o.get("activa", True))
+                ),
             }
             docs.append(doc)
 

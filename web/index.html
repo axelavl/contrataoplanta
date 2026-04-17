@@ -3120,7 +3120,7 @@ async function cargarOfertas() {
     });
 
     // Actualizar contador
-    const totalContador = estado.vista_listado === 'cerradas' ? ofertasFiltradas.length : (data.total ?? ofertasFiltradas.length);
+    const totalContador = data.total ?? ofertasFiltradas.length;
     document.getElementById('count-num').textContent = totalContador.toLocaleString('es-CL');
     const sub = document.getElementById('count-sub');
     if (sub) sub.textContent = totalContador === 1 ? '· 1 resultado' : '';
@@ -3147,11 +3147,7 @@ const itemsHtml = ofertasFiltradas.map((oferta, i) => {
 
 lista.innerHTML = header + itemsHtml;
     // Paginación
-    if (estado.vista_listado === 'cerradas') {
-      renderPaginacion(ofertasFiltradas.length, 1);
-    } else {
-      renderPaginacion(data.total, data.paginas);
-    }
+    renderPaginacion(data.total ?? ofertasFiltradas.length, data.paginas ?? 1);
 
   } catch (err) {
     console.error('Error cargando ofertas:', err);
