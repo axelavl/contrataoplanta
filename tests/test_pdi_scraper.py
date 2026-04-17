@@ -23,6 +23,7 @@ from scrapers.plataformas.pdi import (
     _slug_from_url,
     _slug_to_title,
     _slugs_relacionados,
+    _stable_offer_url,
 )
 from scrapers.plataformas.carabineros import split_pdf_sections
 
@@ -183,6 +184,38 @@ class SlugHelpersTests(unittest.TestCase):
             )
         )
 
+    def test_slugs_no_relacionados_solo_por_anio(self):
+        self.assertFalse(
+            _slugs_relacionados(
+                "perfil-analista-2026",
+                "bases-abogado-2026",
+            )
+        )
+
+    def test_slugs_relacionados_por_mes_y_anio(self):
+        self.assertTrue(
+            _slugs_relacionados(
+                "perfil-analista-marzo-2026",
+                "bases-analista-marzo-2026",
+            )
+        )
+
+    def test_slugs_no_relacionados_si_solo_comparten_mes_y_anio(self):
+        self.assertFalse(
+            _slugs_relacionados(
+                "perfil-abogado-marzo-2026",
+                "bases-medico-marzo-2026",
+            )
+        )
+
+    def test_stable_offer_url_quita_query_y_fragment(self):
+        self.assertEqual(
+            _stable_offer_url(
+                "https://www.pdichile.cl/docs/default-source/cargo/perfil.pdf?sfvrsn=58e4#top"
+            ),
+            "https://www.pdichile.cl/docs/default-source/cargo/perfil.pdf",
+        )
+
 
 class PortadaParsingTests(unittest.TestCase):
     def test_parse_portada_detecta_concursos_y_emparejamiento(self):
@@ -224,10 +257,13 @@ class PortadaParsingTests(unittest.TestCase):
         )
         # Emparejar bases huérfanas (mismo algoritmo que en _enumerar_portada).
         for slug_bases, url_bases in bases.items():
-            for perfil in perfiles.values():
-                if not perfil.url_bases and _slugs_relacionados(perfil.slug, slug_bases):
-                    perfil.url_bases = url_bases
-                    break
+            candidatos = [
+                perfil
+                for perfil in perfiles.values()
+                if not perfil.url_bases and _slugs_relacionados(perfil.slug, slug_bases)
+            ]
+            if len(candidatos) == 1:
+                candidatos[0].url_bases = url_bases
 
         medico = next(p for p in perfiles.values() if "medico" in p.slug)
         ingeniero = next(p for p in perfiles.values() if "ingeniero" in p.slug)
@@ -315,6 +351,50 @@ class OfertaToRawTests(unittest.TestCase):
         self.assertNotEqual(
             c1.id,
             ConcursoPDI(slug="perfil-ingeniero-comercial-resolex-223").id,
+        )
+
+    def test_parse_oferta_normaliza_url_oferta_sin_querystring(self):
+        scraper = _make_scraper()
+
+        class _DummyPipeline:
+            def run(self, _raw_page):
+                return (
+                    {
+                        "job_title": "Médico Criminalista",
+                        "description": "Rol pericial.",
+                        "requirements": ["Ser chileno."],
+                        "contract_type": "Contrata",
+                        "published_at": "2026-03-03",
+                        "application_end_at": "2026-03-13",
+                        "is_expired": False,
+                    },
+                    {},
+                )
+
+        scraper.pipeline = _DummyPipeline()
+        concurso = ConcursoPDI(
+            slug="perfil-medico-criminalista-resolex-222",
+            url_perfil=(
+                "https://www.pdichile.cl/docs/default-source/cargo/"
+                "perfil-medico-criminalista-resolex-222.pdf?sfvrsn=58e48885_2"
+            ),
+            url_bases=(
+                "https://www.pdichile.cl/docs/default-source/concurso/"
+                "bases-medico-criminalista-resolex-222.pdf?sfvrsn=aa11_1"
+            ),
+            perfil_text=PDF_PERFIL_PDI,
+            bases_text=PDF_BASES_PDI,
+        )
+
+        normalized = scraper.parse_oferta({"concurso": concurso})
+        self.assertIsNotNone(normalized)
+        assert normalized is not None
+        self.assertEqual(
+            normalized["url_oferta"],
+            (
+                "https://www.pdichile.cl/docs/default-source/cargo/"
+                "perfil-medico-criminalista-resolex-222.pdf"
+            ),
         )
 
 

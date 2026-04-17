@@ -325,14 +325,16 @@ class PdiScraper(BaseScraper):
                 if sub not in visitadas and sub not in pendientes:
                     pendientes.append(sub)
 
-        # Emparejar bases huérfanas a perfiles por tokens compartidos.
+        # Emparejar bases huérfanas a perfiles por slugs relacionados.
+        # Sólo vinculamos si hay un único candidato fuerte.
         for slug_bases, url_bases in bases.items():
-            for perfil in perfiles.values():
-                if perfil.url_bases:
-                    continue
-                if _slugs_relacionados(perfil.slug, slug_bases):
-                    perfil.url_bases = url_bases
-                    break
+            candidatos = [
+                perfil
+                for perfil in perfiles.values()
+                if not perfil.url_bases and _slugs_relacionados(perfil.slug, slug_bases)
+            ]
+            if len(candidatos) == 1:
+                candidatos[0].url_bases = url_bases
 
         # Bases sin ningún perfil → emitir como concurso "sólo bases"
         # para no perder información del listado.
@@ -571,7 +573,7 @@ class PdiScraper(BaseScraper):
             "area_profesional": None,
             "fecha_publicacion": concurso.fecha_publicacion or posting.get("published_at"),
             "fecha_cierre": concurso.fecha_cierre or posting.get("application_end_at"),
-            "url_oferta": concurso.source_url,
+            "url_oferta": _stable_offer_url(concurso.source_url),
             "url_bases": concurso.url_bases or concurso.url_perfil,
             "estado": "cerrado" if posting.get("is_expired") else "activo",
         }
@@ -599,11 +601,81 @@ def _slug_to_title(slug: str) -> str:
 
 
 def _slugs_relacionados(slug_a: str, slug_b: str) -> bool:
-    """Dos PDFs pertenecen al mismo concurso si comparten al menos un
-    token temporal (mes/año) o un código resolex-NNN."""
+    """Dos slugs se consideran relacionados sólo con evidencia fuerte.
+
+    Reglas:
+      1) Si ambos tienen código `resolex-NNN`, debe coincidir exactamente.
+      2) Si no hay resolex usable, exigimos compartir año + mes + al menos
+         un token semántico específico del cargo (no genérico).
+    """
     tokens_a = {m.group(0).lower() for m in RE_TOKENS.finditer(slug_a)}
     tokens_b = {m.group(0).lower() for m in RE_TOKENS.finditer(slug_b)}
-    return bool(tokens_a & tokens_b)
+    if not tokens_a or not tokens_b:
+        return False
+
+    resolex_a = {t for t in tokens_a if t.startswith("resolex")}
+    resolex_b = {t for t in tokens_b if t.startswith("resolex")}
+    if resolex_a and resolex_b:
+        return bool(resolex_a & resolex_b)
+
+    years_a = {t for t in tokens_a if re.fullmatch(r"20\d{2}", t)}
+    years_b = {t for t in tokens_b if re.fullmatch(r"20\d{2}", t)}
+    meses = {
+        "enero", "febrero", "marzo", "abril", "mayo", "junio",
+        "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+    }
+    months_a = tokens_a & meses
+    months_b = tokens_b & meses
+    if not ((years_a & years_b) and (months_a & months_b)):
+        return False
+
+    stop_tokens = {
+        "perfil",
+        "cargo",
+        "cargos",
+        "bases",
+        "concurso",
+        "concursos",
+        "publico",
+        "publicos",
+        "planta",
+        "postulacion",
+        "postulaciones",
+        "resolex",
+        "del",
+        "de",
+        "la",
+        "el",
+    }
+    words_a = set(re.findall(r"[a-záéíóúñ0-9]+", slug_a.lower(), flags=re.I))
+    words_b = set(re.findall(r"[a-záéíóúñ0-9]+", slug_b.lower(), flags=re.I))
+    semantic_a = {
+        t
+        for t in words_a
+        if t not in stop_tokens
+        and t not in meses
+        and not re.fullmatch(r"20\d{2}", t)
+        and not t.startswith("resolex")
+        and len(t) >= 4
+    }
+    semantic_b = {
+        t
+        for t in words_b
+        if t not in stop_tokens
+        and t not in meses
+        and not re.fullmatch(r"20\d{2}", t)
+        and not t.startswith("resolex")
+        and len(t) >= 4
+    }
+    return bool(semantic_a & semantic_b)
+
+
+def _stable_offer_url(url: str | None) -> str:
+    """Normaliza URL para deduplicación/upsert: sin querystring ni fragment."""
+    if not url:
+        return PORTADA_URL
+    parsed = urlparse(url)
+    return parsed._replace(query="", fragment="").geturl()
 
 
 def _extraer_titulo_desde_pdf(text: str) -> str | None:
