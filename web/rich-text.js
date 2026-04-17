@@ -460,6 +460,63 @@
     return blocks;
   }
 
+  function foldText(s) {
+    return String(s || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+  }
+
+  function headingKey(s) {
+    return foldText(s)
+      .replace(/[^\w\s]/g, ' ')
+      .replace(/\b(el|la|los|las|de|del|y|e|en|para|por|con)\b/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function areSimilarHeadings(a, b) {
+    var ka = headingKey(a);
+    var kb = headingKey(b);
+    if (!ka || !kb) return false;
+    if (ka === kb) return true;
+    if (ka.length >= 8 && kb.length >= 8 && (ka.indexOf(kb) !== -1 || kb.indexOf(ka) !== -1)) return true;
+    var ta = ka.split(' ').filter(Boolean);
+    var tb = kb.split(' ').filter(Boolean);
+    if (!ta.length || !tb.length) return false;
+    var common = 0;
+    for (var i = 0; i < ta.length; i++) if (tb.indexOf(ta[i]) !== -1) common++;
+    var ratio = common / Math.max(ta.length, tb.length);
+    return ratio >= 0.72;
+  }
+
+  function dedupeHeadings(blocks, options) {
+    options = options || {};
+    var out = [];
+    var suppress = (options.suppressHeadings || []).map(headingKey).filter(Boolean);
+    var seen = [];
+    for (var i = 0; i < blocks.length; i++) {
+      var b = blocks[i];
+      if (b.type !== 'heading') {
+        out.push(b);
+        continue;
+      }
+      var skip = suppress.some(function (h) { return areSimilarHeadings(h, b.text); });
+      if (!skip) {
+        for (var j = 0; j < seen.length; j++) {
+          if (areSimilarHeadings(seen[j], b.text)) {
+            skip = true;
+            break;
+          }
+        }
+      }
+      if (skip) continue;
+      seen.push(b.text);
+      out.push(b);
+    }
+    return out;
+  }
+
   // ─────────────────────────────────────────────────────────────
   // 6. Escape + negrita para "Rótulo:" inline
   // ─────────────────────────────────────────────────────────────
@@ -490,6 +547,7 @@
   // ─────────────────────────────────────────────────────────────
   function renderStructuredContent(blocks, options) {
     options = options || {};
+    blocks = dedupeHeadings(blocks, options);
     var out = [];
     for (var i = 0; i < blocks.length; i++) {
       var b = blocks[i];
@@ -511,7 +569,7 @@
       return (
         '<div class="rt-truncate" data-rt-collapsed="true">' +
           '<div class="rt-truncate-inner">' + inner + '</div>' +
-          '<button type="button" class="rt-toggle" data-rt-toggle="1">Ver más</button>' +
+          '<button type="button" class="rt-toggle" data-rt-toggle="1" aria-expanded="false">Ver más</button>' +
         '</div>'
       );
     }
@@ -559,6 +617,7 @@
       if (!wrap) return;
       var collapsed = wrap.getAttribute('data-rt-collapsed') === 'true';
       wrap.setAttribute('data-rt-collapsed', collapsed ? 'false' : 'true');
+      btn.setAttribute('aria-expanded', collapsed ? 'true' : 'false');
       btn.textContent = collapsed ? 'Ver menos' : 'Ver más';
     });
   }
@@ -571,8 +630,10 @@
   };
 
   // Compatibilidad con llamadas existentes: truncado por defecto activado.
-  window.formatRichText = function (raw) {
-    return format(raw, { truncate: true, truncateAt: 900 });
+  window.formatRichText = function (raw, options) {
+    var defaults = { truncate: true, truncateAt: 900 };
+    var cfg = Object.assign({}, defaults, options || {});
+    return format(raw, cfg);
   };
 
   if (document.readyState === 'loading') {

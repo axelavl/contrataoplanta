@@ -430,31 +430,32 @@
       <div class="modal-seccion">
         <div class="modal-seccion-titulo">Resumen ejecutivo</div>
         <div class="modal-info-grid">
-          <div class="modal-info-item">
+          <div class="modal-info-item" id="summary-item-renta">
             <div class="modal-info-label">💰 Renta bruta</div>
             <div class="modal-info-val" id="modal-renta">—</div>
           </div>
-          <div class="modal-info-item">
+          <div class="modal-info-item" id="summary-item-tipo">
             <div class="modal-info-label">📋 Tipo de contrato</div>
             <div class="modal-info-val" id="modal-tipo-contrato">—</div>
           </div>
-          <div class="modal-info-item">
+          <div class="modal-info-item" id="summary-item-jornada">
             <div class="modal-info-label">⏱ Jornada</div>
             <div class="modal-info-val" id="modal-jornada">—</div>
           </div>
-          <div class="modal-info-item">
+          <div class="modal-info-item" id="summary-item-ubicacion">
             <div class="modal-info-label">📍 Ubicación</div>
             <div class="modal-info-val" id="modal-ubicacion">—</div>
           </div>
-          <div class="modal-info-item">
+          <div class="modal-info-item" id="summary-item-cierre">
             <div class="modal-info-label">📅 Fecha de cierre</div>
             <div class="modal-info-val" id="modal-fecha-cierre">—</div>
           </div>
-          <div class="modal-info-item">
+          <div class="modal-info-item" id="summary-item-publicacion">
             <div class="modal-info-label">🕒 Publicada</div>
             <div class="modal-info-val" id="modal-fecha-publicacion">—</div>
           </div>
         </div>
+        <div class="modal-summary-note" id="modal-summary-note" hidden></div>
       </div>
       <div class="modal-seccion">
         <div class="modal-seccion-titulo">Requisitos principales</div>
@@ -469,14 +470,15 @@
       <button class="btn-modal-primary" id="modal-btn-postular">Ir a postular →</button>
       <button class="btn-modal-sec" id="modal-btn-bases" style="display:none">📄 Ver bases</button>
       <button class="btn-modal-sec" id="modal-btn-favorito">♡ Guardar</button>
-      <button class="btn-modal-sec" id="modal-btn-alerta">🔔 Alertarme</button>
-    </div>
-    <div class="modal-share" role="group" aria-label="Compartir esta oferta">
-      <button class="btn-modal-sec btn-modal-sec--share" id="share-primary" type="button">↗ Compartir</button>
-      <a class="btn-modal-sec btn-modal-sec--share-link" id="share-wa" target="_blank" rel="noopener" title="Compartir en WhatsApp">WhatsApp</a>
-      <button class="share-btn share-btn--copy" id="share-copy" type="button" title="Copiar enlace" aria-label="Copiar enlace">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-      </button>
+      <button class="btn-modal-sec btn-modal-sec--more" id="modal-btn-more" type="button" aria-expanded="false" aria-controls="modal-more-panel">⋯ Más</button>
+      <div class="modal-more-panel" id="modal-more-panel" hidden>
+        <button class="btn-modal-sec" id="modal-btn-alerta">🔔 Alertarme</button>
+        <button class="btn-modal-sec btn-modal-sec--share" id="share-primary" type="button">↗ Compartir</button>
+        <a class="btn-modal-sec btn-modal-sec--share-link" id="share-wa" target="_blank" rel="noopener" title="Compartir en WhatsApp">WhatsApp</a>
+        <button class="share-btn share-btn--copy" id="share-copy" type="button" title="Copiar enlace" aria-label="Copiar enlace">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -1888,6 +1890,40 @@ let _modalLastFocus = null;
 let _modalKeydownHandler = null;
 let _modalTouchCleanup = null;
 
+function _toggleModalMoreActions(open) {
+  const btn = document.getElementById('modal-btn-more');
+  const panel = document.getElementById('modal-more-panel');
+  if (!btn || !panel) return;
+  panel.hidden = !open;
+  btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  btn.classList.toggle('is-open', open);
+}
+
+function _isWeakSummaryValue(value) {
+  if (value == null) return true;
+  const normalized = String(value).trim().toLowerCase();
+  if (!normalized) return true;
+  const weakTokens = [
+    '—', '-', 'n/a', 'na', 'sin información', 'no informada', 'no informado',
+    'no especificada', 'no especificado', 'consultar bases', 'ver bases',
+    'por definir', 'no disponible', 'no aplica'
+  ];
+  if (weakTokens.includes(normalized)) return true;
+  return weakTokens.some((token) => normalized.includes(token));
+}
+
+function _setSummaryField(itemId, value, opts = {}) {
+  const { allowWeak = false } = opts;
+  const item = document.getElementById(itemId);
+  if (!item) return false;
+  const valueEl = item.querySelector('.modal-info-val');
+  const text = (value == null ? '' : String(value)).trim();
+  const useful = !!text && (allowWeak || !_isWeakSummaryValue(text));
+  item.hidden = !useful;
+  if (useful && valueEl) valueEl.textContent = text;
+  return useful;
+}
+
 function _focusablesModal() {
   const modal = document.querySelector('#modal .modal');
   if (!modal) return [];
@@ -1968,6 +2004,12 @@ async function abrirModal(ofertaId) {
   const overlay = document.getElementById('modal');
   _modalLastFocus = document.activeElement;
   overlay.classList.add('open');
+  _toggleModalMoreActions(false);
+  document.getElementById('modal-btn-more').onclick = () => {
+    const panel = document.getElementById('modal-more-panel');
+    _toggleModalMoreActions(panel?.hidden);
+  };
+  window.__updateBackToTopVisibility?.();
   document.body.style.overflow = 'hidden';
   _instalarFocusTrap();
   _instalarSwipeCierre();
@@ -1986,6 +2028,15 @@ async function abrirModal(ofertaId) {
   document.getElementById('modal-ubicacion').textContent = '—';
   document.getElementById('modal-fecha-cierre').textContent = '—';
   document.getElementById('modal-fecha-publicacion').textContent = '—';
+  document.getElementById('summary-item-renta').hidden = false;
+  document.getElementById('summary-item-tipo').hidden = false;
+  document.getElementById('summary-item-jornada').hidden = false;
+  document.getElementById('summary-item-ubicacion').hidden = false;
+  document.getElementById('summary-item-cierre').hidden = false;
+  document.getElementById('summary-item-publicacion').hidden = false;
+  const summaryNote = document.getElementById('modal-summary-note');
+  summaryNote.hidden = true;
+  summaryNote.textContent = '';
   document.getElementById('modal-descripcion').innerHTML = '';
   document.getElementById('modal-requisitos').innerHTML = '';
   document.getElementById('modal-btn-postular').onclick = null;
@@ -2028,24 +2079,41 @@ async function abrirModal(ofertaId) {
     if (frescuraMod) partes.push(frescuraMod);
     document.getElementById('modal-plazo-fecha').textContent = partes.join(' · ');
 
-    // Detalles
-    document.getElementById('modal-renta').textContent         = renta || 'Consultar bases';
-    document.getElementById('modal-tipo-contrato').textContent = tipoLabel;
-    document.getElementById('modal-jornada').textContent       = jornadaValida(o.jornada) || 'Consultar bases';
+    // Resumen ejecutivo (prioriza datos útiles y oculta ruido)
+    const jornadaTexto = jornadaValida(o.jornada);
     const ubicacion = [regionCompleta, ciudad].filter(Boolean).join(' · ');
-    document.getElementById('modal-ubicacion').textContent     = ubicacion || 'No especificada';
-    document.getElementById('modal-fecha-cierre').textContent  = o.fecha_cierre ? formatFecha(o.fecha_cierre) : 'No informada';
-    document.getElementById('modal-fecha-publicacion').textContent = o.fecha_publicacion ? formatFecha(o.fecha_publicacion) : 'No informada';
+    const fechaCierreLabel = o.fecha_cierre ? formatFecha(o.fecha_cierre) : 'No informada';
+    const fechaPublicacionLabel = o.fecha_publicacion ? formatFecha(o.fecha_publicacion) : 'No informada';
+    const visibleCount = [
+      _setSummaryField('summary-item-renta', renta || ''),
+      _setSummaryField('summary-item-tipo', tipoLabel || ''),
+      _setSummaryField('summary-item-jornada', jornadaTexto || ''),
+      _setSummaryField('summary-item-ubicacion', ubicacion || ''),
+      _setSummaryField('summary-item-cierre', fechaCierreLabel),
+      _setSummaryField('summary-item-publicacion', fechaPublicacionLabel),
+    ].filter(Boolean).length;
+    if (visibleCount < 3) {
+      summaryNote.textContent = 'Algunos datos no fueron informados claramente por la fuente original. Revisa las bases para validar el detalle completo.';
+      summaryNote.hidden = false;
+    }
 
     // Descripción / funciones — formato enriquecido
     const desc = o.descripcion || '';
-    const descHtml = formatRichText(desc);
+    const descHtml = formatRichText(desc, {
+      truncate: true,
+      truncateAt: 780,
+      suppressHeadings: ['descripción', 'descripción del cargo', 'funciones', 'funciones del cargo']
+    });
     document.getElementById('modal-descripcion').innerHTML = descHtml ||
       '<p>Revisa las bases del concurso para más información sobre funciones y beneficios.</p>';
 
     // Requisitos — formato enriquecido (viñetas, numerados, títulos)
     const reqTexto = o.requisitos || '';
-    const reqHtml  = formatRichText(reqTexto);
+    const reqHtml  = formatRichText(reqTexto, {
+      truncate: true,
+      truncateAt: 760,
+      suppressHeadings: ['requisitos', 'requisitos principales', 'requisitos del cargo']
+    });
     document.getElementById('modal-requisitos').innerHTML = reqHtml ||
       '<p>Consulta las bases del concurso para conocer los requisitos completos.</p>';
 
@@ -2107,6 +2175,8 @@ function cerrarModal(e, force) {
   if (force || e.target === document.getElementById('modal')) {
     cerrarVisorBases({ mantenerScroll: true });
     document.getElementById('modal').classList.remove('open');
+    _toggleModalMoreActions(false);
+    window.__updateBackToTopVisibility?.();
     document.body.style.overflow = '';
     _desinstalarFocusTrap();
     if (_modalTouchCleanup) { _modalTouchCleanup(); _modalTouchCleanup = null; }
@@ -3085,20 +3155,19 @@ async function mostrarUltimaActualizacion() {
 (function backToTop() {
   const btn = document.createElement('button');
   btn.type = 'button';
+  btn.className = 'back-to-top-btn';
   btn.textContent = '↑';
   btn.setAttribute('aria-label', 'Volver al inicio de la página');
-  btn.style.cssText =
-    'position:fixed;right:24px;bottom:24px;width:44px;height:44px;border-radius:50%;' +
-    'border:none;background:#1F4E79;color:#fff;font-size:22px;cursor:pointer;' +
-    'box-shadow:0 4px 12px rgba(0,0,0,0.15);opacity:0;pointer-events:none;' +
-    'transition:opacity 0.2s;z-index:9999;';
   btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
   document.body.appendChild(btn);
-  window.addEventListener('scroll', () => {
+  const updateVisibility = () => {
     const visible = window.scrollY > 400;
-    btn.style.opacity = visible ? '1' : '0';
-    btn.style.pointerEvents = visible ? 'auto' : 'none';
-  }, { passive: true });
+    const modalOpen = document.getElementById('modal')?.classList.contains('open');
+    btn.classList.toggle('is-visible', visible && !modalOpen);
+  };
+  window.__updateBackToTopVisibility = updateVisibility;
+  window.addEventListener('scroll', updateVisibility, { passive: true });
+  updateVisibility();
 })();
 
 // ── 7. Aria-pressed dinámico en filtros activos (auditoría 3.11) ──
