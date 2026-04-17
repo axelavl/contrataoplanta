@@ -1915,7 +1915,7 @@ footer {
         <div class="modal-rich-text" id="modal-requisitos"></div>
       </div>
       <div class="modal-seccion">
-        <div class="modal-seccion-titulo">Funciones y descripción</div>
+        <div class="modal-seccion-titulo">Descripción</div>
         <div class="modal-rich-text" id="modal-descripcion"></div>
       </div>
     </div>
@@ -2042,27 +2042,72 @@ function escHtml(s) {
 }
 
 // ── Format de texto libre (descripción / requisitos) a HTML estructurado ──
-// Detecta: viñetas (- * • · – —), items numerados (1. 1)), títulos (línea
-// corta terminada en :, o en MAYÚSCULAS), párrafos normales. Destaca los
-// "rotulos:" iniciales en negrita para mejorar escaneo visual.
+// Reglas:
+//  • Convierte enumeraciones inline (1. 2. 3.  |  1) 2) 3)  |  -  |  •  |  –)
+//    a listas verticales, incluso cuando vienen todas juntas en un párrafo.
+//  • Detecta "Título corto:" en una línea propia → <h4> (encabezado destacado).
+//  • Detecta "Rótulo:" dentro de un párrafo (cualquier posición) → <strong>Rótulo:</strong>
+//  • Detecta líneas en MAYÚSCULAS → <h4>.
+//  • El resto queda como párrafo normal.
 function formatRichText(rawText) {
   const text = (rawText || '').trim();
   if (!text) return '';
 
-  // Normaliza: convierte viñetas inline ( • / · / – seguidos de espacio) en
-  // saltos de línea para poder detectar items cuando vienen en una sola línea.
-  const normalizado = text
-    .replace(/\r\n?/g, '\n')
-    .replace(/\s*[•·]\s+/g, '\n• ')
-    .replace(/(?:^|\s)[–—]\s+/g, '\n– ');
+  // ── 1. Normalización ────────────────────────────────────────────────
+  let normalizado = text.replace(/\r\n?/g, '\n');
+
+  // Viñetas unicode → viñeta estándar '- ' al comienzo de nueva línea
+  normalizado = normalizado
+    .replace(/\s*[•·]\s+/g, '\n- ')
+    .replace(/(^|[\s])[–—]\s+/g, '$1\n- ');
+
+  // Enumeraciones inline: " 1. " / " 1) " / " (1) " dentro de un párrafo → salto de línea
+  // Se activa sólo cuando el dígito viene precedido por un signo de puntuación o espacio
+  // seguido de letra/número (evita dividir fechas o cifras como "año 2024.").
+  normalizado = normalizado
+    .replace(/([.;:!?\)\]])\s+(\d{1,2})[.\)]\s+/g, '$1\n$2. ')
+    .replace(/\s+(?=(?:\d{1,2})[.\)]\s+[A-ZÁÉÍÓÚÑa-záéíóúñ])(\d{1,2})[.\)]\s+/g, '\n$1. ');
+
+  // Enumeraciones con guión inline: " - " tras puntuación → nuevo item
+  normalizado = normalizado.replace(/([.;:!?\)\]])\s+-\s+/g, '$1\n- ');
+  // Si el texto tiene 2+ separadores " - " inline (patrón de lista),
+  // dividir todos para mostrarlos verticalmente.
+  const guionesInline = (normalizado.match(/\S\s+-\s+\S/g) || []).length;
+  if (guionesInline >= 2) {
+    normalizado = normalizado.replace(/(\S)\s+-\s+(?=\S)/g, '$1\n- ');
+  }
+
+  // Rótulo: inline — cuando tras puntuación (. ; :) aparece "Rótulo:", se
+  // separa en línea propia. Así "Cargo: Director. Formación: título..."
+  // se convierte en líneas independientes para destacar cada rótulo.
+  normalizado = normalizado.replace(
+    /([.;:])\s+(?=[A-ZÁÉÍÓÚÑ][A-Za-zÁÉÍÓÚÑáéíóúñ\s\/\-]{1,50}:\s)/g,
+    '$1\n'
+  );
+  // Encabezado en MAYÚSCULAS inline: "... texto. DESCRIPCIÓN DEL CARGO ..."
+  // Si tras punto/; hay 2+ palabras consecutivas en MAYÚSCULAS, se separa.
+  normalizado = normalizado.replace(
+    /([.;])\s+(?=[A-ZÁÉÍÓÚÑ]{3,}(?:\s+[A-ZÁÉÍÓÚÑ]{2,}){1,6}[\s.:])/g,
+    '$1\n'
+  );
+  // Tras una frase en MAYÚSCULAS (2+ palabras), separar del texto mixto
+  // que le sigue: "DESCRIPCIÓN DEL CARGO. Profesional..." → heading + párrafo
+  normalizado = normalizado.replace(
+    /([A-ZÁÉÍÓÚÑ]{3,}(?:\s+[A-ZÁÉÍÓÚÑ]{2,}){1,6})([.:])\s+(?=[A-ZÁÉÍÓÚÑ][a-záéíóúñ])/g,
+    '$1$2\n'
+  );
+
+  // Colapsa múltiples saltos y espacios
+  normalizado = normalizado.replace(/\n{2,}/g, '\n').replace(/[ \t]+/g, ' ');
 
   const lineas = normalizado.split('\n').map(l => l.trim()).filter(Boolean);
 
-  const bulletRe    = /^[\-*•·–—]\s+(.+)$/;
-  const numberedRe  = /^(\d{1,2})[.\)]\s+(.+)$/;
+  // ── 2. Clasificación de líneas ─────────────────────────────────────
+  const bulletRe   = /^[\-*•·–—]\s+(.+)$/;
+  const numberedRe = /^(\d{1,2})[.\)]\s+(.+)$/;
   // Letter-bullet: sólo con paréntesis de cierre para evitar falsos positivos
-  const letterRe    = /^([a-zA-Z])\)\s+(.+)$/;
-  // Heading: línea mayormente en MAYÚSCULAS (>=70%), sin signo final común
+  const letterRe   = /^([a-zA-Z])\)\s+(.+)$/;
+
   const isAllCaps = (s) => {
     const letras = s.replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñ]/g, '');
     if (letras.length < 3) return false;
@@ -2095,14 +2140,12 @@ function formatRichText(rawText) {
     if ((m = linea.match(bulletRe)) || (m = linea.match(letterRe))) {
       if (listType && listType !== 'ul') flushList();
       listType = 'ul';
-      const contenido = m[m.length - 1];
-      listBuffer.push(renderInline(contenido));
+      listBuffer.push(renderInline(m[m.length - 1]));
       continue;
     }
-    // Heading
     if (isHeadingColon(linea) || (isAllCaps(linea) && linea.length <= 80)) {
       flushList();
-      const limpio = linea.replace(/:\s*$/, '');
+      const limpio = linea.replace(/[:.\s]+$/, '');
       out.push(`<h4 class="rt-heading">${escHtml(limpio)}</h4>`);
       continue;
     }
@@ -2112,13 +2155,15 @@ function formatRichText(rawText) {
   flushList();
   return out.join('');
 
-  // Destaca "Rotulo: ..." al inicio del párrafo con <strong>
+  // ── 3. Render inline: pone en negrita TODOS los "Rótulo:" del texto ──
+  // Un rótulo es: Mayúscula inicial + 1..60 caracteres (letras/espacios/acentos,
+  // opcionalmente con " del/de/la/los/las" o similar) + ":"
   function renderInline(s) {
-    const esc = escHtml(s);
-    const prefix = esc.match(/^([A-ZÁÉÍÓÚÑ][^:.\n]{1,60}?):\s+(.*)$/);
-    if (prefix) {
-      return `<strong>${prefix[1]}:</strong> ${prefix[2]}`;
-    }
+    let esc = escHtml(s);
+    esc = esc.replace(
+      /(^|[\s\(\[¿¡\.;])([A-ZÁÉÍÓÚÑ][A-Za-zÁÉÍÓÚÑáéíóúñ0-9][A-Za-zÁÉÍÓÚÑáéíóúñ0-9\s\/\-]{0,58}?):(?=\s|$)/g,
+      (match, pre, label) => `${pre}<strong>${label}:</strong>`
+    );
     return esc;
   }
 }

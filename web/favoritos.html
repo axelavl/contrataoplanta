@@ -232,7 +232,7 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
         <div class="modal-rich-text" id="modal-requisitos"></div>
       </div>
       <div class="modal-seccion">
-        <div class="modal-seccion-titulo">Funciones y descripción</div>
+        <div class="modal-seccion-titulo">Descripción</div>
         <div class="modal-rich-text" id="modal-descripcion"></div>
       </div>
     </div>
@@ -323,10 +323,33 @@ function escHtml(s) {
 function formatRichText(rawText) {
   const text = (rawText || '').trim();
   if (!text) return '';
-  const normalizado = text
-    .replace(/\r\n?/g, '\n')
-    .replace(/\s*[•·]\s+/g, '\n• ')
-    .replace(/(?:^|\s)[–—]\s+/g, '\n– ');
+
+  let normalizado = text.replace(/\r\n?/g, '\n');
+  normalizado = normalizado
+    .replace(/\s*[•·]\s+/g, '\n- ')
+    .replace(/(^|[\s])[–—]\s+/g, '$1\n- ');
+  normalizado = normalizado
+    .replace(/([.;:!?\)\]])\s+(\d{1,2})[.\)]\s+/g, '$1\n$2. ')
+    .replace(/\s+(?=(?:\d{1,2})[.\)]\s+[A-ZÁÉÍÓÚÑa-záéíóúñ])(\d{1,2})[.\)]\s+/g, '\n$1. ');
+  normalizado = normalizado.replace(/([.;:!?\)\]])\s+-\s+/g, '$1\n- ');
+  const guionesInline = (normalizado.match(/\S\s+-\s+\S/g) || []).length;
+  if (guionesInline >= 2) {
+    normalizado = normalizado.replace(/(\S)\s+-\s+(?=\S)/g, '$1\n- ');
+  }
+  normalizado = normalizado.replace(
+    /([.;:])\s+(?=[A-ZÁÉÍÓÚÑ][A-Za-zÁÉÍÓÚÑáéíóúñ\s\/\-]{1,50}:\s)/g,
+    '$1\n'
+  );
+  normalizado = normalizado.replace(
+    /([.;])\s+(?=[A-ZÁÉÍÓÚÑ]{3,}(?:\s+[A-ZÁÉÍÓÚÑ]{2,}){1,6}[\s.:])/g,
+    '$1\n'
+  );
+  normalizado = normalizado.replace(
+    /([A-ZÁÉÍÓÚÑ]{3,}(?:\s+[A-ZÁÉÍÓÚÑ]{2,}){1,6})([.:])\s+(?=[A-ZÁÉÍÓÚÑ][a-záéíóúñ])/g,
+    '$1$2\n'
+  );
+  normalizado = normalizado.replace(/\n{2,}/g, '\n').replace(/[ \t]+/g, ' ');
+
   const lineas = normalizado.split('\n').map(l => l.trim()).filter(Boolean);
   const bulletRe   = /^[\-*•·–—]\s+(.+)$/;
   const numberedRe = /^(\d{1,2})[.\)]\s+(.+)$/;
@@ -350,9 +373,12 @@ function formatRichText(rawText) {
     listType = null;
   };
   const renderInline = (s) => {
-    const esc = escHtml(s);
-    const prefix = esc.match(/^([A-ZÁÉÍÓÚÑ][^:.\n]{1,60}?):\s+(.*)$/);
-    return prefix ? `<strong>${prefix[1]}:</strong> ${prefix[2]}` : esc;
+    let esc = escHtml(s);
+    esc = esc.replace(
+      /(^|[\s\(\[¿¡\.;])([A-ZÁÉÍÓÚÑ][A-Za-zÁÉÍÓÚÑáéíóúñ0-9][A-Za-zÁÉÍÓÚÑáéíóúñ0-9\s\/\-]{0,58}?):(?=\s|$)/g,
+      (match, pre, label) => `${pre}<strong>${label}:</strong>`
+    );
+    return esc;
   };
 
   for (const linea of lineas) {
@@ -371,7 +397,8 @@ function formatRichText(rawText) {
     }
     if (isHeadingColon(linea) || (isAllCaps(linea) && linea.length <= 80)) {
       flushList();
-      out.push(`<h4 class="rt-heading">${escHtml(linea.replace(/:\s*$/, ''))}</h4>`);
+      const limpio = linea.replace(/[:.\s]+$/, '');
+      out.push(`<h4 class="rt-heading">${escHtml(limpio)}</h4>`);
       continue;
     }
     flushList();
