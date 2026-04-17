@@ -33,7 +33,7 @@
 }
 
 /* ── NAVBAR ─────────────────────────────────────────────────────────── */
-nav {
+header nav {
   position: sticky;
   top: 0;
   z-index: 100;
@@ -56,7 +56,7 @@ nav {
 .logo {
   font-family: var(--font-serif);
   font-size: 18px;
-  color: white;
+  color: var(--acento);
   letter-spacing: -0.3px;
   white-space: nowrap;
   text-decoration: none;
@@ -99,7 +99,7 @@ nav {
 
 .nav-links a:hover,
 .nav-links a.active {
-  color: white;
+  color: var(--blanco);
   background: rgba(255, 255, 255, 0.1);
 }
 

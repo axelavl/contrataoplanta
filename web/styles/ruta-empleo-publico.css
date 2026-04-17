@@ -39,7 +39,7 @@ nav {
   align-items: center;
   gap: 16px;
 }
-.logo { font-family: 'Lora', Georgia, serif; color: #fff; text-decoration: none; font-size: 18px; }
+.logo { font-family: 'Lora', Georgia, serif; color: var(--acento); text-decoration: none; font-size: 18px; font-weight:600; }
 .logo em { color: var(--acento); }
 .nav-links { display: flex; gap: 8px; flex: 1; }
 .nav-links a {
