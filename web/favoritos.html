@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script>document.documentElement.classList.add('js-nav');</script>
-<title>Mis favoritos — contrata o planta .cl</title>
+<title>Favoritos guardados — contrata o planta .cl</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="alternate icon" href="/favicon.ico">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -145,32 +145,20 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .skip-link:focus{top:10px}
 
 </style>
+<script defer src="shared-shell.js"></script>
 </head>
-<body>
+<body data-page="favoritos">
 <a class="skip-link" href="#contenido-principal">Saltar al contenido</a>
 
 
 <!-- ══ NAV ═══════════════════════════════════════════════════════════ -->
-<header>
-<nav>
-  <div class="nav-inner">
-    <a href="index.html" class="logo">contrata <em>o</em> planta <em class="logo-domain-muted">.cl</em></a>
-    <div class="nav-links">
-      <a href="index.html">Buscar empleos</a>
-      <a href="favoritos.html" id="nav-favoritos" class="nav-link-favs active">♡ Mis favoritos</a>
-      <a href="instituciones.html">Instituciones</a>
-      <a href="estadisticas.html">Estadísticas</a>
-      <a href="faq.html">Preguntas frecuentes</a>
-    </div>
-  </div>
-</nav>
-</header>
+<div id="site-header"></div>
 
 <nav class="breadcrumb" aria-label="Ruta de navegación">
   <div class="breadcrumb-inner">
     <a href="index.html">Inicio</a>
     <span class="breadcrumb-sep">›</span>
-    <span class="breadcrumb-actual">Mis favoritos</span>
+    <span class="breadcrumb-actual">Favoritos guardados</span>
   </div>
 </nav>
 
@@ -180,8 +168,8 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 <div class="page-hero">
   <div class="page-hero-inner">
     <div>
-      <div class="page-hero-kicker">♥ Guardados</div>
-      <h1>Mis <em>favoritos</em></h1>
+      <div class="page-hero-kicker">Tu lista prioritaria</div>
+      <h1>Ofertas que te <em>interesan</em></h1>
     </div>
     <div class="fav-count">
       <span class="fav-count-num" id="hero-count">0</span>
@@ -195,8 +183,8 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
   <!-- Estado vacío -->
   <div class="empty-state" id="empty-state" style="display:none">
     <div class="empty-icon">♡</div>
-    <div class="empty-title">Todavía no has guardado ninguna oferta</div>
-    <p class="empty-sub">Cuando veas una convocatoria que te interese, toca <strong>♡ Guardar</strong> para tenerla a mano y revisarla sin perder el plazo.</p>
+    <div class="empty-title">Aún no tienes ofertas guardadas</div>
+    <p class="empty-sub">Guarda las convocatorias que sí te calzan y vuelve cuando quieras. Así comparas requisitos con calma y priorizas antes de que venza el plazo.</p>
     <a href="index.html" class="btn-primary">Buscar ofertas →</a>
   </div>
 
@@ -243,36 +231,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 <!-- ══ FOOTER ════════════════════════════════════════════════════════ -->
 </main>
 
-<footer>
-  <div class="footer-inner">
-    <div class="footer-brand">
-      <a href="index.html" class="logo" style="display:block;margin-bottom:10px">contrata <em>o</em> planta <em class="logo-domain-muted">.cl</em></a>
-      <p class="footer-desc">La plataforma laboral del sector público chileno. 700+ instituciones registradas.</p>
-    </div>
-    <div>
-      <div class="footer-col-titulo">Explorar</div>
-      <a href="index.html" class="footer-link">Buscar empleos</a>
-      <a href="instituciones.html" class="footer-link">Por institución</a>
-      <a href="estadisticas.html" class="footer-link">Estadísticas</a>
-    </div>
-    <div>
-      <div class="footer-col-titulo">Comunidad</div>
-      <a href="faq.html" class="footer-link">Preguntas frecuentes</a>
-      <a href="favoritos.html" class="footer-link">Mis favoritos</a>
-    </div>
-    <div>
-      <div class="footer-col-titulo">Legal</div>
-      <a href="terminos.html" class="footer-link">Términos de uso</a>
-      <a href="privacidad.html" class="footer-link">Privacidad</a>
-      <a href="descargo.html" class="footer-link">Descargo</a>
-      <a href="mailto:hola@contrataoplanta.cl" class="footer-link">Contacto</a>
-    </div>
-  </div>
-  <div class="footer-bottom">
-    <span>© 2026 contrata o planta .cl</span>
-    <span>Datos actualizados cada 6 horas · No somos el Estado</span>
-  </div>
-</footer>
+<div id="site-footer"></div>
 
 <!-- ══ JAVASCRIPT ════════════════════════════════════════════════════ -->
 <script src="rich-text.js"></script>

@@ -110,25 +110,13 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
 @media (max-width: 480px) { .footer-inner { grid-template-columns: 1fr; } }
 @media(max-width:600px){.js-nav .nav-links{display:none}.page-titulo{font-size:26px}}
 </style>
+<script defer src="shared-shell.js"></script>
 </head>
-<body>
+<body data-page="privacidad">
 <a class="skip-link" href="#contenido-principal">Saltar al contenido</a>
 
 
-<header>
-<nav>
-  <div class="nav-inner">
-    <a href="index.html" class="logo">contrata <em>o</em> planta <em class="logo-domain-muted">.cl</em></a>
-    <div class="nav-links">
-      <a href="index.html">Buscar empleos</a>
-      <a href="favoritos.html" id="nav-favoritos" class="nav-link-favs">♡ Mis favoritos</a>
-      <a href="instituciones.html">Instituciones</a>
-      <a href="estadisticas.html">Estadísticas</a>
-      <a href="faq.html">Preguntas frecuentes</a>
-    </div>
-  </div>
-</nav>
-</header>
+<div id="site-header"></div>
 <nav class="breadcrumb" aria-label="Ruta de navegación">
   <div class="breadcrumb-inner">
     <a href="index.html">Inicio</a>
@@ -204,36 +192,7 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
 
 </main>
 
-<footer>
-  <div class="footer-inner">
-    <div class="footer-brand">
-      <a href="index.html" class="logo logo-footer">contrata <em>o</em> planta <em class="logo-domain-muted">.cl</em></a>
-      <p class="footer-desc">La plataforma laboral del sector público chileno. 700+ instituciones registradas.</p>
-    </div>
-    <div>
-      <div class="footer-col-titulo">Explorar</div>
-      <a href="index.html" class="footer-link">Buscar empleos</a>
-      <a href="instituciones.html" class="footer-link">Por institución</a>
-      <a href="estadisticas.html" class="footer-link">Estadísticas</a>
-    </div>
-    <div>
-      <div class="footer-col-titulo">Comunidad</div>
-      <a href="faq.html" class="footer-link">Preguntas frecuentes</a>
-      <a href="favoritos.html" class="footer-link">Mis favoritos</a>
-    </div>
-    <div>
-      <div class="footer-col-titulo">Legal</div>
-      <a href="terminos.html" class="footer-link">Términos de uso</a>
-      <a href="privacidad.html" class="footer-link">Privacidad</a>
-      <a href="descargo.html" class="footer-link">Descargo</a>
-      <a href="mailto:hola@contrataoplanta.cl" class="footer-link">Contacto</a>
-    </div>
-  </div>
-  <div class="footer-bottom">
-    <span>© 2026 contrata o planta .cl</span>
-    <span>Datos actualizados cada 6 horas · No somos el Estado</span>
-  </div>
-</footer>
+<div id="site-footer"></div>
 
 <script>
 (function(){
