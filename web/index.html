@@ -143,17 +143,25 @@
       </div>
 
       <div class="filtros-rapidos">
-        <span style="font-size:11px;color:var(--texto3);font-family:'Inter',sans-serif;font-weight:600;letter-spacing:.5px;margin-right:4px;align-self:center;">TIPO DE VÍNCULO:</span>
-        <button class="filtro-tag activo" onclick="toggleFiltro(this,'planta')" title="Planta — cargo titular permanente">Planta</button>
-        <button class="filtro-tag activo" onclick="toggleFiltro(this,'contrata')" title="Contrata — vínculo transitorio dentro del Estado">Contrata</button>
-        <button class="filtro-tag activo" onclick="toggleFiltro(this,'honorarios')" title="Honorarios — prestación de servicios a honorarios">Honorarios</button>
-        <button class="filtro-tag activo" onclick="toggleFiltro(this,'codigo_trabajo')" title="Código del Trabajo — vínculo laboral del sector privado aplicado a empresas del Estado">Código del Trabajo</button>
-        <button class="filtro-tag activo" onclick="toggleFiltro(this,'otro')" title="Otra modalidad declarada (reemplazo, suplencia, etc.)">Otro</button>
-        <button class="filtro-tag activo" onclick="toggleFiltro(this,'no_informa')" title="La publicación no indica el tipo de vínculo">No informa</button>
-        <span style="width:1px;height:20px;background:var(--borde);align-self:center;margin:0 4px;"></span>
-        <button class="filtro-tag" onclick="toggleFiltro(this,'cierra-hoy')">⏰ Cierra pronto</button>
-        <button class="filtro-tag" onclick="toggleFiltro(this,'nuevos')">✨ Últimas 48 h</button>
-        <button class="filtro-tag" onclick="toggleFiltro(this,'sin-experiencia')">Sin experiencia</button>
+        <div class="filtros-bloque">
+          <span class="filtros-titulo">Tipo de vínculo</span>
+          <div class="filtros-tags-wrap">
+            <button class="filtro-tag activo" onclick="toggleFiltro(this,'planta')" title="Planta — cargo titular permanente">Planta</button>
+            <button class="filtro-tag activo" onclick="toggleFiltro(this,'contrata')" title="Contrata — vínculo transitorio dentro del Estado">Contrata</button>
+            <button class="filtro-tag activo" onclick="toggleFiltro(this,'honorarios')" title="Honorarios — prestación de servicios a honorarios">Honorarios</button>
+            <button class="filtro-tag activo" onclick="toggleFiltro(this,'codigo_trabajo')" title="Código del Trabajo — vínculo laboral del sector privado aplicado a empresas del Estado">Código del Trabajo</button>
+            <button class="filtro-tag activo" onclick="toggleFiltro(this,'otro')" title="Otra modalidad declarada (reemplazo, suplencia, etc.)">Otro</button>
+            <button class="filtro-tag activo" onclick="toggleFiltro(this,'no_informa')" title="La publicación no indica el tipo de vínculo">No informa</button>
+          </div>
+        </div>
+        <div class="filtros-bloque filtros-bloque-secundario">
+          <span class="filtros-titulo">Atajos</span>
+          <div class="filtros-tags-wrap">
+            <button class="filtro-tag" onclick="toggleFiltro(this,'cierra-hoy')">⏰ Cierra pronto</button>
+            <button class="filtro-tag" onclick="toggleFiltro(this,'nuevos')">✨ Últimas 48 h</button>
+            <button class="filtro-tag" onclick="toggleFiltro(this,'sin-experiencia')">Sin experiencia</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -175,48 +183,51 @@
         <span class="count-sub" id="count-sub">· cargando...</span>
       </div>
       <div class="resultados-controles">
-        <!-- Copiar búsqueda -->
-        <button class="btn-copiar-busqueda" id="btn-copiar-busqueda" type="button" onclick="copiarUrlBusqueda()" title="Copiar enlace de esta búsqueda con filtros">🔗 Copiar búsqueda</button>
-        <button class="btn-copiar-busqueda btn-compartir-busqueda" id="btn-compartir-busqueda" type="button" onclick="abrirCompartirBusqueda(this)" title="Compartir esta búsqueda en RRSS" hidden>↗ Compartir</button>
-        <div class="ctrl-sep"></div>
-        <!-- Orden -->
-        <select class="ctrl-select" id="ctrl-orden" onchange="setOrdenSelect(this)" title="Ordenar por">
-          <option value="recientes">↓ Más recientes</option>
-          <option value="cierre">⏰ Cierra antes</option>
-          <option value="renta_desc">$ Mayor renta</option>
-          <option value="renta_asc">$ Menor renta</option>
-          <option value="az">A–Z cargo</option>
-        </select>
-        <!-- Por página -->
-        <select class="ctrl-select" id="ctrl-por-pagina" onchange="setPorPagina(this)" title="Ofertas por página">
-          <option value="10">10 / pág.</option>
-          <option value="20" selected>20 / pág.</option>
-          <option value="50">50 / pág.</option>
-        </select>
-        <div class="ctrl-sep"></div>
-        <!-- Vista -->
-        <div class="vista-btns" role="group" aria-label="Formato de visualización">
-          <button class="vista-btn activo" id="vista-btn-cards" onclick="setVista('cards')" title="Tarjetas">
-            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 15 15">
-              <rect x="1" y="1" width="13" height="5.5" rx="1.5"/>
-              <rect x="1" y="8.5" width="13" height="5.5" rx="1.5"/>
-            </svg>
-          </button>
-          <button class="vista-btn" id="vista-btn-compacta" onclick="setVista('compacta')" title="Lista compacta">
-            <svg width="15" height="15" fill="currentColor" viewBox="0 0 15 15">
-              <rect x="0" y="1.5" width="15" height="2" rx="1"/>
-              <rect x="0" y="6.5" width="15" height="2" rx="1"/>
-              <rect x="0" y="11.5" width="15" height="2" rx="1"/>
-            </svg>
-          </button>
-          <button class="vista-btn" id="vista-btn-grid" onclick="setVista('grid')" title="Cuadrícula">
-            <svg width="15" height="15" fill="currentColor" viewBox="0 0 15 15">
-              <rect x="0" y="0" width="6.5" height="6.5" rx="1.2"/>
-              <rect x="8.5" y="0" width="6.5" height="6.5" rx="1.2"/>
-              <rect x="0" y="8.5" width="6.5" height="6.5" rx="1.2"/>
-              <rect x="8.5" y="8.5" width="6.5" height="6.5" rx="1.2"/>
-            </svg>
-          </button>
+        <div class="resultados-acciones">
+          <!-- Copiar búsqueda -->
+          <button class="btn-copiar-busqueda" id="btn-copiar-busqueda" type="button" onclick="copiarUrlBusqueda()" title="Copiar enlace de esta búsqueda con filtros">🔗 Copiar búsqueda</button>
+          <button class="btn-copiar-busqueda btn-compartir-busqueda" id="btn-compartir-busqueda" type="button" onclick="abrirCompartirBusqueda(this)" title="Compartir esta búsqueda en RRSS" hidden>↗ Compartir</button>
+        </div>
+        <div class="resultados-preferencias">
+          <!-- Orden -->
+          <select class="ctrl-select" id="ctrl-orden" onchange="setOrdenSelect(this)" title="Ordenar por">
+            <option value="recientes">↓ Más recientes</option>
+            <option value="cierre">⏰ Cierra antes</option>
+            <option value="renta_desc">$ Mayor renta</option>
+            <option value="renta_asc">$ Menor renta</option>
+            <option value="az">A–Z cargo</option>
+          </select>
+          <!-- Por página -->
+          <select class="ctrl-select" id="ctrl-por-pagina" onchange="setPorPagina(this)" title="Ofertas por página">
+            <option value="10">10 / pág.</option>
+            <option value="20" selected>20 / pág.</option>
+            <option value="50">50 / pág.</option>
+          </select>
+          <div class="ctrl-sep"></div>
+          <!-- Vista -->
+          <div class="vista-btns" role="group" aria-label="Formato de visualización">
+            <button class="vista-btn activo" id="vista-btn-cards" onclick="setVista('cards')" title="Tarjetas">
+              <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 15 15">
+                <rect x="1" y="1" width="13" height="5.5" rx="1.5"/>
+                <rect x="1" y="8.5" width="13" height="5.5" rx="1.5"/>
+              </svg>
+            </button>
+            <button class="vista-btn" id="vista-btn-compacta" onclick="setVista('compacta')" title="Lista compacta">
+              <svg width="15" height="15" fill="currentColor" viewBox="0 0 15 15">
+                <rect x="0" y="1.5" width="15" height="2" rx="1"/>
+                <rect x="0" y="6.5" width="15" height="2" rx="1"/>
+                <rect x="0" y="11.5" width="15" height="2" rx="1"/>
+              </svg>
+            </button>
+            <button class="vista-btn" id="vista-btn-grid" onclick="setVista('grid')" title="Cuadrícula">
+              <svg width="15" height="15" fill="currentColor" viewBox="0 0 15 15">
+                <rect x="0" y="0" width="6.5" height="6.5" rx="1.2"/>
+                <rect x="8.5" y="0" width="6.5" height="6.5" rx="1.2"/>
+                <rect x="0" y="8.5" width="6.5" height="6.5" rx="1.2"/>
+                <rect x="8.5" y="8.5" width="6.5" height="6.5" rx="1.2"/>
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -440,7 +451,7 @@
       <div style="font-family:'Lora',Georgia,serif;font-size:20px;color:white;line-height:1.2;margin-bottom:8px" id="modal-cargo">Analista de Riesgo Crediticio</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap" id="modal-badges">
         <span class="badge badge-contrata">Contrata</span>
-        <span class="badge badge-region">🗺 RM · Providencia</span>
+        <span class="badge badge-region">🗺 Región Metropolitana · Providencia</span>
       </div>
     </div>
     <div class="modal-body">
@@ -1047,15 +1058,63 @@ function jornadaValida(jornada) {
   return jornada;
 }
 
+const REGIONES_ALIAS = {
+  'RM': 'Región Metropolitana',
+  'METROPOLITANA': 'Región Metropolitana',
+  'METROPOLITANA DE SANTIAGO': 'Región Metropolitana',
+  'MAULE': 'Región del Maule',
+  'BIOBIO': 'Región del Biobío',
+  'BIOBÍO': 'Región del Biobío',
+  'NUBLE': 'Región de Ñuble',
+  'ÑUBLE': 'Región de Ñuble',
+  'OHIGGINS': "Región del Libertador General Bernardo O'Higgins",
+  "O'HIGGINS": "Región del Libertador General Bernardo O'Higgins",
+  'OHÍGGINS': "Región del Libertador General Bernardo O'Higgins",
+  'ARICA Y PARINACOTA': 'Región de Arica y Parinacota',
+  'ATACAMA': 'Región de Atacama',
+  'AYSEN': 'Región de Aysén del General Carlos Ibáñez del Campo',
+  'AYSÉN': 'Región de Aysén del General Carlos Ibáñez del Campo',
+  'ANTOFAGASTA': 'Región de Antofagasta',
+  'COQUIMBO': 'Región de Coquimbo',
+  'LA ARAUCANIA': 'Región de La Araucanía',
+  'LA ARAUCANÍA': 'Región de La Araucanía',
+  'LOS RIOS': 'Región de Los Ríos',
+  'LOS RÍOS': 'Región de Los Ríos',
+  'LOS LAGOS': 'Región de Los Lagos',
+  'TARAPACA': 'Región de Tarapacá',
+  'TARAPACÁ': 'Región de Tarapacá',
+  'VALPARAISO': 'Región de Valparaíso',
+  'VALPARAÍSO': 'Región de Valparaíso',
+  'MAGALLANES': 'Región de Magallanes y de la Antártica Chilena',
+};
+
+function normalizarRegion(region) {
+  return (region || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\./g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toUpperCase();
+}
+
+function nombreRegionCompleto(region) {
+  if (!region) return '';
+  const limpio = region.trim();
+  if (!limpio) return '';
+  const key = normalizarRegion(limpio);
+  if (REGIONES_ALIAS[key]) return REGIONES_ALIAS[key];
+  if (/^REGION\s+/i.test(limpio) || /^REGIÓN\s+/i.test(limpio)) return limpio;
+  return `Región de ${limpio}`;
+}
+
 // ── Renderizar tarjeta de oferta ───────────────────────────────────────────
 function renderCard(oferta) {
   const renta = formatRenta(oferta.renta_bruta_min, oferta.renta_bruta_max, oferta.grado_eus);
   const plazo = plazoInfo(oferta);
   const tipoCss = tipoClase(oferta.tipo_contrato);
   const tipoLabel = tipoEtiqueta(oferta.tipo_contrato);
-  const regionCorta = oferta.region
-    ? oferta.region.replace('Metropolitana de Santiago', 'RM').replace('Región de ', '')
-    : '';
+  const regionCompleta = nombreRegionCompleto(oferta.region);
   const sector  = oferta.sector || '';
   const ciudad  = ciudadValida(oferta.ciudad, oferta.institucion);
   const jornada = jornadaValida(oferta.jornada);
@@ -1087,7 +1146,7 @@ function renderCard(oferta) {
         <div class="oferta-cargo">${escHtml(oferta.cargo)}</div>
         <div class="oferta-tipo-wrap">
           ${oferta.tipo_contrato ? `<span class="badge ${tipoCss}">${tipoLabel}</span>` : ''}
-          ${regionCorta ? `<span class="badge badge-region">🗺 ${escHtml(regionCorta)}</span>` : ''}
+          ${regionCompleta ? `<span class="badge badge-region">🗺 ${escHtml(regionCompleta)}</span>` : ''}
           ${sector ? `<span class="badge badge-sector">${escHtml(sector)}</span>` : ''}
         </div>
       </div>
@@ -1156,8 +1215,7 @@ function renderRowCompacta(oferta) {
   const plazo     = plazoInfo(oferta);
   const tipoCss   = tipoClase(oferta.tipo_contrato);
   const tipoLabel = tipoEtiqueta(oferta.tipo_contrato);
-  const regionCorta = (oferta.region || '')
-    .replace('Metropolitana de Santiago','RM').replace('Región de ','');
+  const regionCompleta = nombreRegionCompleto(oferta.region);
   const rentaHtml = formatRentaRow(oferta.renta_bruta_min, oferta.renta_bruta_max, oferta.grado_eus);
   const favs  = JSON.parse(localStorage.getItem('fav_contrataoplanta') || '[]');
   const esFav = favs.some(f => f.id === oferta.id);
@@ -1170,7 +1228,7 @@ function renderRowCompacta(oferta) {
     <div class="row-main">
       <div class="row-inst">${escHtml(oferta.institucion) || 'Institución pública'}</div>
       <div class="row-cargo">${escHtml(oferta.cargo)}</div>
-      ${regionCorta ? `<div class="row-region">🗺 ${escHtml(regionCorta)}</div>` : ''}
+      ${regionCompleta ? `<div class="row-region">🗺 ${escHtml(regionCompleta)}</div>` : ''}
     </div>
     <div class="row-meta">
       ${tipoLabel ? `<span class="badge ${tipoCss}" style="font-size:10px;white-space:nowrap">${tipoLabel}</span>` : '<span style="color:var(--texto3);font-size:11px">—</span>'}
@@ -1806,7 +1864,7 @@ async function abrirModal(ofertaId) {
 
     const tipoCss  = tipoClase(o.tipo_contrato);
     const tipoLabel = tipoEtiqueta(o.tipo_contrato);
-    const regionCorta = (o.region || '').replace('Metropolitana de Santiago', 'RM');
+    const regionCompleta = nombreRegionCompleto(o.region);
     const ciudad = ciudadValida(o.ciudad, o.institucion);
     const sector = o.sector || '';
     const renta = formatRenta(o.renta_bruta_min, o.renta_bruta_max, o.grado_eus);
@@ -1817,7 +1875,7 @@ async function abrirModal(ofertaId) {
     document.getElementById('modal-cargo').textContent = o.cargo || 'Sin título';
     document.getElementById('modal-badges').innerHTML = [
       `<span class="badge ${tipoCss}">${tipoLabel}</span>`,
-      regionCorta ? `<span class="badge badge-region">🗺 ${escHtml(regionCorta)}${ciudad ? ' · ' + escHtml(ciudad) : ''}</span>` : '',
+      regionCompleta ? `<span class="badge badge-region">🗺 ${escHtml(regionCompleta)}${ciudad ? ' · ' + escHtml(ciudad) : ''}</span>` : '',
     ].join('');
 
     // Alerta de plazo
@@ -1835,7 +1893,7 @@ async function abrirModal(ofertaId) {
     document.getElementById('modal-renta').textContent         = renta || 'Consultar bases';
     document.getElementById('modal-tipo-contrato').textContent = tipoLabel;
     document.getElementById('modal-jornada').textContent       = jornadaValida(o.jornada) || 'Consultar bases';
-    const ubicacion = [regionCorta, ciudad].filter(Boolean).join(' · ');
+    const ubicacion = [regionCompleta, ciudad].filter(Boolean).join(' · ');
     document.getElementById('modal-ubicacion').textContent     = ubicacion || 'No especificada';
 
     // Descripción / funciones — formato enriquecido
