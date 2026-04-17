@@ -423,11 +423,11 @@ nav {
 .info-section{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--r-l);padding:24px;box-shadow:var(--sombra)}
 .info-title{font-family:'Lora',Georgia,serif;font-size:26px;color:var(--azul);margin-bottom:10px}
 .info-sub{font-size:14px;color:var(--texto2);line-height:1.7;margin-bottom:16px}
-.pasos-grid,.casos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.paso-card,.caso-card{background:var(--bg);border:1px solid var(--borde);border-radius:12px;padding:14px}
+.pasos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.paso-card{background:var(--bg);border:1px solid var(--borde);border-radius:12px;padding:14px}
 .paso-num{font-size:11px;font-weight:700;letter-spacing:.8px;color:var(--cielo);text-transform:uppercase;margin-bottom:6px}
-.paso-card h3,.caso-card h3{font-size:15px;color:var(--texto);margin-bottom:6px}
-.paso-card p,.caso-card p{font-size:13px;color:var(--texto2);line-height:1.6}
+.paso-card h3{font-size:15px;color:var(--texto);margin-bottom:6px}
+.paso-card p{font-size:13px;color:var(--texto2);line-height:1.6}
 .metodo-lista{margin:10px 0 0 18px;color:var(--texto2);font-size:13px;line-height:1.7}
 .metodo-lista li{margin-bottom:4px}
 .meta-link{font-size:12px;color:var(--cielo);text-decoration:none}
@@ -1569,7 +1569,7 @@ footer {
   .main > * { min-width: 0; }
   /* Sidebar al final en móvil: el listado queda inmediatamente bajo los filtros */
   .sidebar { order: 2; }
-  .pasos-grid,.casos-grid { grid-template-columns: 1fr; }
+  .pasos-grid { grid-template-columns: 1fr; }
   .buscador-form { grid-template-columns: 1fr 1fr; }
   .buscador-form > .campo:first-child { grid-column: 1 / -1; }
   .buscador-form > .btn-buscar { margin-top: 0; grid-column: 1 / -1; }
@@ -2055,24 +2055,6 @@ footer {
         <div class="paso-num">Paso 3</div>
         <h3>Postula directo en fuente oficial</h3>
         <p>Accede al enlace original de cada convocatoria para validar bases, documentos y requisitos finales.</p>
-      </div>
-    </div>
-  </article>
-
-  <article class="info-section">
-    <h2 class="info-title">Casos de uso reales</h2>
-    <div class="casos-grid">
-      <div class="caso-card">
-        <h3>Primer empleo público</h3>
-        <p>“Usé filtros por región y nivel de renta para ordenar mis primeras postulaciones sin perder fechas clave.”</p>
-      </div>
-      <div class="caso-card">
-        <h3>Cambio de región</h3>
-        <p>“Comparé concursos en mi región actual y la de destino para planificar mi transición laboral.”</p>
-      </div>
-      <div class="caso-card">
-        <h3>Reorientación profesional</h3>
-        <p>“Con estadísticas por sector pude elegir áreas con mayor movimiento y ajustar mejor mi CV.”</p>
       </div>
     </div>
   </article>
