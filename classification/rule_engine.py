@@ -59,6 +59,17 @@ class RuleEngine:
             score -= 0.25
             negatives.append("ausencia total de cargo/requisitos/fechas")
             rule_trace.append(RuleTrace(rule_id="missing_core_signals", weight=-0.25, reason="sin señales núcleo"))
+        trace_ids = {trace.rule_id for trace in rule_trace}
+        if {"news_keyword", "institutional_keyword"} & trace_ids and not essential_hits["deadline"]:
+            score -= 0.22
+            negatives.append("contexto noticioso sin fecha de cierre verificable")
+            rule_trace.append(
+                RuleTrace(
+                    rule_id="news_without_deadline_guard",
+                    weight=-0.22,
+                    reason="noticia/comunicado sin plazo de postulación",
+                )
+            )
         score = max(0.0, min(1.0, 0.5 + score))
 
         if raw_page.http_status and raw_page.http_status >= 400:
@@ -174,26 +185,30 @@ class RuleEngine:
     @staticmethod
     def _build_positive_rules() -> list[Rule]:
         return [
-            Rule("cargo_keyword", r"\bcargo\b|nombre del cargo", 0.18, "menciona cargo"),
-            Rule("postulacion_keyword", r"postulaci[oó]n|postular", 0.16, "menciona postulación"),
+            Rule("cargo_keyword", r"\bcargo\b|nombre del cargo|vacante|puesto", 0.20, "menciona cargo/vacante"),
+            Rule("postulacion_keyword", r"postulaci[oó]n|postular|recepci[oó]n de antecedentes|enviar antecedentes", 0.18, "menciona postulación operativa"),
             Rule("concurso_keyword", r"concurso p[úu]blico|concurso", 0.14, "menciona concurso"),
             Rule("funciones_keyword", r"funciones del cargo|principales funciones|objetivo del cargo", 0.14, "incluye funciones"),
             Rule("requisitos_keyword", r"requisitos del cargo|requisitos exigibles|requisitos deseables|requisitos", 0.14, "incluye requisitos"),
-            Rule("salary_keyword", r"renta bruta|remuneraci[oó]n|honorarios", 0.12, "incluye renta/remuneración"),
-            Rule("contract_keyword", r"contrata|planta|c[oó]digo del trabajo|calidad jur[ií]dica", 0.10, "incluye calidad contractual"),
+            Rule("salary_keyword", r"renta bruta mensual|remuneraci[oó]n mensual|honorarios mensuales|sueldo base", 0.14, "incluye renta/remuneración mensual"),
+            Rule("contract_keyword", r"contrata|planta|c[oó]digo del trabajo|calidad jur[ií]dica|reemplazo|suplencia", 0.12, "incluye calidad contractual"),
             Rule("deadline_keyword", r"fecha de cierre|cierre de postulaci[oó]n|postulaciones hasta", 0.18, "incluye fecha de cierre"),
-            Rule("url_recruitment", r"/trabaja-con-nosotros|/concursos|/postulacion|/ofertas-laborales", 0.14, "URL de reclutamiento", target="url"),
+            Rule("url_recruitment", r"/trabaja-con-nosotros|/concursos|/postulacion|/ofertas-laborales|/rrhh|/transparencia/(activa/)?trabaje-con-nosotros", 0.16, "URL de reclutamiento", target="url"),
             Rule("table_job_columns", r"cargo\s+.*renta.*cierre|renta.*cargo", 0.14, "tabla con estructura laboral", target="tables"),
-            Rule("adjunto_bases", r"bases|perfil|concurso|tdr|convocatoria", 0.12, "adjunto de bases/perfil", target="attachments"),
+            Rule("adjunto_bases", r"bases|perfil de cargo|concurso|tdr|convocatoria|formulario de postulaci[oó]n", 0.12, "adjunto de bases/perfil", target="attachments"),
+            Rule("email_postulacion", r"(enviar|remitir|postular).{0,45}[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}", 0.20, "correo explícito de postulación"),
         ]
 
     @staticmethod
     def _build_negative_rules() -> list[Rule]:
         return [
             Rule("news_keyword", r"noticias?|prensa|comunicado|bolet[ií]n|actualidad|novedades?", -0.24, "contenido de noticias/prensa"),
-            Rule("events_keyword", r"agenda|evento|seminario|charla|taller|ceremonia|aniversario", -0.22, "contenido de evento/agenda"),
+            Rule("events_keyword", r"agenda|evento|seminario|charla|taller|ceremonia|aniversario|operativo", -0.24, "contenido de evento/agenda"),
             Rule("institutional_keyword", r"publicaci[oó]n institucional|art[ií]culo|blog|memoria anual", -0.18, "contenido institucional genérico"),
             Rule("results_keyword", r"resultados del concurso|n[oó]mina de seleccionados|adjudicaci[oó]n|proceso finalizado|concurso cerrado", -0.35, "página de resultados/cierre"),
             Rule("historical_keyword", r"archivo|hist[oó]rico", -0.2, "contenido histórico"),
+            Rule("procurement_keyword", r"licitaci[oó]n|proveedor|compra p[úu]blica|mercado p[úu]blico|subvenci[oó]n|fondos concursables", -0.35, "contenido no laboral (compras/fondos)"),
+            Rule("community_keyword", r"participaci[oó]n ciudadana|actividad comunitaria|cuenta p[úu]blica|concurso escolar|concurso art[ií]stico", -0.30, "convocatoria comunitaria no laboral"),
             Rule("url_news", r"/noticias/|/prensa/|/blog/|/novedades/", -0.25, "URL de noticias", target="url"),
+            Rule("url_non_jobs", r"/licitaciones|/transparencia|/cuenta-publica|/actividades|/agenda", -0.25, "URL con baja probabilidad laboral", target="url"),
         ]

@@ -61,6 +61,51 @@ logging.basicConfig(
 )
 logger = logging.getLogger("scraper.muni_puente_alto")
 
+POSITIVE_HARD_SIGNALS = (
+    "concurso público",
+    "concurso publico",
+    "perfil del cargo",
+    "requisitos del cargo",
+    "funciones del cargo",
+    "recepción de antecedentes",
+    "recepcion de antecedentes",
+    "bases del concurso",
+    "postulaciones hasta",
+    "honorarios",
+    "contrata",
+    "planta",
+    "suplencia",
+    "reemplazo",
+)
+POSITIVE_SOFT_SIGNALS = (
+    "cargo",
+    "vacante",
+    "puesto",
+    "llamado a postulación",
+    "llamado a postulacion",
+    "proceso de selección",
+    "proceso de seleccion",
+    "postular",
+)
+NEGATIVE_SIGNALS = (
+    "noticia",
+    "comunicado",
+    "actividad",
+    "ceremonia",
+    "taller",
+    "capacitación",
+    "capacitacion",
+    "licitación",
+    "licitacion",
+    "proveedor",
+    "subvención",
+    "subvencion",
+    "cuenta pública",
+    "participación ciudadana",
+    "agenda",
+    "operativo",
+)
+
 
 # ── Sesión HTTP ───────────────────────────────────────────────
 def crear_sesion() -> requests.Session:
@@ -195,12 +240,7 @@ def extraer_oferta_de_parrafo(elemento) -> dict | None:
     # Filtrar párrafos que no son concursos
     if len(texto_completo) < 8:
         return None
-    if not any(kw in texto_completo.lower() for kw in [
-        "cargo", "concurso", "llamado", "vacante", "planta", "contrata",
-        "honorario", "profesional", "técnico", "administrativo", "auxiliar",
-        "director", "jefe", "encargado", "médico", "psicólogo", "abogado",
-        "ingeniero", "asistente", "coordinador", "programa", "apoyo"
-    ]):
+    if not es_publicacion_laboral(texto_completo):
         return None
 
     # Buscar link a bases o convocatoria
@@ -295,11 +335,7 @@ def extraer_por_links_fallback(contenedor) -> list[dict]:
                                                   "alcald", "municip", "estructura"]):
             continue
 
-        # Solo procesar links que parezcan concursos o bases
-        if not any(kw in (href + texto).lower() for kw in [
-            "bases", "concurso", "pdf", "cargo", "postul", "aqui", "aquí",
-            "llamado", "descarg", "wp-content"
-        ]):
+        if not es_publicacion_laboral(f"{href} {texto}"):
             continue
 
         url_completa = href if href.startswith("http") else urljoin(BASE_URL, href)
@@ -310,6 +346,8 @@ def extraer_por_links_fallback(contenedor) -> list[dict]:
         # Buscar contexto del link (párrafo padre)
         padre = a.find_parent(["p", "li", "div"])
         texto_contexto = limpiar(padre.get_text()) if padre else texto
+        if not es_publicacion_laboral(texto_contexto):
+            continue
 
         url_original, id_externo = normalizar_url_oferta(url_completa, cargo, texto_contexto)
 
@@ -345,6 +383,19 @@ def limpiar(texto: str) -> str:
     # Reemplazar secuencias de espacios/tabs/newlines
     texto = re.sub(r"\s+", " ", texto)
     return texto.strip()
+
+
+def es_publicacion_laboral(texto: str) -> bool:
+    contenido = limpiar(texto).lower()
+    if len(contenido) < 8:
+        return False
+    if any(neg in contenido for neg in NEGATIVE_SIGNALS):
+        return False
+    hard_hits = sum(1 for kw in POSITIVE_HARD_SIGNALS if kw in contenido)
+    soft_hits = sum(1 for kw in POSITIVE_SOFT_SIGNALS if kw in contenido)
+    if hard_hits >= 1:
+        return True
+    return soft_hits >= 2
 
 
 def crear_identificador_estable(cargo: str, texto: str) -> str:
@@ -473,12 +524,16 @@ def extraer_fecha(texto: str) -> date | None:
 
 def extraer_renta(texto: str) -> tuple[int | None, int | None]:
     """Extrae renta desde texto libre."""
-    montos = re.findall(r"\$?\s*(\d{1,3}(?:[.,]\d{3})+)", texto)
+    montos = list(re.finditer(r"\$?\s*(\d{1,3}(?:[.,]\d{3})+)", texto))
     limpios = []
-    for m in montos:
+    for match in montos:
         try:
+            m = match.group(1)
             n = int(m.replace(".", "").replace(",", ""))
-            if 300_000 <= n <= 15_000_000:
+            contexto = texto[max(0, match.start() - 60):match.end() + 60].lower()
+            if any(neg in contexto for neg in ["presupuesto", "monto total", "convenio", "proyecto", "anual", "global"]):
+                continue
+            if 300_000 <= n < 15_000_000:
                 limpios.append(n)
         except ValueError:
             continue
