@@ -23,6 +23,22 @@
     } catch (e) {}
   }
 
+
+
+  function ensureMobileNavScript() {
+    if (window.__mobileNavInitialized || document.getElementById('nav-mobile-script')) return;
+
+    var alreadyLoaded = Array.prototype.some.call(document.scripts, function (s) {
+      return /(^|\/)nav-mobile\.js($|[?#])/.test(s.getAttribute('src') || '');
+    });
+    if (alreadyLoaded) return;
+
+    var script = document.createElement('script');
+    script.src = 'nav-mobile.js';
+    script.id = 'nav-mobile-script';
+    document.body.appendChild(script);
+  }
+
   function loadPartial(id, path) {
     var mount = document.getElementById(id);
     if (!mount) return Promise.resolve(false);
@@ -42,6 +58,7 @@
         applyActiveNav(document);
         updateFavCount(document);
       }
+      ensureMobileNavScript();
       return loadPartial('site-footer', 'partials/footer.html');
     })
     .then(function () {

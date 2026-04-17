@@ -11,6 +11,9 @@
  */
 (function () {
   'use strict';
+
+  if (window.__mobileNavInitialized) return;
+
   document.documentElement.classList.add('js-nav');
 
   function initMobileNav() {
@@ -168,6 +171,7 @@
       if (navFav) navFav.textContent = '\u2661 Mis favoritos (' + favCount + ')';
     }
   } catch (e) { /* localStorage unavailable */ }
+  window.__mobileNavInitialized = true;
   return true;
 }
 
