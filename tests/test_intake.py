@@ -283,6 +283,16 @@ class IntakeValidateOfferTests(unittest.TestCase):
         self.assertFalse(d.discard)
         self.assertTrue(d.needs_review)
 
+    def test_oferta_periodista_con_blob_noticia_no_se_descarta(self):
+        # Evita falsos negativos por lista cerrada de cargos "válidos".
+        offer = self._offer(
+            cargo="Periodista",
+            descripcion="Cobertura de noticias institucionales y contenidos web.",
+        )
+        d = intake_validate_offer(offer)
+        self.assertFalse(d.discard)
+        self.assertTrue(d.needs_review)
+
 
 if __name__ == "__main__":
     unittest.main()
