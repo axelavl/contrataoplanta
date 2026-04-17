@@ -772,6 +772,7 @@ function sanitizeHighlightHtml(s) {
 
 const CARGO_SIGLAS_MAYUS = new Set([
   'rrhh','tic','ti','qa','ux','ui','it','pm','api','sql','sap','erp','crm','bi','seo','sem',
+  'upc','uci','sapu','aps',
   'ii','iii','iv','v','vi','vii','viii','ix','x'
 ]);
 
@@ -804,38 +805,82 @@ const CARGO_PROPIOS = new Map([
   ['office', 'Office']
 ]);
 
-function normalizarTituloOferta(cargo) {
-  const original = String(cargo || '').trim().replace(/\s+/g, ' ');
-  if (!original) return '';
+const CARGO_STOPWORDS = new Set(['de','del','la','las','el','los','y','e','en','para','con','por','al','a','o','u','sin']);
+const CARGO_ACENTOS = new Map([
+  ['tecnico', 'técnico'],
+  ['tecnica', 'técnica'],
+  ['administracion', 'administración'],
+  ['organizacion', 'organización'],
+  ['enfermeria', 'enfermería'],
+  ['campana', 'campaña'],
+  ['imagenologia', 'imagenología'],
+  ['farmacia', 'farmacia'],
+  ['gestion', 'gestión'],
+  ['publica', 'pública'],
+  ['analisis', 'análisis'],
+  ['clinica', 'clínica'],
+  ['logistica', 'logística'],
+  ['academica', 'académica'],
+  ['programacion', 'programación']
+]);
 
-  const letras = original.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/g, '');
+function _capitalizarPrimera(s) {
+  return s ? s.charAt(0).toLocaleUpperCase('es-CL') + s.slice(1) : '';
+}
+
+function _normalizarTokenCargo(token, idx) {
+  const limpio = String(token || '');
+  const base = limpio.toLocaleLowerCase('es-CL').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (!base) return limpio;
+  if (CARGO_SIGLAS_MAYUS.has(base)) return limpio.toUpperCase();
+  if (CARGO_PROPIOS.has(base)) return CARGO_PROPIOS.get(base);
+
+  let palabra = limpio.toLocaleLowerCase('es-CL');
+  if (CARGO_ACENTOS.has(base)) palabra = CARGO_ACENTOS.get(base);
+  if (idx > 0 && CARGO_STOPWORDS.has(base)) return palabra;
+  return _capitalizarPrimera(palabra);
+}
+
+function _limpiarPrefijosCargo(txt) {
+  let s = txt;
+
+  // Elimina prefijos tipo código de concurso: 006AP-26, 011-26, COD-123, etc.
+  s = s.replace(/^\s*(?:c[oó]d(?:igo)?[:\s-]*)?(?:[a-z]{0,4}\d{1,5}[a-z]{0,4}(?:[-/]\d{1,5}[a-z]{0,4})+|\d{1,5}[a-z]{0,4}(?:[-/]\d{1,5}[a-z]{0,4})+)\s+/i, '');
+  s = s.replace(/^\s*\d{1,3}\s+(?=[a-záéíóúüñ])/i, '');
+
+  // Elimina cantidades no informativas: "2 cargos", "1 vacante", etc.
+  s = s.replace(/\b\d+\s*(?:cargos?|vacantes?|cupos?|plazas?)\b/gi, '');
+  s = s.replace(/^\s*(?:cargos?|vacantes?|cupos?|plazas?)\b[:\s-]*/i, '');
+
+  // Limpieza de separadores residuales.
+  s = s.replace(/^[\s:;,.–—-]+/, '').replace(/\s{2,}/g, ' ').trim();
+  return s;
+}
+
+function normalizarTituloOferta(cargo) {
+const sinPrefijos = _limpiarPrefijosCargo(original);
+  if (!sinPrefijos) return '';
+
+  const letras = sinPrefijos.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/g, '');
   const mayus = (letras.match(/[A-ZÁÉÍÓÚÜÑ]/g) || []).length;
   const minus = (letras.match(/[a-záéíóúüñ]/g) || []).length;
   const pareceGritado = mayus > 0 && (minus === 0 || mayus / Math.max(1, minus) > 3);
-  if (!pareceGritado) return original.charAt(0).toUpperCase() + original.slice(1);
 
-  const conectores = new Set(['de','del','la','las','el','los','y','e','en','para','con','por','al','a']);
-  let lower = original.toLocaleLowerCase('es-CL');
+  if (!pareceGritado) {
+    return _capitalizarPrimera(sinPrefijos.replace(/\s{2,}/g, ' ').trim());
+  }
 
-  lower = lower.replace(/\b([a-záéíóúüñ0-9]+)\b/gi, (w) => {
-    const base = w
-      .toLocaleLowerCase('es-CL')
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    if (CARGO_SIGLAS_MAYUS.has(base)) return w.toUpperCase();
-    if (CARGO_PROPIOS.has(base)) return CARGO_PROPIOS.get(base);
-    if (conectores.has(base)) return base;
-    return w.charAt(0).toLocaleUpperCase('es-CL') + w.slice(1);
-  });
+  const tokens = sinPrefijos.split(/(\s+|[-/(),.:;])/g).filter(Boolean);
+  let idxPalabra = 0;
 
-  // Formato oración: minúsculas salvo primera palabra + excepciones.
-  lower = lower.replace(/\b([A-ZÁÉÍÓÚÜÑ][^\s/-]*)/g, (w, p1, off) => {
-    if (off === 0) return w;
-    const base = w.toLocaleLowerCase('es-CL').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    if (CARGO_SIGLAS_MAYUS.has(base) || CARGO_PROPIOS.has(base)) return w;
-    return w.toLocaleLowerCase('es-CL');
-  });
+  const normalizado = tokens.map((t) => {
+    if (/^\s+$/.test(t) || /^[-/(),.:;]$/.test(t)) return t;
+    const token = _normalizarTokenCargo(t, idxPalabra);
+    idxPalabra += 1;
+    return token;
+  }).join('');
 
-  return lower.charAt(0).toLocaleUpperCase('es-CL') + lower.slice(1);
+  return _capitalizarPrimera(normalizado.replace(/\s{2,}/g, ' ').trim());
 }
 
 // Formato de texto libre (descripción / requisitos) a HTML estructurado.
