@@ -2184,16 +2184,32 @@ footer {
 <!-- ══ JAVASCRIPT ══════════════════════════════════════════════════ -->
 <script>
 // ── Base URL de la API: prioriza mismo origen y hace fallback automático ──
-// hostname === '' cuando el archivo se abre como file:// en vez de un servidor HTTP
-const _esLocalhost = (
-  window.location.hostname === 'localhost' ||
-  window.location.hostname === '127.0.0.1' ||
-  window.location.hostname === ''
-);
-const API_BASES = _esLocalhost
-  ? ['http://localhost:8000']
-  : [''];
-let API_BASE_ACTIVA = API_BASES[0];
+// Permite forzar base con window.__API_BASE (útil para previews/static hosting).
+const _hostname = window.location.hostname || '';
+const _esLocalhost = ['localhost', '127.0.0.1', '::1', ''].includes(_hostname);
+
+const _apiBases = [];
+const _agregarBase = (base) => {
+  if (typeof base !== 'string') return;
+  const limpio = base.trim();
+  if (!_apiBases.includes(limpio)) _apiBases.push(limpio);
+};
+
+_agregarBase(window.__API_BASE || '');
+
+if (_esLocalhost) {
+  // En desarrollo: primero mismo origen (nginx/proxy), luego backend local directo.
+  _agregarBase('');
+  _agregarBase('http://localhost:8000');
+  _agregarBase('http://127.0.0.1:8000');
+} else {
+  // En producción/previews: mismo origen y fallback al dominio canónico.
+  _agregarBase('');
+  _agregarBase('https://contrataoplanta.cl');
+}
+
+const API_BASES = _apiBases;
+let API_BASE_ACTIVA = API_BASES[0] || '';
 
 async function fetchApi(path, options = {}) {
   let ultimoError = null;
