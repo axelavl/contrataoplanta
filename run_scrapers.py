@@ -168,6 +168,19 @@ def main():
     db.close()
     logger.info(f"\n  RESUMEN: {exitosos}/{ejecutados} scrapers completados exitosamente")
 
+    # ── Validación post-scraping de URLs de ofertas activas ──────────────
+    # Mantiene url_oferta_valida / url_bases_valida al día para que el
+    # frontend pueda gatear el botón "Ver bases" / "Postular".
+    if not args.dry_run and ejecutados > 0:
+        try:
+            from validate_offer_urls import main as validar_urls
+            logger.info("\n  Validando URLs de ofertas activas…")
+            t0 = time.time()
+            res = validar_urls(limit=None, workers=20, max_edad_h=24)
+            logger.info(f"  Validación URLs: {res} ({time.time()-t0:.1f}s)")
+        except Exception as exc:
+            logger.warning(f"  Validador de URLs falló (no bloqueante): {exc}")
+
 
 if __name__ == "__main__":
     main()
