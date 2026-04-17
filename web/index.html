@@ -2287,7 +2287,12 @@ const ICONOS_SECTOR = {
 
 // ── Escape helpers ────────────────────────────────────────────────────────
 function escAttr(s) {
-  return (s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return (s || '')
+    .replace(/&/g,'&amp;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;');
 }
 function escHtml(s) {
   return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -3170,8 +3175,9 @@ function renderMasActivas(instituciones) {
   if (!instituciones.length) return;
   const html = instituciones.map(inst => {
     const icono = ICONOS_SECTOR[''] || '🏢';
+    const instId = Number.isFinite(Number(inst.id)) ? Number(inst.id) : 0;
     return `
-      <div class="inst-item" onclick="filtrarInstitucion(${inst.id}, '${escAttr(inst.nombre || '')}')">
+      <div class="inst-item" role="button" tabindex="0" data-inst-id="${instId}" data-inst-nombre="${escAttr(inst.nombre || '')}">
         <div class="inst-icon">${icono}</div>
         <div class="inst-info">
           <div class="inst-nombre">${inst.nombre || 'Institución'}</div>
@@ -3180,7 +3186,22 @@ function renderMasActivas(instituciones) {
         <span class="inst-arrow">›</span>
       </div>`;
   }).join('');
-  document.getElementById('masactivas-lista').innerHTML = html;
+  const lista = document.getElementById('masactivas-lista');
+  lista.innerHTML = html;
+  lista.querySelectorAll('.inst-item').forEach(el => {
+    const abrir = () => {
+      const id = Number.parseInt(el.dataset.instId || '0', 10);
+      const nombre = el.dataset.instNombre || '';
+      filtrarInstitucion(id, nombre);
+    };
+    el.addEventListener('click', abrir);
+    el.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' || ev.key === ' ') {
+        ev.preventDefault();
+        abrir();
+      }
+    });
+  });
 }
 
 function filtrarInstitucion(id, nombre) {
@@ -4606,7 +4627,12 @@ setInterval(mostrarUltimaActualizacion, 5 * 60 * 1000); // refrescar cada 5 min
   });
 
   // Update favorites count in mobile menu
-  var favCount = JSON.parse(localStorage.getItem('fav_contrataoplanta') || '[]').length;
+  var favCount = 0;
+  try {
+    favCount = JSON.parse(localStorage.getItem('fav_contrataoplanta') || '[]').length;
+  } catch {
+    favCount = 0;
+  }
   var mobileFav = document.getElementById('nav-mobile-favoritos');
   if (mobileFav && favCount > 0) {
     mobileFav.textContent = '\u2661 Mis favoritos (' + favCount + ')';
