@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script>document.documentElement.classList.add('js-nav');</script>
-<title>Estadísticas del empleo público — contrata o planta .cl</title>
+<title>Panel de estadísticas — contrata o planta .cl</title>
 <meta name="description" content="Consulta estadísticas del empleo público en Chile: concursos, instituciones activas y tendencias del sector.">
 <link rel="canonical" href="https://estadoemplea.pages.dev/estadisticas.html">
 <meta property="og:title" content="Estadísticas del empleo público — contrata o planta .cl">
@@ -108,31 +108,19 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
   .kpi-grid{grid-template-columns:1fr 1fr}
 }
 </style>
+<script defer src="shared-shell.js"></script>
 </head>
-<body>
+<body data-page="estadisticas">
 <a class="skip-link" href="#contenido-principal">Saltar al contenido</a>
 
 
-<header>
-<nav>
-  <div class="nav-inner">
-    <a href="index.html" class="logo">contrata <em>o</em> planta <em class="logo-domain-muted">.cl</em></a>
-    <div class="nav-links">
-      <a href="index.html">Buscar empleos</a>
-      <a href="favoritos.html" id="nav-favoritos" class="nav-link-favs">♡ Mis favoritos</a>
-      <a href="instituciones.html">Instituciones</a>
-      <a href="estadisticas.html" class="active">Estadísticas</a>
-      <a href="faq.html">Preguntas frecuentes</a>
-    </div>
-  </div>
-</nav>
-</header>
+<div id="site-header"></div>
 
 <nav class="breadcrumb" aria-label="Ruta de navegación">
   <div class="breadcrumb-inner">
     <a href="index.html">Inicio</a>
     <span class="breadcrumb-sep">›</span>
-    <span class="breadcrumb-actual">Estadísticas</span>
+    <span class="breadcrumb-actual">Panel de estadísticas</span>
   </div>
 </nav>
 
@@ -141,8 +129,8 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 <div class="page-hero">
   <div class="page-hero-inner">
     <div class="page-kicker">Datos abiertos</div>
-    <h1 class="page-titulo">Estadísticas del empleo público</h1>
-    <p class="page-sub">Cómo se mueven los concursos hoy: volumen, sectores e instituciones con más actividad.</p>
+    <h1 class="page-titulo">Panel de estadísticas del empleo público</h1>
+    <p class="page-sub">Una vista clara para decidir mejor dónde enfocar tu búsqueda esta semana.</p>
   </div>
 </div>
 
@@ -206,36 +194,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 
 </main>
 
-<footer>
-  <div class="footer-inner">
-    <div class="footer-brand">
-      <a href="index.html" class="logo" style="display:block;margin-bottom:10px">contrata <em>o</em> planta <em class="logo-domain-muted">.cl</em></a>
-      <p class="footer-desc">La plataforma laboral del sector público chileno. 700+ instituciones registradas.</p>
-    </div>
-    <div>
-      <div class="footer-col-titulo">Explorar</div>
-      <a href="index.html" class="footer-link">Buscar empleos</a>
-      <a href="instituciones.html" class="footer-link">Por institución</a>
-      <a href="estadisticas.html" class="footer-link">Estadísticas</a>
-    </div>
-    <div>
-      <div class="footer-col-titulo">Comunidad</div>
-      <a href="faq.html" class="footer-link">Preguntas frecuentes</a>
-      <a href="favoritos.html" class="footer-link">Mis favoritos</a>
-    </div>
-    <div>
-      <div class="footer-col-titulo">Legal</div>
-      <a href="terminos.html" class="footer-link">Términos de uso</a>
-      <a href="privacidad.html" class="footer-link">Privacidad</a>
-      <a href="descargo.html" class="footer-link">Descargo</a>
-      <a href="mailto:hola@contrataoplanta.cl" class="footer-link">Contacto</a>
-    </div>
-  </div>
-  <div class="footer-bottom">
-    <span>© 2026 contrata o planta .cl</span>
-    <span>Datos actualizados cada 6 horas · No somos el Estado</span>
-  </div>
-</footer>
+<div id="site-footer"></div>
 
 <script>
 const API_BASE = (
@@ -324,7 +283,7 @@ function renderMasActivas(lista) {
   }
   const filas = lista.map(inst => `
     <tr>
-      <td><a href="instituciones.html?id=${inst.id}" class="inst-nombre">${inst.nombre}</a></td>
+      <td><a href="index.html?q=${encodeURIComponent(inst.nombre)}" class="inst-nombre">${inst.nombre}</a></td>
       <td><span class="badge-activas">${fmt(inst.activas)}</span></td>
       <td>${inst.nuevas_semana > 0 ? `<span class="badge-nuevas">+${inst.nuevas_semana}</span>` : '<span style="color:var(--texto3);font-size:12px">—</span>'}</td>
     </tr>
@@ -354,7 +313,7 @@ async function cargar() {
     renderHistorico(d.historico_mensual);
     renderMasActivas(d.mas_activas);
   } catch (e) {
-    const msg = '<p class="error-estado">No pudimos cargar las estadísticas en este momento. Vuelve a intentarlo en unos minutos.</p>';
+    const msg = '<p class="error-estado">No pudimos cargar el panel ahora. Inténtalo nuevamente en unos minutos.</p>';
     document.getElementById('kpi-grid').innerHTML = msg;
     document.getElementById('sector-contenido').innerHTML = msg;
     document.getElementById('historico-contenido').innerHTML = msg;

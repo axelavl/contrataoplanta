@@ -13,6 +13,8 @@
   'use strict';
   document.documentElement.classList.add('js-nav');
 
+  function initMobileNav() {
+
   // ── 1. Inject mobile CSS ──────────────────────────────────────────
   var css = [
     'html, body { overflow-x: hidden; }',
@@ -80,14 +82,14 @@
   var links = [
     { href: 'index.html',          text: 'Buscar empleos' },
     { href: 'favoritos.html',      text: '\u2661 Mis favoritos', cls: 'nav-link-favs', id: 'nav-mobile-favoritos' },
-    { href: 'instituciones.html',  text: 'Instituciones' },
+    { href: 'index.html#fuentes-activas',  text: 'Fuentes activas' },
     { href: 'estadisticas.html',   text: 'Estad\u00edsticas' },
     { href: 'faq.html',            text: 'Preguntas frecuentes' }
   ];
 
   // ── 4. Build hamburger button ─────────────────────────────────────
   var navInner = document.querySelector('.nav-inner');
-  if (!navInner) return;
+  if (!navInner) return false;
 
   var btn = document.createElement('button');
   btn.className = 'hamburger';
@@ -166,4 +168,10 @@
       if (navFav) navFav.textContent = '\u2661 Mis favoritos (' + favCount + ')';
     }
   } catch (e) { /* localStorage unavailable */ }
+  return true;
+}
+
+if (!initMobileNav()) {
+  document.addEventListener('shell:ready', function(){ initMobileNav(); }, { once: true });
+}
 })();

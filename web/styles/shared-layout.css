@@ -5,35 +5,10 @@
    héroe de página, footer y patrones compartidos.
    ══════════════════════════════════════════════════════════════════════ */
 
-:root {
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-serif: 'Lora', Georgia, serif;
-  --azul: #0A2E6E;
-  --azul-m: #1557C0;
-  --cielo: #1A6BCC;
-  --cielo-l: #D6E6F8;
-  --acento: #E8A820;
-  --acento-l: #FFF4D6;
-  --bg: #F5F4EF;
-  --bg2: #EDECEA;
-  --borde: #D9D7CF;
-  --texto: #111827;
-  --texto2: #4B5563;
-  --texto3: #9CA3AF;
-  --blanco: #FAFAF8;
-  --verde: #16A34A;
-  --verde-l: #DCFCE7;
-  --naran: #D97706;
-  --naran-l: #FEF3C7;
-  --rojo: #DC2626;
-  --rojo-l: #FEE2E2;
-  --sombra: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
-  --r: 10px;
-  --r-l: 16px;
-}
+@import url('design-tokens.css');
 
 /* ── NAVBAR ─────────────────────────────────────────────────────────── */
-nav {
+header nav {
   position: sticky;
   top: 0;
   z-index: 100;
@@ -56,7 +31,7 @@ nav {
 .logo {
   font-family: var(--font-serif);
   font-size: 18px;
-  color: white;
+  color: var(--acento);
   letter-spacing: -0.3px;
   white-space: nowrap;
   text-decoration: none;
@@ -99,7 +74,7 @@ nav {
 
 .nav-links a:hover,
 .nav-links a.active {
-  color: white;
+  color: var(--blanco);
   background: rgba(255, 255, 255, 0.1);
 }
 

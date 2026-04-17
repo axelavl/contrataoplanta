@@ -1,19 +1,5 @@
-:root {
-  --azul: #0A2E6E;
-  --azul-m: #1557C0;
-  --cielo: #1A6BCC;
-  --cielo-l: #D6E6F8;
-  --acento: #E8A820;
-  --bg: #F5F4EF;
-  --bg2: #EDECEA;
-  --borde: #D9D7CF;
-  --texto: #111827;
-  --texto2: #4B5563;
-  --blanco: #FAFAF8;
-  --ok: #166534;
-  --ok-bg: #DCFCE7;
-  --radius: 12px;
-}
+@import url('design-tokens.css');
+
 * { box-sizing: border-box; }
 body {
   margin: 0;
@@ -23,6 +9,9 @@ body {
   line-height: 1.6;
 }
 a { color: var(--cielo); }
+
+.skip-link { position:absolute; left:12px; top:-48px; z-index:1000; background:var(--azul); color:var(--blanco); padding:10px 14px; border-radius:8px; text-decoration:none; font-size:13px; font-weight:600; transition:top .2s; }
+.skip-link:focus { top:10px; }
 nav {
   position: sticky;
   top: 0;
@@ -39,7 +28,7 @@ nav {
   align-items: center;
   gap: 16px;
 }
-.logo { font-family: 'Lora', Georgia, serif; color: #fff; text-decoration: none; font-size: 18px; }
+.logo { font-family: 'Lora', Georgia, serif; color: var(--acento); text-decoration: none; font-size: 18px; font-weight:600; }
 .logo em { color: var(--acento); }
 .nav-links { display: flex; gap: 8px; flex: 1; }
 .nav-links a {
