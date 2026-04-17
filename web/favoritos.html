@@ -105,8 +105,21 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,46,110,0.97);backdrop-f
 .modal-info-label{font-size:11px;color:var(--texto3);font-family:'Inter',sans-serif;margin-bottom:4px}
 .modal-info-val{font-size:14px;font-weight:600;color:var(--texto)}
 .requisitos-lista{display:flex;flex-direction:column;gap:6px}
-.requisito-item{display:flex;gap:10px;font-size:13px;color:var(--texto2);line-height:1.5}
-.requisito-item::before{content:'→';color:var(--cielo);flex-shrink:0;margin-top:1px;font-size:12px}
+.requisito-item{display:flex;gap:10px;font-size:13.5px;color:var(--texto2);line-height:1.55}
+.requisito-item::before{content:'→';color:var(--cielo);flex-shrink:0;margin-top:0;font-weight:700}
+.modal-rich-text{font-size:13.5px;color:var(--texto2);line-height:1.65;text-align:left;font-family:'Inter',sans-serif;word-break:break-word;overflow-wrap:anywhere}
+.modal-rich-text > *:first-child{margin-top:0}
+.modal-rich-text > *:last-child{margin-bottom:0}
+.modal-rich-text p{margin:0 0 8px 0}
+.modal-rich-text p:last-child{margin-bottom:0}
+.modal-rich-text strong,.modal-rich-text b{color:var(--texto);font-weight:700}
+.modal-rich-text h4,.modal-rich-text .rt-heading{font-size:13.5px;font-weight:700;color:var(--texto);margin:10px 0 6px 0;letter-spacing:-0.1px;line-height:1.35}
+.modal-rich-text ul,.modal-rich-text ol{margin:4px 0 10px 0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:5px}
+.modal-rich-text li{position:relative;padding-left:18px;line-height:1.55}
+.modal-rich-text ul > li::before{content:'→';color:var(--cielo);position:absolute;left:0;top:0;font-weight:700}
+.modal-rich-text ol{counter-reset:rt-counter}
+.modal-rich-text ol > li{counter-increment:rt-counter}
+.modal-rich-text ol > li::before{content:counter(rt-counter) '.';color:var(--cielo);font-weight:700;position:absolute;left:0;top:0}
 .modal-actions{display:flex;gap:10px;padding:20px 28px;border-top:1px solid var(--bg2);background:var(--blanco);position:sticky;bottom:0;border-radius:0 0 var(--r-l) var(--r-l)}
 .btn-modal-primary{flex:1;height:44px;background:var(--azul);color:white;border:none;border-radius:var(--r);font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:background .15s}
 .btn-modal-primary:hover{background:var(--azul-m)}
@@ -216,11 +229,11 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
       </div>
       <div class="modal-seccion">
         <div class="modal-seccion-titulo">Requisitos principales</div>
-        <div class="requisitos-lista" id="modal-requisitos"></div>
+        <div class="modal-rich-text" id="modal-requisitos"></div>
       </div>
       <div class="modal-seccion">
-        <div class="modal-seccion-titulo">Descripción</div>
-        <p id="modal-descripcion" style="font-size:14px;color:var(--texto2);line-height:1.7"></p>
+        <div class="modal-seccion-titulo">Funciones y descripción</div>
+        <div class="modal-rich-text" id="modal-descripcion"></div>
       </div>
     </div>
     <div class="modal-actions">
@@ -302,6 +315,72 @@ function formatGuardado(isoStr) {
   return `Guardado el ${d.getDate()} de ${['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][d.getMonth()]}`;
 }
 
+function escHtml(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Format de texto libre a HTML enriquecido (listas, títulos, negrita) ──
+function formatRichText(rawText) {
+  const text = (rawText || '').trim();
+  if (!text) return '';
+  const normalizado = text
+    .replace(/\r\n?/g, '\n')
+    .replace(/\s*[•·]\s+/g, '\n• ')
+    .replace(/(?:^|\s)[–—]\s+/g, '\n– ');
+  const lineas = normalizado.split('\n').map(l => l.trim()).filter(Boolean);
+  const bulletRe   = /^[\-*•·–—]\s+(.+)$/;
+  const numberedRe = /^(\d{1,2})[.\)]\s+(.+)$/;
+  const letterRe   = /^([a-zA-Z])\)\s+(.+)$/;
+  const isAllCaps = (s) => {
+    const letras = s.replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñ]/g, '');
+    if (letras.length < 3) return false;
+    const upp = letras.replace(/[^A-ZÁÉÍÓÚÑ]/g, '').length;
+    return (upp / letras.length) >= 0.7;
+  };
+  const isHeadingColon = (s) => /^[^:]{2,80}:\s*$/.test(s) && !/[.!?]$/.test(s);
+
+  const out = [];
+  let listBuffer = [];
+  let listType = null;
+  const flushList = () => {
+    if (!listBuffer.length) return;
+    const tag = listType === 'ol' ? 'ol' : 'ul';
+    out.push(`<${tag}>${listBuffer.map(i => `<li>${i}</li>`).join('')}</${tag}>`);
+    listBuffer = [];
+    listType = null;
+  };
+  const renderInline = (s) => {
+    const esc = escHtml(s);
+    const prefix = esc.match(/^([A-ZÁÉÍÓÚÑ][^:.\n]{1,60}?):\s+(.*)$/);
+    return prefix ? `<strong>${prefix[1]}:</strong> ${prefix[2]}` : esc;
+  };
+
+  for (const linea of lineas) {
+    let m;
+    if ((m = linea.match(numberedRe))) {
+      if (listType && listType !== 'ol') flushList();
+      listType = 'ol';
+      listBuffer.push(renderInline(m[2]));
+      continue;
+    }
+    if ((m = linea.match(bulletRe)) || (m = linea.match(letterRe))) {
+      if (listType && listType !== 'ul') flushList();
+      listType = 'ul';
+      listBuffer.push(renderInline(m[m.length - 1]));
+      continue;
+    }
+    if (isHeadingColon(linea) || (isAllCaps(linea) && linea.length <= 80)) {
+      flushList();
+      out.push(`<h4 class="rt-heading">${escHtml(linea.replace(/:\s*$/, ''))}</h4>`);
+      continue;
+    }
+    flushList();
+    out.push(`<p>${renderInline(linea)}</p>`);
+  }
+  flushList();
+  return out.join('');
+}
+
 // ── Renderizar grid ────────────────────────────────────────────────
 function renderFavs() {
   const favs = getFavs();
@@ -370,7 +449,7 @@ async function abrirModal(ofertaId) {
   document.getElementById('modal-jornada').textContent = '…';
   document.getElementById('modal-cierre').textContent = '…';
   document.getElementById('modal-requisitos').innerHTML = '';
-  document.getElementById('modal-descripcion').textContent = '';
+  document.getElementById('modal-descripcion').innerHTML = '';
 
   try {
     const res = await fetch(`${API_BASE}/api/ofertas/${ofertaId}`);
@@ -416,17 +495,13 @@ async function abrirModal(ofertaId) {
       cierreEl.style.color = 'var(--verde)';
     }
 
-    // Requisitos
-    if (o.requisitos_texto) {
-      const items = o.requisitos_texto.split(/\n|\.(?=\s[A-Z])/).filter(s => s.trim().length > 10).slice(0, 8);
-      document.getElementById('modal-requisitos').innerHTML =
-        items.map(i => `<div class="requisito-item">${i.trim()}</div>`).join('');
-    } else {
-      document.getElementById('modal-requisitos').innerHTML =
-        '<div class="requisito-item">Ver bases del concurso para requisitos completos.</div>';
-    }
+    // Requisitos y descripción con formato enriquecido
+    const reqHtml = formatRichText(o.requisitos_texto || o.requisitos || '');
+    document.getElementById('modal-requisitos').innerHTML = reqHtml ||
+      '<p>Ver bases del concurso para requisitos completos.</p>';
 
-    document.getElementById('modal-descripcion').textContent = o.descripcion || '—';
+    const descHtml = formatRichText(o.descripcion || '');
+    document.getElementById('modal-descripcion').innerHTML = descHtml || '<p>—</p>';
 
     // Botones
     const urlPostular = o.url_oferta || o.url_bases || '#';
