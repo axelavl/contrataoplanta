@@ -1538,9 +1538,16 @@ async function cargarOfertas() {
   if (estado.ciudad)         params.set('ciudad', estado.ciudad);
   // Tipos activos: enviar solo cuando es un subconjunto propio del catálogo.
   // Si están todos activos o ninguno, no filtrar para incluir todos los tipos.
-  const TIPOS_CATALOGO = ['planta','contrata','honorarios','codigo_trabajo','otro','no_informa'];
-  if (estado.tipos.length > 0 && estado.tipos.length < TIPOS_CATALOGO.length) {
-    params.set('tipo', estado.tipos.join(','));
+  const TIPOS_CATALOGO_UI = ['planta','contrata','honorarios','codigo_trabajo','otro','no_informa'];
+  const tiposActivosApi = estado.tipos.flatMap((tipo) => (
+    tipo === 'otro' ? ['otro', 'reemplazo'] : [tipo]
+  ));
+  const tiposUnicosApi = [...new Set(tiposActivosApi)];
+  const tiposCatalogoApi = [...new Set(TIPOS_CATALOGO_UI.flatMap((tipo) => (
+    tipo === 'otro' ? ['otro', 'reemplazo'] : [tipo]
+  )))];
+  if (tiposUnicosApi.length > 0 && tiposUnicosApi.length < tiposCatalogoApi.length) {
+    params.set('tipo', tiposUnicosApi.join(','));
   }
 
   try {
