@@ -20,7 +20,10 @@
 :root{--azul:#0A2E6E;--azul-m:#1557C0;--cielo:#1A6BCC;--cielo-l:#D6E6F8;--bg:#F5F4EF;--bg2:#EDECEA;--borde:#D9D7CF;--texto:#111827;--texto2:#4B5563;--texto3:#9CA3AF;--blanco:#FAFAF8;--r:10px}
 *{box-sizing:border-box;margin:0;padding:0} body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--texto)}
 .skip-link{position:absolute;left:12px;top:-48px;z-index:1000;background:var(--azul);color:var(--blanco);padding:10px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600}.skip-link:focus{top:10px}
-.page-content{max-width:860px;margin:0 auto;padding:42px 24px 80px}
+.page-content{max-width:900px;margin:0 auto;padding:42px 24px 80px}
+.quick-links{margin:0 0 18px;display:flex;gap:8px;flex-wrap:wrap}
+.quick-links a{font-size:12px;font-weight:600;background:var(--cielo-l);color:var(--azul);text-decoration:none;border-radius:999px;padding:7px 12px}
+.quick-links a:hover{opacity:.9}
 .faq-grid{display:grid;gap:26px}
 .faq-bloque{background:var(--blanco);border:1px solid var(--borde);border-radius:14px;padding:20px}
 .faq-bloque h2{font-family:'Lora',serif;color:var(--azul);font-size:22px;margin-bottom:14px}
@@ -45,7 +48,12 @@
 </header>
 <main id="contenido-principal">
 <div class="page-hero"><div class="page-hero-inner"><div class="page-kicker">Ayuda práctica</div><h1 class="page-titulo">Preguntas frecuentes</h1><p class="page-sub">Respuestas concretas para buscar, entender y postular a ofertas públicas sin perder oportunidades.</p></div></div>
-<div class="page-content"><div class="faq-grid">
+<div class="page-content">
+  <div class="quick-links">
+    <a href="index.html">Ver vigentes</a>
+    <a href="index.html?vista=cerradas">Ver historial cerradas</a>
+  </div>
+  <div class="faq-grid">
 <section class="faq-bloque"><h2>Buscar ofertas y estados</h2>
 <div class="faq-item"><button class="faq-pregunta" aria-expanded="false">¿Cómo busco ofertas por cargo, institución o región?<span class="faq-icono">＋</span></button><div class="faq-respuesta"><p>Usa la búsqueda principal con términos de cargo (ej. “analista”), luego combina filtros de región, sector, tipo de contrato y comuna. Si quieres ampliar resultados, elimina filtros uno a uno y vuelve a buscar.</p></div></div>
 <div class="faq-item"><button class="faq-pregunta" aria-expanded="false">¿Qué significa “Cierra hoy”?<span class="faq-icono">＋</span></button><div class="faq-respuesta"><p>Significa que la oferta sigue vigente durante el día actual y todavía puedes postular si cumples los requisitos. Se muestra con estilo de advertencia para priorizarla.</p></div></div>

@@ -37,8 +37,8 @@ nav {
 }
 
 .logo-domain-muted {
-  font-style: normal;
-  color: rgba(255, 255, 255, 0.3) !important;
+  font-style: italic;
+  color: #E8A820 !important;
 }
 
 .logo-footer {
