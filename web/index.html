@@ -433,6 +433,7 @@ nav {
 .meta-link:hover{text-decoration:underline}
 
 /* ═══ BARRA DE RESULTADOS Y CONTROLES ════════════════════════════════ */
+.estado-listado-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.estado-tab{border:1px solid var(--borde);background:var(--blanco);color:var(--texto2);padding:8px 12px;border-radius:999px;font-size:12px;font-weight:600;cursor:pointer}.estado-tab.activo{background:var(--azul);border-color:var(--azul);color:#fff}.estado-listado-copy{font-size:12px;color:var(--texto2);margin-bottom:14px}
 .resultados-header {
   display: flex; justify-content: space-between; align-items: center;
   margin-bottom: 16px; gap: 12px; flex-wrap: wrap;
@@ -624,12 +625,14 @@ nav {
   width: 7px; height: 7px; border-radius: 50%;
   flex-shrink: 0;
 }
-.plazo-verde  { background: var(--verde); }
-.plazo-naran  { background: var(--naran); }
-.plazo-rojo   { background: var(--rojo); animation: pulse .8s infinite; }
+.status-active { background: var(--verde); }
+.status-closing-today { background: var(--naran); animation: pulse .9s infinite; }
+.status-closed { background: var(--texto3); }
+.status-upcoming { background: var(--cielo); }
+.status-unknown { background: var(--borde); }
 @keyframes pulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: .3; }
+  50% { opacity: .35; }
 }
 
 .btn-postular {
@@ -1458,28 +1461,31 @@ footer {
   margin-bottom: 16px;
   border: 1.5px solid transparent;
 }
-.modal-plazo-alert.plazo-rojo  { background: var(--rojo-l);  border-color: #FCA5A5; }
-.modal-plazo-alert.plazo-naran { background: var(--naran-l); border-color: #FDE68A; }
-.modal-plazo-alert.plazo-verde { background: var(--verde-l); border-color: #86EFAC; }
-.modal-plazo-alert.plazo-gris  { background: var(--bg2);     border-color: var(--borde); }
+.modal-plazo-alert.status-closed { background: #F3F4F6; border-color: #D1D5DB; }
+.modal-plazo-alert.status-closing-today { background: var(--naran-l); border-color: #FDE68A; }
+.modal-plazo-alert.status-active { background: var(--verde-l); border-color: #86EFAC; }
+.modal-plazo-alert.status-upcoming { background: var(--cielo-l); border-color: #93C5FD; }
+.modal-plazo-alert.status-unknown { background: var(--bg2); border-color: var(--borde); }
 .modal-plazo-icon {
   width: 34px; height: 34px; border-radius: 50%;
   display: grid; place-items: center; flex-shrink: 0;
   font-size: 18px; color: white;
 }
-.plazo-rojo  .modal-plazo-icon { background: var(--rojo); }
-.plazo-naran .modal-plazo-icon { background: var(--naran); }
-.plazo-verde .modal-plazo-icon { background: var(--verde); }
-.plazo-gris  .modal-plazo-icon { background: var(--texto3); }
+.status-closed .modal-plazo-icon { background: var(--texto3); }
+.status-closing-today .modal-plazo-icon { background: var(--naran); }
+.status-active .modal-plazo-icon { background: var(--verde); }
+.status-upcoming .modal-plazo-icon { background: var(--cielo); }
+.status-unknown .modal-plazo-icon { background: var(--texto3); }
 .modal-plazo-label {
   font-size: 14px; font-weight: 700;
   font-family: 'Inter', sans-serif;
   line-height: 1.2;
 }
-.plazo-rojo  .modal-plazo-label { color: #991B1B; }
-.plazo-naran .modal-plazo-label { color: #92400E; }
-.plazo-verde .modal-plazo-label { color: #166534; }
-.plazo-gris  .modal-plazo-label { color: var(--texto2); }
+.status-closed .modal-plazo-label { color: #374151; }
+.status-closing-today .modal-plazo-label { color: #92400E; }
+.status-active .modal-plazo-label { color: #166534; }
+.status-upcoming .modal-plazo-label { color: #1D4ED8; }
+.status-unknown .modal-plazo-label { color: var(--texto2); }
 .modal-plazo-fecha {
   font-size: 12px; color: var(--texto2);
   margin-top: 2px; font-family: 'Inter', sans-serif;
@@ -1805,6 +1811,11 @@ footer {
 
   <!-- COLUMNA OFERTAS -->
   <div>
+    <div class="estado-listado-tabs" role="tablist" aria-label="Vista por estado">
+      <button class="estado-tab activo" id="tab-vigentes" onclick="setVistaListado('vigentes')" role="tab" aria-selected="true">Vigentes</button>
+      <button class="estado-tab" id="tab-cerradas" onclick="setVistaListado('cerradas')" role="tab" aria-selected="false">Convocatorias anteriores</button>
+    </div>
+    <p class="estado-listado-copy" id="estado-listado-copy">Mostrando solo ofertas vigentes. Las ofertas cerradas están disponibles en Convocatorias anteriores.</p>
     <div class="resultados-header">
       <div class="resultados-count">
         <strong id="count-num">—</strong> ofertas encontradas
@@ -2342,6 +2353,7 @@ const estado = {
   institucion_id: null,
   renta_min: null,
   ciudad: '',
+  vista_listado: 'vigentes',
 };
 
 let _debounceTimer = null;
@@ -2561,13 +2573,48 @@ const BUSQUEDAS_POPULARES = [
   { label: 'Ingeniero · Ejecutivo', q: 'ingeniero', sector: 'Ejecutivo Central' },
 ];
 
-function plazoInfo(dias) {
-  if (dias === null || dias === undefined) return { clase: 'plazo-verde', texto: 'Sin fecha límite', color: 'var(--texto3)' };
-  if (dias < 0)  return { clase: 'plazo-rojo',  texto: 'Cerrada',        color: 'var(--rojo)' };
-  if (dias === 0) return { clase: 'plazo-rojo',  texto: 'Cierra hoy',    color: 'var(--rojo)' };
-  if (dias === 1) return { clase: 'plazo-rojo',  texto: 'Cierra mañana', color: 'var(--rojo)' };
-  if (dias <= 5)  return { clase: 'plazo-naran', texto: `Cierra en ${dias} días`, color: 'var(--naran)' };
-  return { clase: 'plazo-verde', texto: `Cierra en ${dias} días`, color: 'var(--verde)' };
+function parseLocalDate(value) {
+  if (!value) return null;
+  const text = String(value).trim();
+  if (!text) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    const [y,m,d] = text.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+  const parsed = new Date(text);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+}
+
+function getOfertaEstado(oferta) {
+  if (!oferta) return { key: 'unknown', dias: null };
+  const hoy = new Date();
+  const hoyLocal = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+  const inicio = parseLocalDate(oferta.fecha_inicio);
+  const cierre = parseLocalDate(oferta.fecha_cierre);
+  if (inicio && inicio > hoyLocal) return { key: 'upcoming', dias: Math.round((inicio - hoyLocal) / 86400000) };
+  if (cierre) {
+    const dias = Math.round((cierre - hoyLocal) / 86400000);
+    if (dias < 0) return { key: 'closed', dias };
+    if (dias === 0) return { key: 'closing_today', dias };
+    return { key: 'active', dias };
+  }
+  if (oferta.estado && ['closed','active','closing_today','upcoming'].includes(oferta.estado)) {
+    return { key: oferta.estado, dias: oferta.dias_restantes ?? null };
+  }
+  return { key: 'active', dias: oferta.dias_restantes ?? null };
+}
+
+function plazoInfo(oferta) {
+  const estadoOferta = getOfertaEstado(oferta);
+  const dias = estadoOferta.dias;
+  if (estadoOferta.key === 'closed') return { clase: 'status-closed', texto: 'Finalizada', color: 'var(--texto2)' };
+  if (estadoOferta.key === 'closing_today') return { clase: 'status-closing-today', texto: 'Cierra hoy', color: 'var(--naran)' };
+  if (estadoOferta.key === 'upcoming') return { clase: 'status-upcoming', texto: 'Próximamente', color: 'var(--cielo)' };
+  if (dias === null || dias === undefined) return { clase: 'status-active', texto: 'Disponible', color: 'var(--verde)' };
+  if (dias === 1) return { clase: 'status-active', texto: 'Cierra mañana', color: 'var(--verde)' };
+  if (dias <= 5) return { clase: 'status-closing-today', texto: `Cierra en ${dias} días`, color: 'var(--naran)' };
+  return { clase: 'status-active', texto: `Disponible · ${dias} días`, color: 'var(--verde)' };
 }
 
 // ── Logos institucionales (favicon DuckDuckGo con fallback emoji) ─────────
@@ -2620,7 +2667,7 @@ function jornadaValida(jornada) {
 // ── Renderizar tarjeta de oferta ───────────────────────────────────────────
 function renderCard(oferta) {
   const renta = formatRenta(oferta.renta_bruta_min, oferta.renta_bruta_max, oferta.grado_eus);
-  const plazo = plazoInfo(oferta.dias_restantes);
+  const plazo = plazoInfo(oferta);
   const tipoCss = TIPO_CSS[oferta.tipo_contrato] || 'badge-sector';
   const tipoLabel = oferta.tipo_contrato
     ? oferta.tipo_contrato.charAt(0).toUpperCase() + oferta.tipo_contrato.slice(1)
@@ -2725,7 +2772,7 @@ function toggleFavCard(btn) {
 
 // ── Vista compacta (fila densa) ────────────────────────────────────────────
 function renderRowCompacta(oferta) {
-  const plazo     = plazoInfo(oferta.dias_restantes);
+  const plazo     = plazoInfo(oferta);
   const tipoCss   = TIPO_CSS[oferta.tipo_contrato] || 'badge-sector';
   const tipoLabel = oferta.tipo_contrato
     ? oferta.tipo_contrato.charAt(0).toUpperCase() + oferta.tipo_contrato.slice(1) : '';
@@ -3021,6 +3068,22 @@ function irPagina(n) {
   document.getElementById('lista-ofertas').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+function setVistaListado(vista) {
+  estado.vista_listado = vista;
+  estado.pagina = 1;
+  document.getElementById('tab-vigentes')?.classList.toggle('activo', vista === 'vigentes');
+  document.getElementById('tab-cerradas')?.classList.toggle('activo', vista === 'cerradas');
+  document.getElementById('tab-vigentes')?.setAttribute('aria-selected', vista === 'vigentes' ? 'true' : 'false');
+  document.getElementById('tab-cerradas')?.setAttribute('aria-selected', vista === 'cerradas' ? 'true' : 'false');
+  const copy = document.getElementById('estado-listado-copy');
+  if (copy) {
+    copy.textContent = vista === 'vigentes'
+      ? 'Mostrando solo ofertas vigentes. Las ofertas cerradas están disponibles en Convocatorias anteriores.'
+      : 'Mostrando convocatorias cerradas e históricas para consulta. Cambia a Vigentes para postular.';
+  }
+  cargarOfertas();
+}
+
 // ── Carga principal de ofertas ─────────────────────────────────────────────
 async function cargarOfertas() {
   renderEsqueletos();
@@ -3029,7 +3092,7 @@ async function cargarOfertas() {
   if (estado.q)              params.set('q', estado.q);
   if (estado.region)         params.set('region', estado.region);
   if (estado.sector)         params.set('sector', estado.sector);
-  if (estado.cierra_pronto)  params.set('cierra_pronto', 'true');
+  if (estado.cierra_pronto && estado.vista_listado === 'vigentes')  params.set('cierra_pronto', 'true');
   if (estado.nuevas)         params.set('nuevas', 'true');
   if (estado.institucion_id) params.set('institucion', estado.institucion_id);
   if (estado.renta_min)      params.set('renta_min', estado.renta_min);
@@ -3041,7 +3104,8 @@ async function cargarOfertas() {
   }
 
   try {
-    const resp = await fetchApi(`/api/ofertas?${params}`);
+    const endpoint = estado.vista_listado === 'cerradas' ? '/api/historial' : '/api/ofertas';
+    const resp = await fetchApi(`${endpoint}?${params}`);
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
 
@@ -3049,12 +3113,19 @@ async function cargarOfertas() {
     if (_reintentoIntervalo) clearInterval(_reintentoIntervalo);
     _reintentosConsecutivos = 0;
 
-    // Actualizar contador
-    document.getElementById('count-num').textContent = data.total.toLocaleString('es-CL');
-    const sub = document.getElementById('count-sub');
-    if (sub) sub.textContent = data.total === 1 ? '· 1 resultado' : '';
+    const ofertasRaw = data.ofertas || data.historial || [];
+    const ofertasFiltradas = ofertasRaw.filter((oferta) => {
+      const key = getOfertaEstado(oferta).key;
+      return estado.vista_listado === 'cerradas' ? key === 'closed' : key !== 'closed';
+    });
 
-    if (!data.ofertas || data.ofertas.length === 0) {
+    // Actualizar contador
+    const totalContador = estado.vista_listado === 'cerradas' ? ofertasFiltradas.length : (data.total ?? ofertasFiltradas.length);
+    document.getElementById('count-num').textContent = totalContador.toLocaleString('es-CL');
+    const sub = document.getElementById('count-sub');
+    if (sub) sub.textContent = totalContador === 1 ? '· 1 resultado' : '';
+
+    if (!ofertasFiltradas.length) {
       renderVacio();
       return;
     }
@@ -3065,7 +3136,7 @@ async function cargarOfertas() {
 
     // Renderizar items según vista activa (con cabecera ordenable en modo compacto)
     const header = estado.vista === 'compacta' ? renderHeaderCompacta() : '';
-const itemsHtml = data.ofertas.map((oferta, i) => {
+const itemsHtml = ofertasFiltradas.map((oferta, i) => {
   try {
     return renderItem(oferta);
   } catch (err) {
@@ -3076,7 +3147,11 @@ const itemsHtml = data.ofertas.map((oferta, i) => {
 
 lista.innerHTML = header + itemsHtml;
     // Paginación
-    renderPaginacion(data.total, data.paginas);
+    if (estado.vista_listado === 'cerradas') {
+      renderPaginacion(ofertasFiltradas.length, 1);
+    } else {
+      renderPaginacion(data.total, data.paginas);
+    }
 
   } catch (err) {
     console.error('Error cargando ofertas:', err);
@@ -3223,14 +3298,15 @@ function filtrarInstitucion(id, nombre) {
 }
 
 // ── Etiquetas narrativas de plazo para el modal ───────────────────────────
-function plazoDetalle(dias) {
-  if (dias === null || dias === undefined) return { clase: 'plazo-gris',  label: 'Sin fecha de cierre',     icon: '—', sub: 'La institución no informó plazo límite.' };
-  if (dias < 0)                            return { clase: 'plazo-rojo',  label: 'Convocatoria cerrada',    icon: '✕', sub: 'El plazo de postulación ya finalizó.' };
-  if (dias === 0)                          return { clase: 'plazo-rojo',  label: '¡Cierra HOY!',            icon: '!', sub: 'Postula ahora para no quedar fuera.' };
-  if (dias === 1)                          return { clase: 'plazo-rojo',  label: 'Cierra mañana',           icon: '!', sub: 'Queda menos de 24 horas para postular.' };
-  if (dias <= 5)                           return { clase: 'plazo-naran', label: `Cierra pronto · ${dias} días`, icon: '⏰', sub: 'Prepara tus antecedentes, el plazo es corto.' };
-  if (dias <= 14)                          return { clase: 'plazo-verde', label: `Disponible · ${dias} días`,    icon: '✓', sub: 'Aún tienes tiempo para postular con calma.' };
-  return                                          { clase: 'plazo-verde', label: `Disponible · ${dias} días`,    icon: '✓', sub: 'Plazo amplio: planifica tu postulación.' };
+function plazoDetalle(oferta) {
+  const estadoOferta = getOfertaEstado(oferta);
+  const dias = estadoOferta.dias;
+  if (estadoOferta.key === 'closed') return { clase: 'status-closed', label: 'Convocatoria finalizada', icon: '✕', sub: 'El plazo de postulación ya terminó.' };
+  if (estadoOferta.key === 'closing_today') return { clase: 'status-closing-today', label: 'Cierra hoy', icon: '⏰', sub: 'Aún puedes postular durante hoy.' };
+  if (estadoOferta.key === 'upcoming') return { clase: 'status-upcoming', label: 'Próximamente', icon: 'ℹ', sub: 'La convocatoria aún no abre postulaciones.' };
+  if (dias === null || dias === undefined) return { clase: 'status-active', label: 'Disponible', icon: '✓', sub: 'La institución no informó fecha de cierre.' };
+  if (dias <= 5) return { clase: 'status-closing-today', label: `Cierra pronto · ${dias} días`, icon: '⏰', sub: 'Revisa requisitos y postula con anticipación.' };
+  return { clase: 'status-active', label: `Disponible · ${dias} días`, icon: '✓', sub: 'La postulación sigue vigente.' };
 }
 
 // ── Modal de detalle ───────────────────────────────────────────────────────
@@ -3340,7 +3416,7 @@ async function abrirModal(ofertaId) {
   document.getElementById('modal-btn-postular').onclick = null;
   document.getElementById('modal-btn-bases').style.display = 'none';
   const alertBox = document.getElementById('modal-plazo-alert');
-  alertBox.className = 'modal-plazo-alert plazo-gris';
+  alertBox.className = 'modal-plazo-alert status-unknown';
   document.getElementById('modal-plazo-icon').textContent = '•';
   document.getElementById('modal-plazo-label').textContent = '—';
   document.getElementById('modal-plazo-fecha').textContent = '';
@@ -3358,7 +3434,7 @@ async function abrirModal(ofertaId) {
     const ciudad = ciudadValida(o.ciudad, o.institucion);
     const sector = o.sector || '';
     const renta = formatRenta(o.renta_bruta_min, o.renta_bruta_max, o.grado_eus);
-    const detalle = plazoDetalle(o.dias_restantes);
+    const detalle = plazoDetalle(o);
 
     document.getElementById('modal-kicker').textContent =
       [o.institucion, sector].filter(Boolean).join(' · ').toUpperCase();
@@ -3827,6 +3903,12 @@ function limpiarRenta() {
 
 // ── Búsqueda y filtros ─────────────────────────────────────────────────────
 function buscar() {
+  if (estado.vista_listado !== 'vigentes') {
+    estado.vista_listado = 'vigentes';
+    document.getElementById('tab-vigentes')?.classList.add('activo');
+    document.getElementById('tab-cerradas')?.classList.remove('activo');
+    document.getElementById('estado-listado-copy').textContent = 'Mostrando solo ofertas vigentes. Las ofertas cerradas están disponibles en Convocatorias anteriores.';
+  }
   estado.q         = document.getElementById('input-cargo').value.trim();
   estado.region    = document.getElementById('filtro-region').value;
   estado.sector    = document.getElementById('filtro-sector').value;

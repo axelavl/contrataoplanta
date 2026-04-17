@@ -37,13 +37,16 @@ ALLOW_ORIGINS = [
 ]
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
-ESTADO_SQL = (
-    "COALESCE(NULLIF(o.estado, ''), "
+NORMALIZED_STATUS_SQL = (
     "CASE "
-    "WHEN COALESCE(o.activa, TRUE) = FALSE THEN 'cerrado' "
-    "WHEN o.fecha_cierre IS NOT NULL AND o.fecha_cierre < CURRENT_DATE THEN 'vencido' "
-    "ELSE 'activo' END)"
+    "WHEN COALESCE(o.activa, TRUE) = FALSE THEN 'closed' "
+    "WHEN LOWER(COALESCE(o.estado, '')) IN ('cerrada', 'cerrado', 'cerrada_manual', 'vencido', 'finalizada', 'expired', 'closed') THEN 'closed' "
+    "WHEN o.fecha_inicio IS NOT NULL AND o.fecha_inicio > CURRENT_DATE THEN 'upcoming' "
+    "WHEN o.fecha_cierre IS NOT NULL AND o.fecha_cierre < CURRENT_DATE THEN 'closed' "
+    "WHEN o.fecha_cierre = CURRENT_DATE THEN 'closing_today' "
+    "ELSE 'active' END"
 )
+ACTIVE_STATES_SQL = "('active','closing_today')"
 
 
 class AlertaPayload(BaseModel):
@@ -153,6 +156,7 @@ def ensure_api_schema() -> None:
         "ALTER TABLE ofertas ADD COLUMN IF NOT EXISTS jornada VARCHAR(100)",
         "ALTER TABLE ofertas ADD COLUMN IF NOT EXISTS area_profesional VARCHAR(200)",
         "ALTER TABLE ofertas ADD COLUMN IF NOT EXISTS fecha_publicacion DATE",
+        "ALTER TABLE ofertas ADD COLUMN IF NOT EXISTS fecha_inicio DATE",
         "ALTER TABLE ofertas ADD COLUMN IF NOT EXISTS fecha_cierre DATE",
         "ALTER TABLE ofertas ADD COLUMN IF NOT EXISTS url_oferta TEXT",
         "ALTER TABLE ofertas ADD COLUMN IF NOT EXISTS url_bases TEXT",
@@ -219,7 +223,7 @@ def ofertas_select_sql() -> str:
         o.fecha_inicio,
         COALESCE(o.url_oferta, o.url_original) AS url_oferta,
         COALESCE(o.url_bases, o.url_original, o.url_oferta) AS url_bases,
-        {ESTADO_SQL} AS estado,
+        {NORMALIZED_STATUS_SQL} AS estado,
         COALESCE(o.fecha_scraped, o.detectada_en, o.actualizada_en, o.creada_en) AS fecha_scraped,
         COALESCE(o.fecha_actualizado, o.actualizada_en, o.creada_en) AS fecha_actualizado,
         i.plataforma_empleo AS plataforma
@@ -241,9 +245,9 @@ def build_ofertas_filters(
     params: list[Any] = []
 
     if solo_activas:
-        where.append(f"{ESTADO_SQL} = 'activo'")
+        where.append(f"{NORMALIZED_STATUS_SQL} IN {ACTIVE_STATES_SQL}")
     if closed_only:
-        where.append(f"{ESTADO_SQL} IN ('cerrado', 'vencido')")
+        where.append(f"{NORMALIZED_STATUS_SQL} = 'closed'")
 
     if q:
         where.append(
@@ -408,16 +412,16 @@ def get_estadisticas() -> dict[str, Any]:
     conteos = execute_fetch_one(
         f"""
         SELECT
-            COUNT(*) FILTER (WHERE {ESTADO_SQL.replace('o.', '')} = 'activo') AS activas_hoy,
+            COUNT(*) FILTER (WHERE {NORMALIZED_STATUS_SQL.replace('o.', '')} IN {ACTIVE_STATES_SQL}) AS activas_hoy,
             COUNT(*) FILTER (
                 WHERE COALESCE(fecha_scraped, detectada_en, actualizada_en, creada_en) >= NOW() - INTERVAL '48 hours'
-                  AND {ESTADO_SQL.replace('o.', '')} = 'activo'
+                  AND {NORMALIZED_STATUS_SQL.replace('o.', '')} IN {ACTIVE_STATES_SQL}
             ) AS nuevas_48h,
             COUNT(*) FILTER (
                 WHERE fecha_cierre = CURRENT_DATE
-                  AND {ESTADO_SQL.replace('o.', '')} = 'activo'
+                  AND {NORMALIZED_STATUS_SQL.replace('o.', '')} IN {ACTIVE_STATES_SQL}
             ) AS cierran_hoy,
-            COUNT(DISTINCT institucion_id) FILTER (WHERE {ESTADO_SQL.replace('o.', '')} = 'activo') AS instituciones_activas
+            COUNT(DISTINCT institucion_id) FILTER (WHERE {NORMALIZED_STATUS_SQL.replace('o.', '')} IN {ACTIVE_STATES_SQL}) AS instituciones_activas
         FROM ofertas o
         """
     ) or {}
@@ -428,7 +432,7 @@ def get_estadisticas() -> dict[str, Any]:
             COALESCE(i.sector, o.sector, i.tipo, 'Sin sector') AS sector,
             COUNT(*) AS total
         {ofertas_base_sql()}
-        WHERE {ESTADO_SQL} = 'activo'
+        WHERE {NORMALIZED_STATUS_SQL} IN {ACTIVE_STATES_SQL}
         GROUP BY 1
         ORDER BY total DESC, sector ASC
         LIMIT 8
@@ -457,7 +461,7 @@ def get_estadisticas() -> dict[str, Any]:
                 WHERE COALESCE(o.fecha_scraped, o.detectada_en, o.actualizada_en, o.creada_en) >= NOW() - INTERVAL '7 days'
             ) AS nuevas_semana
         {ofertas_base_sql()}
-        WHERE {ESTADO_SQL} = 'activo'
+        WHERE {NORMALIZED_STATUS_SQL} IN {ACTIVE_STATES_SQL}
         GROUP BY i.id, i.nombre
         ORDER BY activas DESC, nuevas_semana DESC, nombre ASC
         LIMIT 5
@@ -508,7 +512,7 @@ def get_instituciones(
         i.region,
         i.url_empleo,
         i.plataforma_empleo,
-        COUNT(o.id) FILTER (WHERE {ESTADO_SQL} = 'activo') AS activas
+        COUNT(o.id) FILTER (WHERE {NORMALIZED_STATUS_SQL} IN {ACTIVE_STATES_SQL}) AS activas
     FROM instituciones i
     LEFT JOIN ofertas o ON o.institucion_id = i.id
     WHERE {where_sql}
