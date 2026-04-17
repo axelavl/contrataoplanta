@@ -427,25 +427,10 @@ def intake_validate_offer(
         return decision.reject("cargo_es_noticia_o_resultado")
 
     if is_garbage_text(blob):
-        # Sólo descartamos si el blob pesado es basura Y el cargo no tiene
-        # señales fuertes de ser un cargo real (palabras como 'profesional',
-        # 'analista', 'jefe', 'director' suelen denotar oferta legítima).
-        cargo_norm = _norm(cargo)
-        senales_cargo_real = any(
-            token in cargo_norm
-            for token in (
-                "analista", "profesional", "jefe", "jefa", "director",
-                "directora", "encargad", "coordinad", "asistente",
-                "tecnico", "ingenier", "abogad", "medic", "enfermer",
-                "kinesi", "psicolog", "contador", "auditor", "operad",
-                "inspector", "fiscal", "secretari", "administrativ",
-                "matron", "odontolog", "trabajador social", "asesor",
-                "supervisor", "gestor", "monitor", "auxiliar", "chofer",
-                "conductor", "guardia", "vigilante",
-            )
-        )
-        if not senales_cargo_real:
-            return decision.reject("texto_es_noticia_o_resultado")
+        # El blob completo puede contener "noticias", "resultados", etc. por
+        # contexto institucional, pero aún así corresponder a un cargo válido
+        # (ej: "Periodista"). Para evitar falsos negativos, no descartamos en
+        # este punto y exigimos revisión manual.
         decision.add_review("texto_contiene_indicadores_no_laborales")
 
     # 5. Vigencia / antigüedad
