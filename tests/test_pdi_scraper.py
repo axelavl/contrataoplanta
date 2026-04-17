@@ -23,6 +23,7 @@ from scrapers.plataformas.pdi import (
     _slug_from_url,
     _slug_to_title,
     _slugs_relacionados,
+    _stable_offer_url,
 )
 from scrapers.plataformas.carabineros import split_pdf_sections
 
@@ -183,6 +184,30 @@ class SlugHelpersTests(unittest.TestCase):
             )
         )
 
+    def test_slugs_no_relacionados_solo_por_anio(self):
+        self.assertFalse(
+            _slugs_relacionados(
+                "perfil-analista-2026",
+                "bases-abogado-2026",
+            )
+        )
+
+    def test_slugs_relacionados_por_mes_y_anio(self):
+        self.assertTrue(
+            _slugs_relacionados(
+                "perfil-analista-marzo-2026",
+                "bases-analista-marzo-2026",
+            )
+        )
+
+    def test_stable_offer_url_quita_query_y_fragment(self):
+        self.assertEqual(
+            _stable_offer_url(
+                "https://www.pdichile.cl/docs/default-source/cargo/perfil.pdf?sfvrsn=58e4#top"
+            ),
+            "https://www.pdichile.cl/docs/default-source/cargo/perfil.pdf",
+        )
+
 
 class PortadaParsingTests(unittest.TestCase):
     def test_parse_portada_detecta_concursos_y_emparejamiento(self):
@@ -224,10 +249,13 @@ class PortadaParsingTests(unittest.TestCase):
         )
         # Emparejar bases huérfanas (mismo algoritmo que en _enumerar_portada).
         for slug_bases, url_bases in bases.items():
-            for perfil in perfiles.values():
-                if not perfil.url_bases and _slugs_relacionados(perfil.slug, slug_bases):
-                    perfil.url_bases = url_bases
-                    break
+            candidatos = [
+                perfil
+                for perfil in perfiles.values()
+                if not perfil.url_bases and _slugs_relacionados(perfil.slug, slug_bases)
+            ]
+            if len(candidatos) == 1:
+                candidatos[0].url_bases = url_bases
 
         medico = next(p for p in perfiles.values() if "medico" in p.slug)
         ingeniero = next(p for p in perfiles.values() if "ingeniero" in p.slug)
