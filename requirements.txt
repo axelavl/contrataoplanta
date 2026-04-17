@@ -35,3 +35,6 @@ apscheduler==3.10.4
 
 # ── Observabilidad ──────────────────────────────────────────
 rich==13.7.1
+
+# ── Generación de imágenes OG/Twitter por oferta ────────────
+Pillow==10.4.0

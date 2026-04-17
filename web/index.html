@@ -7,6 +7,11 @@
 <title>contrataoplanta.cl — La plataforma laboral del sector público chileno</title>
 <meta name="description" content="Encuentra empleos públicos en Chile, filtra por institución y revisa oportunidades del sector público en un solo buscador.">
 <link rel="canonical" href="https://contrataoplanta.cl/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="alternate icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#0A2E6E">
 <meta property="og:title" content="contrata o planta .cl — Empleo público en Chile">
 <meta property="og:description" content="Buscador laboral del sector público chileno con vacantes, filtros y acceso directo a concursos vigentes.">
 <meta property="og:url" content="https://contrataoplanta.cl/">
@@ -468,6 +473,34 @@ nav {
 .btn-copiar-busqueda.btn-copiar-ok {
   border-color: #86EFAC; color: #166534; background: var(--verde-l);
 }
+.btn-compartir-busqueda { color: var(--azul); }
+
+.popover-share {
+  position: relative;
+  margin: 8px 0 12px;
+  padding: 10px 14px;
+  background: white;
+  border: 1px solid var(--borde);
+  border-radius: var(--r);
+  box-shadow: var(--sombra);
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.popover-share[hidden] { display: none; }
+.popover-share-titulo {
+  font-size: 13px; font-weight: 600; color: var(--azul);
+}
+.popover-share-acciones {
+  display: flex; gap: 8px; align-items: center;
+}
+.popover-share-cerrar {
+  position: absolute; top: 6px; right: 6px;
+  width: 24px; height: 24px; border-radius: 50%;
+  border: none; background: transparent;
+  color: var(--texto3); font-size: 18px; line-height: 1;
+  cursor: pointer;
+}
+.popover-share-cerrar:hover { background: var(--bg2); color: var(--texto); }
+
 .vista-btns {
   display: flex; gap: 2px;
   background: var(--bg2); border-radius: 8px; padding: 3px;
@@ -1220,6 +1253,151 @@ footer {
 .btn-modal-sec--activo:hover { background: #FEE2E2; color: #DC2626; border-color: #F87171; }
 .btn-modal-sec:is(a) { text-decoration: none; display: inline-flex; align-items: center; }
 
+/* Barra de compartir en modal (RRSS + copiar enlace) */
+.modal-share {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  padding: 10px 20px 16px;
+  border-top: 1px solid var(--bg2);
+  background: var(--blanco);
+}
+.modal-share-label {
+  font-size: .8rem; color: var(--texto2);
+  margin-right: 4px; font-weight: 500;
+}
+.share-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: 50%;
+  border: 1.5px solid var(--borde); background: white;
+  color: var(--texto); cursor: pointer; text-decoration: none;
+  padding: 0; flex-shrink: 0;
+  transition: transform .12s ease, background .15s, color .15s, border-color .15s;
+}
+.share-btn svg { width: 18px; height: 18px; }
+.share-btn:hover { transform: translateY(-1px); }
+.share-btn:focus-visible { outline: 2px solid var(--cielo); outline-offset: 2px; }
+.share-btn--native:hover { background: var(--azul); color: white; border-color: var(--azul); }
+.share-btn--wa:hover     { background: #25D366; color: white; border-color: #25D366; }
+.share-btn--li:hover     { background: #0A66C2; color: white; border-color: #0A66C2; }
+.share-btn--fb:hover     { background: #1877F2; color: white; border-color: #1877F2; }
+.share-btn--x:hover      { background: #000;    color: white; border-color: #000;    }
+.share-btn--mail:hover   { background: var(--azul); color: white; border-color: var(--azul); }
+.share-btn--copy:hover   { background: var(--acento); color: var(--azul); border-color: var(--acento); }
+.share-btn--copy.is-copied {
+  background: var(--verde); color: white; border-color: var(--verde);
+}
+.share-btn--ig:hover {
+  background: linear-gradient(45deg, #F58529 0%, #DD2A7B 50%, #8134AF 100%);
+  color: white; border-color: transparent;
+}
+.share-btn--qr:hover { background: var(--azul); color: white; border-color: var(--azul); }
+/* El QR solo tiene sentido en escritorio: ocultarlo en móvil */
+@media (max-width: 600px) {
+  .share-btn--qr { display: none; }
+}
+
+/* Popover QR */
+.qr-popover {
+  position: fixed; inset: 0;
+  background: rgba(10, 46, 110, .55);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 10000; padding: 20px;
+}
+.qr-popover[hidden] { display: none; }
+.qr-popover-caja {
+  background: white; border-radius: var(--r-l);
+  padding: 24px 24px 20px; max-width: 320px; width: 100%;
+  box-shadow: var(--sombra-m); position: relative;
+  text-align: center;
+}
+.qr-popover-cerrar {
+  position: absolute; top: 8px; right: 8px;
+  width: 32px; height: 32px; border-radius: 50%;
+  border: none; background: transparent;
+  font-size: 22px; line-height: 1; color: var(--texto2);
+  cursor: pointer;
+}
+.qr-popover-cerrar:hover { background: var(--bg2); color: var(--texto); }
+.qr-popover-titulo {
+  font-weight: 600; font-size: 15px;
+  color: var(--azul); margin-bottom: 14px;
+}
+.qr-popover-canvas {
+  display: flex; justify-content: center; align-items: center;
+  min-height: 220px; margin-bottom: 12px;
+}
+.qr-popover-canvas canvas, .qr-popover-canvas img, .qr-popover-canvas svg {
+  width: 220px; height: 220px; display: block;
+}
+.qr-popover-url {
+  font-size: 11px; color: var(--texto2);
+  word-break: break-all; margin-bottom: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.qr-popover-hint { font-size: 12px; color: var(--texto3); }
+
+/* Modal Instagram */
+.ig-modal {
+  position: fixed; inset: 0;
+  background: rgba(10, 46, 110, .55);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 10000; padding: 20px;
+}
+.ig-modal[hidden] { display: none; }
+.ig-modal-caja {
+  background: white; border-radius: var(--r-l);
+  padding: 24px 24px 20px; max-width: 420px; width: 100%;
+  box-shadow: var(--sombra-m); position: relative;
+}
+.ig-modal-cerrar {
+  position: absolute; top: 8px; right: 8px;
+  width: 32px; height: 32px; border-radius: 50%;
+  border: none; background: transparent;
+  font-size: 22px; line-height: 1; color: var(--texto2);
+  cursor: pointer;
+}
+.ig-modal-cerrar:hover { background: var(--bg2); color: var(--texto); }
+.ig-modal-titulo {
+  font-weight: 700; font-size: 18px; color: var(--azul);
+  margin-bottom: 10px; padding-right: 24px;
+}
+.ig-modal-texto { font-size: 14px; color: var(--texto2); margin-bottom: 12px; }
+.ig-modal-lista {
+  font-size: 13px; color: var(--texto); line-height: 1.55;
+  padding-left: 20px; margin-bottom: 16px;
+}
+.ig-modal-lista li { margin-bottom: 6px; }
+.ig-modal-acciones {
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.ig-btn {
+  flex: 1; min-width: 140px; height: 40px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--r); font-size: 13px; font-weight: 600;
+  cursor: pointer; text-decoration: none;
+  border: 1.5px solid var(--borde);
+  transition: all .15s;
+}
+.ig-btn--primary {
+  background: linear-gradient(45deg, #F58529 0%, #DD2A7B 50%, #8134AF 100%);
+  color: white; border-color: transparent;
+}
+.ig-btn--primary:hover { opacity: .9; }
+.ig-btn--sec { background: white; color: var(--texto); }
+.ig-btn--sec:hover { border-color: var(--cielo); color: var(--cielo); }
+.ig-btn--sec.is-copied { background: var(--verde); color: white; border-color: var(--verde); }
+@media (max-width: 600px) {
+  .modal-share {
+    gap: 10px; padding: 10px 16px 14px;
+    overflow-x: auto; flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .modal-share::-webkit-scrollbar { display: none; }
+  .share-btn { width: 44px; height: 44px; }
+  .share-btn svg { width: 20px; height: 20px; }
+  .modal-share-label { display: none; }
+}
+
 /* Alerta de plazo en modal */
 .modal-plazo-alert {
   display: flex; align-items: center; gap: 12px;
@@ -1582,6 +1760,7 @@ footer {
       <div class="resultados-controles">
         <!-- Copiar búsqueda -->
         <button class="btn-copiar-busqueda" id="btn-copiar-busqueda" type="button" onclick="copiarUrlBusqueda()" title="Copiar enlace de esta búsqueda con filtros">🔗 Copiar búsqueda</button>
+        <button class="btn-copiar-busqueda btn-compartir-busqueda" id="btn-compartir-busqueda" type="button" onclick="abrirCompartirBusqueda(this)" title="Compartir esta búsqueda en RRSS" hidden>↗ Compartir</button>
         <div class="ctrl-sep"></div>
         <!-- Orden -->
         <select class="ctrl-select" id="ctrl-orden" onchange="setOrdenSelect(this)" title="Ordenar por">
@@ -1623,6 +1802,19 @@ footer {
           </button>
         </div>
       </div>
+    </div>
+
+    <!-- Popover: Compartir búsqueda en RRSS -->
+    <div id="popover-compartir-busqueda" class="popover-share" hidden role="dialog" aria-label="Compartir esta búsqueda">
+      <div class="popover-share-titulo">Compartir esta búsqueda</div>
+      <div class="popover-share-acciones">
+        <a class="share-btn share-btn--wa"   id="psb-wa"   target="_blank" rel="noopener" title="WhatsApp"  aria-label="Compartir búsqueda en WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.002-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></a>
+        <a class="share-btn share-btn--li"   id="psb-li"   target="_blank" rel="noopener" title="LinkedIn"  aria-label="Compartir búsqueda en LinkedIn"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.063 2.063 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></a>
+        <a class="share-btn share-btn--fb"   id="psb-fb"   target="_blank" rel="noopener" title="Facebook"  aria-label="Compartir búsqueda en Facebook"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></a>
+        <a class="share-btn share-btn--x"    id="psb-x"    target="_blank" rel="noopener" title="X"         aria-label="Compartir búsqueda en X"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+        <a class="share-btn share-btn--mail" id="psb-mail" title="Email" aria-label="Compartir búsqueda por email"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></a>
+      </div>
+      <button class="popover-share-cerrar" type="button" onclick="cerrarCompartirBusqueda()" aria-label="Cerrar">×</button>
     </div>
 
     <div class="ofertas-lista" id="lista-ofertas">
@@ -1924,7 +2116,67 @@ footer {
       <a class="btn-modal-sec" id="modal-btn-bases" target="_blank" rel="noopener noreferrer" style="display:none">📄 Ver bases</a>
       <button class="btn-modal-sec" id="modal-btn-favorito">♡ Guardar</button>
       <button class="btn-modal-sec" id="modal-btn-alerta">🔔 Alertarme</button>
-      <button class="btn-modal-sec" id="modal-btn-compartir">↗ Compartir</button>
+    </div>
+    <div class="modal-share" role="group" aria-label="Compartir esta oferta">
+      <span class="modal-share-label">Compartir:</span>
+      <button class="share-btn share-btn--native" id="share-native" type="button" title="Compartir…" aria-label="Compartir con el sistema" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      </button>
+      <a class="share-btn share-btn--wa" id="share-wa" target="_blank" rel="noopener" title="WhatsApp" aria-label="Compartir en WhatsApp">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.002-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+      </a>
+      <a class="share-btn share-btn--li" id="share-li" target="_blank" rel="noopener" title="LinkedIn" aria-label="Compartir en LinkedIn">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.063 2.063 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+      </a>
+      <a class="share-btn share-btn--fb" id="share-fb" target="_blank" rel="noopener" title="Facebook" aria-label="Compartir en Facebook">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+      </a>
+      <a class="share-btn share-btn--x" id="share-x" target="_blank" rel="noopener" title="X (Twitter)" aria-label="Compartir en X">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      </a>
+      <a class="share-btn share-btn--mail" id="share-mail" title="Email" aria-label="Compartir por email">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      </a>
+      <button class="share-btn share-btn--ig" id="share-ig" type="button" title="Instagram" aria-label="Compartir en Instagram">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+      </button>
+      <button class="share-btn share-btn--qr" id="share-qr" type="button" title="QR para escanear" aria-label="Mostrar código QR">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><line x1="14" y1="14" x2="14" y2="17"/><line x1="14" y1="20" x2="14" y2="21"/><line x1="17" y1="14" x2="21" y2="14"/><line x1="20" y1="17" x2="20" y2="21"/><line x1="17" y1="17" x2="17" y2="20"/></svg>
+      </button>
+      <button class="share-btn share-btn--copy" id="share-copy" type="button" title="Copiar enlace" aria-label="Copiar enlace">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ POPOVER QR ══════════════════════════════════════════════════ -->
+<div id="qr-popover" class="qr-popover" role="dialog" aria-modal="true" aria-labelledby="qr-titulo" hidden>
+  <div class="qr-popover-caja">
+    <button class="qr-popover-cerrar" type="button" aria-label="Cerrar" onclick="cerrarQR()">×</button>
+    <div class="qr-popover-titulo" id="qr-titulo">Escanea para abrir en tu móvil</div>
+    <div class="qr-popover-canvas" id="qr-canvas" aria-live="polite"></div>
+    <div class="qr-popover-url" id="qr-url"></div>
+    <div class="qr-popover-hint">Apunta la cámara de tu teléfono al código.</div>
+  </div>
+</div>
+
+<!-- ══ MODAL INSTAGRAM ════════════════════════════════════════════ -->
+<div id="ig-modal" class="ig-modal" role="dialog" aria-modal="true" aria-labelledby="ig-titulo" hidden>
+  <div class="ig-modal-caja">
+    <button class="ig-modal-cerrar" type="button" aria-label="Cerrar" onclick="cerrarIG()">×</button>
+    <div class="ig-modal-titulo" id="ig-titulo">Compartir en Instagram</div>
+    <p class="ig-modal-texto">
+      Instagram no permite compartir enlaces desde la web. Tienes tres opciones:
+    </p>
+    <ol class="ig-modal-lista">
+      <li><strong>Descarga la imagen</strong> de la oferta y súbela a tu historia o publicación.</li>
+      <li><strong>Copia el enlace</strong> y pégalo en tu biografía o como sticker en una historia.</li>
+      <li><strong>Abre Instagram en tu móvil</strong> y usa el botón de compartir nativo desde esta página.</li>
+    </ol>
+    <div class="ig-modal-acciones">
+      <a class="ig-btn ig-btn--primary" id="ig-descargar" download>⬇ Descargar imagen</a>
+      <button class="ig-btn ig-btn--sec" id="ig-copiar" type="button">📋 Copiar enlace</button>
     </div>
   </div>
 </div>
@@ -3157,8 +3409,8 @@ async function abrirModal(ofertaId) {
       setTimeout(() => document.getElementById('alerta-email')?.focus(), 500);
     };
 
-    // Botón compartir
-    document.getElementById('modal-btn-compartir').onclick = () => compartirOferta(o);
+    // Barra de compartir (RRSS + copiar enlace)
+    configurarCompartir(o);
 
   } catch (err) {
     console.error('Error cargando detalle:', err);
@@ -3180,21 +3432,169 @@ function cerrarModal(e, force) {
   }
 }
 
-function compartirOferta(oferta) {
-  const url  = oferta.url_oferta || window.location.href;
+// Construye el deep-link a esta oferta dentro de contrataoplanta.cl.
+// Ventaja vs compartir oferta.url_oferta directo: el receptor ve nuestra
+// previsualización (OG image dinámica) y aterriza en el modal preseleccionado,
+// con un solo click para postular.
+function urlDeepLinkOferta(oferta) {
+  const url = new URL(window.location.href);
+  url.search = '';
+  url.hash = '';
+  url.pathname = '/';
+  url.searchParams.set('oferta', String(oferta.id));
+  return url.toString();
+}
+
+function configurarCompartir(oferta) {
+  const url = urlDeepLinkOferta(oferta);
+  const urlExterna = oferta.url_oferta || url;
   const titulo = oferta.cargo || 'Oferta laboral';
-  const texto  = `${titulo} — ${oferta.institucion || 'Institución pública'}`;
+  const texto = `${titulo} — ${oferta.institucion || 'Institución pública'}`;
+  const enc = encodeURIComponent;
+
+  const track = (red) => {
+    try { window.umami?.track?.('share', { red, id: oferta.id }); } catch { /* noop */ }
+  };
+
+  const btnNative = document.getElementById('share-native');
   if (navigator.share) {
-    navigator.share({ title: titulo, text: texto, url }).catch(() => {});
+    btnNative.hidden = false;
+    btnNative.onclick = () => {
+      track('nativo');
+      navigator.share({ title: titulo, text: texto, url }).catch(() => {});
+    };
   } else {
-    navigator.clipboard.writeText(url).then(() => {
-      const btn = document.getElementById('modal-btn-compartir');
-      const orig = btn.textContent;
-      btn.textContent = '✓ Enlace copiado';
-      setTimeout(() => btn.textContent = orig, 2000);
-    }).catch(() => prompt('Copia este enlace:', url));
+    btnNative.hidden = true;
+  }
+
+  const setHref = (id, href, red) => {
+    const el = document.getElementById(id);
+    el.href = href;
+    el.onclick = () => track(red);
+  };
+  setHref('share-wa',   `https://wa.me/?text=${enc(texto + ' ' + url)}`,                        'whatsapp');
+  setHref('share-li',   `https://www.linkedin.com/sharing/share-offsite/?url=${enc(url)}`,     'linkedin');
+  setHref('share-fb',   `https://www.facebook.com/sharer/sharer.php?u=${enc(url)}`,            'facebook');
+  setHref('share-x',    `https://twitter.com/intent/tweet?text=${enc(texto)}&url=${enc(url)}`, 'x');
+  setHref('share-mail', `mailto:?subject=${enc(titulo)}&body=${enc(texto + '\n\n' + url)}`,    'email');
+
+  // Instagram: en móvil intentamos Web Share (suele incluir IG si está
+  // instalado); si no, abrimos un modal explicativo con descarga de imagen.
+  const btnIG = document.getElementById('share-ig');
+  btnIG.onclick = () => {
+    track('instagram');
+    const apiBase = (typeof API_BASE_ACTIVA === 'string') ? API_BASE_ACTIVA : '';
+    const ogUrl = `${apiBase}/api/og/${oferta.id}.png`;
+    if (navigator.share) {
+      navigator.share({ title: titulo, text: texto + '\nVer ofertas similares en contrataoplanta.cl', url })
+        .catch(() => abrirIG(oferta, url, ogUrl));
+    } else {
+      abrirIG(oferta, url, ogUrl);
+    }
+  };
+
+  // QR: solo escritorio (oculto por CSS en móvil). Lazy-load del lib y render.
+  const btnQR = document.getElementById('share-qr');
+  btnQR.onclick = () => {
+    track('qr');
+    abrirQR(url);
+  };
+
+  const btnCopy = document.getElementById('share-copy');
+  btnCopy.onclick = async () => {
+    track('copiar');
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      prompt('Copia este enlace:', url);
+      return;
+    }
+    btnCopy.classList.add('is-copied');
+    btnCopy.setAttribute('aria-label', 'Enlace copiado');
+    btnCopy.setAttribute('title', '¡Copiado!');
+    setTimeout(() => {
+      btnCopy.classList.remove('is-copied');
+      btnCopy.setAttribute('aria-label', 'Copiar enlace');
+      btnCopy.setAttribute('title', 'Copiar enlace');
+    }, 1800);
+  };
+}
+
+// ── QR popover (lazy-loaded library) ──
+let _qrLibPromise = null;
+function _cargarQRLib() {
+  if (_qrLibPromise) return _qrLibPromise;
+  _qrLibPromise = new Promise((resolve, reject) => {
+    if (window.qrcode) return resolve(window.qrcode);
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js';
+    s.async = true;
+    s.onload = () => window.qrcode ? resolve(window.qrcode) : reject(new Error('qrcode lib no disponible'));
+    s.onerror = () => reject(new Error('No se pudo cargar la librería QR'));
+    document.head.appendChild(s);
+  });
+  return _qrLibPromise;
+}
+
+async function abrirQR(url) {
+  const pop = document.getElementById('qr-popover');
+  const canvas = document.getElementById('qr-canvas');
+  const urlEl = document.getElementById('qr-url');
+  canvas.innerHTML = '<span style="color:var(--texto3);font-size:13px">Generando…</span>';
+  urlEl.textContent = url;
+  pop.hidden = false;
+  document.body.style.overflow = 'hidden';
+  try {
+    const qrcode = await _cargarQRLib();
+    const qr = qrcode(0, 'M');
+    qr.addData(url);
+    qr.make();
+    canvas.innerHTML = qr.createSvgTag({ scalable: true, margin: 0 });
+  } catch (e) {
+    canvas.innerHTML = `<span style="color:var(--rojo);font-size:13px">${e.message || 'Error generando QR'}</span>`;
   }
 }
+
+function cerrarQR() {
+  document.getElementById('qr-popover').hidden = true;
+  document.body.style.overflow = '';
+}
+
+// ── Modal Instagram (explicación + descarga de imagen) ──
+function abrirIG(oferta, url, ogUrl) {
+  const modal = document.getElementById('ig-modal');
+  const dl = document.getElementById('ig-descargar');
+  const cp = document.getElementById('ig-copiar');
+  dl.href = ogUrl;
+  dl.setAttribute('download', `oferta-${oferta.id}.png`);
+  cp.classList.remove('is-copied');
+  cp.textContent = '📋 Copiar enlace';
+  cp.onclick = async () => {
+    try { await navigator.clipboard.writeText(url); }
+    catch { prompt('Copia este enlace:', url); return; }
+    cp.classList.add('is-copied');
+    cp.textContent = '✓ Copiado';
+  };
+  modal.hidden = false;
+  document.body.style.overflow = 'hidden';
+}
+
+function cerrarIG() {
+  document.getElementById('ig-modal').hidden = true;
+  document.body.style.overflow = '';
+}
+
+// Cierre por click fuera y por tecla Escape para QR e IG
+document.addEventListener('click', (e) => {
+  if (e.target.id === 'qr-popover') cerrarQR();
+  if (e.target.id === 'ig-modal') cerrarIG();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (!document.getElementById('qr-popover')?.hidden) cerrarQR();
+    if (!document.getElementById('ig-modal')?.hidden) cerrarIG();
+  }
+});
 
 function toggleFavorito(oferta) {
   const KEY = 'fav_contrataoplanta';
@@ -3667,6 +4067,68 @@ function sincronizarURL() {
   } catch { /* ignorar */ }
 }
 
+// ¿Hay filtros activos que valgan la pena compartir?
+function hayFiltrosActivos() {
+  return Boolean(
+    estado.q || estado.region || estado.sector || estado.ciudad ||
+    estado.renta_min || estado.institucion_id ||
+    (Array.isArray(estado.tipos) && estado.tipos.length > 0)
+  );
+}
+
+// Muestra/oculta el botón "Compartir búsqueda" según el estado de filtros.
+function actualizarVisibilidadCompartirBusqueda() {
+  const btn = document.getElementById('btn-compartir-busqueda');
+  if (!btn) return;
+  const visible = hayFiltrosActivos();
+  btn.hidden = !visible;
+  if (!visible) cerrarCompartirBusqueda();
+}
+
+function _resumenFiltros() {
+  const partes = [];
+  if (estado.q) partes.push(`"${estado.q}"`);
+  if (estado.region) partes.push(estado.region);
+  if (estado.sector) partes.push(estado.sector);
+  if (estado.ciudad) partes.push(estado.ciudad);
+  if (Array.isArray(estado.tipos) && estado.tipos.length) partes.push(estado.tipos.join('/'));
+  return partes.length
+    ? `Empleos públicos: ${partes.join(' · ')}`
+    : 'Empleos públicos en Chile';
+}
+
+function abrirCompartirBusqueda(btnRef) {
+  const pop = document.getElementById('popover-compartir-busqueda');
+  if (!pop) return;
+  const url = construirUrlBusqueda();
+  const titulo = _resumenFiltros();
+  const enc = encodeURIComponent;
+  const track = (red) => {
+    try { window.umami?.track?.('share-busqueda', { red }); } catch { /* noop */ }
+  };
+  const setHref = (id, href, red) => {
+    const el = document.getElementById(id);
+    el.href = href;
+    el.onclick = () => track(red);
+  };
+  setHref('psb-wa',   `https://wa.me/?text=${enc(titulo + ' ' + url)}`,                          'whatsapp');
+  setHref('psb-li',   `https://www.linkedin.com/sharing/share-offsite/?url=${enc(url)}`,        'linkedin');
+  setHref('psb-fb',   `https://www.facebook.com/sharer/sharer.php?u=${enc(url)}`,               'facebook');
+  setHref('psb-x',    `https://twitter.com/intent/tweet?text=${enc(titulo)}&url=${enc(url)}`,   'x');
+  setHref('psb-mail', `mailto:?subject=${enc(titulo)}&body=${enc(titulo + '\n\n' + url)}`,      'email');
+  pop.hidden = false;
+  // Si hay Web Share nativo en móvil, ofrecerlo de forma directa también.
+  if (navigator.share && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
+    track('nativo');
+    navigator.share({ title: titulo, text: titulo, url }).catch(() => {});
+  }
+}
+
+function cerrarCompartirBusqueda() {
+  const pop = document.getElementById('popover-compartir-busqueda');
+  if (pop) pop.hidden = true;
+}
+
 async function copiarUrlBusqueda() {
   const btn = document.getElementById('btn-copiar-busqueda');
   if (!btn) return;
@@ -3730,6 +4192,7 @@ if (_cargarOfertasOriginal) {
   window.cargarOfertas = async function(...args) {
     const result = await _cargarOfertasOriginal.apply(this, args);
     sincronizarURL();
+    actualizarVisibilidadCompartirBusqueda();
     return result;
   };
 }
@@ -3800,6 +4263,17 @@ document.addEventListener('filtros:cambio', actualizarAriaPressed);
 
 // ── 8. Restaurar filtros antes de la primera carga ──
 restaurarFiltrosDesdeURL();
+
+// ── 8.b Deep-link a oferta concreta: ?oferta=ID abre el modal al cargar ──
+(function abrirOfertaDesdeURL() {
+  try {
+    const id = parseInt(new URLSearchParams(window.location.search).get('oferta') || '', 10);
+    if (!isNaN(id) && id > 0) {
+      // Esperar al primer pintado para no pelear con la animación de carga.
+      window.addEventListener('load', () => setTimeout(() => abrirModal(id), 200));
+    }
+  } catch { /* ignorar */ }
+})();
 
 // ═══ REGIONES DINÁMICAS (API DPA del Estado) ════════════════════════════════
 async function cargarRegiones() {

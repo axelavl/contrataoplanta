@@ -23,7 +23,7 @@ except ImportError:
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 
 # Para poder importar scrapers.source_status desde la API, agregamos la raíz del
@@ -532,6 +532,37 @@ def get_oferta(oferta_id: int) -> dict[str, Any]:
     if not row:
         raise HTTPException(status_code=404, detail="Oferta no encontrada")
     return serialize_offer(row)
+
+
+@app.get("/api/og/{oferta_id}.png")
+def og_image_oferta(oferta_id: int) -> Response:
+    """Imagen OG/Twitter dinámica (1200x630 PNG) para una oferta concreta.
+
+    Sirve también como activo descargable para que el usuario pueda
+    subirlo a Instagram (Stories o feed) ya que esa red no acepta links.
+    """
+    sql = f"""
+    WITH base AS (
+        {ofertas_select_sql()}
+        {ofertas_base_sql()}
+        WHERE o.id = %s
+    )
+    SELECT * FROM base
+    """
+    row = execute_fetch_one(sql, [oferta_id])
+    if not row:
+        raise HTTPException(status_code=404, detail="Oferta no encontrada")
+    oferta = serialize_offer(row)
+    try:
+        from api.services.og_image import render_offer_card
+        png = render_offer_card(oferta)
+    except ImportError as exc:  # Pillow no instalado
+        raise HTTPException(status_code=503, detail=f"Generador OG no disponible: {exc}") from exc
+    return Response(
+        content=png,
+        media_type="image/png",
+        headers={"Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"},
+    )
 
 
 @app.get("/api/estadisticas")
