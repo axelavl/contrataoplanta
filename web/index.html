@@ -110,7 +110,6 @@
             <option>Empresa del Estado</option>
           </select>
         </div>
-        <button class="btn-buscar" onclick="buscar()">Buscar</button>
       </div>
       <!-- Segunda fila de filtros: institución + ciudad + renta mínima -->
       <div class="buscador-fila2">
@@ -140,20 +139,10 @@
             <button class="btn-renta-x" onclick="limpiarRenta()" title="Limpiar renta">×</button>
           </div>
         </div>
+        <button class="btn-buscar" onclick="buscar()">Buscar</button>
       </div>
 
       <div class="filtros-rapidos">
-        <div class="filtros-bloque">
-          <span class="filtros-titulo">Tipo de vínculo</span>
-          <div class="filtros-tags-wrap">
-            <button class="filtro-tag activo" onclick="toggleFiltro(this,'planta')" title="Planta — cargo titular permanente">Planta</button>
-            <button class="filtro-tag activo" onclick="toggleFiltro(this,'contrata')" title="Contrata — vínculo transitorio dentro del Estado">Contrata</button>
-            <button class="filtro-tag activo" onclick="toggleFiltro(this,'honorarios')" title="Honorarios — prestación de servicios a honorarios">Honorarios</button>
-            <button class="filtro-tag activo" onclick="toggleFiltro(this,'codigo_trabajo')" title="Código del Trabajo — vínculo laboral del sector privado aplicado a empresas del Estado">Código del Trabajo</button>
-            <button class="filtro-tag activo" onclick="toggleFiltro(this,'otro')" title="Otra modalidad declarada (reemplazo, suplencia, etc.)">Otro</button>
-            <button class="filtro-tag activo" onclick="toggleFiltro(this,'no_informa')" title="La publicación no indica el tipo de vínculo">No informa</button>
-          </div>
-        </div>
         <div class="filtros-bloque filtros-bloque-secundario">
           <span class="filtros-titulo">Atajos</span>
           <div class="filtros-tags-wrap">
@@ -781,6 +770,74 @@ function sanitizeHighlightHtml(s) {
   return escaped.replace(/&lt;(\/?)mark&gt;/gi, '<$1mark>');
 }
 
+const CARGO_SIGLAS_MAYUS = new Set([
+  'rrhh','tic','ti','qa','ux','ui','it','pm','api','sql','sap','erp','crm','bi','seo','sem',
+  'ii','iii','iv','v','vi','vii','viii','ix','x'
+]);
+
+const CARGO_PROPIOS = new Map([
+  ['chile', 'Chile'],
+  ['santiago', 'Santiago'],
+  ['valparaiso', 'Valparaíso'],
+  ['biobio', 'Biobío'],
+  ['araucania', 'Araucanía'],
+  ['o\'higgins', "O'Higgins"],
+  ['nuble', 'Ñuble'],
+  ['magallanes', 'Magallanes'],
+  ['aysen', 'Aysén'],
+  ['tarapaca', 'Tarapacá'],
+  ['antofagasta', 'Antofagasta'],
+  ['coquimbo', 'Coquimbo'],
+  ['maule', 'Maule'],
+  ['los', 'Los'],
+  ['rios', 'Ríos'],
+  ['lagos', 'Lagos'],
+  ['excel', 'Excel'],
+  ['python', 'Python'],
+  ['java', 'Java'],
+  ['javascript', 'JavaScript'],
+  ['typescript', 'TypeScript'],
+  ['react', 'React'],
+  ['node', 'Node'],
+  ['aws', 'AWS'],
+  ['power', 'Power'],
+  ['office', 'Office']
+]);
+
+function normalizarTituloOferta(cargo) {
+  const original = String(cargo || '').trim().replace(/\s+/g, ' ');
+  if (!original) return '';
+
+  const letras = original.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/g, '');
+  const mayus = (letras.match(/[A-ZÁÉÍÓÚÜÑ]/g) || []).length;
+  const minus = (letras.match(/[a-záéíóúüñ]/g) || []).length;
+  const pareceGritado = mayus > 0 && (minus === 0 || mayus / Math.max(1, minus) > 3);
+  if (!pareceGritado) return original.charAt(0).toUpperCase() + original.slice(1);
+
+  const conectores = new Set(['de','del','la','las','el','los','y','e','en','para','con','por','al','a']);
+  let lower = original.toLocaleLowerCase('es-CL');
+
+  lower = lower.replace(/\b([a-záéíóúüñ0-9]+)\b/gi, (w) => {
+    const base = w
+      .toLocaleLowerCase('es-CL')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (CARGO_SIGLAS_MAYUS.has(base)) return w.toUpperCase();
+    if (CARGO_PROPIOS.has(base)) return CARGO_PROPIOS.get(base);
+    if (conectores.has(base)) return base;
+    return w.charAt(0).toLocaleUpperCase('es-CL') + w.slice(1);
+  });
+
+  // Formato oración: minúsculas salvo primera palabra + excepciones.
+  lower = lower.replace(/\b([A-ZÁÉÍÓÚÜÑ][^\s/-]*)/g, (w, p1, off) => {
+    if (off === 0) return w;
+    const base = w.toLocaleLowerCase('es-CL').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (CARGO_SIGLAS_MAYUS.has(base) || CARGO_PROPIOS.has(base)) return w;
+    return w.toLocaleLowerCase('es-CL');
+  });
+
+  return lower.charAt(0).toLocaleUpperCase('es-CL') + lower.slice(1);
+}
+
 // Formato de texto libre (descripción / requisitos) a HTML estructurado.
 // La lógica vive en rich-text.js y se expone como window.formatRichText.
 
@@ -1110,6 +1167,7 @@ function nombreRegionCompleto(region) {
 
 // ── Renderizar tarjeta de oferta ───────────────────────────────────────────
 function renderCard(oferta) {
+  const cargoDisplay = normalizarTituloOferta(oferta.cargo);
   const renta = formatRenta(oferta.renta_bruta_min, oferta.renta_bruta_max, oferta.grado_eus);
   const plazo = plazoInfo(oferta);
   const tipoCss = tipoClase(oferta.tipo_contrato);
@@ -1128,10 +1186,10 @@ function renderCard(oferta) {
   }
 
   return `
-  <div class="oferta-card${esFav ? ' favorita' : ''}" data-oferta-id="${oferta.id}" role="button" tabindex="0" aria-label="Ver detalle: ${escAttr(oferta.cargo)}">
+  <div class="oferta-card${esFav ? ' favorita' : ''}" data-oferta-id="${oferta.id}" role="button" tabindex="0" aria-label="Ver detalle: ${escAttr(cargoDisplay)}">
     <button class="btn-fav-card${esFav ? ' activo' : ''}"
       data-id="${oferta.id}"
-      data-cargo="${escAttr(oferta.cargo)}"
+      data-cargo="${escAttr(cargoDisplay)}"
       data-inst="${escAttr(oferta.institucion)}"
       data-region="${escAttr(oferta.region || '')}"
       data-cierre="${escAttr(oferta.fecha_cierre || '')}"
@@ -1143,7 +1201,7 @@ function renderCard(oferta) {
       <div class="oferta-logo">${getInstIcon(oferta)}</div>
       <div class="oferta-meta">
         <div class="oferta-institucion">${escHtml(oferta.institucion) || 'Institución pública'}</div>
-        <div class="oferta-cargo">${escHtml(oferta.cargo)}</div>
+        <div class="oferta-cargo">${escHtml(cargoDisplay)}</div>
         <div class="oferta-tipo-wrap">
           ${oferta.tipo_contrato ? `<span class="badge ${tipoCss}">${tipoLabel}</span>` : ''}
           ${regionCompleta ? `<span class="badge badge-region">🗺 ${escHtml(regionCompleta)}</span>` : ''}
@@ -1212,6 +1270,7 @@ function toggleFavCard(btn) {
 
 // ── Vista compacta (fila densa) ────────────────────────────────────────────
 function renderRowCompacta(oferta) {
+  const cargoDisplay = normalizarTituloOferta(oferta.cargo);
   const plazo     = plazoInfo(oferta);
   const tipoCss   = tipoClase(oferta.tipo_contrato);
   const tipoLabel = tipoEtiqueta(oferta.tipo_contrato);
@@ -1224,10 +1283,10 @@ function renderRowCompacta(oferta) {
     console.debug('[SEO] JobPosting omitido en row por campos faltantes:', jobPosting.errores, oferta?.id);
   }
   return `
-  <div class="oferta-row${esFav ? ' favorita' : ''}" data-oferta-id="${oferta.id}" role="button" tabindex="0" aria-label="Ver detalle: ${escAttr(oferta.cargo)}">
+  <div class="oferta-row${esFav ? ' favorita' : ''}" data-oferta-id="${oferta.id}" role="button" tabindex="0" aria-label="Ver detalle: ${escAttr(cargoDisplay)}">
     <div class="row-main">
       <div class="row-inst">${escHtml(oferta.institucion) || 'Institución pública'}</div>
-      <div class="row-cargo" title="${escAttr(oferta.cargo)}">${escHtml(oferta.cargo)}</div>
+      <div class="row-cargo" title="${escAttr(cargoDisplay)}">${escHtml(cargoDisplay)}</div>
       ${regionCompleta ? `<div class="row-region">🗺 ${escHtml(regionCompleta)}</div>` : ''}
     </div>
     <div class="row-meta">
@@ -1240,7 +1299,7 @@ function renderRowCompacta(oferta) {
     <div class="row-renta">${rentaHtml || '<span style="color:var(--texto3)">—</span>'}</div>
     <button class="btn-fav-row${esFav ? ' activo' : ''}"
       data-id="${oferta.id}"
-      data-cargo="${escAttr(oferta.cargo)}"
+      data-cargo="${escAttr(cargoDisplay)}"
       data-inst="${escAttr(oferta.institucion)}"
       data-region="${escAttr(oferta.region || '')}"
       data-cierre="${escAttr(oferta.fecha_cierre || '')}"
@@ -1879,7 +1938,7 @@ async function abrirModal(ofertaId) {
 
     document.getElementById('modal-kicker').textContent =
       [o.institucion, sector].filter(Boolean).join(' · ').toUpperCase();
-    document.getElementById('modal-cargo').textContent = o.cargo || 'Sin título';
+    document.getElementById('modal-cargo').textContent = normalizarTituloOferta(o.cargo) || 'Sin título';
     document.getElementById('modal-badges').innerHTML = [
       `<span class="badge ${tipoCss}">${tipoLabel}</span>`,
       regionCompleta ? `<span class="badge badge-region">🗺 ${escHtml(regionCompleta)}${ciudad ? ' · ' + escHtml(ciudad) : ''}</span>` : '',
@@ -2004,7 +2063,7 @@ function urlDeepLinkOferta(oferta) {
 function configurarCompartir(oferta) {
   const url = urlDeepLinkOferta(oferta);
   const urlExterna = oferta.url_oferta || url;
-  const titulo = oferta.cargo || 'Oferta laboral';
+  const titulo = normalizarTituloOferta(oferta.cargo) || 'Oferta laboral';
   const texto = `${titulo} — ${oferta.institucion || 'Institución pública'}`;
   const enc = encodeURIComponent;
 
@@ -2226,7 +2285,7 @@ function toggleFavorito(oferta) {
   } else {
     favs.push({
       id: oferta.id,
-      cargo: oferta.cargo,
+      cargo: normalizarTituloOferta(oferta.cargo),
       institucion: oferta.institucion,
       region: oferta.region,
       fecha_cierre: oferta.fecha_cierre,
