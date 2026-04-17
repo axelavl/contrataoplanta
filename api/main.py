@@ -1414,7 +1414,15 @@ def health() -> dict[str, Any] | JSONResponse:
 
 @app.get("/")
 def web_root(request: Request, oferta: int | None = Query(None, ge=1)) -> Response:
-    if request.headers.get("accept", "").startswith("application/json"):
+    accept_types = [
+        item.split(";", 1)[0].strip().lower()
+        for item in request.headers.get("accept", "").split(",")
+        if item.strip()
+    ]
+    accepts_html = any(item in {"text/html", "application/xhtml+xml"} for item in accept_types)
+    accepts_json = any(item == "application/json" or item.endswith("+json") for item in accept_types)
+    accepts_any = "*/*" in accept_types
+    if accepts_json or (accepts_any and not accepts_html):
         return JSONResponse(
             {
                 "nombre": "contrata o planta .cl - API",
