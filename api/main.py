@@ -77,12 +77,18 @@ DEFAULT_ALLOW_ORIGINS = [
     "http://127.0.0.1:5500",
     "https://contrataoplanta.cl",
     "https://www.contrataoplanta.cl",
+    "https://api.contrataoplanta.cl",
     "https://contrataoplanta.pages.dev",
+    "https://www.contrataoplanta.pages.dev",
     "https://contrataoplanta.netlify.app",
     "https://www.contrataoplanta.netlify.app",
-    "https://estadoemplea.pages.dev",
     "https://estadoemplea.cl",
     "https://www.estadoemplea.cl",
+    "https://api.estadoemplea.cl",
+    "https://estadoemplea.pages.dev",
+    "https://www.estadoemplea.pages.dev",
+    "https://estadoemplea.netlify.app",
+    "https://www.estadoemplea.netlify.app",
 ]
 
 
@@ -607,7 +613,17 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOW_ORIGINS,
-    allow_origin_regex=r"https?://((localhost|127\.0\.0\.1)(:\d+)?|([a-z0-9-]+\.)?contrataoplanta\.cl|[a-z0-9-]+\.contrataoplanta\.pages\.dev)$",
+    allow_origin_regex=(
+        r"https?://("
+        r"(localhost|127\.0\.0\.1)(:\d+)?"
+        r"|([a-z0-9-]+\.)?contrataoplanta\.cl"
+        r"|([a-z0-9-]+\.)?estadoemplea\.cl"
+        r"|([a-z0-9-]+\.)?contrataoplanta\.pages\.dev"
+        r"|([a-z0-9-]+\.)?estadoemplea\.pages\.dev"
+        r"|([a-z0-9-]+\.)?contrataoplanta\.netlify\.app"
+        r"|([a-z0-9-]+\.)?estadoemplea\.netlify\.app"
+        r")$"
+    ),
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
