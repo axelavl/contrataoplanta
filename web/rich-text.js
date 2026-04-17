@@ -156,22 +156,27 @@
     t = t.replace(/\s*[⇒→➜➝➤]\s+/g, '\n- ');
     // Guiones largos como bullet
     t = t.replace(/(^|\n)\s*[–—]\s+/g, '$1- ');
+    // Enumeraciones inline: exigir mayúscula después del número para evitar
+    // romper referencias legales como "Art. 1. del decreto 22." donde el
+    // dígito es parte de la prosa. Las listas reales en español empiezan
+    // cada ítem con mayúscula ("1. Atender", "2. Reportar").
     // "texto. 1.- item" → "texto.\n1.- item"
-    t = t.replace(/([.;:!?\)\]])\s+(\d{1,2})\.\-\s+/g, '$1\n$2.- ');
+    t = t.replace(/([.;:!?\)\]])\s+(\d{1,2})\.\-\s+(?=[A-ZÁÉÍÓÚÑ])/g, '$1\n$2.- ');
     // "texto. 1. item" / "texto. 1) item"
-    t = t.replace(/([.;:!?\)\]])\s+(\d{1,2})[.\)]\s+/g, '$1\n$2. ');
+    t = t.replace(/([.;:!?\)\]])\s+(\d{1,2})[.\)]\s+(?=[A-ZÁÉÍÓÚÑ])/g, '$1\n$2. ');
     // "texto. (1) item"
-    t = t.replace(/([.;:!?\)\]])\s+\((\d{1,2})\)\s+/g, '$1\n$2. ');
-    // Secuencia "1. X 2. Y 3. Z" sin puntuación previa fuerte: si hay ≥2 números,
-    // partir cada ocurrencia "<espacio>N. " en nueva línea.
-    var seqHits = (t.match(/(^|[\s])(\d{1,2})[.\)]\s+[A-Za-zÁÉÍÓÚÑáéíóúñ]/g) || []).length;
+    t = t.replace(/([.;:!?\)\]])\s+\((\d{1,2})\)\s+(?=[A-ZÁÉÍÓÚÑ])/g, '$1\n$2. ');
+    // Secuencia "1. X 2. Y 3. Z" sin puntuación previa fuerte: si hay ≥2 números
+    // seguidos de mayúscula, partir cada ocurrencia "<espacio>N. " en nueva línea.
+    var seqHits = (t.match(/(^|[\s])(\d{1,2})[.\)]\s+[A-ZÁÉÍÓÚÑ]/g) || []).length;
     if (seqHits >= 2) {
-      t = t.replace(/([^\n])\s+(\d{1,2})[.\)]\s+(?=[A-Za-zÁÉÍÓÚÑáéíóúñ])/g, '$1\n$2. ');
+      t = t.replace(/([^\n])\s+(\d{1,2})[.\)]\s+(?=[A-ZÁÉÍÓÚÑ])/g, '$1\n$2. ');
     }
     // "texto. - item"
     t = t.replace(/([.;:!?\)\]])\s+-\s+/g, '$1\n- ');
-    // 2+ separadores " - " en prosa → convertir todos
-    var dashHits = (t.match(/\S\s+-\s+\S/g) || []).length;
+    // 2+ separadores " - " en prosa → convertir todos.
+    // Lookahead para que "A - B - C" cuente 2 (matches solapados), no 1.
+    var dashHits = (t.match(/\S\s+-\s+(?=\S)/g) || []).length;
     if (dashHits >= 2) {
       t = t.replace(/(\S)\s+-\s+(?=\S)/g, '$1\n- ');
     }
