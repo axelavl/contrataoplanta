@@ -70,19 +70,31 @@ DB_CONFIG = {
     "password": os.getenv("DB_PASSWORD", "axel1234"),
 }
 
-ALLOW_ORIGINS = [
+DEFAULT_ALLOW_ORIGINS = [
     "null",
     "http://localhost:3000",
     "http://localhost:5500",
     "http://127.0.0.1:5500",
     "https://contrataoplanta.cl",
     "https://www.contrataoplanta.cl",
+    "https://contrataoplanta.pages.dev",
     "https://contrataoplanta.netlify.app",
     "https://www.contrataoplanta.netlify.app",
     "https://estadoemplea.pages.dev",
     "https://estadoemplea.cl",
     "https://www.estadoemplea.cl",
 ]
+
+
+def _load_allow_origins() -> list[str]:
+    raw = (os.getenv("CORS_ALLOW_ORIGINS", "") or "").strip()
+    if not raw:
+        return DEFAULT_ALLOW_ORIGINS
+    parsed = [origin.strip() for origin in raw.split(",") if origin.strip()]
+    return parsed or DEFAULT_ALLOW_ORIGINS
+
+
+ALLOW_ORIGINS = _load_allow_origins()
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 ESTADO_SQL = (
@@ -92,7 +104,7 @@ ESTADO_SQL = (
     "WHEN o.fecha_cierre IS NOT NULL AND o.fecha_cierre < CURRENT_DATE THEN 'vencido' "
     "ELSE 'activo' END)"
 )
-SITE_URL = (os.getenv("SITE_URL", "https://estadoemplea.cl") or "https://estadoemplea.cl").rstrip("/")
+SITE_URL = (os.getenv("SITE_URL", "https://contrataoplanta.cl") or "https://contrataoplanta.cl").rstrip("/")
 WEB_INDEX_PATH = _PROJECT_ROOT / "web" / "index.html"
 DEFAULT_OG_IMAGE = f"{SITE_URL}/og-default.jpg"
 
@@ -595,7 +607,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOW_ORIGINS,
-    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
+    allow_origin_regex=r"https?://((localhost|127\.0\.0\.1)(:\d+)?|([a-z0-9-]+\.)?contrataoplanta\.cl|[a-z0-9-]+\.contrataoplanta\.pages\.dev)$",
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
@@ -1417,7 +1429,11 @@ def health() -> dict[str, Any] | JSONResponse:
         row = execute_fetch_one("SELECT NOW() AS ts")
         return {"status": "ok", "db": str(row["ts"]) if row else None}
     except Exception as exc:  # pragma: no cover
-        return JSONResponse(status_code=503, content={"status": "error", "detail": str(exc)})
+        logger.warning("Healthcheck sin DB: %s", exc)
+        return JSONResponse(
+            status_code=503,
+            content={"status": "degraded", "detail": "database_unavailable"},
+        )
 
 
 @app.get("/")

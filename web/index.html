@@ -2314,6 +2314,9 @@ _agregarBase('https://contrataoplanta.cl');
 
 const API_BASES = _apiBases;
 let API_BASE_ACTIVA = API_BASES[0] || '';
+const API_TIMEOUT_MS = 12000;
+const MAX_REINTENTOS_AUTOMATICOS = 3;
+let _reintentosConsecutivos = 0;
 
 console.info('[API] Resolución de entorno', {
   hostnameCrudo: _hostnameCrudo,
@@ -2331,8 +2334,12 @@ async function fetchApi(path, options = {}) {
   for (const base of API_BASES) {
     const url = `${base}${path}`;
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+      const opts = { ...options, signal: controller.signal };
       console.debug('[API] Intentando endpoint', { url, base });
-      const resp = await fetch(url, options);
+      const resp = await fetch(url, opts);
+      clearTimeout(timeoutId);
 
       // Aceptar sólo respuestas que vengan de la API real (Content-Type JSON).
       // Si nginx u otro servidor devuelve HTML (ej. 404 de archivos estáticos
@@ -2352,8 +2359,11 @@ async function fetchApi(path, options = {}) {
       errores.push({ url, base, detalle });
       console.warn('[API] Respuesta descartada', { url, status: resp.status, contentType: ct });
     } catch (err) {
-      ultimoError = err;
-      const detalle = err && err.message ? err.message : String(err);
+      const isTimeout = err?.name === 'AbortError';
+      ultimoError = isTimeout ? new Error(`Timeout (${API_TIMEOUT_MS}ms)`) : err;
+      const detalle = isTimeout
+        ? `Timeout (${API_TIMEOUT_MS}ms)`
+        : (err && err.message ? err.message : String(err));
       errores.push({ url, base, detalle });
       console.warn('[API] Error de conexión', { url, detalle });
     }
@@ -2950,6 +2960,7 @@ function prellenarAlertaDesdeFiltros() {
 }
 
 let _reintentoTimer = null;
+let _reintentoIntervalo = null;
 function _resumenErrorConexion(err) {
   if (!err) return 'No recibimos respuesta desde ninguno de los endpoints configurados.';
   const detallePrincipal = err.message || String(err);
@@ -2959,25 +2970,55 @@ function _resumenErrorConexion(err) {
   return `${detallePrincipal}. Último intento: ${ultimo.url}`;
 }
 
+function _tipoError(err) {
+  const detalle = String(err?.message || err || '').toLowerCase();
+  if (detalle.includes('timeout')) return 'timeout';
+  if (detalle.includes('failed to fetch')) return 'network';
+  if (detalle.includes('http 5')) return 'server';
+  if (detalle.includes('http 4')) return 'client';
+  return 'unknown';
+}
+
 function renderError(err = null) {
+  const tipo = _tipoError(err);
   const detalle = _resumenErrorConexion(err);
+  const mensaje = (
+    tipo === 'timeout' ? 'El backend tardó demasiado en responder.' :
+    tipo === 'network' ? 'No logramos conectarnos al backend (red, DNS o servicio caído).' :
+    tipo === 'server' ? 'El backend respondió con error interno (5xx).' :
+    tipo === 'client' ? 'La solicitud fue rechazada por el backend (4xx).' :
+    'No se pudo completar la solicitud al backend.'
+  );
+  const quedanReintentos = _reintentosConsecutivos < MAX_REINTENTOS_AUTOMATICOS;
   document.getElementById('lista-ofertas').innerHTML = `
     <div class="estado-error">
       ⚠️ No pudimos cargar ofertas desde el backend.
-      <p class="estado-mensaje" id="msg-reintento">Reintentando en 30 segundos...</p>
+      <p class="estado-mensaje">${mensaje}</p>
+      <p class="estado-mensaje" id="msg-reintento">${quedanReintentos ? 'Reintentando en 30 segundos...' : 'Se detuvieron los reintentos automáticos.'}</p>
       <p class="estado-mensaje">${detalle}</p>
+      <button type="button" class="estado-alerta-cta" id="btn-reintento-manual">Reintentar ahora</button>
     </div>`;
   document.getElementById('paginacion').innerHTML = '';
+  document.getElementById('btn-reintento-manual')?.addEventListener('click', () => {
+    _reintentosConsecutivos = 0;
+    cargarOfertas();
+  });
 
   clearTimeout(_reintentoTimer);
+  if (_reintentoIntervalo) clearInterval(_reintentoIntervalo);
+
+  if (!quedanReintentos) return;
   let segs = 30;
-  const intervalo = setInterval(() => {
+  _reintentoIntervalo = setInterval(() => {
     segs--;
     const msg = document.getElementById('msg-reintento');
     if (msg) msg.textContent = `Reintentando en ${segs} segundos...`;
-    if (segs <= 0) clearInterval(intervalo);
+    if (segs <= 0 && _reintentoIntervalo) clearInterval(_reintentoIntervalo);
   }, 1000);
-  _reintentoTimer = setTimeout(() => cargarOfertas(), 30000);
+  _reintentoTimer = setTimeout(() => {
+    _reintentosConsecutivos += 1;
+    cargarOfertas();
+  }, 30000);
 }
 
 // ── Paginación dinámica ────────────────────────────────────────────────────
@@ -3074,6 +3115,8 @@ async function cargarOfertas() {
     const data = await resp.json();
 
     clearTimeout(_reintentoTimer);
+    if (_reintentoIntervalo) clearInterval(_reintentoIntervalo);
+    _reintentosConsecutivos = 0;
 
     // Actualizar contador
     document.getElementById('count-num').textContent = data.total.toLocaleString('es-CL');
