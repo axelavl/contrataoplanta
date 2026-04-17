@@ -58,6 +58,7 @@
 </script>
 <link rel="stylesheet" href="styles/index.css">
 <script defer src="shared-shell.js"></script>
+<script defer src="nav-mobile.js"></script>
 </head>
 <body data-page="home">
 <a class="skip-link" href="#contenido-principal">Saltar al contenido</a>
@@ -3054,55 +3055,6 @@ cargarResumenFuentes();
 mostrarUltimaActualizacion();
 setInterval(mostrarUltimaActualizacion, 5 * 60 * 1000); // refrescar cada 5 min
 
-// ═══ HAMBURGER MENU ═══════════════════════════════════════════════════
-(function() {
-  const btn = document.getElementById('hamburger-btn');
-  const panel = document.getElementById('nav-mobile-panel');
-  const overlay = document.getElementById('nav-mobile-overlay');
-  if (!btn || !panel || !overlay) return;
-
-  function abrirMenu() {
-    btn.classList.add('abierto');
-    btn.setAttribute('aria-expanded', 'true');
-    btn.setAttribute('aria-label', 'Cerrar menú');
-    panel.classList.add('visible');
-    overlay.classList.add('visible');
-    document.body.style.overflow = 'hidden';
-    const firstLink = panel.querySelector('a');
-    if (firstLink) firstLink.focus();
-  }
-  function cerrarMenu(devolverFoco) {
-    btn.classList.remove('abierto');
-    btn.setAttribute('aria-expanded', 'false');
-    btn.setAttribute('aria-label', 'Abrir menú');
-    panel.classList.remove('visible');
-    overlay.classList.remove('visible');
-    document.body.style.overflow = '';
-    if (devolverFoco) btn.focus();
-  }
-  btn.addEventListener('click', function() {
-    btn.classList.contains('abierto') ? cerrarMenu(false) : abrirMenu();
-  });
-  overlay.addEventListener('click', function() { cerrarMenu(true); });
-  panel.querySelectorAll('a').forEach(function(a) {
-    a.addEventListener('click', function() { cerrarMenu(false); });
-  });
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && btn.classList.contains('abierto')) cerrarMenu(true);
-  });
-
-  // Update favorites count in mobile menu
-  var favCount = 0;
-  try {
-    favCount = JSON.parse(localStorage.getItem('fav_contrataoplanta') || '[]').length;
-  } catch {
-    favCount = 0;
-  }
-  var mobileFav = document.getElementById('nav-mobile-favoritos');
-  if (mobileFav && favCount > 0) {
-    mobileFav.textContent = '\u2661 Mis favoritos (' + favCount + ')';
-  }
-})();
 </script>
 </body>
 </html>
