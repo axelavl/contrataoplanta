@@ -4,17 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script>document.documentElement.classList.add('js-nav');</script>
-<title>Historial de concursos — contrata o planta .cl</title>
+<title>Cerradas — contrata o planta .cl</title>
 <meta name="description" content="Revisa el historial de concursos del sector público chileno con filtros por institución, región y periodo.">
 <link rel="canonical" href="https://estadoemplea.pages.dev/historial.html">
-<meta property="og:title" content="Historial de concursos — contrata o planta .cl">
+<meta property="og:title" content="Cerradas — contrata o planta .cl">
 <meta property="og:description" content="Archivo de concursos públicos para analizar evolución y antecedentes de vacantes estatales.">
 <meta property="og:url" content="https://estadoemplea.pages.dev/historial.html">
 <meta property="og:image" content="https://estadoemplea.pages.dev/og-default.jpg">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="es_CL">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Historial de concursos — contrata o planta .cl">
+<meta name="twitter:title" content="Cerradas — contrata o planta .cl">
 <meta name="twitter:description" content="Consulta concursos anteriores del sector público con filtros detallados.">
 <meta name="twitter:image" content="https://estadoemplea.pages.dev/og-default.jpg">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -24,6 +24,7 @@
 <meta name="theme-color" content="#0A2E6E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="styles/shared-layout.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet">
 <!-- Analytics deshabilitado: reactivar cuando haya subdominio propio de Umami. -->
 <style>
@@ -163,18 +164,24 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
       <a href="estadisticas.html">Estadísticas</a>
       <a href="faq.html">Preguntas frecuentes</a>
     </div>
-    <a href="index.html#alertas" class="nav-alerta">+ Crear alerta</a>
   </div>
 </nav>
 </header>
+<nav class="breadcrumb" aria-label="Ruta de navegación">
+  <div class="breadcrumb-inner">
+    <a href="index.html">Inicio</a>
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-actual">Cerradas</span>
+  </div>
+</nav>
 
 <main id="contenido-principal">
 
 <div class="page-hero">
   <div class="page-hero-inner">
-    <div class="page-kicker">Archivo</div>
-    <h1 class="page-titulo">Historial de concursos</h1>
-    <p class="page-sub">Procesos de selección cerrados y vencidos del sector público chileno</p>
+    <div class="page-kicker">Cerradas · Archivo histórico</div>
+    <h1 class="page-titulo">Convocatorias cerradas</h1>
+    <p class="page-sub">Concursos que ya vencieron. Sirven para revisar perfiles solicitados, rentas y patrones de contratación del Estado.</p>
   </div>
 </div>
 

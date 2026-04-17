@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script>document.documentElement.classList.add('js-nav');</script>
-<title>Instituciones — contrata o planta .cl</title>
+<title>Instituciones públicas — contrata o planta .cl</title>
 <meta name="description" content="Explora instituciones públicas de Chile y revisa sus concursos, vacantes y datos laborales en un solo listado.">
 <link rel="canonical" href="https://estadoemplea.pages.dev/instituciones.html">
 <meta property="og:title" content="Instituciones públicas — contrata o planta .cl">
@@ -25,69 +25,15 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/shared-layout.css">
 <!-- Analytics deshabilitado: reactivar cuando haya subdominio propio de Umami. -->
 <style>
-:root {
-  --azul:   #0A2E6E; --azul-m: #1557C0; --cielo: #1A6BCC; --cielo-l:#D6E6F8;
-  --bg:     #F5F4EF; --bg2:   #EDECEA; --borde: #D9D7CF;
-  --texto:  #111827; --texto2:#4B5563; --texto3:#9CA3AF;
-  --blanco: #FAFAF8; --r:10px; --r-l:16px;
-  --sombra: 0 1px 3px rgba(0,0,0,0.08),0 4px 16px rgba(0,0,0,0.06);
-}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;font-size:16px}
 body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--texto);-webkit-font-smoothing:antialiased;min-height:100vh}
 
 .skip-link{position:absolute;left:12px;top:-48px;z-index:1000;background:var(--azul, #0A2E6E);color:var(--blanco, #FAFAF8);padding:10px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;transition:top .2s}
 .skip-link:focus{top:10px}
-
-nav {
-  position: sticky; top: 0; z-index: 100;
-  background: rgba(10,46,110,0.97);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-}
-.nav-inner {
-  max-width: 1200px; margin: 0 auto;
-  padding: 0 24px;
-  display: flex; align-items: center; gap: 32px;
-  height: 56px;
-}
-.logo {
-  font-family: 'Lora', Georgia, serif;
-  font-size: 18px; color: white;
-  letter-spacing: -0.3px; white-space: nowrap;
-  text-decoration: none;
-}
-.logo em { color: #E8A820; font-style: italic; }
-.nav-links {
-  display: flex; gap: 4px; align-items: center; flex: 1;
-}
-.nav-links a {
-  font-size: 13px; color: rgba(255,255,255,0.55);
-  text-decoration: none; padding: 6px 12px;
-  border-radius: 6px; transition: all .15s;
-  font-weight: 500;
-}
-.nav-links a:hover, .nav-links a.active {
-  color: white; background: rgba(255,255,255,0.1);
-}
-.nav-link-favs { color: #E8A820 !important; }
-.nav-link-favs:hover, .nav-link-favs.active { background: rgba(232,168,32,0.15) !important; }
-.nav-alerta {
-  font-size: 12px; font-weight: 600;
-  background: #E8A820; color: #0A2E6E;
-  padding: 7px 16px; border-radius: 6px;
-  cursor: pointer; white-space: nowrap;
-  transition: opacity .15s; text-decoration: none;
-}
-.nav-alerta:hover { opacity: .9; }
-
-.page-hero{background:var(--azul);padding:48px 24px 40px;text-align:center}
-.page-hero-inner{max-width:700px;margin:0 auto}
-.page-kicker{font-size:11px;font-weight:700;color:rgba(255,255,255,.45);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px}
-.page-titulo{font-family:'Lora',Georgia,serif;font-size:32px;color:white;line-height:1.2;margin-bottom:10px}
-.page-sub{font-size:15px;color:rgba(255,255,255,.55);line-height:1.7;font-weight:300}
 
 .page-content{max-width:1100px;margin:0 auto;padding:40px 24px 80px}
 .data-update{font-size:13px;color:var(--texto3);margin:-8px 0 18px}
@@ -153,25 +99,9 @@ nav {
 /* ESTADO VACÍO / ERROR */
 .estado-vacio{text-align:center;padding:60px 20px;color:var(--texto3);font-size:14px}
 
-footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
-.footer-inner {
-  max-width: 1200px; margin: 0 auto;
-  display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
-  gap: 40px;
-}
-.footer-brand .logo { font-size: 20px; }
-.footer-desc { font-size: 13px; color: rgba(255,255,255,0.35); line-height: 1.7; max-width: 280px; font-weight: 300; }
-.footer-col-titulo { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; font-family: 'Inter', sans-serif; }
-.footer-link { display: block; font-size: 13px; color: rgba(255,255,255,0.5); text-decoration: none; margin-bottom: 8px; transition: color .15s; }
-.footer-link:hover { color: white; }
-.footer-bottom { max-width: 1200px; margin: 28px auto 0; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; font-size: 12px; color: rgba(255,255,255,0.25); }
-@media (max-width: 768px) { .footer-inner { grid-template-columns: 1fr 1fr; gap: 24px; } }
-@media (max-width: 480px) { .footer-inner { grid-template-columns: 1fr; } }
 @media(max-width:900px){
-  .footer-inner{grid-template-columns:1fr 1fr}
   .col-region,.col-link{display:none}
 }
-@media(max-width:600px){.js-nav .nav-links{display:none}.footer-inner{grid-template-columns:1fr;gap:24px}.page-titulo{font-size:26px}}
 </style>
 </head>
 <body>
@@ -189,10 +119,17 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
       <a href="estadisticas.html">Estadísticas</a>
       <a href="faq.html">Preguntas frecuentes</a>
     </div>
-    <a href="index.html#alertas" class="nav-alerta">+ Crear alerta</a>
   </div>
 </nav>
 </header>
+
+<nav class="breadcrumb" aria-label="Ruta de navegación">
+  <div class="breadcrumb-inner">
+    <a href="index.html">Inicio</a>
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-actual">Instituciones</span>
+  </div>
+</nav>
 
 <main id="contenido-principal">
 
@@ -200,7 +137,7 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
   <div class="page-hero-inner">
     <div class="page-kicker">Directorio</div>
     <h1 class="page-titulo">Instituciones del sector público</h1>
-    <p class="page-sub">Organismos e instituciones con concursos activos en el Estado de Chile</p>
+    <p class="page-sub">Busca por nombre, sector o región y entra a los concursos de cada organismo del Estado.</p>
   </div>
 </div>
 
@@ -260,23 +197,23 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
   <div class="paginacion" id="paginacion"></div>
 
   <section class="info-section">
-    <h2 class="info-title">Cómo te ayudamos</h2>
-    <p class="info-sub">3 pasos simples para postular mejor sin perder tiempo en portales dispersos.</p>
+    <h2 class="info-title">Cómo aprovechar este directorio</h2>
+    <p class="info-sub">Tres pasos para postular con foco, sin saltar de portal en portal.</p>
     <div class="pasos-grid">
       <article class="paso-card">
         <div class="paso-num">Paso 1</div>
-        <h3>Filtra por lo que sí te sirve</h3>
-        <p>Busca por institución, sector o región para concentrarte en concursos compatibles con tu perfil.</p>
+        <h3>Filtra por lo que te interesa</h3>
+        <p>Combina búsqueda por nombre, sector y región para ver solo instituciones donde sí podrías postular.</p>
       </article>
       <article class="paso-card">
         <div class="paso-num">Paso 2</div>
-        <h3>Prioriza las vacantes activas</h3>
-        <p>Ordena por ofertas activas y revisa la ley aplicable para entender bases, requisitos y marco normativo.</p>
+        <h3>Revisa cuáles tienen concursos hoy</h3>
+        <p>La columna de ofertas activas te muestra quién está convocando ahora. La ley aplicable te anticipa el marco contractual.</p>
       </article>
       <article class="paso-card">
         <div class="paso-num">Paso 3</div>
-        <h3>Confirma y postula en la fuente</h3>
-        <p>Usa el enlace directo al portal oficial y verifica cierres, anexos y documentos antes de enviar tu postulación.</p>
+        <h3>Entra al sitio oficial antes de postular</h3>
+        <p>El enlace directo te lleva al portal de la institución para confirmar bases, anexos y plazos vigentes.</p>
       </article>
     </div>
   </section>
@@ -440,8 +377,8 @@ async function cargar() {
     const d = await res.json();
 
     if (!d.instituciones || d.instituciones.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5"><div class="estado-vacio">No se encontraron instituciones con los filtros seleccionados.</div></td></tr>`;
-      document.getElementById('total-label').textContent = '0 instituciones';
+      tbody.innerHTML = `<tr><td colspan="5"><div class="estado-vacio">No encontramos instituciones con esos filtros. Prueba quitar la región o el sector para ampliar el resultado.</div></td></tr>`;
+      document.getElementById('total-label').textContent = 'Sin resultados';
       return;
     }
 
@@ -451,7 +388,7 @@ async function cargar() {
     // Load laws for visible institutions (BCN LeyChile)
     cargarLeyesInstituciones(d.instituciones);
   } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="5"><div class="estado-vacio">No se pudo conectar con el servidor. Verifica que la API esté corriendo.</div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5"><div class="estado-vacio">No pudimos cargar el directorio en este momento. Vuelve a intentarlo en unos minutos.</div></td></tr>`;
     document.getElementById('total-label').textContent = '';
   }
 }

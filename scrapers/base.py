@@ -68,6 +68,27 @@ DEFAULT_BROWSER_HEADERS: dict[str, str] = {
     "Cache-Control": "max-age=0",
 }
 
+# ── Catálogo de tipos de vínculo / contratación ──────────────────────
+# Categorías soportadas a nivel de producto (UI + backend + scrapers):
+#   planta          — cargo titular permanente (Estatuto Administrativo)
+#   contrata        — vínculo transitorio del Estatuto Administrativo
+#   honorarios      — prestación de servicios a honorarios
+#   codigo_trabajo  — vínculos regidos por el Código del Trabajo
+#   reemplazo       — reemplazo, suplencia o subrogancia transitoria
+#   otro            — modalidad distinta, explícitamente declarada
+#   no_informa      — la publicación revisada no declara la modalidad
+#   sin_datos       — campo ausente, nulo o no capturado
+TIPOS_CATALOGO = (
+    "planta",
+    "contrata",
+    "honorarios",
+    "codigo_trabajo",
+    "reemplazo",
+    "otro",
+    "no_informa",
+    "sin_datos",
+)
+
 TIPO_MAP = {
     "planta": "planta",
     "contrata": "contrata",
@@ -75,7 +96,19 @@ TIPO_MAP = {
     "honorarios": "honorarios",
     "codigo del trabajo": "codigo_trabajo",
     "codigo trabajo": "codigo_trabajo",
+    "regido por el codigo del trabajo": "codigo_trabajo",
+    "articulo 11 codigo del trabajo": "codigo_trabajo",
     "reemplazo": "reemplazo",
+    "suplencia": "reemplazo",
+    "subrogancia": "reemplazo",
+    "no informa": "no_informa",
+    "no especifica": "no_informa",
+    "sin especificar": "no_informa",
+    "modalidad no especificada": "no_informa",
+    "no indica": "no_informa",
+    "sin informacion contractual": "no_informa",
+    "otro": "otro",
+    "otra modalidad": "otro",
 }
 
 REGION_MAP = {
@@ -221,12 +254,24 @@ def parse_date(value: str | date | datetime | None) -> date | None:
 
 
 def normalize_tipo_contrato(value: str | None) -> str | None:
+    """Normaliza la modalidad contractual a una categoría estable.
+
+    Devuelve una de las claves de ``TIPOS_CATALOGO`` o ``None`` cuando el
+    campo viene ausente (``sin_datos`` a nivel de producto se representa
+    como ``None`` en la base — quienes consumen este valor deben tratarlo
+    como ``sin_datos``). El scraper **no** debe asumir ``contrata`` por
+    defecto: si la publicación no declara el vínculo, deja ``None`` para
+    que la UI muestre "Sin datos" o "No informa" sin inventar categoría.
+    """
+    if value is None:
+        return None
     key = normalize_key(value)
     if not key:
         return None
-    for raw, normalized in TIPO_MAP.items():
+    # Búsqueda por coincidencia más específica primero (frase > palabra).
+    for raw in sorted(TIPO_MAP, key=len, reverse=True):
         if raw in key:
-            return normalized
+            return TIPO_MAP[raw]
     return None
 
 

@@ -24,6 +24,7 @@
 <meta name="theme-color" content="#0A2E6E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="styles/shared-layout.css">
 <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&display=swap" as="style">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&display=swap">
 <!-- Analytics deshabilitado: reactivar cuando haya subdominio propio de Umami. -->
@@ -125,10 +126,16 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
       <a href="estadisticas.html">Estadísticas</a>
       <a href="faq.html">Preguntas frecuentes</a>
     </div>
-    <a href="index.html#alertas" class="nav-alerta">+ Crear alerta</a>
   </div>
 </nav>
 </header>
+<nav class="breadcrumb" aria-label="Ruta de navegación">
+  <div class="breadcrumb-inner">
+    <a href="index.html">Inicio</a>
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-actual">Términos de uso</span>
+  </div>
+</nav>
 
 <main id="contenido-principal">
 

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script>document.documentElement.classList.add('js-nav');</script>
-<title>Estadísticas — contrata o planta .cl</title>
+<title>Estadísticas del empleo público — contrata o planta .cl</title>
 <meta name="description" content="Consulta estadísticas del empleo público en Chile: concursos, instituciones activas y tendencias del sector.">
 <link rel="canonical" href="https://estadoemplea.pages.dev/estadisticas.html">
 <meta property="og:title" content="Estadísticas del empleo público — contrata o planta .cl">
@@ -25,69 +25,15 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/shared-layout.css">
 <!-- Analytics deshabilitado: reactivar cuando haya subdominio propio de Umami. -->
 <style>
-:root {
-  --azul:   #0A2E6E; --azul-m: #1557C0; --cielo: #1A6BCC; --cielo-l:#D6E6F8;
-  --bg:     #F5F4EF; --bg2:   #EDECEA; --borde: #D9D7CF;
-  --texto:  #111827; --texto2:#4B5563; --texto3:#9CA3AF;
-  --blanco: #FAFAF8; --r:10px; --r-l:16px;
-  --sombra: 0 1px 3px rgba(0,0,0,0.08),0 4px 16px rgba(0,0,0,0.06);
-}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;font-size:16px}
 body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--texto);-webkit-font-smoothing:antialiased;min-height:100vh}
 
 .skip-link{position:absolute;left:12px;top:-48px;z-index:1000;background:var(--azul, #0A2E6E);color:var(--blanco, #FAFAF8);padding:10px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;transition:top .2s}
 .skip-link:focus{top:10px}
-
-nav {
-  position: sticky; top: 0; z-index: 100;
-  background: rgba(10,46,110,0.97);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-}
-.nav-inner {
-  max-width: 1200px; margin: 0 auto;
-  padding: 0 24px;
-  display: flex; align-items: center; gap: 32px;
-  height: 56px;
-}
-.logo {
-  font-family: 'Lora', Georgia, serif;
-  font-size: 18px; color: white;
-  letter-spacing: -0.3px; white-space: nowrap;
-  text-decoration: none;
-}
-.logo em { color: #E8A820; font-style: italic; }
-.nav-links {
-  display: flex; gap: 4px; align-items: center; flex: 1;
-}
-.nav-links a {
-  font-size: 13px; color: rgba(255,255,255,0.55);
-  text-decoration: none; padding: 6px 12px;
-  border-radius: 6px; transition: all .15s;
-  font-weight: 500;
-}
-.nav-links a:hover, .nav-links a.active {
-  color: white; background: rgba(255,255,255,0.1);
-}
-.nav-link-favs { color: #E8A820 !important; }
-.nav-link-favs:hover, .nav-link-favs.active { background: rgba(232,168,32,0.15) !important; }
-.nav-alerta {
-  font-size: 12px; font-weight: 600;
-  background: #E8A820; color: #0A2E6E;
-  padding: 7px 16px; border-radius: 6px;
-  cursor: pointer; white-space: nowrap;
-  transition: opacity .15s; text-decoration: none;
-}
-.nav-alerta:hover { opacity: .9; }
-
-.page-hero{background:var(--azul);padding:48px 24px 40px;text-align:center}
-.page-hero-inner{max-width:700px;margin:0 auto}
-.page-kicker{font-size:11px;font-weight:700;color:rgba(255,255,255,.45);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px}
-.page-titulo{font-family:'Lora',Georgia,serif;font-size:32px;color:white;line-height:1.2;margin-bottom:10px}
-.page-sub{font-size:15px;color:rgba(255,255,255,.55);line-height:1.7;font-weight:300}
 
 .page-content{max-width:1100px;margin:0 auto;padding:40px 24px 80px}
 .data-update{font-size:13px;color:var(--texto3);margin:-8px 0 22px}
@@ -152,33 +98,15 @@ nav {
 .meta-link{font-size:12px;color:var(--cielo);text-decoration:none}
 .meta-link:hover{text-decoration:underline}
 
-footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
-.footer-inner {
-  max-width: 1200px; margin: 0 auto;
-  display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
-  gap: 40px;
-}
-.footer-brand .logo { font-size: 20px; }
-.footer-desc { font-size: 13px; color: rgba(255,255,255,0.35); line-height: 1.7; max-width: 280px; font-weight: 300; }
-.footer-col-titulo { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; font-family: 'Inter', sans-serif; }
-.footer-link { display: block; font-size: 13px; color: rgba(255,255,255,0.5); text-decoration: none; margin-bottom: 8px; transition: color .15s; }
-.footer-link:hover { color: white; }
-.footer-bottom { max-width: 1200px; margin: 28px auto 0; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; font-size: 12px; color: rgba(255,255,255,0.25); }
-@media (max-width: 768px) { .footer-inner { grid-template-columns: 1fr 1fr; gap: 24px; } }
-@media (max-width: 480px) { .footer-inner { grid-template-columns: 1fr; } }
 @media(max-width:900px){
   .kpi-grid{grid-template-columns:repeat(2,1fr)}
   .stats-grid{grid-template-columns:1fr}
   .stats-card-full{grid-column:auto}
-  .footer-inner{grid-template-columns:1fr 1fr}
+  .pasos-grid{grid-template-columns:1fr}
 }
 @media(max-width:600px){
-  .js-nav .nav-links{display:none}
   .kpi-grid{grid-template-columns:1fr 1fr}
-  .footer-inner{grid-template-columns:1fr;gap:24px}
-  .page-titulo{font-size:26px}
 }
-@media(max-width:900px){.pasos-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -196,10 +124,17 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
       <a href="estadisticas.html" class="active">Estadísticas</a>
       <a href="faq.html">Preguntas frecuentes</a>
     </div>
-    <a href="index.html#alertas" class="nav-alerta">+ Crear alerta</a>
   </div>
 </nav>
 </header>
+
+<nav class="breadcrumb" aria-label="Ruta de navegación">
+  <div class="breadcrumb-inner">
+    <a href="index.html">Inicio</a>
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-actual">Estadísticas</span>
+  </div>
+</nav>
 
 <main id="contenido-principal">
 
@@ -207,7 +142,7 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
   <div class="page-hero-inner">
     <div class="page-kicker">Datos abiertos</div>
     <h1 class="page-titulo">Estadísticas del empleo público</h1>
-    <p class="page-sub">Panorama en tiempo real de los concursos y procesos de selección en el sector público chileno</p>
+    <p class="page-sub">Cómo se mueven los concursos hoy: volumen, sectores e instituciones con más actividad.</p>
   </div>
 </div>
 
@@ -246,23 +181,23 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
   </div>
 
   <section class="info-section">
-    <h2 class="info-title">Cómo te ayudamos</h2>
-    <p class="info-sub">3 pasos simples para postular mejor usando datos comparables del empleo público.</p>
+    <h2 class="info-title">Cómo usar estos datos</h2>
+    <p class="info-sub">Tres formas concretas de orientar tu búsqueda con lo que muestra el panel.</p>
     <div class="pasos-grid">
       <article class="paso-card">
         <div class="paso-num">Paso 1</div>
-        <h3>Define foco por sector y región</h3>
-        <p>Visualiza dónde hay más movimiento para orientar tu búsqueda según tu perfil y ubicación objetivo.</p>
+        <h3>Ubica dónde hay más movimiento</h3>
+        <p>Observa el desglose por sector para concentrar tu búsqueda donde sí están publicando concursos afines a tu perfil.</p>
       </article>
       <article class="paso-card">
         <div class="paso-num">Paso 2</div>
-        <h3>Detecta ventanas de postulación</h3>
-        <p>Revisa tendencias mensuales y variaciones recientes para preparar documentos antes de los picos de oferta.</p>
+        <h3>Anticipa los picos del año</h3>
+        <p>El histórico mensual te muestra las temporadas fuertes. Llega con CV, certificados y documentos listos antes de la próxima ola.</p>
       </article>
       <article class="paso-card">
         <div class="paso-num">Paso 3</div>
-        <h3>Prioriza instituciones activas</h3>
-        <p>Identifica organismos con mayor recurrencia de concursos y planifica postulaciones de mediano plazo.</p>
+        <h3>Prioriza las instituciones que más convocan</h3>
+        <p>Identifica los organismos que publican con más frecuencia y sigue sus bases para postular a lo que realmente se repite.</p>
       </article>
     </div>
   </section>
@@ -419,7 +354,7 @@ async function cargar() {
     renderHistorico(d.historico_mensual);
     renderMasActivas(d.mas_activas);
   } catch (e) {
-    const msg = '<p class="error-estado">No se pudo conectar con el servidor. Verifica que la API esté corriendo.</p>';
+    const msg = '<p class="error-estado">No pudimos cargar las estadísticas en este momento. Vuelve a intentarlo en unos minutos.</p>';
     document.getElementById('kpi-grid').innerHTML = msg;
     document.getElementById('sector-contenido').innerHTML = msg;
     document.getElementById('historico-contenido').innerHTML = msg;
