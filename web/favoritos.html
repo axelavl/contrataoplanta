@@ -118,13 +118,27 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,46,110,0.97);backdrop-f
 .modal-rich-text p{margin:0 0 8px 0}
 .modal-rich-text p:last-child{margin-bottom:0}
 .modal-rich-text strong,.modal-rich-text b{color:var(--texto);font-weight:700}
-.modal-rich-text h4,.modal-rich-text .rt-heading{font-size:13.5px;font-weight:700;color:var(--texto);margin:10px 0 6px 0;letter-spacing:-0.1px;line-height:1.35}
-.modal-rich-text ul,.modal-rich-text ol{margin:4px 0 10px 0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:5px}
+.modal-rich-text h4,.modal-rich-text .rt-heading{font-size:13.5px;font-weight:700;color:var(--texto);margin:14px 0 6px 0;letter-spacing:-0.1px;line-height:1.35;display:block}
+.modal-rich-text > .rt-heading:first-child{margin-top:0}
+.modal-rich-text .rt-heading--excluyente{color:#991B1B}
+.modal-rich-text .rt-heading--excluyente::before{content:'⚠';color:var(--rojo);margin-right:6px;font-weight:700}
+.modal-rich-text .rt-heading--deseable{color:#92400E}
+.modal-rich-text .rt-heading--deseable::before{content:'+';color:var(--acento);margin-right:6px;font-weight:800}
+.modal-rich-text ul,.modal-rich-text ol{margin:4px 0 10px 0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.modal-rich-text .rt-heading + ul,.modal-rich-text .rt-heading + ol{margin-top:4px}
 .modal-rich-text li{position:relative;padding-left:18px;line-height:1.55}
 .modal-rich-text ul > li::before{content:'→';color:var(--cielo);position:absolute;left:0;top:0;font-weight:700}
 .modal-rich-text ol{counter-reset:rt-counter}
 .modal-rich-text ol > li{counter-increment:rt-counter}
 .modal-rich-text ol > li::before{content:counter(rt-counter) '.';color:var(--cielo);font-weight:700;position:absolute;left:0;top:0}
+.modal-rich-text .rt-list--excluyente > li::before{color:var(--rojo)}
+.modal-rich-text .rt-list--deseable > li::before{color:var(--acento)}
+.modal-rich-text .rt-truncate{position:relative}
+.modal-rich-text .rt-truncate-inner{overflow:hidden;transition:max-height .2s ease}
+.modal-rich-text .rt-truncate[data-rt-collapsed="true"] .rt-truncate-inner{max-height:280px;-webkit-mask-image:linear-gradient(to bottom,black 70%,transparent 100%);mask-image:linear-gradient(to bottom,black 70%,transparent 100%)}
+.modal-rich-text .rt-toggle{display:inline-block;margin-top:6px;background:white;border:1.5px solid var(--borde);color:var(--cielo);font-family:'Inter',sans-serif;font-size:12px;font-weight:600;padding:5px 14px;border-radius:999px;cursor:pointer;transition:border-color .15s,background .15s,color .15s}
+.modal-rich-text .rt-toggle:hover{border-color:var(--cielo);background:var(--cielo-l)}
+@media (max-width:600px){.modal-rich-text{font-size:14px;line-height:1.7}.modal-rich-text .rt-heading{font-size:14px;margin:16px 0 6px 0}.modal-rich-text li{line-height:1.6;padding-left:20px}.modal-rich-text .rt-truncate[data-rt-collapsed="true"] .rt-truncate-inner{max-height:360px}}
 .modal-actions{display:flex;gap:10px;padding:20px 28px;border-top:1px solid var(--bg2);background:var(--blanco);position:sticky;bottom:0;border-radius:0 0 var(--r-l) var(--r-l)}
 .btn-modal-primary{flex:1;height:44px;background:var(--azul);color:white;border:none;border-radius:var(--r);font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:background .15s}
 .btn-modal-primary:hover{background:var(--azul-m)}
@@ -237,7 +251,7 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
         <div class="modal-rich-text" id="modal-requisitos"></div>
       </div>
       <div class="modal-seccion">
-        <div class="modal-seccion-titulo">Funciones y descripción</div>
+        <div class="modal-seccion-titulo">Descripción</div>
         <div class="modal-rich-text" id="modal-descripcion"></div>
       </div>
     </div>
@@ -284,6 +298,7 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
 </footer>
 
 <!-- ══ JAVASCRIPT ════════════════════════════════════════════════════ -->
+<script src="rich-text.js"></script>
 <script>
 const API_BASE = (
   window.location.hostname === 'localhost' ||
@@ -324,67 +339,7 @@ function escHtml(s) {
   return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-// ── Format de texto libre a HTML enriquecido (listas, títulos, negrita) ──
-function formatRichText(rawText) {
-  const text = (rawText || '').trim();
-  if (!text) return '';
-  const normalizado = text
-    .replace(/\r\n?/g, '\n')
-    .replace(/\s*[•·]\s+/g, '\n• ')
-    .replace(/(?:^|\s)[–—]\s+/g, '\n– ');
-  const lineas = normalizado.split('\n').map(l => l.trim()).filter(Boolean);
-  const bulletRe   = /^[\-*•·–—]\s+(.+)$/;
-  const numberedRe = /^(\d{1,2})[.\)]\s+(.+)$/;
-  const letterRe   = /^([a-zA-Z])\)\s+(.+)$/;
-  const isAllCaps = (s) => {
-    const letras = s.replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñ]/g, '');
-    if (letras.length < 3) return false;
-    const upp = letras.replace(/[^A-ZÁÉÍÓÚÑ]/g, '').length;
-    return (upp / letras.length) >= 0.7;
-  };
-  const isHeadingColon = (s) => /^[^:]{2,80}:\s*$/.test(s) && !/[.!?]$/.test(s);
-
-  const out = [];
-  let listBuffer = [];
-  let listType = null;
-  const flushList = () => {
-    if (!listBuffer.length) return;
-    const tag = listType === 'ol' ? 'ol' : 'ul';
-    out.push(`<${tag}>${listBuffer.map(i => `<li>${i}</li>`).join('')}</${tag}>`);
-    listBuffer = [];
-    listType = null;
-  };
-  const renderInline = (s) => {
-    const esc = escHtml(s);
-    const prefix = esc.match(/^([A-ZÁÉÍÓÚÑ][^:.\n]{1,60}?):\s+(.*)$/);
-    return prefix ? `<strong>${prefix[1]}:</strong> ${prefix[2]}` : esc;
-  };
-
-  for (const linea of lineas) {
-    let m;
-    if ((m = linea.match(numberedRe))) {
-      if (listType && listType !== 'ol') flushList();
-      listType = 'ol';
-      listBuffer.push(renderInline(m[2]));
-      continue;
-    }
-    if ((m = linea.match(bulletRe)) || (m = linea.match(letterRe))) {
-      if (listType && listType !== 'ul') flushList();
-      listType = 'ul';
-      listBuffer.push(renderInline(m[m.length - 1]));
-      continue;
-    }
-    if (isHeadingColon(linea) || (isAllCaps(linea) && linea.length <= 80)) {
-      flushList();
-      out.push(`<h4 class="rt-heading">${escHtml(linea.replace(/:\s*$/, ''))}</h4>`);
-      continue;
-    }
-    flushList();
-    out.push(`<p>${renderInline(linea)}</p>`);
-  }
-  flushList();
-  return out.join('');
-}
+// formatRichText vive en rich-text.js (window.formatRichText).
 
 // ── Renderizar grid ────────────────────────────────────────────────
 function renderFavs() {

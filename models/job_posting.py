@@ -42,4 +42,13 @@ class JobPosting(BaseModel):
     field_completeness_score: float = 0.0
     overall_quality_score: float = 0.0
     needs_review: bool = False
+    emails_found: list[str] = Field(default_factory=list)
+    email_postulacion: list[str] = Field(default_factory=list)
+    email_consultas: list[str] = Field(default_factory=list)
+    email_indeterminado: list[str] = Field(default_factory=list)
+    email_contexts: list[str] = Field(default_factory=list)
+    postulacion_channel: str | None = None
+    has_consultation_channel: bool = False
+    salary_validation_status: str | None = None
+    salary_trace: str | None = None
     scraped_at: datetime

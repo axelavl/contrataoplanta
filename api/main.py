@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import html
 import json
 import logging
 import math
@@ -12,6 +13,7 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlencode
 
 try:
     import psycopg2
@@ -21,9 +23,9 @@ except ImportError:
     import pg8000.dbapi as _pg8000  # type: ignore[import]
     _PG_DRIVER = "pg8000"
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, Response, RedirectResponse
 from pydantic import BaseModel
 
 # Para poder importar scrapers.source_status desde la API, agregamos la raíz del
@@ -68,17 +70,37 @@ DB_CONFIG = {
     "password": os.getenv("DB_PASSWORD", "axel1234"),
 }
 
-ALLOW_ORIGINS = [
+DEFAULT_ALLOW_ORIGINS = [
     "null",
     "http://localhost:3000",
     "http://localhost:5500",
     "http://127.0.0.1:5500",
     "https://contrataoplanta.cl",
     "https://www.contrataoplanta.cl",
+    "https://api.contrataoplanta.cl",
+    "https://contrataoplanta.pages.dev",
+    "https://www.contrataoplanta.pages.dev",
     "https://contrataoplanta.netlify.app",
     "https://www.contrataoplanta.netlify.app",
+    "https://estadoemplea.cl",
+    "https://www.estadoemplea.cl",
+    "https://api.estadoemplea.cl",
     "https://estadoemplea.pages.dev",
+    "https://www.estadoemplea.pages.dev",
+    "https://estadoemplea.netlify.app",
+    "https://www.estadoemplea.netlify.app",
 ]
+
+
+def _load_allow_origins() -> list[str]:
+    raw = (os.getenv("CORS_ALLOW_ORIGINS", "") or "").strip()
+    if not raw:
+        return DEFAULT_ALLOW_ORIGINS
+    parsed = [origin.strip() for origin in raw.split(",") if origin.strip()]
+    return parsed or DEFAULT_ALLOW_ORIGINS
+
+
+ALLOW_ORIGINS = _load_allow_origins()
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 ESTADO_SQL = (
@@ -88,6 +110,9 @@ ESTADO_SQL = (
     "WHEN o.fecha_cierre IS NOT NULL AND o.fecha_cierre < CURRENT_DATE THEN 'vencido' "
     "ELSE 'activo' END)"
 )
+SITE_URL = (os.getenv("SITE_URL", "https://contrataoplanta.cl") or "https://contrataoplanta.cl").rstrip("/")
+WEB_INDEX_PATH = _PROJECT_ROOT / "web" / "index.html"
+DEFAULT_OG_IMAGE = f"{SITE_URL}/og-default.jpg"
 
 
 class AlertaPayload(BaseModel):
@@ -424,6 +449,161 @@ def validate_email(email: str) -> str:
     return value
 
 
+def _truncate_text(value: str, max_len: int) -> str:
+    text = re.sub(r"\s+", " ", (value or "").strip())
+    if len(text) <= max_len:
+        return text
+    return text[: max_len - 1].rstrip(" ,.-") + "…"
+
+
+def _format_fecha_larga(value: date | None) -> str | None:
+    if value is None:
+        return None
+    meses = (
+        "enero", "febrero", "marzo", "abril", "mayo", "junio",
+        "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+    )
+    return f"{value.day} de {meses[value.month - 1]} de {value.year}"
+
+
+def _format_renta_bruta(oferta: dict[str, Any]) -> str | None:
+    rmin = oferta.get("renta_bruta_min")
+    rmax = oferta.get("renta_bruta_max")
+    if isinstance(rmin, int) and isinstance(rmax, int) and rmin > 0 and rmax > 0:
+        if rmin == rmax:
+            return f"${rmin:,.0f}".replace(",", ".")
+        return f"${rmin:,.0f}".replace(",", ".") + " a " + f"${rmax:,.0f}".replace(",", ".")
+    if isinstance(rmax, int) and rmax > 0:
+        return f"Hasta ${rmax:,.0f}".replace(",", ".")
+    if isinstance(rmin, int) and rmin > 0:
+        return f"Desde ${rmin:,.0f}".replace(",", ".")
+    return None
+
+
+def _escape_attr(value: str) -> str:
+    return html.escape(value, quote=True)
+
+
+def _set_title(html_doc: str, title: str) -> str:
+    safe = html.escape(title)
+    if re.search(r"<title>.*?</title>", html_doc, flags=re.IGNORECASE | re.DOTALL):
+        return re.sub(r"<title>.*?</title>", f"<title>{safe}</title>", html_doc, count=1, flags=re.IGNORECASE | re.DOTALL)
+    return html_doc.replace("</head>", f"<title>{safe}</title>\n</head>", 1)
+
+
+def _set_meta(html_doc: str, key: str, content: str, *, attr: str = "name") -> str:
+    pattern = re.compile(
+        rf'<meta\s+[^>]*{attr}\s*=\s*["\']{re.escape(key)}["\'][^>]*>',
+        flags=re.IGNORECASE,
+    )
+    tag = f'<meta {attr}="{_escape_attr(key)}" content="{_escape_attr(content)}">'
+    if pattern.search(html_doc):
+        return pattern.sub(tag, html_doc, count=1)
+    return html_doc.replace("</head>", f"{tag}\n</head>", 1)
+
+
+def _set_canonical(html_doc: str, href: str) -> str:
+    pattern = re.compile(r'<link\s+[^>]*rel\s*=\s*["\']canonical["\'][^>]*>', flags=re.IGNORECASE)
+    tag = f'<link rel="canonical" href="{_escape_attr(href)}">'
+    if pattern.search(html_doc):
+        return pattern.sub(tag, html_doc, count=1)
+    return html_doc.replace("</head>", f"{tag}\n</head>", 1)
+
+
+def _inject_offer_path_bootstrap(html_doc: str, oferta_id: int | None) -> str:
+    if not oferta_id:
+        return html_doc
+    marker = "window.__OFERTA_PATH_ID__"
+    if marker in html_doc:
+        return html_doc
+    script = (
+        "<script>"
+        f"{marker}={oferta_id};"
+        "try{const u=new URL(window.location.href);"
+        "if(!u.searchParams.get('oferta')){u.searchParams.set('oferta',String(window.__OFERTA_PATH_ID__));"
+        "history.replaceState(null,'',u.pathname+u.search+u.hash);}}catch(e){}"
+        "</script>"
+    )
+    return html_doc.replace("</head>", f"{script}\n</head>", 1)
+
+
+def fetch_offer_for_meta(oferta_id: int) -> dict[str, Any] | None:
+    sql = f"""
+    WITH base AS (
+        {ofertas_select_sql()}
+        {ofertas_base_sql()}
+        WHERE o.id = %s
+    )
+    SELECT * FROM base
+    """
+    row = execute_fetch_one(sql, [oferta_id])
+    if not row:
+        return None
+    return serialize_offer(row)
+
+
+def build_offer_meta(oferta: dict[str, Any] | None, canonical_url: str) -> dict[str, str]:
+    if not oferta:
+        return {
+            "title": "estadoemplea.cl — Empleos públicos vigentes en Chile",
+            "description": "Encuentra empleos públicos en Chile, filtra por institución y revisa oportunidades del sector público.",
+            "og_image": DEFAULT_OG_IMAGE,
+            "canonical": canonical_url,
+        }
+
+    cargo = (oferta.get("cargo") or "Oferta laboral").strip()
+    institucion = (oferta.get("institucion") or "Institución pública").strip()
+    ciudad = (oferta.get("ciudad") or "").strip()
+    region = (oferta.get("region") or "").strip()
+    tipo = (oferta.get("tipo_contrato") or "").strip()
+    cierre = _format_fecha_larga(oferta.get("fecha_cierre"))
+    estado = (oferta.get("estado") or "").strip()
+    renta = _format_renta_bruta(oferta)
+
+    title = _truncate_text(f"{cargo} – {institucion}", 90)
+    desc_parts = []
+    if region:
+        desc_parts.append(region)
+    if ciudad and ciudad.lower() not in region.lower():
+        desc_parts.append(ciudad)
+    if tipo:
+        desc_parts.append(tipo.capitalize())
+    if renta:
+        desc_parts.append(renta)
+    if cierre:
+        desc_parts.append(f"Cierre: {cierre}")
+    elif estado:
+        desc_parts.append(f"Estado: {estado}")
+    description = _truncate_text(" · ".join(desc_parts) or "Revisa requisitos, renta y plazos de postulación.", 200)
+    oferta_id = oferta.get("id")
+    image_url = f"{SITE_URL}/api/og/{oferta_id}.png" if oferta_id else DEFAULT_OG_IMAGE
+
+    return {
+        "title": title,
+        "description": description,
+        "og_image": image_url,
+        "canonical": canonical_url,
+    }
+
+
+def render_index_with_meta(meta: dict[str, str], *, oferta_id_for_bootstrap: int | None = None) -> str:
+    html_doc = WEB_INDEX_PATH.read_text(encoding="utf-8")
+    html_doc = _set_title(html_doc, meta["title"])
+    html_doc = _set_meta(html_doc, "description", meta["description"], attr="name")
+    html_doc = _set_meta(html_doc, "og:title", meta["title"], attr="property")
+    html_doc = _set_meta(html_doc, "og:description", meta["description"], attr="property")
+    html_doc = _set_meta(html_doc, "og:url", meta["canonical"], attr="property")
+    html_doc = _set_meta(html_doc, "og:image", meta["og_image"], attr="property")
+    html_doc = _set_meta(html_doc, "og:type", "website", attr="property")
+    html_doc = _set_meta(html_doc, "twitter:card", "summary_large_image", attr="name")
+    html_doc = _set_meta(html_doc, "twitter:title", meta["title"], attr="name")
+    html_doc = _set_meta(html_doc, "twitter:description", meta["description"], attr="name")
+    html_doc = _set_meta(html_doc, "twitter:image", meta["og_image"], attr="name")
+    html_doc = _set_canonical(html_doc, meta["canonical"])
+    html_doc = _inject_offer_path_bootstrap(html_doc, oferta_id_for_bootstrap)
+    return html_doc
+
+
 app = FastAPI(
     title="contrata o planta .cl - API",
     version="2.1.0",
@@ -433,7 +613,17 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOW_ORIGINS,
-    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
+    allow_origin_regex=(
+        r"https?://("
+        r"(localhost|127\.0\.0\.1)(:\d+)?"
+        r"|([a-z0-9-]+\.)?contrataoplanta\.cl"
+        r"|([a-z0-9-]+\.)?estadoemplea\.cl"
+        r"|([a-z0-9-]+\.)?contrataoplanta\.pages\.dev"
+        r"|([a-z0-9-]+\.)?estadoemplea\.pages\.dev"
+        r"|([a-z0-9-]+\.)?contrataoplanta\.netlify\.app"
+        r"|([a-z0-9-]+\.)?estadoemplea\.netlify\.app"
+        r")$"
+    ),
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
@@ -442,8 +632,16 @@ app.add_middleware(
 
 @app.on_event("startup")
 def on_startup() -> None:
-    ensure_api_schema()
-    logger.info("API iniciada y esquema verificado")
+    # No bloquear el arranque si Postgres aún no responde: la API queda viva
+    # respondiendo 503 por request hasta que la DB vuelva. Si abortamos aquí,
+    # uvicorn cae y nginx devuelve 502/connection refused al frontend.
+    try:
+        ensure_api_schema()
+        logger.info("API iniciada y esquema verificado")
+    except Exception as exc:
+        logger.error(
+            "API iniciada sin validar esquema (DB no disponible aún): %s", exc
+        )
 
 
 @app.get("/api/ofertas")
@@ -1202,16 +1400,81 @@ def api_enviar_alertas_pendientes() -> dict[str, Any]:
 
 # ──────────────────── Health & Root ─────────────────────────────────────────
 
+@app.get("/web/index.html", response_class=HTMLResponse, include_in_schema=False)
+def web_index(oferta: int | None = Query(None, ge=1)) -> HTMLResponse:
+    canonical = f"{SITE_URL}/web/index.html"
+    if oferta:
+        canonical = f"{SITE_URL}/oferta/{oferta}"
+    oferta_data = fetch_offer_for_meta(oferta) if oferta else None
+    meta = build_offer_meta(oferta_data, canonical_url=canonical)
+    html_doc = render_index_with_meta(meta, oferta_id_for_bootstrap=oferta)
+    return HTMLResponse(
+        content=html_doc,
+        status_code=200,
+        headers={"Cache-Control": "public, max-age=60, stale-while-revalidate=600"},
+    )
+
+
+@app.get("/oferta/{oferta_id}", response_class=HTMLResponse, include_in_schema=False)
+def web_offer(oferta_id: int) -> HTMLResponse:
+    oferta_data = fetch_offer_for_meta(oferta_id)
+    canonical = f"{SITE_URL}/oferta/{oferta_id}"
+    meta = build_offer_meta(oferta_data, canonical_url=canonical)
+    html_doc = render_index_with_meta(meta, oferta_id_for_bootstrap=oferta_id)
+    return HTMLResponse(
+        content=html_doc,
+        status_code=200,
+        headers={"Cache-Control": "public, max-age=120, stale-while-revalidate=900"},
+    )
+
+
+@app.get("/share/oferta/{oferta_id}", include_in_schema=False)
+def web_offer_share(oferta_id: int) -> RedirectResponse:
+    return RedirectResponse(url=f"/oferta/{oferta_id}", status_code=308)
+
+
+@app.get("/index.html", include_in_schema=False)
+def legacy_index_redirect(request: Request) -> RedirectResponse:
+    query = f"?{urlencode(list(request.query_params.multi_items()))}" if request.query_params else ""
+    return RedirectResponse(url=f"/web/index.html{query}", status_code=308)
+
+
 @app.get("/health", response_model=None)
 def health() -> dict[str, Any] | JSONResponse:
     try:
         row = execute_fetch_one("SELECT NOW() AS ts")
         return {"status": "ok", "db": str(row["ts"]) if row else None}
     except Exception as exc:  # pragma: no cover
-        return JSONResponse(status_code=503, content={"status": "error", "detail": str(exc)})
+        logger.warning("Healthcheck sin DB: %s", exc)
+        return JSONResponse(
+            status_code=503,
+            content={"status": "degraded", "detail": "database_unavailable"},
+        )
 
 
 @app.get("/")
+def web_root(request: Request, oferta: int | None = Query(None, ge=1)) -> Response:
+    if request.headers.get("accept", "").startswith("application/json"):
+        return JSONResponse(
+            {
+                "nombre": "contrata o planta .cl - API",
+                "version": "3.0.0",
+                "docs": "/docs",
+                "db_host": DB_CONFIG["host"],
+            }
+        )
+    if oferta:
+        return RedirectResponse(url=f"/oferta/{oferta}", status_code=308)
+    meta = build_offer_meta(None, canonical_url=f"{SITE_URL}/")
+    html_doc = render_index_with_meta(meta)
+    return HTMLResponse(
+        content=html_doc,
+        status_code=200,
+        headers={"Cache-Control": "public, max-age=60, stale-while-revalidate=600"},
+    )
+
+
+@app.get("/api", include_in_schema=False)
 def root() -> dict[str, Any]:
     return {
         "nombre": "contrata o planta .cl - API",

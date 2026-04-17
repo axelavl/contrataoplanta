@@ -44,6 +44,7 @@ SCRAPERS = [
     (6, "Fiscalía de Chile",         "scrapers.fiscalia",         "ejecutar"),
     (7, "Dirección del Trabajo",     "scrapers.dir_trabajo",      "ejecutar"),
     (8, "Gobiernos Regionales",      "scrapers.gobiernos_regionales", "ejecutar"),
+    (9, "Plataforma Trabajando.cl",  "scrapers.trabajando",       "ejecutar"),
 ]
 
 

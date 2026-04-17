@@ -423,11 +423,11 @@ nav {
 .info-section{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--r-l);padding:24px;box-shadow:var(--sombra)}
 .info-title{font-family:'Lora',Georgia,serif;font-size:26px;color:var(--azul);margin-bottom:10px}
 .info-sub{font-size:14px;color:var(--texto2);line-height:1.7;margin-bottom:16px}
-.pasos-grid,.casos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.paso-card,.caso-card{background:var(--bg);border:1px solid var(--borde);border-radius:12px;padding:14px}
+.pasos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.paso-card{background:var(--bg);border:1px solid var(--borde);border-radius:12px;padding:14px}
 .paso-num{font-size:11px;font-weight:700;letter-spacing:.8px;color:var(--cielo);text-transform:uppercase;margin-bottom:6px}
-.paso-card h3,.caso-card h3{font-size:15px;color:var(--texto);margin-bottom:6px}
-.paso-card p,.caso-card p{font-size:13px;color:var(--texto2);line-height:1.6}
+.paso-card h3{font-size:15px;color:var(--texto);margin-bottom:6px}
+.paso-card p{font-size:13px;color:var(--texto2);line-height:1.6}
 .metodo-lista{margin:10px 0 0 18px;color:var(--texto2);font-size:13px;line-height:1.7}
 .metodo-lista li{margin-bottom:4px}
 .meta-link{font-size:12px;color:var(--cielo);text-decoration:none}
@@ -1178,18 +1178,36 @@ footer {
 .modal-rich-text h4,
 .modal-rich-text .rt-heading {
   font-size: 13.5px; font-weight: 700;
-  color: var(--texto); margin: 10px 0 6px 0;
+  color: var(--texto); margin: 14px 0 6px 0;
   letter-spacing: -0.1px; line-height: 1.35;
+  display: block;
+}
+.modal-rich-text > .rt-heading:first-child { margin-top: 0; }
+.modal-rich-text .rt-heading--excluyente {
+  color: #991B1B;
+}
+.modal-rich-text .rt-heading--excluyente::before {
+  content: '⚠'; color: var(--rojo);
+  margin-right: 6px; font-weight: 700;
+}
+.modal-rich-text .rt-heading--deseable {
+  color: #92400E;
+}
+.modal-rich-text .rt-heading--deseable::before {
+  content: '+'; color: var(--acento);
+  margin-right: 6px; font-weight: 800;
 }
 .modal-rich-text ul,
 .modal-rich-text ol {
   margin: 4px 0 10px 0;
   padding-left: 0;
   list-style: none;
-  display: flex; flex-direction: column; gap: 5px;
+  display: flex; flex-direction: column; gap: 6px;
 }
 .modal-rich-text ul + p,
-.modal-rich-text ol + p { margin-top: 6px; }
+.modal-rich-text ol + p { margin-top: 8px; }
+.modal-rich-text .rt-heading + ul,
+.modal-rich-text .rt-heading + ol { margin-top: 4px; }
 .modal-rich-text li {
   position: relative;
   padding-left: 18px;
@@ -1210,6 +1228,42 @@ footer {
   content: counter(rt-counter) '.';
   color: var(--cielo); font-weight: 700;
   position: absolute; left: 0; top: 0;
+}
+.modal-rich-text .rt-list--excluyente > li::before { color: var(--rojo); }
+.modal-rich-text .rt-list--deseable  > li::before { color: var(--acento); }
+
+/* Truncado "Ver más / Ver menos" */
+.modal-rich-text .rt-truncate { position: relative; }
+.modal-rich-text .rt-truncate-inner {
+  overflow: hidden;
+  transition: max-height .2s ease;
+}
+.modal-rich-text .rt-truncate[data-rt-collapsed="true"] .rt-truncate-inner {
+  max-height: 280px;
+  -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+          mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+}
+.modal-rich-text .rt-toggle {
+  display: inline-block; margin-top: 6px;
+  background: white; border: 1.5px solid var(--borde);
+  color: var(--cielo); font-family: 'Inter', sans-serif;
+  font-size: 12px; font-weight: 600;
+  padding: 5px 14px; border-radius: 999px; cursor: pointer;
+  transition: border-color .15s, background .15s, color .15s;
+}
+.modal-rich-text .rt-toggle:hover {
+  border-color: var(--cielo);
+  background: var(--cielo-l);
+}
+
+/* Legibilidad en móvil */
+@media (max-width: 600px) {
+  .modal-rich-text { font-size: 14px; line-height: 1.7; }
+  .modal-rich-text .rt-heading { font-size: 14px; margin: 16px 0 6px 0; }
+  .modal-rich-text li { line-height: 1.6; padding-left: 20px; }
+  .modal-rich-text .rt-truncate[data-rt-collapsed="true"] .rt-truncate-inner {
+    max-height: 360px;
+  }
 }
 
 /* Compatibilidad con clases antiguas */
@@ -1515,7 +1569,7 @@ footer {
   .main > * { min-width: 0; }
   /* Sidebar al final en móvil: el listado queda inmediatamente bajo los filtros */
   .sidebar { order: 2; }
-  .pasos-grid,.casos-grid { grid-template-columns: 1fr; }
+  .pasos-grid { grid-template-columns: 1fr; }
   .buscador-form { grid-template-columns: 1fr 1fr; }
   .buscador-form > .campo:first-child { grid-column: 1 / -1; }
   .buscador-form > .btn-buscar { margin-top: 0; grid-column: 1 / -1; }
@@ -1638,7 +1692,7 @@ footer {
       <a href="instituciones.html">Instituciones</a>
       <a href="estadisticas.html">Estadísticas</a>
       <a href="faq.html">Preguntas frecuentes</a>
-      <a href="editorial.html">Editorial</a>
+      <a href="ruta-ingreso-empleo-publico.html">Ruta de ingreso</a>
     </div>
     <a href="#alertas" class="nav-alerta">+ Crear alerta</a>
     <button class="hamburger" id="hamburger-btn" aria-label="Abrir menú" aria-expanded="false" aria-controls="nav-mobile-panel">
@@ -1653,7 +1707,7 @@ footer {
   <a href="instituciones.html">Instituciones</a>
   <a href="estadisticas.html">Estadísticas</a>
   <a href="faq.html">Preguntas frecuentes</a>
-      <a href="editorial.html">Editorial</a>
+      <a href="ruta-ingreso-empleo-publico.html">Ruta de ingreso</a>
   <a href="#alertas" class="nav-mobile-alerta">+ Crear alerta</a>
 </div>
 </header>
@@ -2004,24 +2058,6 @@ footer {
       </div>
     </div>
   </article>
-
-  <article class="info-section">
-    <h2 class="info-title">Casos de uso reales</h2>
-    <div class="casos-grid">
-      <div class="caso-card">
-        <h3>Primer empleo público</h3>
-        <p>“Usé filtros por región y nivel de renta para ordenar mis primeras postulaciones sin perder fechas clave.”</p>
-      </div>
-      <div class="caso-card">
-        <h3>Cambio de región</h3>
-        <p>“Comparé concursos en mi región actual y la de destino para planificar mi transición laboral.”</p>
-      </div>
-      <div class="caso-card">
-        <h3>Reorientación profesional</h3>
-        <p>“Con estadísticas por sector pude elegir áreas con mayor movimiento y ajustar mejor mi CV.”</p>
-      </div>
-    </div>
-  </article>
 </section>
 
 <!-- ══ FOOTER ══════════════════════════════════════════════════════ -->
@@ -2043,7 +2079,7 @@ footer {
     <div>
       <div class="footer-col-titulo">Comunidad</div>
       <a href="faq.html" class="footer-link">Preguntas frecuentes</a>
-      <a href="editorial.html" class="footer-link">Editorial laboral</a>
+      <a href="ruta-ingreso-empleo-publico.html" class="footer-link">Ruta de ingreso laboral</a>
     </div>
     <div>
       <div class="footer-col-titulo">Legal</div>
@@ -2107,7 +2143,7 @@ footer {
         <div class="modal-rich-text" id="modal-requisitos"></div>
       </div>
       <div class="modal-seccion">
-        <div class="modal-seccion-titulo">Funciones y descripción</div>
+        <div class="modal-seccion-titulo">Descripción</div>
         <div class="modal-rich-text" id="modal-descripcion"></div>
       </div>
     </div>
@@ -2182,40 +2218,146 @@ footer {
 </div>
 
 <!-- ══ JAVASCRIPT ══════════════════════════════════════════════════ -->
+<script src="rich-text.js"></script>
 <script>
 // ── Base URL de la API: prioriza mismo origen y hace fallback automático ──
-// hostname === '' cuando el archivo se abre como file:// en vez de un servidor HTTP
-const _esLocalhost = (
-  window.location.hostname === 'localhost' ||
-  window.location.hostname === '127.0.0.1' ||
-  window.location.hostname === ''
-);
-const API_BASES = _esLocalhost
-  ? ['http://localhost:8000', 'https://contrataoplanta-production.up.railway.app']
-  : ['', 'https://contrataoplanta-production.up.railway.app'];
-let API_BASE_ACTIVA = API_BASES[0];
+// Permite forzar base con window.__API_BASE (útil para previews/static hosting).
+function _normalizarHostname(hostname) {
+  const limpio = String(hostname || '').trim().toLowerCase();
+  // Algunos entornos entregan el loopback IPv6 con corchetes ([::1]).
+  if (limpio.startsWith('[') && limpio.endsWith(']')) return limpio.slice(1, -1);
+  return limpio;
+}
+
+function _esIPv4Loopback(hostname) {
+  const m = /^127(?:\.(\d{1,3})){3}$/.exec(hostname);
+  if (!m) return false;
+  return hostname.split('.').slice(1).every((n) => Number(n) >= 0 && Number(n) <= 255);
+}
+
+function _esIPv6Loopback(hostname) {
+  // Formato comprimido y completo de ::1.
+  return hostname === '::1' || hostname === '0:0:0:0:0:0:0:1';
+}
+
+function _esEntornoLocal(hostname) {
+  return (
+    hostname === '' ||
+    hostname === 'localhost' ||
+    hostname.endsWith('.localhost') ||
+    _esIPv4Loopback(hostname) ||
+    _esIPv6Loopback(hostname)
+  );
+}
+
+function _hostnameParaURL(hostname) {
+  return hostname.includes(':') ? `[${hostname}]` : hostname;
+}
+
+const _hostnameCrudo = window.location.hostname || '';
+const _hostnameNormalizado = _normalizarHostname(_hostnameCrudo);
+const _esLocalhost = _esEntornoLocal(_hostnameNormalizado);
+const _origenActual = (window.location.origin || '').replace(/\/+$/, '').toLowerCase();
+
+const _apiBases = [];
+const _agregarBase = (base) => {
+  if (typeof base !== 'string') return;
+  const limpio = base.trim().replace(/\/+$/, '');
+  // Evitar duplicar el origen actual como base absoluta: `''` (mismo origen)
+  // ya cubre ese caso y reintentarlo sólo enmascara el error real con un
+  // segundo "Failed to fetch".
+  if (limpio && limpio.toLowerCase() === _origenActual) return;
+  if (!_apiBases.includes(limpio)) _apiBases.push(limpio);
+};
+
+_agregarBase(window.__API_BASE || '');
+
+// Siempre intentar mismo origen primero (/api).
+_agregarBase('');
+
+if (_esLocalhost) {
+  // En desarrollo/file://: probar backend local directo en variantes loopback.
+  const _hostsLocales = ['localhost', '127.0.0.1', '::1'];
+  if (_hostnameNormalizado && !_hostsLocales.includes(_hostnameNormalizado)) {
+    _hostsLocales.unshift(_hostnameNormalizado);
+  }
+
+  const _protocoloPreferido = window.location.protocol === 'https:' ? 'https:' : 'http:';
+  for (const host of _hostsLocales) {
+    const hostUrl = _hostnameParaURL(host);
+    _agregarBase(`${_protocoloPreferido}//${hostUrl}:8000`);
+    if (_protocoloPreferido !== 'http:') _agregarBase(`http://${hostUrl}:8000`);
+  }
+}
+
+// Fallbacks remotos explícitos para entornos estáticos/previews sin proxy /api.
+// Incluimos ambos dominios de marca para evitar cortes al publicar en
+// `estadoemplea.pages.dev` o `contrataoplanta.pages.dev`.
+_agregarBase('https://api.estadoemplea.cl');
+_agregarBase('https://estadoemplea.cl');
+_agregarBase('https://api.contrataoplanta.cl');
+_agregarBase('https://contrataoplanta.cl');
+
+const API_BASES = _apiBases;
+let API_BASE_ACTIVA = API_BASES[0] || '';
+const API_TIMEOUT_MS = 12000;
+const MAX_REINTENTOS_AUTOMATICOS = 3;
+let _reintentosConsecutivos = 0;
+
+console.info('[API] Resolución de entorno', {
+  hostnameCrudo: _hostnameCrudo,
+  hostnameNormalizado: _hostnameNormalizado,
+  esLocalhost: _esLocalhost,
+  origin: window.location.origin,
+  apiBaseForzada: window.__API_BASE || null,
+});
+console.info('[API] Bases candidatas', API_BASES);
 
 async function fetchApi(path, options = {}) {
   let ultimoError = null;
+  const errores = [];
+
   for (const base of API_BASES) {
     const url = `${base}${path}`;
     try {
-      const resp = await fetch(url, options);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+      const opts = { ...options, signal: controller.signal };
+      console.debug('[API] Intentando endpoint', { url, base });
+      const resp = await fetch(url, opts);
+      clearTimeout(timeoutId);
 
-      // Solo aceptar respuestas que vengan de la API real (Content-Type JSON).
-      // Si nginx u otro servidor devuelve HTML (ej. 404 de archivos estáticos),
-      // intentamos la siguiente base en vez de aceptar la respuesta inválida.
+      // Aceptar sólo respuestas que vengan de la API real (Content-Type JSON).
+      // Si nginx u otro servidor devuelve HTML (ej. 404 de archivos estáticos
+      // o 502 de un upstream caído), intentamos la siguiente base en vez de
+      // aceptar la respuesta inválida. Para JSON devolvemos siempre, incluso
+      // con 5xx: el backend respondió y el llamador puede mostrar el detalle
+      // real en lugar de volver a intentar contra fallbacks equivalentes.
       const ct = (resp.headers.get('content-type') || '').toLowerCase();
-      if (resp.status < 500 && ct.includes('application/json')) {
+      if (ct.includes('application/json')) {
         API_BASE_ACTIVA = base;
+        console.info('[API] Endpoint activo', { base: API_BASE_ACTIVA || '(mismo origen)', path, status: resp.status });
         return resp;
       }
-      ultimoError = new Error(`HTTP ${resp.status} en ${url}`);
+
+      const detalle = `HTTP ${resp.status} (${ct || 'sin content-type'})`;
+      ultimoError = new Error(`${detalle} en ${url}`);
+      errores.push({ url, base, detalle });
+      console.warn('[API] Respuesta descartada', { url, status: resp.status, contentType: ct });
     } catch (err) {
-      ultimoError = err;
+      const isTimeout = err?.name === 'AbortError';
+      ultimoError = isTimeout ? new Error(`Timeout (${API_TIMEOUT_MS}ms)`) : err;
+      const detalle = isTimeout
+        ? `Timeout (${API_TIMEOUT_MS}ms)`
+        : (err && err.message ? err.message : String(err));
+      errores.push({ url, base, detalle });
+      console.warn('[API] Error de conexión', { url, detalle });
     }
   }
-  throw ultimoError || new Error(`No se pudo contactar la API para ${path}`);
+
+  const errorFinal = ultimoError || new Error(`No se pudo contactar la API para ${path}`);
+  errorFinal.detalles = errores;
+  throw errorFinal;
 }
 
 // ── Estado global de filtros y paginación ──────────────────────────────────
@@ -2287,93 +2429,24 @@ const ICONOS_SECTOR = {
 
 // ── Escape helpers ────────────────────────────────────────────────────────
 function escAttr(s) {
-  return (s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return (s || '')
+    .replace(/&/g,'&amp;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;');
 }
 function escHtml(s) {
   return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
-
-// ── Format de texto libre (descripción / requisitos) a HTML estructurado ──
-// Detecta: viñetas (- * • · – —), items numerados (1. 1)), títulos (línea
-// corta terminada en :, o en MAYÚSCULAS), párrafos normales. Destaca los
-// "rotulos:" iniciales en negrita para mejorar escaneo visual.
-function formatRichText(rawText) {
-  const text = (rawText || '').trim();
-  if (!text) return '';
-
-  // Normaliza: convierte viñetas inline ( • / · / – seguidos de espacio) en
-  // saltos de línea para poder detectar items cuando vienen en una sola línea.
-  const normalizado = text
-    .replace(/\r\n?/g, '\n')
-    .replace(/\s*[•·]\s+/g, '\n• ')
-    .replace(/(?:^|\s)[–—]\s+/g, '\n– ');
-
-  const lineas = normalizado.split('\n').map(l => l.trim()).filter(Boolean);
-
-  const bulletRe    = /^[\-*•·–—]\s+(.+)$/;
-  const numberedRe  = /^(\d{1,2})[.\)]\s+(.+)$/;
-  // Letter-bullet: sólo con paréntesis de cierre para evitar falsos positivos
-  const letterRe    = /^([a-zA-Z])\)\s+(.+)$/;
-  // Heading: línea mayormente en MAYÚSCULAS (>=70%), sin signo final común
-  const isAllCaps = (s) => {
-    const letras = s.replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñ]/g, '');
-    if (letras.length < 3) return false;
-    const upp = letras.replace(/[^A-ZÁÉÍÓÚÑ]/g, '').length;
-    return (upp / letras.length) >= 0.7;
-  };
-  const isHeadingColon = (s) =>
-    /^[^:]{2,80}:\s*$/.test(s) && !/[.!?]$/.test(s);
-
-  const out = [];
-  let listBuffer = [];
-  let listType   = null; // 'ul' | 'ol'
-
-  const flushList = () => {
-    if (!listBuffer.length) return;
-    const tag = listType === 'ol' ? 'ol' : 'ul';
-    out.push(`<${tag}>${listBuffer.map(i => `<li>${i}</li>`).join('')}</${tag}>`);
-    listBuffer = [];
-    listType   = null;
-  };
-
-  for (const linea of lineas) {
-    let m;
-    if ((m = linea.match(numberedRe))) {
-      if (listType && listType !== 'ol') flushList();
-      listType = 'ol';
-      listBuffer.push(renderInline(m[2]));
-      continue;
-    }
-    if ((m = linea.match(bulletRe)) || (m = linea.match(letterRe))) {
-      if (listType && listType !== 'ul') flushList();
-      listType = 'ul';
-      const contenido = m[m.length - 1];
-      listBuffer.push(renderInline(contenido));
-      continue;
-    }
-    // Heading
-    if (isHeadingColon(linea) || (isAllCaps(linea) && linea.length <= 80)) {
-      flushList();
-      const limpio = linea.replace(/:\s*$/, '');
-      out.push(`<h4 class="rt-heading">${escHtml(limpio)}</h4>`);
-      continue;
-    }
-    flushList();
-    out.push(`<p>${renderInline(linea)}</p>`);
-  }
-  flushList();
-  return out.join('');
-
-  // Destaca "Rotulo: ..." al inicio del párrafo con <strong>
-  function renderInline(s) {
-    const esc = escHtml(s);
-    const prefix = esc.match(/^([A-ZÁÉÍÓÚÑ][^:.\n]{1,60}?):\s+(.*)$/);
-    if (prefix) {
-      return `<strong>${prefix[1]}:</strong> ${prefix[2]}`;
-    }
-    return esc;
-  }
+function sanitizeHighlightHtml(s) {
+  const raw = String(s || '');
+  const escaped = escHtml(raw);
+  return escaped.replace(/&lt;(\/?)mark&gt;/gi, '<$1mark>');
 }
+
+// Formato de texto libre (descripción / requisitos) a HTML estructurado.
+// La lógica vive en rich-text.js y se expone como window.formatRichText.
 
 function isValidHttpUrl(url) {
   if (!url || typeof url !== 'string') return false;
@@ -2873,23 +2946,65 @@ function prellenarAlertaDesdeFiltros() {
 }
 
 let _reintentoTimer = null;
-function renderError() {
+let _reintentoIntervalo = null;
+function _resumenErrorConexion(err) {
+  if (!err) return 'No recibimos respuesta desde ninguno de los endpoints configurados.';
+  const detallePrincipal = err.message || String(err);
+  const intentos = Array.isArray(err.detalles) ? err.detalles : [];
+  if (!intentos.length) return detallePrincipal;
+  const ultimo = intentos[intentos.length - 1];
+  return `${detallePrincipal}. Último intento: ${ultimo.url}`;
+}
+
+function _tipoError(err) {
+  const detalle = String(err?.message || err || '').toLowerCase();
+  if (detalle.includes('timeout')) return 'timeout';
+  if (detalle.includes('failed to fetch')) return 'network';
+  if (detalle.includes('http 5')) return 'server';
+  if (detalle.includes('http 4')) return 'client';
+  return 'unknown';
+}
+
+function renderError(err = null) {
+  const tipo = _tipoError(err);
+  const detalle = _resumenErrorConexion(err);
+  const mensaje = (
+    tipo === 'timeout' ? 'El backend tardó demasiado en responder.' :
+    tipo === 'network' ? 'No logramos conectarnos al backend (red, DNS o servicio caído).' :
+    tipo === 'server' ? 'El backend respondió con error interno (5xx).' :
+    tipo === 'client' ? 'La solicitud fue rechazada por el backend (4xx).' :
+    'No se pudo completar la solicitud al backend.'
+  );
+  const quedanReintentos = _reintentosConsecutivos < MAX_REINTENTOS_AUTOMATICOS;
   document.getElementById('lista-ofertas').innerHTML = `
     <div class="estado-error">
-      ⚠️ No pudimos conectar con el servidor.
-      <p class="estado-mensaje" id="msg-reintento">Reintentando en 30 segundos...</p>
+      ⚠️ No pudimos cargar ofertas desde el backend.
+      <p class="estado-mensaje">${mensaje}</p>
+      <p class="estado-mensaje" id="msg-reintento">${quedanReintentos ? 'Reintentando en 30 segundos...' : 'Se detuvieron los reintentos automáticos.'}</p>
+      <p class="estado-mensaje">${detalle}</p>
+      <button type="button" class="estado-alerta-cta" id="btn-reintento-manual">Reintentar ahora</button>
     </div>`;
   document.getElementById('paginacion').innerHTML = '';
+  document.getElementById('btn-reintento-manual')?.addEventListener('click', () => {
+    _reintentosConsecutivos = 0;
+    cargarOfertas();
+  });
 
   clearTimeout(_reintentoTimer);
+  if (_reintentoIntervalo) clearInterval(_reintentoIntervalo);
+
+  if (!quedanReintentos) return;
   let segs = 30;
-  const intervalo = setInterval(() => {
+  _reintentoIntervalo = setInterval(() => {
     segs--;
     const msg = document.getElementById('msg-reintento');
     if (msg) msg.textContent = `Reintentando en ${segs} segundos...`;
-    if (segs <= 0) clearInterval(intervalo);
+    if (segs <= 0 && _reintentoIntervalo) clearInterval(_reintentoIntervalo);
   }, 1000);
-  _reintentoTimer = setTimeout(() => cargarOfertas(), 30000);
+  _reintentoTimer = setTimeout(() => {
+    _reintentosConsecutivos += 1;
+    cargarOfertas();
+  }, 30000);
 }
 
 // ── Paginación dinámica ────────────────────────────────────────────────────
@@ -2986,6 +3101,8 @@ async function cargarOfertas() {
     const data = await resp.json();
 
     clearTimeout(_reintentoTimer);
+    if (_reintentoIntervalo) clearInterval(_reintentoIntervalo);
+    _reintentosConsecutivos = 0;
 
     // Actualizar contador
     document.getElementById('count-num').textContent = data.total.toLocaleString('es-CL');
@@ -3018,7 +3135,7 @@ lista.innerHTML = header + itemsHtml;
 
   } catch (err) {
     console.error('Error cargando ofertas:', err);
-    renderError();
+    renderError(err);
   }
 }
 
@@ -3120,8 +3237,9 @@ function renderMasActivas(instituciones) {
   if (!instituciones.length) return;
   const html = instituciones.map(inst => {
     const icono = ICONOS_SECTOR[''] || '🏢';
+    const instId = Number.isFinite(Number(inst.id)) ? Number(inst.id) : 0;
     return `
-      <div class="inst-item" onclick="filtrarInstitucion(${inst.id}, '${escAttr(inst.nombre || '')}')">
+      <div class="inst-item" role="button" tabindex="0" data-inst-id="${instId}" data-inst-nombre="${escAttr(inst.nombre || '')}">
         <div class="inst-icon">${icono}</div>
         <div class="inst-info">
           <div class="inst-nombre">${inst.nombre || 'Institución'}</div>
@@ -3130,7 +3248,22 @@ function renderMasActivas(instituciones) {
         <span class="inst-arrow">›</span>
       </div>`;
   }).join('');
-  document.getElementById('masactivas-lista').innerHTML = html;
+  const lista = document.getElementById('masactivas-lista');
+  lista.innerHTML = html;
+  lista.querySelectorAll('.inst-item').forEach(el => {
+    const abrir = () => {
+      const id = Number.parseInt(el.dataset.instId || '0', 10);
+      const nombre = el.dataset.instNombre || '';
+      filtrarInstitucion(id, nombre);
+    };
+    el.addEventListener('click', abrir);
+    el.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' || ev.key === ' ') {
+        ev.preventDefault();
+        abrir();
+      }
+    });
+  });
 }
 
 function filtrarInstitucion(id, nombre) {
@@ -3387,16 +3520,22 @@ function cerrarModal(e, force) {
   }
 }
 
-// Construye el deep-link a esta oferta dentro de contrataoplanta.cl.
+// Construye el deep-link a esta oferta dentro del dominio actual.
 // Ventaja vs compartir oferta.url_oferta directo: el receptor ve nuestra
 // previsualización (OG image dinámica) y aterriza en el modal preseleccionado,
 // con un solo click para postular.
 function urlDeepLinkOferta(oferta) {
   const url = new URL(window.location.href);
-  url.search = '';
+  const pathname = (url.pathname || '').replace(/\/+/g, '/');
+  const isLegacyRoot = pathname === '/' || pathname === '/index.html' || pathname === '/index_contrataoplanta.html';
+  if (isLegacyRoot) {
+    // Evita depender del redirect / -> /web/index.html para deep links compartidos.
+    url.pathname = '/web/index.html';
+  }
+
+  // Conservamos otros filtros existentes y limpiamos solo el hash visual.
   url.hash = '';
-  url.pathname = '/web/index.html';
-  url.searchParams.set('oferta', String(oferta.id));
+  url.pathname = `/oferta/${oferta.id}`;
   return url.toString();
 }
 
@@ -3441,7 +3580,7 @@ function configurarCompartir(oferta) {
     const apiBase = (typeof API_BASE_ACTIVA === 'string') ? API_BASE_ACTIVA : '';
     const ogUrl = `${apiBase}/api/og/${oferta.id}.png`;
     if (navigator.share) {
-      navigator.share({ title: titulo, text: texto + '\nVer ofertas similares en contrataoplanta.cl', url })
+      navigator.share({ title: titulo, text: texto + `\nVer ofertas similares en ${window.location.hostname}`, url })
         .catch(() => abrirIG(oferta, url, ogUrl));
     } else {
       abrirIG(oferta, url, ogUrl);
@@ -3477,17 +3616,79 @@ function configurarCompartir(oferta) {
 
 // ── QR popover (lazy-loaded library) ──
 let _qrLibPromise = null;
+const _QR_LIB_SRC = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js';
+
+function _buscarScriptQR() {
+  return Array.from(document.scripts).find((script) => {
+    if (script.dataset && script.dataset.qrLib === 'qrcode-generator') return true;
+    return script.src === _QR_LIB_SRC;
+  }) || null;
+}
+
+function _limpiarScriptQR(script) {
+  if (script && script.parentNode) script.parentNode.removeChild(script);
+}
+
+function _resolverQRLib() {
+  if (window.qrcode) return window.qrcode;
+  throw new Error('La librería QR se cargó, pero no pudo inicializarse correctamente');
+}
+
 function _cargarQRLib() {
+  if (window.qrcode) {
+    _qrLibPromise = Promise.resolve(window.qrcode);
+    return _qrLibPromise;
+  }
+
   if (_qrLibPromise) return _qrLibPromise;
+
+  let script = _buscarScriptQR();
+  if (script && script.dataset.qrEstado === 'error') {
+    _limpiarScriptQR(script);
+    script = null;
+  }
+  if (script && !window.qrcode && (script.dataset.qrEstado === 'loaded' || script.readyState === 'complete')) {
+    _limpiarScriptQR(script);
+    script = null;
+  }
+
+  if (!script) {
+    script = document.createElement('script');
+    script.src = _QR_LIB_SRC;
+    script.async = true;
+    script.dataset.qrLib = 'qrcode-generator';
+    script.dataset.qrEstado = 'loading';
+    document.head.appendChild(script);
+  }
+
   _qrLibPromise = new Promise((resolve, reject) => {
-    if (window.qrcode) return resolve(window.qrcode);
-    const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js';
-    s.async = true;
-    s.onload = () => window.qrcode ? resolve(window.qrcode) : reject(new Error('qrcode lib no disponible'));
-    s.onerror = () => reject(new Error('No se pudo cargar la librería QR'));
-    document.head.appendChild(s);
+    const onLoad = () => {
+      try {
+        script.dataset.qrEstado = 'loaded';
+        resolve(_resolverQRLib());
+      } catch (err) {
+        script.dataset.qrEstado = 'error';
+        _limpiarScriptQR(script);
+        reject(err);
+      }
+    };
+
+    const onError = () => {
+      script.dataset.qrEstado = 'error';
+      _limpiarScriptQR(script);
+      reject(new Error('No se pudo cargar la librería QR'));
+    };
+
+    script.addEventListener('load', onLoad, { once: true });
+    script.addEventListener('error', onError, { once: true });
+  }).then((qrcode) => {
+    _qrLibPromise = Promise.resolve(qrcode);
+    return qrcode;
+  }).catch((err) => {
+    _qrLibPromise = null;
+    throw err;
   });
+
   return _qrLibPromise;
 }
 
@@ -4222,7 +4423,11 @@ restaurarFiltrosDesdeURL();
 // ── 8.b Deep-link a oferta concreta: ?oferta=ID abre el modal al cargar ──
 (function abrirOfertaDesdeURL() {
   try {
-    const id = parseInt(new URLSearchParams(window.location.search).get('oferta') || '', 10);
+    const params = new URLSearchParams(window.location.search);
+    const fromQuery = parseInt(params.get('oferta') || '', 10);
+    const fromPathMatch = window.location.pathname.match(/^\/oferta\/(\d+)(?:\/)?$/);
+    const fromPath = fromPathMatch ? parseInt(fromPathMatch[1], 10) : NaN;
+    const id = !isNaN(fromQuery) && fromQuery > 0 ? fromQuery : fromPath;
     if (!isNaN(id) && id > 0) {
       // Esperar al primer pintado para no pelear con la animación de carga.
       window.addEventListener('load', () => setTimeout(() => abrirModal(id), 200));
@@ -4381,7 +4586,7 @@ function initMeilisearchAutocomplete() {
             onmouseenter="this.style.background='var(--bg2)'"
             onmouseleave="this.style.background=''"
             data-cargo="${escAttr(s.cargo)}">
-            <div style="font-weight:500;color:var(--texto)">${s.cargo_highlight || escHtml(s.cargo)}</div>
+            <div style="font-weight:500;color:var(--texto)">${s.cargo_highlight ? sanitizeHighlightHtml(s.cargo_highlight) : escHtml(s.cargo)}</div>
             <div style="font-size:11px;color:var(--texto3);margin-top:2px">${escHtml(s.institucion)}${s.region ? ' · ' + escHtml(s.region) : ''}</div>
           </div>
         `).join('');
@@ -4484,7 +4689,12 @@ setInterval(mostrarUltimaActualizacion, 5 * 60 * 1000); // refrescar cada 5 min
   });
 
   // Update favorites count in mobile menu
-  var favCount = JSON.parse(localStorage.getItem('favoritos') || '[]').length;
+  var favCount = 0;
+  try {
+    favCount = JSON.parse(localStorage.getItem('fav_contrataoplanta') || '[]').length;
+  } catch {
+    favCount = 0;
+  }
   var mobileFav = document.getElementById('nav-mobile-favoritos');
   if (mobileFav && favCount > 0) {
     mobileFav.textContent = '\u2661 Mis favoritos (' + favCount + ')';
