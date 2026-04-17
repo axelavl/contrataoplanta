@@ -2297,6 +2297,11 @@ function escAttr(s) {
 function escHtml(s) {
   return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
+function sanitizeHighlightHtml(s) {
+  const raw = String(s || '');
+  const escaped = escHtml(raw);
+  return escaped.replace(/&lt;(\/?)mark&gt;/gi, '<$1mark>');
+}
 
 // ── Format de texto libre (descripción / requisitos) a HTML estructurado ──
 // Reglas:
@@ -4519,7 +4524,7 @@ function initMeilisearchAutocomplete() {
             onmouseenter="this.style.background='var(--bg2)'"
             onmouseleave="this.style.background=''"
             data-cargo="${escAttr(s.cargo)}">
-            <div style="font-weight:500;color:var(--texto)">${s.cargo_highlight || escHtml(s.cargo)}</div>
+            <div style="font-weight:500;color:var(--texto)">${s.cargo_highlight ? sanitizeHighlightHtml(s.cargo_highlight) : escHtml(s.cargo)}</div>
             <div style="font-size:11px;color:var(--texto3);margin-top:2px">${escHtml(s.institucion)}${s.region ? ' · ' + escHtml(s.region) : ''}</div>
           </div>
         `).join('');
