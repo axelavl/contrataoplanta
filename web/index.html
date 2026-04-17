@@ -471,7 +471,6 @@
       <button class="btn-modal-sec" id="modal-btn-favorito">♡ Guardar</button>
       <button class="btn-modal-sec btn-modal-sec--more" id="modal-btn-more" type="button" aria-expanded="false" aria-controls="modal-more-panel">⋯ Más</button>
       <div class="modal-more-panel" id="modal-more-panel" hidden>
-        <button class="btn-modal-sec" id="modal-btn-alerta">🔔 Alertarme</button>
         <button class="btn-modal-sec btn-modal-sec--share" id="share-primary" type="button">↗ Compartir</button>
         <a class="btn-modal-sec btn-modal-sec--share-link" id="share-wa" target="_blank" rel="noopener" title="Compartir en WhatsApp">WhatsApp</a>
         <button class="share-btn share-btn--copy" id="share-copy" type="button" title="Copiar enlace" aria-label="Copiar enlace">
@@ -2146,13 +2145,6 @@ async function abrirModal(ofertaId) {
     btnFav.textContent = favs.some(f => f.id === o.id) ? '♥ Guardado' : '♡ Guardar';
     btnFav.classList.toggle('btn-modal-sec--activo', favs.some(f => f.id === o.id));
     btnFav.onclick = () => toggleFavorito(o);
-
-    // Botón alertarme
-    document.getElementById('modal-btn-alerta').onclick = () => {
-      cerrarModal(null, true);
-      document.getElementById('alertas').scrollIntoView({ behavior: 'smooth', block: 'start' });
-      setTimeout(() => document.getElementById('alerta-email')?.focus(), 500);
-    };
 
     // Barra de compartir (RRSS + copiar enlace)
     configurarCompartir(o);
