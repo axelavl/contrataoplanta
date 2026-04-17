@@ -3522,17 +3522,79 @@ function configurarCompartir(oferta) {
 
 // ── QR popover (lazy-loaded library) ──
 let _qrLibPromise = null;
+const _QR_LIB_SRC = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js';
+
+function _buscarScriptQR() {
+  return Array.from(document.scripts).find((script) => {
+    if (script.dataset && script.dataset.qrLib === 'qrcode-generator') return true;
+    return script.src === _QR_LIB_SRC;
+  }) || null;
+}
+
+function _limpiarScriptQR(script) {
+  if (script && script.parentNode) script.parentNode.removeChild(script);
+}
+
+function _resolverQRLib() {
+  if (window.qrcode) return window.qrcode;
+  throw new Error('La librería QR se cargó, pero no pudo inicializarse correctamente');
+}
+
 function _cargarQRLib() {
+  if (window.qrcode) {
+    _qrLibPromise = Promise.resolve(window.qrcode);
+    return _qrLibPromise;
+  }
+
   if (_qrLibPromise) return _qrLibPromise;
+
+  let script = _buscarScriptQR();
+  if (script && script.dataset.qrEstado === 'error') {
+    _limpiarScriptQR(script);
+    script = null;
+  }
+  if (script && !window.qrcode && (script.dataset.qrEstado === 'loaded' || script.readyState === 'complete')) {
+    _limpiarScriptQR(script);
+    script = null;
+  }
+
+  if (!script) {
+    script = document.createElement('script');
+    script.src = _QR_LIB_SRC;
+    script.async = true;
+    script.dataset.qrLib = 'qrcode-generator';
+    script.dataset.qrEstado = 'loading';
+    document.head.appendChild(script);
+  }
+
   _qrLibPromise = new Promise((resolve, reject) => {
-    if (window.qrcode) return resolve(window.qrcode);
-    const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js';
-    s.async = true;
-    s.onload = () => window.qrcode ? resolve(window.qrcode) : reject(new Error('qrcode lib no disponible'));
-    s.onerror = () => reject(new Error('No se pudo cargar la librería QR'));
-    document.head.appendChild(s);
+    const onLoad = () => {
+      try {
+        script.dataset.qrEstado = 'loaded';
+        resolve(_resolverQRLib());
+      } catch (err) {
+        script.dataset.qrEstado = 'error';
+        _limpiarScriptQR(script);
+        reject(err);
+      }
+    };
+
+    const onError = () => {
+      script.dataset.qrEstado = 'error';
+      _limpiarScriptQR(script);
+      reject(new Error('No se pudo cargar la librería QR'));
+    };
+
+    script.addEventListener('load', onLoad, { once: true });
+    script.addEventListener('error', onError, { once: true });
+  }).then((qrcode) => {
+    _qrLibPromise = Promise.resolve(qrcode);
+    return qrcode;
+  }).catch((err) => {
+    _qrLibPromise = null;
+    throw err;
   });
+
   return _qrLibPromise;
 }
 
