@@ -106,6 +106,13 @@ ACTIVE_OFFER_SQL = f"{OFFER_STATUS_SQL} IN ('active', 'closing_today')"
 SITE_URL = (os.getenv("SITE_URL", "https://contrataoplanta.cl") or "https://contrataoplanta.cl").rstrip("/")
 WEB_INDEX_PATH = _PROJECT_ROOT / "web" / "index.html"
 DEFAULT_OG_IMAGE = f"{SITE_URL}/og-default.jpg"
+STATUS_LEGACY_MAP = {
+    "active": "activo",
+    "closing_today": "activo",
+    "upcoming": "proximo",
+    "closed": "cerrado",
+    "unknown": "desconocido",
+}
 
 
 class AlertaPayload(BaseModel):
@@ -433,6 +440,9 @@ def dias_restantes(value: date | None) -> int | None:
 def serialize_offer(row: dict[str, Any]) -> dict[str, Any]:
     data = dict(row)
     data["dias_restantes"] = dias_restantes(data.get("fecha_cierre"))
+    estado = str(data.get("estado") or "unknown").strip().lower()
+    data["estado_normalizado"] = estado
+    data["estado_legacy"] = STATUS_LEGACY_MAP.get(estado, "desconocido")
     return data
 
 

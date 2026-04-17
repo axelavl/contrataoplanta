@@ -2620,7 +2620,7 @@ function plazoInfo(dias) {
 }
 
 function normalizarEstadoOferta(oferta) {
-  const raw = String(oferta?.estado || '').toLowerCase();
+  const raw = String(oferta?.estado_normalizado || oferta?.estado || '').toLowerCase();
   if (['active', 'closing_today', 'closed', 'upcoming', 'unknown'].includes(raw)) return raw;
   const dias = oferta?.dias_restantes;
   if (typeof dias === 'number') {
