@@ -92,11 +92,12 @@ ALLOW_ORIGINS = _load_allow_origins()
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 OFFER_STATUS_SQL = (
     "CASE "
-    "WHEN LOWER(COALESCE(NULLIF(o.estado, ''), '')) IN ('cerrado', 'vencido', 'closed', 'expired') THEN 'closed' "
     "WHEN COALESCE(o.activa, TRUE) = FALSE THEN 'closed' "
-    "WHEN o.fecha_cierre IS NOT NULL AND o.fecha_cierre < CURRENT_DATE THEN 'closed' "
+    "WHEN LOWER(COALESCE(NULLIF(o.estado, ''), '')) IN "
+    "('cerrada', 'cerrado', 'cerrada_manual', 'vencido', 'finalizada', 'closed', 'expired') THEN 'closed' "
     "WHEN COALESCE(o.fecha_inicio, o.fecha_publicacion) IS NOT NULL "
     "  AND COALESCE(o.fecha_inicio, o.fecha_publicacion) > CURRENT_DATE THEN 'upcoming' "
+    "WHEN o.fecha_cierre IS NOT NULL AND o.fecha_cierre < CURRENT_DATE THEN 'closed' "
     "WHEN o.fecha_cierre = CURRENT_DATE THEN 'closing_today' "
     "WHEN o.fecha_cierre IS NULL OR o.fecha_cierre > CURRENT_DATE THEN 'active' "
     "ELSE 'unknown' "
