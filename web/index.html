@@ -467,7 +467,7 @@
     </div>
     <div class="modal-actions">
       <button class="btn-modal-primary" id="modal-btn-postular">Ir a postular →</button>
-      <button class="btn-modal-sec" id="modal-btn-bases" style="display:none">📄 Ver bases</button>
+      <button class="btn-modal-sec" id="modal-btn-bases" style="display:none">📄 Bases oficiales</button>
       <button class="btn-modal-sec" id="modal-btn-favorito">♡ Guardar</button>
       <button class="btn-modal-sec btn-modal-sec--more" id="modal-btn-more" type="button" aria-expanded="false" aria-controls="modal-more-panel">⋯ Más</button>
       <div class="modal-more-panel" id="modal-more-panel" hidden>
@@ -482,35 +482,25 @@
   </div>
 </div>
 
-<!-- ══ VISOR DE BASES (PDF) ═══════════════════════════════════════ -->
+<!-- ══ ACCIONES DE BASES OFICIALES ═════════════════════════════════ -->
 <div id="bases-viewer" class="bases-viewer-overlay" role="dialog" aria-modal="true" aria-labelledby="bases-viewer-title" hidden>
   <div class="bases-viewer-panel">
     <header class="bases-viewer-header">
       <div class="bases-viewer-meta">
-        <div class="bases-viewer-kicker">Bases del concurso</div>
-        <h3 id="bases-viewer-title">Visualizador interno</h3>
+        <div class="bases-viewer-kicker">Documento externo</div>
+        <h3 id="bases-viewer-title">Bases oficiales del concurso</h3>
       </div>
-      <button class="bases-viewer-close" type="button" aria-label="Cerrar visor de bases" onclick="cerrarVisorBases()">✕</button>
+      <button class="bases-viewer-close" type="button" aria-label="Cerrar acciones de bases" onclick="cerrarVisorBases()">✕</button>
     </header>
 
-    <div class="bases-viewer-actions" role="group" aria-label="Acciones del documento">
-      <a id="bases-action-open" class="btn-modal-sec" target="_blank" rel="noopener noreferrer">Abrir original ↗</a>
-      <a id="bases-action-download" class="btn-modal-sec" target="_blank" rel="noopener noreferrer" download>Descargar PDF</a>
-      <button id="bases-action-copy" class="btn-modal-sec" type="button">Copiar enlace</button>
-      <button id="bases-action-back" class="btn-modal-sec" type="button">Volver al detalle</button>
-    </div>
-
-    <div class="bases-viewer-status" id="bases-viewer-status" aria-live="polite">Cargando bases…</div>
-
-    <div class="bases-viewer-content">
-      <iframe id="bases-viewer-frame" class="bases-viewer-frame" title="Visualizador de bases del concurso" loading="lazy"></iframe>
-      <div id="bases-viewer-fallback" class="bases-viewer-fallback" hidden>
-        <p class="bases-fallback-title">No pudimos mostrar este PDF dentro del sitio.</p>
-        <p class="bases-fallback-copy">Algunos portales bloquean la visualización embebida. Puedes continuar con una de estas opciones:</p>
-        <div class="bases-fallback-actions">
-          <a id="bases-fallback-open" class="btn-modal-primary" target="_blank" rel="noopener noreferrer">Abrir PDF original</a>
-          <a id="bases-fallback-download" class="btn-modal-sec" target="_blank" rel="noopener noreferrer" download>Descargar PDF</a>
-        </div>
+    <div class="bases-viewer-content bases-viewer-content--actions">
+      <p class="bases-fallback-copy">
+        Las bases están alojadas en el sitio oficial del organismo. Algunos documentos externos no se visualizan correctamente dentro de la plataforma.
+      </p>
+      <div class="bases-fallback-actions" role="group" aria-label="Acciones de bases oficiales">
+        <a id="bases-action-open" class="btn-modal-primary" target="_blank" rel="noopener noreferrer">Abrir bases oficiales ↗</a>
+        <a id="bases-action-download" class="btn-modal-sec" target="_blank" rel="noopener noreferrer" download>Descargar PDF</a>
+        <button id="bases-action-copy" class="btn-modal-sec" type="button">Copiar enlace</button>
       </div>
     </div>
   </div>
@@ -1011,7 +1001,7 @@ const esUrlValida = (typeof isValidHttpUrl === 'function')
       }
     };
 
-// ── Botón "Ver bases": consulta primero el flag del backend ──────────────
+// ── Botón "Bases oficiales": consulta primero el flag del backend ──────────
 // Si el backend marcó url_bases_valida === false → deshabilitar.
 // Si viene null/ausente → degradación a esUrlValida (validación client-side).
 function renderBtnBases(oferta) {
@@ -1024,7 +1014,7 @@ function renderBtnBases(oferta) {
   if (!valida) {
     return `<span class="btn-ver btn-ver-off" title="Enlace de bases no disponible" onclick="event.stopPropagation()">Bases no disponibles</span>`;
   }
-  return `<button class="btn-ver" onclick="event.stopPropagation();abrirVisorBasesPorId(${Number(oferta.id) || 0})">Ver bases</button>`;
+  return `<button class="btn-ver" onclick="event.stopPropagation();abrirVisorBasesPorId(${Number(oferta.id) || 0})">Bases oficiales</button>`;
 }
 
 // ── ¿La oferta tiene una URL de postulación utilizable? ─────────────────
@@ -2139,10 +2129,11 @@ async function abrirModal(ofertaId) {
       btnPostular.onclick = null;
     }
 
-    // Botón Ver bases (solo si es distinto y válido por backend o cliente)
+    // Botón Bases oficiales (solo si es distinto y válido por backend o cliente)
     const btnBases = document.getElementById('modal-btn-bases');
     if (o.url_bases && o.url_bases !== o.url_oferta && basesOk) {
       btnBases.style.display = 'inline-flex';
+      btnBases.textContent = '📄 Bases oficiales';
       btnBases.onclick = () => abrirVisorBases(o);
     } else {
       btnBases.style.display = 'none';
@@ -2189,37 +2180,14 @@ function cerrarModal(e, force) {
   }
 }
 
-let _basesViewerTimeout = null;
 let _basesViewerUrl = '';
 let _basesViewerLastFocus = null;
-
-function _resetVisorBases() {
-  const frame = document.getElementById('bases-viewer-frame');
-  const fallback = document.getElementById('bases-viewer-fallback');
-  const status = document.getElementById('bases-viewer-status');
-  clearTimeout(_basesViewerTimeout);
-  _basesViewerTimeout = null;
-  frame.removeAttribute('src');
-  fallback.hidden = true;
-  status.textContent = 'Cargando bases…';
-}
-
-function _setVisorBasesFallback(mensaje = 'No pudimos abrir este documento dentro del sitio.') {
-  const fallback = document.getElementById('bases-viewer-fallback');
-  const status = document.getElementById('bases-viewer-status');
-  const frame = document.getElementById('bases-viewer-frame');
-  fallback.hidden = false;
-  frame.classList.add('is-hidden');
-  status.textContent = mensaje;
-}
 
 function cerrarVisorBases(opts = {}) {
   const { mantenerScroll = false } = opts;
   const overlay = document.getElementById('bases-viewer');
   if (overlay.hidden) return;
   overlay.hidden = true;
-  _resetVisorBases();
-  document.getElementById('bases-viewer-frame').classList.remove('is-hidden');
   if (!mantenerScroll && !document.getElementById('modal').classList.contains('open')) {
     document.body.style.overflow = '';
   }
@@ -2249,36 +2217,15 @@ function abrirVisorBases(oferta) {
   _basesViewerLastFocus = document.activeElement;
   _basesViewerUrl = basesUrl;
 
-  const titulo = normalizarTituloOferta(oferta.cargo) || 'Bases del concurso';
+  const titulo = normalizarTituloOferta(oferta.cargo) || 'Bases oficiales del concurso';
   document.getElementById('bases-viewer-title').textContent = titulo;
   document.getElementById('bases-action-open').href = basesUrl;
   document.getElementById('bases-action-download').href = basesUrl;
-  document.getElementById('bases-fallback-open').href = basesUrl;
-  document.getElementById('bases-fallback-download').href = basesUrl;
+  document.getElementById('bases-action-copy').textContent = 'Copiar enlace';
   document.getElementById('bases-action-copy').onclick = copiarEnlaceBases;
-  document.getElementById('bases-action-back').onclick = () => cerrarVisorBases({ mantenerScroll: true });
-
-  const frame = document.getElementById('bases-viewer-frame');
-  const status = document.getElementById('bases-viewer-status');
-
-  _resetVisorBases();
-  frame.classList.remove('is-hidden');
-  frame.onload = () => {
-    clearTimeout(_basesViewerTimeout);
-    _basesViewerTimeout = null;
-    document.getElementById('bases-viewer-status').textContent = 'Visualización interna activa.';
-  };
-  frame.onerror = () => {
-    _setVisorBasesFallback('No pudimos cargar el PDF embebido. Puedes abrirlo o descargarlo.');
-  };
 
   document.getElementById('bases-viewer').hidden = false;
   document.body.style.overflow = 'hidden';
-  status.textContent = 'Cargando bases…';
-  frame.src = `${basesUrl}#view=FitH`;
-  _basesViewerTimeout = setTimeout(() => {
-    _setVisorBasesFallback('La carga está tardando más de lo normal. Te dejamos opciones rápidas para continuar.');
-  }, 9000);
 }
 
 function abrirVisorBasesPorId(ofertaId) {
