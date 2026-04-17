@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script>document.documentElement.classList.add('js-nav');</script>
-<title>contrataoplanta.cl — La plataforma laboral del sector público chileno</title>
+<title>Empleo público en Chile — contrata o planta .cl</title>
 <meta name="description" content="Encuentra empleos públicos en Chile, filtra por institución y revisa oportunidades del sector público en un solo buscador.">
 <link rel="canonical" href="https://estadoemplea.pages.dev/">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -131,7 +131,8 @@ nav {
   letter-spacing: -0.3px; white-space: nowrap;
   text-decoration: none;
 }
-.logo em { color: var(--acento); font-style: italic; }
+.logo em { color: var(--acento); font-style: italic; font-weight: 600; }
+.logo-domain-muted { color: var(--acento) !important; font-style: italic; font-weight: 600; }
 .nav-links {
   display: flex; gap: 4px; align-items: center; flex: 1;
 }
@@ -592,11 +593,14 @@ nav {
   font-family: 'Inter', sans-serif;
   letter-spacing: 0.3px;
 }
-.badge-planta   { background: #EFF6FF; color: #1D4ED8; }
-.badge-contrata { background: #F0FDF4; color: #166534; }
-.badge-honorarios { background: #FEF3C7; color: #92400E; }
-.badge-region   { background: var(--bg2); color: var(--texto2); }
-.badge-sector   { background: var(--bg2); color: var(--texto2); }
+.badge-planta       { background: #E0E7FF; color: #3730A3; }
+.badge-contrata     { background: #D6E6F8; color: #1557C0; }
+.badge-honorarios   { background: #FCE7F3; color: #9D174D; }
+.badge-codigo       { background: #E0F2FE; color: #075985; }
+.badge-otro         { background: var(--bg2); color: var(--texto2); }
+.badge-sin-dato     { background: transparent; color: var(--texto3); border: 1px dashed var(--borde); padding: 1px 8px; }
+.badge-region       { background: var(--bg2); color: var(--texto2); }
+.badge-sector       { background: var(--bg2); color: var(--texto2); }
 
 .oferta-detalles {
   display: flex; gap: 16px; flex-wrap: wrap;
@@ -1705,7 +1709,7 @@ footer {
 <header>
 <nav>
   <div class="nav-inner">
-    <a href="index.html" class="logo">contrata <em>o</em> planta <em style="font-style:normal;color:rgba(255,255,255,0.3)">.cl</em></a>
+    <a href="index.html" class="logo">contrata <em>o</em> planta <em class="logo-domain-muted">.cl</em></a>
     <div class="nav-links">
       <a href="index.html" class="active">Buscar empleos</a>
       <a href="favoritos.html" id="nav-favoritos" class="nav-link-favs">♡ Mis favoritos</a>
@@ -1714,7 +1718,6 @@ footer {
       <a href="faq.html">Preguntas frecuentes</a>
       <a href="ruta-ingreso-empleo-publico.html">Ruta de ingreso</a>
     </div>
-    <a href="#alertas" class="nav-alerta">+ Crear alerta</a>
     <button class="hamburger" id="hamburger-btn" aria-label="Abrir menú" aria-expanded="false" aria-controls="nav-mobile-panel">
       <span></span><span></span><span></span>
     </button>
@@ -1727,8 +1730,7 @@ footer {
   <a href="instituciones.html">Instituciones</a>
   <a href="estadisticas.html">Estadísticas</a>
   <a href="faq.html">Preguntas frecuentes</a>
-      <a href="ruta-ingreso-empleo-publico.html">Ruta de ingreso</a>
-  <a href="#alertas" class="nav-mobile-alerta">+ Crear alerta</a>
+  <a href="ruta-ingreso-empleo-publico.html">Ruta de ingreso</a>
 </div>
 </header>
 
@@ -1808,14 +1810,17 @@ footer {
       </div>
 
       <div class="filtros-rapidos">
-        <span style="font-size:11px;color:var(--texto3);font-family:'Inter',sans-serif;font-weight:600;letter-spacing:.5px;margin-right:4px;align-self:center;">FILTRAR POR:</span>
-        <button class="filtro-tag activo" onclick="toggleFiltro(this,'planta')">Planta</button>
-        <button class="filtro-tag activo" onclick="toggleFiltro(this,'contrata')">Contrata</button>
-        <button class="filtro-tag activo" onclick="toggleFiltro(this,'honorarios')">Honorarios</button>
+        <span style="font-size:11px;color:var(--texto3);font-family:'Inter',sans-serif;font-weight:600;letter-spacing:.5px;margin-right:4px;align-self:center;">TIPO DE VÍNCULO:</span>
+        <button class="filtro-tag activo" onclick="toggleFiltro(this,'planta')" title="Planta — cargo titular permanente">Planta</button>
+        <button class="filtro-tag activo" onclick="toggleFiltro(this,'contrata')" title="Contrata — vínculo transitorio dentro del Estado">Contrata</button>
+        <button class="filtro-tag activo" onclick="toggleFiltro(this,'honorarios')" title="Honorarios — prestación de servicios a honorarios">Honorarios</button>
+        <button class="filtro-tag activo" onclick="toggleFiltro(this,'codigo_trabajo')" title="Código del Trabajo — vínculo laboral del sector privado aplicado a empresas del Estado">Código del Trabajo</button>
+        <button class="filtro-tag activo" onclick="toggleFiltro(this,'otro')" title="Otra modalidad declarada (reemplazo, suplencia, etc.)">Otro</button>
+        <button class="filtro-tag activo" onclick="toggleFiltro(this,'no_informa')" title="La publicación no indica el tipo de vínculo">No informa</button>
         <span style="width:1px;height:20px;background:var(--borde);align-self:center;margin:0 4px;"></span>
         <button class="filtro-tag" onclick="toggleFiltro(this,'cierra-hoy')">⏰ Cierra pronto</button>
-        <button class="filtro-tag" onclick="toggleFiltro(this,'nuevos')">✨ Últimas 48h</button>
-        <button class="filtro-tag" onclick="toggleFiltro(this,'sin-experiencia')">Sin experiencia requerida</button>
+        <button class="filtro-tag" onclick="toggleFiltro(this,'nuevos')">✨ Últimas 48 h</button>
+        <button class="filtro-tag" onclick="toggleFiltro(this,'sin-experiencia')">Sin experiencia</button>
       </div>
     </div>
   </div>
@@ -1828,9 +1833,9 @@ footer {
   <div>
     <div class="estado-listado-tabs" id="estado-listado-tabs" role="tablist" aria-label="Vista por estado" data-estado="vigentes">
       <button class="estado-tab activo" id="tab-vigentes" onclick="setVistaListado('vigentes')" role="tab" aria-selected="true">Vigentes</button>
-      <button class="estado-tab" id="tab-cerradas" onclick="setVistaListado('cerradas')" role="tab" aria-selected="false">Convocatorias pasadas</button>
+      <button class="estado-tab" id="tab-cerradas" onclick="setVistaListado('cerradas')" role="tab" aria-selected="false">Cerradas</button>
     </div>
-    <p class="estado-listado-copy" id="estado-listado-copy">Mostrando solo ofertas vigentes. Las ofertas cerradas están disponibles en Convocatorias pasadas.</p>
+    <p class="estado-listado-copy" id="estado-listado-copy">Mostrando concursos vigentes. Revisa los cerrados en la pestaña <strong>Cerradas</strong>.</p>
     <div class="resultados-header">
       <div class="resultados-count">
         <strong id="count-num">—</strong> ofertas encontradas
@@ -1939,12 +1944,15 @@ footer {
               </select>
             </div>
             <div>
-              <div class="alerta-label">Tipo contrato</div>
+              <div class="alerta-label">Tipo de vínculo</div>
               <select id="alerta-tipo">
                 <option value="">Todos</option>
                 <option value="planta">Planta</option>
                 <option value="contrata">Contrata</option>
                 <option value="honorarios">Honorarios</option>
+                <option value="codigo_trabajo">Código del Trabajo</option>
+                <option value="otro">Otro</option>
+                <option value="no_informa">No informa</option>
               </select>
             </div>
           </div>
@@ -2091,7 +2099,7 @@ footer {
 <footer>
   <div class="footer-inner">
     <div class="footer-brand">
-      <a href="index.html" class="logo" style="display:block;margin-bottom:10px">contrata <em>o</em> planta <em style="font-style:normal;color:rgba(255,255,255,0.3)">.cl</em></a>
+      <a href="index.html" class="logo" style="display:block;margin-bottom:10px">contrata <em>o</em> planta <em class="logo-domain-muted">.cl</em></a>
       <p class="footer-desc">La plataforma laboral del sector público chileno. <span id="footer-fuentes-total">700</span> instituciones registradas, <span id="footer-fuentes-activas">—</span> con scraping activo.</p>
     </div>
     <div>
@@ -2359,7 +2367,7 @@ const estado = {
   q: '',
   region: '',
   sector: '',
-  tipos: ['planta','contrata','honorarios'],
+  tipos: ['planta','contrata','honorarios','codigo_trabajo','otro','no_informa'],
   cierra_pronto: false,
   nuevas: false,
   orden:        _ordenInicial(_prefs),
@@ -2377,14 +2385,56 @@ function debounceBuscar(ms = 400) {
   _debounceTimer = setTimeout(buscar, ms);
 }
 
-// ── Mapas de tipo de contrato a clase CSS ─────────────────────────────────
+// ── Mapas de tipo de contrato a clase CSS + etiqueta legible ─────────────
 const TIPO_CSS = {
-  planta:       'badge-planta',
-  contrata:     'badge-contrata',
-  honorarios:   'badge-honorarios',
-  reemplazo:    'badge-honorarios',
-  codigo_trabajo:'badge-honorarios',
+  planta:         'badge-planta',
+  contrata:       'badge-contrata',
+  honorarios:     'badge-honorarios',
+  codigo_trabajo: 'badge-codigo',
+  reemplazo:      'badge-otro',
+  otro:           'badge-otro',
+  no_informa:     'badge-sin-dato',
+  sin_datos:      'badge-sin-dato',
 };
+
+const TIPO_LABEL = {
+  planta:         'Planta',
+  contrata:       'Contrata',
+  honorarios:     'Honorarios',
+  codigo_trabajo: 'Código del Trabajo',
+  reemplazo:      'Reemplazo',
+  otro:           'Otro',
+  no_informa:     'No informa',
+  sin_datos:      'Sin datos',
+};
+
+function tipoClaveNormalizada(valor) {
+  if (valor == null) return 'sin_datos';
+  const s = String(valor).trim();
+  if (!s) return 'sin_datos';
+  const key = s.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!key) return 'sin_datos';
+  if (key.includes('planta')) return 'planta';
+  if (key.includes('contrata')) return 'contrata';
+  if (key.includes('honorario')) return 'honorarios';
+  if (key.includes('codigo') && key.includes('trabajo')) return 'codigo_trabajo';
+  if (key.includes('reemplazo') || key.includes('suplencia')) return 'reemplazo';
+  if (key.includes('no informa') || key.includes('no especifica') || key.includes('sin especificar')) return 'no_informa';
+  if (key.includes('otro')) return 'otro';
+  return 'otro';
+}
+
+function tipoEtiqueta(valorBruto) {
+  return TIPO_LABEL[tipoClaveNormalizada(valorBruto)] || (valorBruto || 'Sin datos');
+}
+
+function tipoClase(valorBruto) {
+  return TIPO_CSS[tipoClaveNormalizada(valorBruto)] || 'badge-otro';
+}
 
 const ICONOS_SECTOR = {
   'Municipal':            '🏛️',
@@ -2698,10 +2748,8 @@ function jornadaValida(jornada) {
 function renderCard(oferta) {
   const renta = formatRenta(oferta.renta_bruta_min, oferta.renta_bruta_max, oferta.grado_eus);
   const plazo = plazoInfo(oferta);
-  const tipoCss = TIPO_CSS[oferta.tipo_contrato] || 'badge-sector';
-  const tipoLabel = oferta.tipo_contrato
-    ? oferta.tipo_contrato.charAt(0).toUpperCase() + oferta.tipo_contrato.slice(1)
-    : 'Sin dato';
+  const tipoCss = tipoClase(oferta.tipo_contrato);
+  const tipoLabel = tipoEtiqueta(oferta.tipo_contrato);
   const regionCorta = oferta.region
     ? oferta.region.replace('Metropolitana de Santiago', 'RM').replace('Región de ', '')
     : '';
@@ -2803,9 +2851,8 @@ function toggleFavCard(btn) {
 // ── Vista compacta (fila densa) ────────────────────────────────────────────
 function renderRowCompacta(oferta) {
   const plazo     = plazoInfo(oferta);
-  const tipoCss   = TIPO_CSS[oferta.tipo_contrato] || 'badge-sector';
-  const tipoLabel = oferta.tipo_contrato
-    ? oferta.tipo_contrato.charAt(0).toUpperCase() + oferta.tipo_contrato.slice(1) : '';
+  const tipoCss   = tipoClase(oferta.tipo_contrato);
+  const tipoLabel = tipoEtiqueta(oferta.tipo_contrato);
   const regionCorta = (oferta.region || '')
     .replace('Metropolitana de Santiago','RM').replace('Región de ','');
   const rentaHtml = formatRentaRow(oferta.renta_bruta_min, oferta.renta_bruta_max, oferta.grado_eus);
@@ -3109,8 +3156,8 @@ function setVistaListado(vista) {
   const copy = document.getElementById('estado-listado-copy');
   if (copy) {
     copy.textContent = vista === 'vigentes'
-      ? 'Mostrando solo ofertas vigentes. Las ofertas cerradas están disponibles en Convocatorias pasadas.'
-      : 'Mostrando convocatorias cerradas e históricas para consulta. Cambia a Vigentes para postular.';
+      ? 'Mostrando concursos vigentes. Revisa los cerrados en la pestaña Cerradas.'
+      : 'Mostrando convocatorias ya cerradas para consulta e historial. Vuelve a Vigentes para postular.';
   }
   cargarOfertas();
 }
@@ -3128,9 +3175,10 @@ async function cargarOfertas() {
   if (estado.institucion_id) params.set('institucion', estado.institucion_id);
   if (estado.renta_min)      params.set('renta_min', estado.renta_min);
   if (estado.ciudad)         params.set('ciudad', estado.ciudad);
-    // Tipos activos: enviar solo cuando es un subconjunto (1 o 2 tipos).
-  // Si están los 3 activos o ninguno, no filtrar para incluir todos los tipos.
-  if (estado.tipos.length > 0 && estado.tipos.length < 3) {
+  // Tipos activos: enviar solo cuando es un subconjunto propio del catálogo.
+  // Si están todos activos o ninguno, no filtrar para incluir todos los tipos.
+  const TIPOS_CATALOGO = ['planta','contrata','honorarios','codigo_trabajo','otro','no_informa'];
+  if (estado.tipos.length > 0 && estado.tipos.length < TIPOS_CATALOGO.length) {
     params.set('tipo', estado.tipos.join(','));
   }
 
@@ -3457,10 +3505,8 @@ async function abrirModal(ofertaId) {
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const o = await resp.json();
 
-    const tipoCss  = TIPO_CSS[o.tipo_contrato] || 'badge-sector';
-    const tipoLabel = o.tipo_contrato
-      ? o.tipo_contrato.charAt(0).toUpperCase() + o.tipo_contrato.slice(1)
-      : 'Sin dato';
+    const tipoCss  = tipoClase(o.tipo_contrato);
+    const tipoLabel = tipoEtiqueta(o.tipo_contrato);
     const regionCorta = (o.region || '').replace('Metropolitana de Santiago', 'RM');
     const ciudad = ciudadValida(o.ciudad, o.institucion);
     const sector = o.sector || '';
@@ -3471,7 +3517,7 @@ async function abrirModal(ofertaId) {
       [o.institucion, sector].filter(Boolean).join(' · ').toUpperCase();
     document.getElementById('modal-cargo').textContent = o.cargo || 'Sin título';
     document.getElementById('modal-badges').innerHTML = [
-      o.tipo_contrato ? `<span class="badge ${tipoCss}">${tipoLabel}</span>` : '',
+      `<span class="badge ${tipoCss}">${tipoLabel}</span>`,
       regionCorta ? `<span class="badge badge-region">🗺 ${escHtml(regionCorta)}${ciudad ? ' · ' + escHtml(ciudad) : ''}</span>` : '',
     ].join('');
 
@@ -3941,7 +3987,7 @@ function buscar() {
     document.getElementById('tab-cerradas')?.classList.remove('activo');
     document.getElementById('tab-vigentes')?.setAttribute('aria-selected', 'true');
     document.getElementById('tab-cerradas')?.setAttribute('aria-selected', 'false');
-    document.getElementById('estado-listado-copy').textContent = 'Mostrando solo ofertas vigentes. Las ofertas cerradas están disponibles en Convocatorias pasadas.';
+    document.getElementById('estado-listado-copy').textContent = 'Mostrando concursos vigentes. Revisa los cerrados en la pestaña Cerradas.';
   }
   estado.q         = document.getElementById('input-cargo').value.trim();
   estado.region    = document.getElementById('filtro-region').value;
@@ -4076,22 +4122,20 @@ async function enviarAlerta() {
 }
 
 // ── Inicialización ─────────────────────────────────────────────────────────
-document.querySelector('.nav-alerta').addEventListener('click', () => {
-  const emailInput = document.getElementById('alerta-email');
-  emailInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  setTimeout(() => emailInput.focus(), 400);
-});
-
+// Nota: el botón "Crear alerta" fue retirado del header. El widget de alertas
+// sigue disponible en el sidebar (#alertas) y su formulario en #btn-alerta-submit.
 document.getElementById('btn-alerta-submit').addEventListener('click', enviarAlerta);
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') cerrarModal(null, true);
 });
 
-// Activar tipos desde el inicio (planta, contrata, honorarios están activos por defecto)
+// Activar todos los tipos del catálogo al cargar. Los filtros de cierre/nuevos/
+// sin-experiencia quedan inactivos y sólo se activan manualmente.
+const _TIPOS_ACTIVABLES = new Set(['planta','contrata','honorarios','codigo_trabajo','otro','no_informa']);
 document.querySelectorAll('.filtro-tag.activo[onclick*="toggleFiltro"]').forEach(btn => {
   const m = btn.getAttribute('onclick').match(/'([^']+)'\)/);
-  if (m && ['planta','contrata','honorarios'].includes(m[1])) {
+  if (m && _TIPOS_ACTIVABLES.has(m[1])) {
     if (!estado.tipos.includes(m[1])) estado.tipos.push(m[1]);
   }
 });

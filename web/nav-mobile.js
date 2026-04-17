@@ -48,17 +48,12 @@
     '.nav-mobile-panel a:hover, .nav-mobile-panel a.active {',
     '  background:rgba(255,255,255,0.1); color:white; }',
     '.nav-mobile-panel .nav-link-favs { color:#E8A820 !important; }',
-    '.nav-mobile-panel .nav-mobile-alerta { margin:16px 24px 0;',
-    '  display:inline-block; font-size:13px; font-weight:600;',
-    '  background:#E8A820; color:#0A2E6E; padding:10px 20px;',
-    '  border-radius:8px; text-align:center; }',
 
     /* Show only on mobile */
     '@media (max-width:600px) {',
     '  .js-nav .hamburger { display:flex; }',
     '  .js-nav .nav-mobile-overlay, .js-nav .nav-mobile-panel { display:flex; }',
     '  .js-nav .nav-links { display:none !important; }',
-    '  .js-nav .nav-alerta { display:none !important; }',
     '  .footer-inner { grid-template-columns:1fr !important; gap:24px !important; }',
     '  .footer-bottom { flex-direction:column; gap:4px; text-align:center; }',
     '}',
@@ -121,13 +116,6 @@
     if (l.href === path) a.classList.add('active');
     panel.appendChild(a);
   });
-
-  // Alert button
-  var alertaLink = document.createElement('a');
-  alertaLink.href = 'index.html#alertas';
-  alertaLink.className = 'nav-mobile-alerta';
-  alertaLink.textContent = '+ Crear alerta';
-  panel.appendChild(alertaLink);
 
   // Insert after nav
   var nav = document.querySelector('nav');

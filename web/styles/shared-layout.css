@@ -1,8 +1,38 @@
+/* ══════════════════════════════════════════════════════════════════════
+   shared-layout.css — Sistema de diseño común de contrata o planta .cl
+   Incluido en páginas internas (favoritos, instituciones, estadísticas,
+   faq, historial, 404, legales). Centraliza navbar, logo, breadcrumb,
+   héroe de página, footer y patrones compartidos.
+   ══════════════════════════════════════════════════════════════════════ */
+
 :root {
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-serif: 'Lora', Georgia, serif;
+  --azul: #0A2E6E;
+  --azul-m: #1557C0;
+  --cielo: #1A6BCC;
+  --cielo-l: #D6E6F8;
+  --acento: #E8A820;
+  --acento-l: #FFF4D6;
+  --bg: #F5F4EF;
+  --bg2: #EDECEA;
+  --borde: #D9D7CF;
+  --texto: #111827;
+  --texto2: #4B5563;
+  --texto3: #9CA3AF;
+  --blanco: #FAFAF8;
+  --verde: #16A34A;
+  --verde-l: #DCFCE7;
+  --naran: #D97706;
+  --naran-l: #FEF3C7;
+  --rojo: #DC2626;
+  --rojo-l: #FEE2E2;
+  --sombra: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
+  --r: 10px;
+  --r-l: 16px;
 }
 
+/* ── NAVBAR ─────────────────────────────────────────────────────────── */
 nav {
   position: sticky;
   top: 0;
@@ -22,6 +52,7 @@ nav {
   height: 56px;
 }
 
+/* Marca "contrata o planta .cl" — estandarizada en amarillo */
 .logo {
   font-family: var(--font-serif);
   font-size: 18px;
@@ -29,16 +60,19 @@ nav {
   letter-spacing: -0.3px;
   white-space: nowrap;
   text-decoration: none;
+  font-weight: 500;
 }
 
 .logo em {
-  color: #E8A820;
+  color: var(--acento);
   font-style: italic;
+  font-weight: 600;
 }
 
 .logo-domain-muted {
   font-style: italic;
-  color: #E8A820 !important;
+  color: var(--acento) !important;
+  font-weight: 600;
 }
 
 .logo-footer {
@@ -55,7 +89,7 @@ nav {
 
 .nav-links a {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.70);
   text-decoration: none;
   padding: 6px 12px;
   border-radius: 6px;
@@ -70,7 +104,7 @@ nav {
 }
 
 .nav-link-favs {
-  color: #E8A820 !important;
+  color: var(--acento) !important;
 }
 
 .nav-link-favs:hover,
@@ -78,23 +112,45 @@ nav {
   background: rgba(232, 168, 32, 0.15) !important;
 }
 
-.nav-alerta {
-  font-size: 12px;
-  font-weight: 600;
-  background: #E8A820;
-  color: #0A2E6E;
-  padding: 7px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: opacity .15s;
+/* ── BREADCRUMB / RUTA DE NAVEGACIÓN ────────────────────────────────── */
+.breadcrumb {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--borde);
+}
+
+.breadcrumb-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--texto3);
+  flex-wrap: wrap;
+}
+
+.breadcrumb-inner a {
+  color: var(--texto2);
   text-decoration: none;
+  transition: color .15s;
 }
 
-.nav-alerta:hover {
-  opacity: .9;
+.breadcrumb-inner a:hover {
+  color: var(--cielo);
 }
 
+.breadcrumb-sep {
+  color: var(--texto3);
+  opacity: 0.7;
+}
+
+.breadcrumb-actual {
+  color: var(--texto);
+  font-weight: 600;
+}
+
+/* ── HERO DE PÁGINA INTERNA ─────────────────────────────────────────── */
 .page-hero {
   background: var(--azul);
   padding: 48px 24px 40px;
@@ -106,30 +162,39 @@ nav {
   margin: 0 auto;
 }
 
-.page-kicker {
+.page-kicker,
+.page-hero-kicker {
   font-size: 11px;
   font-weight: 700;
-  color: rgba(255, 255, 255, .45);
+  color: rgba(255, 255, 255, .55);
   letter-spacing: 1.5px;
   text-transform: uppercase;
   margin-bottom: 12px;
 }
 
-.page-titulo {
+.page-titulo,
+.page-hero h1 {
   font-family: var(--font-serif);
   font-size: 32px;
   color: white;
   line-height: 1.2;
   margin-bottom: 10px;
+  letter-spacing: -0.3px;
+}
+
+.page-hero h1 em {
+  color: var(--acento);
+  font-style: italic;
 }
 
 .page-sub {
   font-size: 15px;
-  color: rgba(255, 255, 255, .55);
+  color: rgba(255, 255, 255, .70);
   line-height: 1.7;
   font-weight: 300;
 }
 
+/* ── CONTENIDO TIPO ARTÍCULO ────────────────────────────────────────── */
 .prose h2 {
   font-family: var(--font-serif);
   font-size: 20px;
@@ -148,6 +213,7 @@ nav {
 .prose a:hover { text-decoration-color: var(--cielo); }
 .prose .nota { background: var(--cielo-l); border-left: 3px solid var(--cielo); border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 16px 0; font-size: 14px; color: var(--texto); }
 
+/* ── FAQ (reutilizable) ─────────────────────────────────────────────── */
 .faq-categoria { font-family: var(--font-serif); font-size: 20px; color: var(--azul); margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 1.5px solid var(--borde); }
 .faq-categoria:first-of-type { margin-top: 0; }
 .faq-item { border: 1px solid var(--borde); border-radius: var(--r); margin-bottom: 8px; overflow: hidden; background: var(--blanco); }
@@ -165,15 +231,52 @@ nav {
 .faq-respuesta a:hover { text-decoration-color: var(--cielo); }
 .faq-respuesta .nota { background: var(--cielo-l); border-left: 3px solid var(--cielo); border-radius: 0 8px 8px 0; padding: 10px 14px; margin: 12px 0; font-size: 13px; color: var(--texto); }
 
+/* ── BADGE TIPO DE CONTRATO (compartido) ────────────────────────────── */
+.badge-tipo {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 20px;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+}
+
+.badge-tipo--planta      { background: #E0E7FF; color: #3730A3; }
+.badge-tipo--contrata    { background: var(--cielo-l); color: var(--azul-m); }
+.badge-tipo--honorarios  { background: #FCE7F3; color: #9D174D; }
+.badge-tipo--codigo      { background: #E0F2FE; color: #075985; }
+.badge-tipo--otro        { background: var(--bg2); color: var(--texto2); }
+.badge-tipo--sin-dato    {
+  background: transparent;
+  color: var(--texto3);
+  border: 1px dashed var(--borde);
+  padding: 2px 8px;
+}
+
+/* ── FOOTER ─────────────────────────────────────────────────────────── */
 footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
 .footer-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; }
 .footer-brand .logo { font-size: 20px; }
-.footer-desc { font-size: 13px; color: rgba(255, 255, 255, 0.35); line-height: 1.7; max-width: 280px; font-weight: 300; }
-.footer-col-titulo { font-size: 11px; font-weight: 700; color: rgba(255, 255, 255, 0.4); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; font-family: var(--font-sans); }
-.footer-link { display: block; font-size: 13px; color: rgba(255, 255, 255, 0.5); text-decoration: none; margin-bottom: 8px; transition: color .15s; }
+.footer-desc { font-size: 13px; color: rgba(255, 255, 255, 0.45); line-height: 1.7; max-width: 280px; font-weight: 300; }
+.footer-col-titulo { font-size: 11px; font-weight: 700; color: rgba(255, 255, 255, 0.5); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; font-family: var(--font-sans); }
+.footer-link { display: block; font-size: 13px; color: rgba(255, 255, 255, 0.55); text-decoration: none; margin-bottom: 8px; transition: color .15s; }
 .footer-link:hover { color: white; }
-.footer-bottom { max-width: 1200px; margin: 28px auto 0; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; font-size: 12px; color: rgba(255, 255, 255, 0.25); }
+.footer-bottom { max-width: 1200px; margin: 28px auto 0; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; font-size: 12px; color: rgba(255, 255, 255, 0.35); }
 
-@media (max-width: 768px) { .footer-inner { grid-template-columns: 1fr 1fr; gap: 24px; } }
-@media (max-width: 600px) { .nav-links { display: none; } .page-titulo { font-size: 26px; } }
-@media (max-width: 480px) { .footer-inner { grid-template-columns: 1fr; } }
+/* ── RESPONSIVE ─────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .footer-inner { grid-template-columns: 1fr 1fr; gap: 24px; }
+}
+
+@media (max-width: 600px) {
+  .js-nav .nav-links { display: none; }
+  .page-titulo,
+  .page-hero h1 { font-size: 26px; }
+  .breadcrumb-inner { padding: 8px 16px; font-size: 12px; }
+  .footer-bottom { flex-direction: column; gap: 4px; text-align: center; }
+}
+
+@media (max-width: 480px) {
+  .footer-inner { grid-template-columns: 1fr; }
+}

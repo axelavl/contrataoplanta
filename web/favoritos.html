@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script>document.documentElement.classList.add('js-nav');</script>
-<title>Mis Favoritos — contrata o planta .cl</title>
+<title>Mis favoritos — contrata o planta .cl</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="alternate icon" href="/favicon.ico">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -13,35 +13,22 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/shared-layout.css">
 <!-- Analytics deshabilitado: reactivar cuando haya subdominio propio de Umami. -->
 <style>
-:root {
-  --azul:#0A2E6E; --azul-m:#1557C0; --cielo:#1A6BCC; --cielo-l:#D6E6F8;
-  --acento:#E8A820; --acento-l:#FFF4D6;
-  --bg:#F5F4EF; --bg2:#EDECEA; --borde:#D9D7CF;
-  --texto:#111827; --texto2:#4B5563; --texto3:#9CA3AF;
-  --blanco:#FAFAF8;
-  --verde:#16A34A; --verde-l:#DCFCE7;
-  --naran:#D97706; --naran-l:#FEF3C7;
-  --rojo:#DC2626; --rojo-l:#FEE2E2;
-  --sombra:0 1px 3px rgba(0,0,0,0.08),0 4px 16px rgba(0,0,0,0.06);
-  --r:10px; --r-l:16px;
-}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;font-size:16px}
 body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--texto);-webkit-font-smoothing:antialiased;min-height:100vh}
 
-/* ── NAV ─────────────────────────────────────────────────────────── */
-nav{position:sticky;top:0;z-index:100;background:rgba(10,46,110,0.97);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,0.08)}
-.nav-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;gap:32px;height:56px}
-.logo{font-family:'Lora',Georgia,serif;font-size:18px;color:white;letter-spacing:-.3px;white-space:nowrap;text-decoration:none}
-.logo em{color:var(--acento);font-style:italic}
-.nav-links{display:flex;gap:4px;align-items:center;flex:1}
-.nav-links a{font-size:13px;color:rgba(255,255,255,0.55);text-decoration:none;padding:6px 12px;border-radius:6px;transition:all .15s;font-weight:500}
-.nav-links a:hover,.nav-links a.active{color:white;background:rgba(255,255,255,0.1)}
-.nav-link-favs { color: #E8A820 !important; }
-.nav-link-favs:hover, .nav-link-favs.active { background: rgba(232,168,32,0.15) !important; }
-.nav-alerta{font-size:12px;font-weight:600;background:var(--acento);color:var(--azul);padding:7px 16px;border-radius:6px;cursor:pointer;white-space:nowrap;text-decoration:none}
+/* ── BADGE TIPO DE CONTRATO (cards y modal) ───────────────────────── */
+.badge{font-size:11px;font-weight:600;padding:2px 9px;border-radius:4px;letter-spacing:.3px;display:inline-block}
+.badge-planta       { background:#E0E7FF; color:#3730A3; }
+.badge-contrata     { background:#D6E6F8; color:#1557C0; }
+.badge-honorarios   { background:#FCE7F3; color:#9D174D; }
+.badge-codigo       { background:#E0F2FE; color:#075985; }
+.badge-otro         { background:var(--bg2); color:var(--texto2); }
+.badge-sin-dato     { background:transparent; color:var(--texto3); border:1px dashed var(--borde); padding:1px 8px; }
+.badge-region       { background:var(--bg2); color:var(--texto2); }
 
 /* ── HERO SECCIÓN ─────────────────────────────────────────────────── */
 .page-hero{background:var(--azul);padding:40px 24px 36px;position:relative;overflow:hidden}
@@ -146,22 +133,6 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,46,110,0.97);backdrop-f
 .btn-modal-sec--activo{background:#FEF2F2;color:#DC2626;border-color:#FCA5A5}
 .btn-modal-sec--activo:hover{background:#FEE2E2;color:#DC2626;border-color:#F87171}
 
-/* ── FOOTER ───────────────────────────────────────────────────────── */
-footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
-.footer-inner {
-  max-width: 1200px; margin: 0 auto;
-  display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
-  gap: 40px;
-}
-.footer-brand .logo { font-size: 20px; }
-.footer-desc { font-size: 13px; color: rgba(255,255,255,0.35); line-height: 1.7; max-width: 280px; font-weight: 300; }
-.footer-col-titulo { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; font-family: 'Inter', sans-serif; }
-.footer-link { display: block; font-size: 13px; color: rgba(255,255,255,0.5); text-decoration: none; margin-bottom: 8px; transition: color .15s; }
-.footer-link:hover { color: white; }
-.footer-bottom { max-width: 1200px; margin: 28px auto 0; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; font-size: 12px; color: rgba(255,255,255,0.25); }
-@media (max-width: 768px) { .footer-inner { grid-template-columns: 1fr 1fr; gap: 24px; } }
-@media (max-width: 480px) { .footer-inner { grid-template-columns: 1fr; } }
-
 /* ── RESPONSIVE ───────────────────────────────────────────────────── */
 @media(max-width:600px){
   .favs-grid{grid-template-columns:1fr}
@@ -191,10 +162,17 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
       <a href="estadisticas.html">Estadísticas</a>
       <a href="faq.html">Preguntas frecuentes</a>
     </div>
-    <a href="index.html#alertas" class="nav-alerta">+ Crear alerta</a>
   </div>
 </nav>
 </header>
+
+<nav class="breadcrumb" aria-label="Ruta de navegación">
+  <div class="breadcrumb-inner">
+    <a href="index.html">Inicio</a>
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-actual">Mis favoritos</span>
+  </div>
+</nav>
 
 <main id="contenido-principal">
 
@@ -217,9 +195,9 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
   <!-- Estado vacío -->
   <div class="empty-state" id="empty-state" style="display:none">
     <div class="empty-icon">♡</div>
-    <div class="empty-title">Aún no tienes favoritos</div>
-    <p class="empty-sub">Cuando encuentres una oferta que te interese, presiona <strong>♡ Guardar</strong> en el detalle para agregarla aquí.</p>
-    <a href="index.html" class="btn-primary">Explorar ofertas →</a>
+    <div class="empty-title">Todavía no has guardado ninguna oferta</div>
+    <p class="empty-sub">Cuando veas una convocatoria que te interese, toca <strong>♡ Guardar</strong> para tenerla a mano y revisarla sin perder el plazo.</p>
+    <a href="index.html" class="btn-primary">Buscar ofertas →</a>
   </div>
 
   <!-- Grid de favoritos -->
@@ -306,6 +284,35 @@ const API_BASE = (
 ) ? 'http://localhost:8000' : '';
 
 const FAV_KEY = 'fav_contrataoplanta';
+
+// ── Normalización de tipo de vínculo (catálogo unificado) ─────────
+const TIPO_LABEL = {
+  planta:'Planta', contrata:'Contrata', honorarios:'Honorarios',
+  codigo_trabajo:'Código del Trabajo', reemplazo:'Reemplazo',
+  otro:'Otro', no_informa:'No informa', sin_datos:'Sin datos',
+};
+const TIPO_CSS = {
+  planta:'badge-planta', contrata:'badge-contrata', honorarios:'badge-honorarios',
+  codigo_trabajo:'badge-codigo', reemplazo:'badge-otro', otro:'badge-otro',
+  no_informa:'badge-sin-dato', sin_datos:'badge-sin-dato',
+};
+function tipoClaveNormalizada(v){
+  if(v==null) return 'sin_datos';
+  const s=String(v).trim(); if(!s) return 'sin_datos';
+  const k=s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
+  if(!k) return 'sin_datos';
+  if(k.includes('planta')) return 'planta';
+  if(k.includes('contrata')) return 'contrata';
+  if(k.includes('honorario')) return 'honorarios';
+  if(k.includes('codigo') && k.includes('trabajo')) return 'codigo_trabajo';
+  if(k.includes('reemplazo')||k.includes('suplencia')) return 'reemplazo';
+  if(k.includes('no informa')||k.includes('no especifica')) return 'no_informa';
+  if(k.includes('otro')) return 'otro';
+  return 'otro';
+}
+function tipoEtiqueta(v){ return TIPO_LABEL[tipoClaveNormalizada(v)] || (v||'Sin datos'); }
+function tipoClase(v){ return TIPO_CSS[tipoClaveNormalizada(v)] || 'badge-otro'; }
 
 // ── Helpers ────────────────────────────────────────────────────────
 function getFavs() {
@@ -419,10 +426,11 @@ async function abrirModal(ofertaId) {
       [o.institucion, o.sector].filter(Boolean).join(' · ').toUpperCase();
     document.getElementById('modal-cargo').textContent = o.cargo || '—';
 
-    // Badges
-    const tipoClase = { planta:'badge-planta', contrata:'badge-contrata', honorarios:'badge-honorarios', adp:'badge-adp' };
+    // Badges (reutiliza normalización centralizada)
+    const tipoCls = tipoClase(o.tipo_contrato);
+    const tipoLbl = tipoEtiqueta(o.tipo_contrato);
     const badgesHTML = [
-      o.tipo_contrato ? `<span class="badge ${tipoClase[o.tipo_contrato?.toLowerCase()] || 'badge-contrata'}">${o.tipo_contrato}</span>` : '',
+      `<span class="badge ${tipoCls}">${tipoLbl}</span>`,
       o.region        ? `<span class="badge badge-region">🗺 ${o.region}${o.ciudad ? ' · ' + o.ciudad : ''}</span>` : '',
     ].filter(Boolean).join('');
     document.getElementById('modal-badges').innerHTML = badgesHTML;
@@ -434,7 +442,7 @@ async function abrirModal(ofertaId) {
       return max && max !== min ? `${fmt(min)} – ${fmt(max)}` : fmt(min || max);
     };
     document.getElementById('modal-renta').textContent = fmtRenta(o.renta_bruta_min, o.renta_bruta_max);
-    document.getElementById('modal-tipo-contrato').textContent = o.tipo_contrato || 'Sin dato';
+    document.getElementById('modal-tipo-contrato').textContent = tipoLbl;
     document.getElementById('modal-jornada').textContent = o.jornada || '—';
 
     const diasR = diasRestantes(o.fecha_cierre);
