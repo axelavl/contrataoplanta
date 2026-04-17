@@ -2309,6 +2309,10 @@ if (_esLocalhost) {
 }
 
 // Fallbacks remotos explícitos para entornos estáticos/previews sin proxy /api.
+// Incluimos ambos dominios de marca para evitar cortes al publicar en
+// `estadoemplea.pages.dev` o `contrataoplanta.pages.dev`.
+_agregarBase('https://api.estadoemplea.cl');
+_agregarBase('https://estadoemplea.cl');
 _agregarBase('https://api.contrataoplanta.cl');
 _agregarBase('https://contrataoplanta.cl');
 
