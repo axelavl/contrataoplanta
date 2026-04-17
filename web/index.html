@@ -3438,9 +3438,15 @@ function cerrarModal(e, force) {
 // con un solo click para postular.
 function urlDeepLinkOferta(oferta) {
   const url = new URL(window.location.href);
-  url.search = '';
+  const pathname = (url.pathname || '').replace(/\/+/g, '/');
+  const isLegacyRoot = pathname === '/' || pathname === '/index.html' || pathname === '/index_contrataoplanta.html';
+  if (isLegacyRoot) {
+    // Evita depender del redirect / -> /web/index.html para deep links compartidos.
+    url.pathname = '/web/index.html';
+  }
+
+  // Conservamos otros filtros existentes y limpiamos solo el hash visual.
   url.hash = '';
-  url.pathname = '/';
   url.searchParams.set('oferta', String(oferta.id));
   return url.toString();
 }
