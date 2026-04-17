@@ -597,6 +597,15 @@ nav {
   transition: all .15s;
 }
 .btn-ver:hover { background: var(--cielo-l); }
+.oferta-acciones {
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+}
+.btn-ver-off, .btn-postular-off {
+  opacity: 0.55; cursor: not-allowed; pointer-events: none;
+  background: var(--bg2); color: var(--texto3);
+  border: 1.5px solid var(--borde);
+}
+.btn-postular-off { background: var(--bg2); color: var(--texto3); }
 
 /* ═══ VISTA CUADRÍCULA (grid 2 cols) ════════════════════════════════ */
 .ofertas-lista.cuadricula {
@@ -1054,6 +1063,45 @@ footer {
 .btn-modal-sec:hover { border-color: var(--cielo); color: var(--cielo); }
 .btn-modal-sec--activo { background: #FEF2F2; color: #DC2626; border-color: #FCA5A5; }
 .btn-modal-sec--activo:hover { background: #FEE2E2; color: #DC2626; border-color: #F87171; }
+.btn-modal-sec:is(a) { text-decoration: none; display: inline-flex; align-items: center; }
+
+/* Alerta de plazo en modal */
+.modal-plazo-alert {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border-radius: var(--r);
+  margin-bottom: 16px;
+  border: 1.5px solid transparent;
+}
+.modal-plazo-alert.plazo-rojo  { background: var(--rojo-l);  border-color: #FCA5A5; }
+.modal-plazo-alert.plazo-naran { background: var(--naran-l); border-color: #FDE68A; }
+.modal-plazo-alert.plazo-verde { background: var(--verde-l); border-color: #86EFAC; }
+.modal-plazo-alert.plazo-gris  { background: var(--bg2);     border-color: var(--borde); }
+.modal-plazo-icon {
+  width: 34px; height: 34px; border-radius: 50%;
+  display: grid; place-items: center; flex-shrink: 0;
+  font-size: 18px; color: white;
+}
+.plazo-rojo  .modal-plazo-icon { background: var(--rojo); }
+.plazo-naran .modal-plazo-icon { background: var(--naran); }
+.plazo-verde .modal-plazo-icon { background: var(--verde); }
+.plazo-gris  .modal-plazo-icon { background: var(--texto3); }
+.modal-plazo-label {
+  font-size: 14px; font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.2;
+}
+.plazo-rojo  .modal-plazo-label { color: #991B1B; }
+.plazo-naran .modal-plazo-label { color: #92400E; }
+.plazo-verde .modal-plazo-label { color: #166534; }
+.plazo-gris  .modal-plazo-label { color: var(--texto2); }
+.modal-plazo-fecha {
+  font-size: 12px; color: var(--texto2);
+  margin-top: 2px; font-family: 'Inter', sans-serif;
+}
+.modal-descripcion {
+  font-size: 13px; color: var(--texto2);
+  line-height: 1.7; text-align: left;
+}
 
 /* ═══ FAVORITO EN TARJETA ════════════════════════════════════════════ */
 .btn-fav-card {
@@ -1139,6 +1187,25 @@ footer {
   .oferta-row-header > :nth-child(5) { display: none; }
 }
 @media (max-width: 600px) {
+  /* Ofertas: footer se apila para que los botones sean tappeables y no se recorten */
+  .oferta-card { padding: 16px 16px; }
+  .oferta-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .oferta-acciones {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .btn-postular, .btn-ver, .btn-ver-off, .btn-postular-off {
+    font-size: 13px; padding: 10px 16px;
+    min-height: 40px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .btn-postular { flex: 1; text-align: center; }
+  .btn-ver, .btn-ver-off { flex: 1; text-align: center; }
+  .oferta-plazo { font-size: 13px; }
   .js-nav .nav-links { display: none; }
   .js-nav .nav-alerta { display: none; }
   /* Compactar el hero para que los filtros queden cerca del listado */
@@ -1527,15 +1594,6 @@ footer {
     </div>
   </article>
 
-  <article class="info-section" id="metodologia">
-    <h2 class="info-title">Metodología</h2>
-    <ul class="metodo-lista">
-      <li><strong>Fuentes:</strong> portales oficiales de empleo público y sitios institucionales del Estado de Chile.</li>
-      <li><strong>Frecuencia:</strong> monitoreo e integración varias veces al día, según disponibilidad de cada fuente.</li>
-      <li><strong>Limitaciones:</strong> puede haber desfases o cambios posteriores; siempre manda la publicación original y sus bases.</li>
-    </ul>
-  </article>
-
   <article class="info-section">
     <h2 class="info-title">Casos de uso reales</h2>
     <div class="casos-grid">
@@ -1603,46 +1661,48 @@ footer {
       </div>
     </div>
     <div class="modal-body">
+      <!-- Alerta de plazo destacada -->
+      <div class="modal-plazo-alert" id="modal-plazo-alert">
+        <span class="modal-plazo-icon" id="modal-plazo-icon">●</span>
+        <div class="modal-plazo-texto">
+          <div class="modal-plazo-label" id="modal-plazo-label">Disponible</div>
+          <div class="modal-plazo-fecha" id="modal-plazo-fecha">—</div>
+        </div>
+      </div>
+
       <div class="modal-seccion">
         <div class="modal-seccion-titulo">Detalles del cargo</div>
         <div class="modal-info-grid">
           <div class="modal-info-item">
-            <div class="modal-info-label">Renta bruta</div>
-            <div class="modal-info-val" id="modal-renta">$1.650.000 – $2.100.000</div>
+            <div class="modal-info-label">💰 Renta bruta</div>
+            <div class="modal-info-val" id="modal-renta">—</div>
           </div>
           <div class="modal-info-item">
-            <div class="modal-info-label">Tipo de contrato</div>
-            <div class="modal-info-val" id="modal-tipo-contrato">Contrata</div>
+            <div class="modal-info-label">📋 Tipo de contrato</div>
+            <div class="modal-info-val" id="modal-tipo-contrato">—</div>
           </div>
           <div class="modal-info-item">
-            <div class="modal-info-label">Jornada</div>
-            <div class="modal-info-val" id="modal-jornada">44 hrs / semana</div>
+            <div class="modal-info-label">⏱ Jornada</div>
+            <div class="modal-info-val" id="modal-jornada">—</div>
           </div>
           <div class="modal-info-item">
-            <div class="modal-info-label">Fecha de cierre</div>
-            <div class="modal-info-val" style="color:var(--verde)" id="modal-cierre">21 de abril 2026</div>
+            <div class="modal-info-label">📍 Ubicación</div>
+            <div class="modal-info-val" id="modal-ubicacion">—</div>
           </div>
         </div>
       </div>
       <div class="modal-seccion">
         <div class="modal-seccion-titulo">Requisitos principales</div>
-        <div class="requisitos-lista" id="modal-requisitos">
-          <div class="requisito-item">Título profesional de Ing. Comercial, Economía, Finanzas o afín</div>
-          <div class="requisito-item">2 años de experiencia en análisis financiero o riesgo crediticio</div>
-          <div class="requisito-item">Manejo de herramientas de análisis de datos (Excel avanzado, SQL deseable)</div>
-          <div class="requisito-item">Ciudadano chileno o extranjero con residencia definitiva</div>
-          <div class="requisito-item">Sin inhabilidades para ejercer cargos públicos</div>
-        </div>
+        <div class="requisitos-lista" id="modal-requisitos"></div>
       </div>
       <div class="modal-seccion">
         <div class="modal-seccion-titulo">Descripción</div>
-        <p id="modal-descripcion" style="font-size:12px;color:var(--texto2);line-height:1.7;text-align:left">
-          El cargo requiere analizar carteras crediticias, evaluar riesgo de clientes y elaborar informes de gestión para la Gerencia de Riesgo. Se trabaja en equipo con las áreas de negocios y tecnología. BancoEstado ofrece beneficios adicionales incluyendo caja de compensación, sala cuna, casino subsidiado y capacitación continua.
-        </p>
+        <p class="modal-descripcion" id="modal-descripcion"></p>
       </div>
     </div>
     <div class="modal-actions">
       <button class="btn-modal-primary" id="modal-btn-postular">Ir a postular →</button>
+      <a class="btn-modal-sec" id="modal-btn-bases" target="_blank" rel="noopener noreferrer" style="display:none">📄 Ver bases</a>
       <button class="btn-modal-sec" id="modal-btn-favorito">♡ Guardar</button>
       <button class="btn-modal-sec" id="modal-btn-alerta">🔔 Alertarme</button>
       <button class="btn-modal-sec" id="modal-btn-compartir">↗ Compartir</button>
@@ -1830,6 +1890,31 @@ function buildJobPostingJsonLd(oferta) {
   return { valido: true, markup: jsonLdScript(payload), errores: [] };
 }
 
+// ── Validación de URL (http/https, parseable, no vacía) ───────────────────
+const esUrlValida = (typeof isValidHttpUrl === 'function')
+  ? isValidHttpUrl
+  : function (u) {
+      if (!u || typeof u !== 'string') return false;
+      const s = u.trim();
+      if (!s || s === '#' || s.toLowerCase().startsWith('javascript:')) return false;
+      try {
+        const url = new URL(s);
+        return url.protocol === 'http:' || url.protocol === 'https:';
+      } catch {
+        return false;
+      }
+    };
+
+// ── Botón "Ver bases": válido, inválido o inexistente ─────────────────────
+function renderBtnBases(oferta) {
+  const tieneBases = oferta.url_bases && oferta.url_bases !== oferta.url_oferta;
+  if (!tieneBases) return '';
+  if (!esUrlValida(oferta.url_bases)) {
+    return `<span class="btn-ver btn-ver-off" title="Enlace de bases no disponible" onclick="event.stopPropagation()">Bases no disponibles</span>`;
+  }
+  return `<a class="btn-ver" href="${escAttr(oferta.url_bases)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">Ver bases</a>`;
+}
+
 // ── Utilidades de formato ──────────────────────────────────────────────────
 function formatRenta(min, max, grado) {
   if (min) {
@@ -1963,12 +2048,11 @@ function renderCard(oferta) {
         <span style="color:${plazo.color}">${plazo.texto}</span>
         ${oferta.fecha_cierre ? `<span style="color:var(--texto3);margin-left:4px">· ${formatFecha(oferta.fecha_cierre)}</span>` : ''}
       </div>
-      <div style="display:flex;gap:8px">
-        <a class="meta-link" href="#metodologia" onclick="event.stopPropagation()">Metodología</a>
-        ${oferta.url_bases && oferta.url_bases !== oferta.url_oferta
-  ? `<a class="btn-ver" href="${escAttr(oferta.url_bases)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">Ver bases</a>`
-  : ''}
-<a class="btn-postular" href="${escAttr(oferta.url_oferta)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">Postular →</a>
+      <div class="oferta-acciones">
+        ${renderBtnBases(oferta)}
+        ${oferta.url_oferta && esUrlValida(oferta.url_oferta)
+  ? `<a class="btn-postular" href="${escAttr(oferta.url_oferta)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">Postular →</a>`
+  : `<span class="btn-postular btn-postular-off" title="Enlace de postulación no disponible" onclick="event.stopPropagation()">Sin enlace</span>`}
       </div>
     </div>
     ${jobPosting.markup}
@@ -2401,24 +2485,40 @@ function filtrarInstitucion(id, nombre) {
   cargarOfertas();
 }
 
+// ── Etiquetas narrativas de plazo para el modal ───────────────────────────
+function plazoDetalle(dias) {
+  if (dias === null || dias === undefined) return { clase: 'plazo-gris',  label: 'Sin fecha de cierre',     icon: '—', sub: 'La institución no informó plazo límite.' };
+  if (dias < 0)                            return { clase: 'plazo-rojo',  label: 'Convocatoria cerrada',    icon: '✕', sub: 'El plazo de postulación ya finalizó.' };
+  if (dias === 0)                          return { clase: 'plazo-rojo',  label: '¡Cierra HOY!',            icon: '!', sub: 'Postula ahora para no quedar fuera.' };
+  if (dias === 1)                          return { clase: 'plazo-rojo',  label: 'Cierra mañana',           icon: '!', sub: 'Queda menos de 24 horas para postular.' };
+  if (dias <= 5)                           return { clase: 'plazo-naran', label: `Cierra pronto · ${dias} días`, icon: '⏰', sub: 'Prepara tus antecedentes, el plazo es corto.' };
+  if (dias <= 14)                          return { clase: 'plazo-verde', label: `Disponible · ${dias} días`,    icon: '✓', sub: 'Aún tienes tiempo para postular con calma.' };
+  return                                          { clase: 'plazo-verde', label: `Disponible · ${dias} días`,    icon: '✓', sub: 'Plazo amplio: planifica tu postulación.' };
+}
+
 // ── Modal de detalle ───────────────────────────────────────────────────────
 async function abrirModal(ofertaId) {
   const overlay = document.getElementById('modal');
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
 
-  // Mostrar skeleton mientras carga
-  document.getElementById('modal-kicker').textContent = 'Cargando...';
+  // Reset de contenido mientras carga
+  document.getElementById('modal-kicker').textContent = 'Cargando…';
   document.getElementById('modal-cargo').textContent = '';
   document.getElementById('modal-badges').innerHTML = '';
   document.getElementById('modal-renta').textContent = '—';
-  document.getElementById('modal-cierre').textContent = '—';
-  document.getElementById('modal-cierre').style.color = '';
   document.getElementById('modal-tipo-contrato').textContent = '—';
   document.getElementById('modal-jornada').textContent = '—';
+  document.getElementById('modal-ubicacion').textContent = '—';
   document.getElementById('modal-descripcion').textContent = '';
   document.getElementById('modal-requisitos').innerHTML = '';
   document.getElementById('modal-btn-postular').onclick = null;
+  document.getElementById('modal-btn-bases').style.display = 'none';
+  const alertBox = document.getElementById('modal-plazo-alert');
+  alertBox.className = 'modal-plazo-alert plazo-gris';
+  document.getElementById('modal-plazo-icon').textContent = '•';
+  document.getElementById('modal-plazo-label').textContent = '—';
+  document.getElementById('modal-plazo-fecha').textContent = '';
 
   try {
     const resp = await fetchApi(`/api/ofertas/${ofertaId}`);
@@ -2430,44 +2530,72 @@ async function abrirModal(ofertaId) {
       ? o.tipo_contrato.charAt(0).toUpperCase() + o.tipo_contrato.slice(1)
       : 'Sin dato';
     const regionCorta = (o.region || '').replace('Metropolitana de Santiago', 'RM');
-    const ciudad = o.ciudad || '';
+    const ciudad = ciudadValida(o.ciudad, o.institucion);
     const sector = o.sector || '';
     const renta = formatRenta(o.renta_bruta_min, o.renta_bruta_max, o.grado_eus);
-    const plazo = plazoInfo(o.dias_restantes);
+    const detalle = plazoDetalle(o.dias_restantes);
 
     document.getElementById('modal-kicker').textContent =
       [o.institucion, sector].filter(Boolean).join(' · ').toUpperCase();
     document.getElementById('modal-cargo').textContent = o.cargo || 'Sin título';
     document.getElementById('modal-badges').innerHTML = [
       o.tipo_contrato ? `<span class="badge ${tipoCss}">${tipoLabel}</span>` : '',
-      regionCorta ? `<span class="badge badge-region">🗺 ${regionCorta}${ciudad ? ' · ' + ciudad : ''}</span>` : '',
+      regionCorta ? `<span class="badge badge-region">🗺 ${escHtml(regionCorta)}${ciudad ? ' · ' + escHtml(ciudad) : ''}</span>` : '',
     ].join('');
 
-    document.getElementById('modal-renta').textContent      = renta || 'Ver bases';
+    // Alerta de plazo
+    alertBox.className = 'modal-plazo-alert ' + detalle.clase;
+    document.getElementById('modal-plazo-icon').textContent = detalle.icon;
+    document.getElementById('modal-plazo-label').textContent = detalle.label;
+    const fechaCierre = o.fecha_cierre ? formatFecha(o.fecha_cierre) : '';
+    document.getElementById('modal-plazo-fecha').textContent =
+      fechaCierre ? `${detalle.sub} · Fecha de cierre: ${fechaCierre}` : detalle.sub;
+
+    // Detalles
+    document.getElementById('modal-renta').textContent         = renta || 'Consultar bases';
     document.getElementById('modal-tipo-contrato').textContent = tipoLabel;
-    document.getElementById('modal-jornada').textContent    = o.jornada || '—';
-    document.getElementById('modal-cierre').textContent     = o.fecha_cierre ? formatFecha(o.fecha_cierre) : 'Sin fecha';
-    document.getElementById('modal-cierre').style.color     = plazo.color;
+    document.getElementById('modal-jornada').textContent       = jornadaValida(o.jornada) || 'Consultar bases';
+    const ubicacion = [regionCorta, ciudad].filter(Boolean).join(' · ');
+    document.getElementById('modal-ubicacion').textContent     = ubicacion || 'No especificada';
 
     // Descripción
     const desc = o.descripcion || '';
-    document.getElementById('modal-descripcion').textContent = desc || 'Ver bases para más información.';
+    document.getElementById('modal-descripcion').textContent = desc || 'Revisa las bases del concurso para más información sobre funciones y beneficios.';
 
-    // Requisitos: dividir por saltos de línea o "–"
+    // Requisitos: dividir por saltos de línea o viñetas
     const reqTexto = o.requisitos || '';
     if (reqTexto) {
       const items = reqTexto.split(/\n|–|•/).map(s => s.trim()).filter(s => s.length > 4);
       document.getElementById('modal-requisitos').innerHTML = items.length
-        ? items.map(r => `<div class="requisito-item">${r}</div>`).join('')
-        : `<div class="requisito-item">${reqTexto}</div>`;
+        ? items.map(r => `<div class="requisito-item">${escHtml(r)}</div>`).join('')
+        : `<div class="requisito-item">${escHtml(reqTexto)}</div>`;
     } else {
       document.getElementById('modal-requisitos').innerHTML =
-        '<div class="requisito-item">Ver bases del concurso para requisitos completos.</div>';
+        '<div class="requisito-item">Consulta las bases del concurso para conocer los requisitos completos.</div>';
     }
 
     // Botón postular
-    const urlPostular = o.url_oferta || o.url_bases || '#';
-    document.getElementById('modal-btn-postular').onclick = () => window.open(urlPostular, '_blank');
+    const btnPostular = document.getElementById('modal-btn-postular');
+    const urlPostular = esUrlValida(o.url_oferta) ? o.url_oferta : (esUrlValida(o.url_bases) ? o.url_bases : null);
+    if (urlPostular) {
+      btnPostular.disabled = false;
+      btnPostular.textContent = 'Ir a postular →';
+      btnPostular.onclick = () => window.open(urlPostular, '_blank', 'noopener,noreferrer');
+    } else {
+      btnPostular.disabled = true;
+      btnPostular.textContent = 'Enlace no disponible';
+      btnPostular.onclick = null;
+    }
+
+    // Botón Ver bases (solo si es distinto y válido)
+    const btnBases = document.getElementById('modal-btn-bases');
+    if (o.url_bases && o.url_bases !== o.url_oferta && esUrlValida(o.url_bases)) {
+      btnBases.href = o.url_bases;
+      btnBases.style.display = 'inline-flex';
+    } else {
+      btnBases.style.display = 'none';
+      btnBases.removeAttribute('href');
+    }
 
     // Botón favorito
     const favs = JSON.parse(localStorage.getItem('fav_contrataoplanta') || '[]');

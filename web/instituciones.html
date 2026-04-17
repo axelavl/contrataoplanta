@@ -277,16 +277,6 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
     </div>
   </section>
 
-  <section class="info-section" id="metodologia">
-    <h2 class="info-title">Metodología</h2>
-    <p class="info-sub">Cómo construimos este directorio y qué debes considerar al interpretar los datos.</p>
-    <ul class="metodo-lista">
-      <li><strong>Fuentes:</strong> portales oficiales de empleo público y sitios institucionales del Estado de Chile.</li>
-      <li><strong>Frecuencia:</strong> consolidación automática varias veces al día según disponibilidad de cada fuente.</li>
-      <li><strong>Limitaciones:</strong> puede existir desfase entre publicación oficial y detección; siempre prevalecen las bases y el portal de origen.</li>
-    </ul>
-  </section>
-
   <section class="info-section">
     <h2 class="info-title">Casos de uso reales</h2>
     <div class="casos-grid">
@@ -366,7 +356,6 @@ function renderFila(inst) {
       <td>
         <a href="index.html?institucion=${inst.id}" class="inst-nombre-link">${inst.nombre}</a>
         ${sigla}
-        <a href="#metodologia" class="meta-link">Metodología ↗</a>
       </td>
       <td>${sector}</td>
       <td class="col-region">${region}</td>
