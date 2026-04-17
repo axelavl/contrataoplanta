@@ -44,6 +44,25 @@ KEYWORDS_OFERTA = (
     "empleo",
     "oportunidad laboral",
 )
+NEGATIVE_CONTEXT = (
+    "noticia",
+    "comunicado",
+    "actividad",
+    "taller",
+    "licitacion",
+    "licitación",
+    "proveedor",
+    "subvencion",
+    "subvención",
+    "agenda",
+    "participacion ciudadana",
+    "participación ciudadana",
+    "cuenta publica",
+    "cuenta pública",
+    "concurso escolar",
+    "concurso artistico",
+    "concurso artístico",
+)
 
 
 # Perfiles operativos del scraper genérico.
@@ -441,7 +460,14 @@ class GenericSiteScraper(BaseScraper):
         if len(hay_texto) < 8:
             return False
         key = normalize_key(hay_texto)
-        return any(normalize_key(keyword) in key for keyword in KEYWORDS_OFERTA)
+        if any(normalize_key(keyword) in key for keyword in NEGATIVE_CONTEXT):
+            return False
+        positive_hits = sum(1 for keyword in KEYWORDS_OFERTA if normalize_key(keyword) in key)
+        has_actionable_signal = any(
+            normalize_key(token) in key
+            for token in ("requisitos", "funciones", "bases", "postulaciones hasta", "recepcion de antecedentes")
+        )
+        return positive_hits >= 2 or (positive_hits >= 1 and has_actionable_signal)
 
     def _crop_title(self, text: str) -> str:
         cleaned = clean_text(text)

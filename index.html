@@ -7,7 +7,10 @@
   <link rel="canonical" href="https://contrataoplanta.cl/web/index.html">
   <title>Redirigiendo…</title>
   <script>
-    window.location.replace('/web/index.html');
+    (function () {
+      var destino = '/web/index.html' + window.location.search + window.location.hash;
+      window.location.replace(destino);
+    })();
   </script>
 </head>
 <body>

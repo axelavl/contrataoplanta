@@ -20,3 +20,12 @@ class ExtractionBundle(BaseModel):
     selection_process: str | None = None
     attachments_used: list[str] = Field(default_factory=list)
     traces: list[str] = Field(default_factory=list)
+    emails_found: list[str] = Field(default_factory=list)
+    email_postulacion: list[str] = Field(default_factory=list)
+    email_consultas: list[str] = Field(default_factory=list)
+    email_indeterminado: list[str] = Field(default_factory=list)
+    email_contexts: list[str] = Field(default_factory=list)
+    postulacion_channel: str | None = None
+    has_consultation_channel: bool = False
+    salary_validation_status: str | None = None
+    salary_trace: str | None = None

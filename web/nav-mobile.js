@@ -170,7 +170,7 @@
 
   // ── 7. Favorites counter ──────────────────────────────────────────
   try {
-    var favCount = JSON.parse(localStorage.getItem('favoritos') || '[]').length;
+    var favCount = JSON.parse(localStorage.getItem('fav_contrataoplanta') || '[]').length;
     if (favCount > 0) {
       var mobileFav = document.getElementById('nav-mobile-favoritos');
       if (mobileFav) mobileFav.textContent = '\u2661 Mis favoritos (' + favCount + ')';

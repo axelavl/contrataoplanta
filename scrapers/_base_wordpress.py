@@ -222,14 +222,31 @@ class MuniWordPressBase:
         """Determina si un texto describe una oferta laboral."""
         if len(texto) < 8:
             return False
-        kw = [
-            "cargo", "concurso", "llamado", "vacante", "planta", "contrata",
-            "honorario", "profesional", "técnico", "administrativo", "auxiliar",
-            "director", "jefe", "encargado", "médico", "psicólogo", "abogado",
-            "ingeniero", "asistente", "coordinador", "programa", "apoyo",
-            "trabajador social", "educador", "enfermero", "matrón"
+        t = texto.lower()
+        neg = [
+            "noticia", "comunicado", "actividad", "ceremonia", "taller",
+            "capacitación", "capacitacion", "licitación", "licitacion",
+            "proveedor", "subvención", "subvencion", "cuenta pública",
+            "participación ciudadana", "agenda", "operativo",
         ]
-        return any(k in texto.lower() for k in kw)
+        if any(k in t for k in neg):
+            return False
+
+        hard_positive = [
+            "concurso público", "concurso publico", "perfil del cargo",
+            "requisitos del cargo", "funciones del cargo", "recepción de antecedentes",
+            "recepcion de antecedentes", "bases del concurso", "postulaciones hasta",
+            "honorarios", "contrata", "planta", "suplencia", "reemplazo",
+        ]
+        soft_positive = [
+            "cargo", "vacante", "puesto", "llamado a postulación", "llamado a postulacion",
+            "proceso de selección", "proceso de seleccion", "postular",
+        ]
+        hard_hits = sum(1 for k in hard_positive if k in t)
+        soft_hits = sum(1 for k in soft_positive if k in t)
+        if hard_hits >= 1:
+            return True
+        return soft_hits >= 2
 
     def _extraer_url(self, el) -> str | None:
         """Extrae la URL de bases/convocatoria de un elemento."""
@@ -393,12 +410,16 @@ class MuniWordPressBase:
 
     @staticmethod
     def _extraer_renta(texto: str) -> tuple:
-        montos = re.findall(r"\$?\s*(\d{1,3}(?:[.,]\d{3})+)", texto)
+        montos = list(re.finditer(r"\$?\s*(\d{1,3}(?:[.,]\d{3})+)", texto))
         limpios = []
-        for mo in montos:
+        for match in montos:
+            mo = match.group(1)
             try:
                 n = int(mo.replace(".", "").replace(",", ""))
-                if 300_000 <= n <= 15_000_000:
+                ctx = texto[max(0, match.start() - 60):match.end() + 60].lower()
+                if any(neg in ctx for neg in ["presupuesto", "monto total", "convenio", "proyecto", "anual", "global"]):
+                    continue
+                if 300_000 <= n < 15_000_000:
                     limpios.append(n)
             except ValueError:
                 continue
