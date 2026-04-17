@@ -36,16 +36,17 @@
 
     /* Overlay */
     '.nav-mobile-overlay { display:none; position:fixed; inset:0; top:56px;',
-    '  background:rgba(0,0,0,0.5); z-index:98; opacity:0; transition:opacity .3s; }',
-    '.nav-mobile-overlay.visible { opacity:1; }',
+    '  background:rgba(0,0,0,0.5); z-index:98; opacity:0; pointer-events:none;',
+    '  transition:opacity .3s; }',
+    '.nav-mobile-overlay.visible { opacity:1; pointer-events:auto; }',
 
     /* Panel */
     '.nav-mobile-panel { display:none; position:fixed; top:56px; right:0;',
     '  width:280px; max-width:85vw; height:calc(100vh - 56px); height:calc(100dvh - 56px);',
     '  background:#0A2E6E; z-index:99; flex-direction:column; padding:16px 0;',
-    '  overflow-y:auto; transform:translateX(100%);',
+    '  overflow-y:auto; transform:translateX(100%); pointer-events:none;',
     '  transition:transform .3s cubic-bezier(.4,0,.2,1); }',
-    '.nav-mobile-panel.visible { transform:translateX(0); }',
+    '.nav-mobile-panel.visible { transform:translateX(0); pointer-events:auto; }',
     '.nav-mobile-panel a { display:block; padding:14px 24px; font-size:15px;',
     '  color:rgba(255,255,255,0.7); text-decoration:none; font-weight:500;',
     '  transition:background .15s,color .15s;',
@@ -80,15 +81,27 @@
   });
 
   // ── 3. Detect current page for active state ───────────────────────
-  var path = location.pathname.split('/').pop() || 'index.html';
+  var currentPath = location.pathname.split('/').pop() || 'index.html';
+  var currentHash = location.hash || '';
+  function normalizeHref(href) {
+    if (!href) return '';
+    var a = document.createElement('a');
+    a.href = href;
+    var p = (a.pathname.split('/').pop() || 'index.html');
+    return p + (a.hash || '');
+  }
 
-  var links = [
-    { href: 'index.html',          text: 'Buscar empleos' },
-    { href: 'favoritos.html',      text: '\u2661 Mis favoritos', cls: 'nav-link-favs', id: 'nav-mobile-favoritos' },
-    { href: 'index.html#fuentes-activas',  text: 'Fuentes activas' },
-    { href: 'estadisticas.html',   text: 'Estad\u00edsticas' },
-    { href: 'faq.html',            text: 'Preguntas frecuentes' }
-  ];
+  // Replica exactamente los links del menú de escritorio para mantener
+  // el mismo contenido y denominaciones en móvil.
+  var desktopLinks = Array.prototype.slice.call(document.querySelectorAll('.nav-links a'));
+  var links = desktopLinks.map(function (a) {
+    return {
+      href: a.getAttribute('href') || '',
+      text: (a.textContent || '').trim(),
+      cls: a.className || '',
+      id: a.id ? ('mobile-' + a.id) : ''
+    };
+  }).filter(function (l) { return !!l.href; });
 
   // ── 4. Build hamburger button ─────────────────────────────────────
   var navInner = document.querySelector('.nav-inner');
@@ -118,7 +131,9 @@
     a.textContent = l.text;
     if (l.cls) a.className = l.cls;
     if (l.id) a.id = l.id;
-    if (l.href === path) a.classList.add('active');
+    var target = normalizeHref(l.href);
+    var isActive = target === currentPath || target === (currentPath + currentHash);
+    if (isActive) a.classList.add('active');
     panel.appendChild(a);
   });
 
@@ -165,7 +180,7 @@
   try {
     var favCount = JSON.parse(localStorage.getItem('fav_contrataoplanta') || '[]').length;
     if (favCount > 0) {
-      var mobileFav = document.getElementById('nav-mobile-favoritos');
+      var mobileFav = document.getElementById('mobile-nav-favoritos');
       if (mobileFav) mobileFav.textContent = '\u2661 Mis favoritos (' + favCount + ')';
       var navFav = document.getElementById('nav-favoritos');
       if (navFav) navFav.textContent = '\u2661 Mis favoritos (' + favCount + ')';

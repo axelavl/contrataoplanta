@@ -90,7 +90,7 @@ table {
 }
 th, td { border: 1px solid var(--borde); padding: 12px; text-align: left; vertical-align: top; }
 th { background: #eef3fb; color: var(--azul); font-size: 14px; }
-.breadcrumbs { margin-bottom: 14px; font-size: 13px; color: var(--texto2); }
+.breadcrumbs { display: none; }
 .breadcrumbs a { color: var(--azul-m); text-decoration: none; }
 .tag {
   display: inline-block;

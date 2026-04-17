@@ -89,8 +89,7 @@ header nav {
 
 /* ── BREADCRUMB / RUTA DE NAVEGACIÓN ────────────────────────────────── */
 .breadcrumb {
-  background: var(--bg2);
-  border-bottom: 1px solid var(--borde);
+  display: none;
 }
 
 .breadcrumb-inner {
