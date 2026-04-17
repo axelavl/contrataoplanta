@@ -12,7 +12,8 @@
 (function () {
   'use strict';
 
-  if (window.__mobileNavInitialized) return;
+  if (window.__mobileNavInitialized || window.__mobileNavInitializing) return;
+  window.__mobileNavInitializing = true;
 
   document.documentElement.classList.add('js-nav');
 
@@ -105,25 +106,47 @@
 
   // ── 4. Build hamburger button ─────────────────────────────────────
   var navInner = document.querySelector('.nav-inner');
-  if (!navInner) return false;
+  if (!navInner) {
+    window.__mobileNavInitializing = false;
+    return false;
+  }
 
-  var btn = document.createElement('button');
-  btn.className = 'hamburger';
-  btn.id = 'hamburger-btn';
-  btn.setAttribute('aria-label', 'Abrir men\u00fa');
-  btn.setAttribute('aria-expanded', 'false');
-  btn.setAttribute('aria-controls', 'nav-mobile-panel');
-  btn.innerHTML = '<span></span><span></span><span></span>';
-  navInner.appendChild(btn);
+  var existingBtns = navInner.querySelectorAll('.hamburger');
+  if (existingBtns.length > 1) {
+    Array.prototype.slice.call(existingBtns, 1).forEach(function (el) { el.remove(); });
+  }
+
+  var btn = navInner.querySelector('.hamburger');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.className = 'hamburger';
+    btn.id = 'hamburger-btn';
+    btn.setAttribute('aria-label', 'Abrir men\u00fa');
+    btn.setAttribute('aria-expanded', 'false');
+    btn.setAttribute('aria-controls', 'nav-mobile-panel');
+    btn.innerHTML = '<span></span><span></span><span></span>';
+    navInner.appendChild(btn);
+  } else {
+    btn.id = btn.id || 'hamburger-btn';
+  }
 
   // ── 5. Build overlay & panel ──────────────────────────────────────
-  var overlay = document.createElement('div');
+  var overlays = document.querySelectorAll('#nav-mobile-overlay');
+  if (overlays.length > 1) {
+    Array.prototype.slice.call(overlays, 1).forEach(function (el) { el.remove(); });
+  }
+  var overlay = document.getElementById('nav-mobile-overlay') || document.createElement('div');
   overlay.className = 'nav-mobile-overlay';
   overlay.id = 'nav-mobile-overlay';
 
-  var panel = document.createElement('div');
+  var panels = document.querySelectorAll('#nav-mobile-panel');
+  if (panels.length > 1) {
+    Array.prototype.slice.call(panels, 1).forEach(function (el) { el.remove(); });
+  }
+  var panel = document.getElementById('nav-mobile-panel') || document.createElement('div');
   panel.className = 'nav-mobile-panel';
   panel.id = 'nav-mobile-panel';
+  panel.innerHTML = '';
 
   links.forEach(function (l) {
     var a = document.createElement('a');
@@ -140,8 +163,8 @@
   // Insert after nav
   var nav = document.querySelector('nav');
   if (nav && nav.parentNode) {
-    nav.parentNode.insertBefore(overlay, nav.nextSibling);
-    nav.parentNode.insertBefore(panel, overlay.nextSibling);
+    if (!overlay.parentNode) nav.parentNode.insertBefore(overlay, nav.nextSibling);
+    if (!panel.parentNode) nav.parentNode.insertBefore(panel, overlay.nextSibling);
   }
 
   // ── 6. Open / close logic ─────────────────────────────────────────
@@ -187,6 +210,7 @@
     }
   } catch (e) { /* localStorage unavailable */ }
   window.__mobileNavInitialized = true;
+  window.__mobileNavInitializing = false;
   return true;
 }
 

@@ -238,7 +238,7 @@ nav {
 }
 .buscador-form {
   display: grid;
-  grid-template-columns: minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) auto;
+  grid-template-columns: minmax(0,2fr) minmax(0,1fr) minmax(0,1fr);
   gap: 10px;
   margin-bottom: 16px;
   width: 100%;
@@ -253,6 +253,8 @@ nav {
 }
 .campo input, .campo select {
   height: 44px; padding: 0 14px;
+  width: 100%;
+  box-sizing: border-box;
   border: 1.5px solid var(--borde);
   border-radius: var(--r);
   font-family: 'Inter', sans-serif;
@@ -268,6 +270,8 @@ nav {
 }
 /* Input de renta libre */
 .renta-wrap { position: relative; }
+.renta-wrap,
+.renta-wrap input { width: 100%; }
 .renta-wrap input { padding-right: 36px; }
 .renta-wrap .renta-prefix {
   position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
@@ -305,6 +309,7 @@ nav {
 .filtros-rapidos {
   display: grid;
   gap: 10px;
+  margin-top: 2px;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--borde);
 }
@@ -1499,7 +1504,7 @@ footer {
 /* ═══ AUTOCOMPLETE INSTITUCIÓN ═══════════════════════════════════════ */
 .buscador-fila2 {
   display: grid;
-  grid-template-columns: minmax(0,2fr) minmax(0,1fr) minmax(0,1fr);
+  grid-template-columns: minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) auto;
   gap: 10px;
   margin-bottom: 12px;
 }
@@ -1549,9 +1554,9 @@ footer {
   .pasos-grid { grid-template-columns: 1fr; }
   .buscador-form { grid-template-columns: 1fr 1fr; }
   .buscador-form > .campo:first-child { grid-column: 1 / -1; }
-  .buscador-form > .btn-buscar { margin-top: 0; grid-column: 1 / -1; }
   .buscador-fila2 { grid-template-columns: 1fr 1fr; }
   .buscador-fila2 > .campo:first-child { grid-column: 1 / -1; }
+  .buscador-fila2 > .btn-buscar { grid-column: 1 / -1; margin-top: 0; }
   .footer-inner { grid-template-columns: 1fr 1fr; }
   .modal-info-grid { grid-template-columns: 1fr; }
   .ofertas-lista.cuadricula { grid-template-columns: 1fr; }
@@ -1622,9 +1627,9 @@ footer {
   .buscador-wrap { padding: 16px 16px 0; margin-top: 4px; border-radius: var(--r) var(--r) 0 0; }
   .buscador-form { grid-template-columns: 1fr; gap: 8px; margin-bottom: 10px; }
   .buscador-form > .campo:first-child { grid-column: auto; }
-  .buscador-form > .btn-buscar { grid-column: auto; }
   .buscador-fila2 { grid-template-columns: 1fr; gap: 8px; margin-bottom: 8px; }
   .buscador-fila2 > .campo:first-child { grid-column: auto; }
+  .buscador-fila2 > .btn-buscar { grid-column: auto; width: 100%; margin-top: 0; }
   .filtros-rapidos { gap: 8px; padding-bottom: 12px; }
   .filtros-tags-wrap { gap: 6px; }
   .filtro-tag { font-size: 11px; padding: 4px 10px; }
