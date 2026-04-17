@@ -1692,7 +1692,7 @@ footer {
       <a href="instituciones.html">Instituciones</a>
       <a href="estadisticas.html">Estadísticas</a>
       <a href="faq.html">Preguntas frecuentes</a>
-      <a href="editorial.html">Ruta al Empleo Público</a>
+      <a href="ruta-ingreso-empleo-publico.html">Ruta de ingreso</a>
     </div>
     <a href="#alertas" class="nav-alerta">+ Crear alerta</a>
     <button class="hamburger" id="hamburger-btn" aria-label="Abrir menú" aria-expanded="false" aria-controls="nav-mobile-panel">
@@ -1707,7 +1707,7 @@ footer {
   <a href="instituciones.html">Instituciones</a>
   <a href="estadisticas.html">Estadísticas</a>
   <a href="faq.html">Preguntas frecuentes</a>
-      <a href="editorial.html">Ruta al Empleo Público</a>
+      <a href="ruta-ingreso-empleo-publico.html">Ruta de ingreso</a>
   <a href="#alertas" class="nav-mobile-alerta">+ Crear alerta</a>
 </div>
 </header>
@@ -2097,7 +2097,7 @@ footer {
     <div>
       <div class="footer-col-titulo">Comunidad</div>
       <a href="faq.html" class="footer-link">Preguntas frecuentes</a>
-      <a href="editorial.html" class="footer-link">Ruta al Empleo Público</a>
+      <a href="ruta-ingreso-empleo-publico.html" class="footer-link">Ruta de ingreso laboral</a>
     </div>
     <div>
       <div class="footer-col-titulo">Legal</div>
@@ -2309,6 +2309,10 @@ if (_esLocalhost) {
 }
 
 // Fallbacks remotos explícitos para entornos estáticos/previews sin proxy /api.
+// Incluimos ambos dominios de marca para evitar cortes al publicar en
+// `estadoemplea.pages.dev` o `contrataoplanta.pages.dev`.
+_agregarBase('https://api.estadoemplea.cl');
+_agregarBase('https://estadoemplea.cl');
 _agregarBase('https://api.contrataoplanta.cl');
 _agregarBase('https://contrataoplanta.cl');
 
