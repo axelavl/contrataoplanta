@@ -316,12 +316,12 @@ nav {
   padding-top: 2px;
 }
 .filtros-titulo {
-  font-size: 11px;
-  color: var(--texto3);
+  font-size: 12px;
+  color: var(--texto2);
   font-family: 'Inter', sans-serif;
   font-weight: 600;
-  letter-spacing: .5px;
-  text-transform: uppercase;
+  letter-spacing: .2px;
+  text-transform: none;
 }
 .filtros-tags-wrap {
   display: flex;
@@ -330,11 +330,15 @@ nav {
 }
 .filtro-tag {
   font-size: 12px; font-weight: 500;
+  min-height: 32px;
   padding: 4px 12px; border-radius: 20px;
   cursor: pointer; transition: all .15s;
   border: 1.5px solid var(--borde);
   background: white; color: var(--texto2);
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .filtro-tag:hover { border-color: var(--cielo); color: var(--cielo); }
 .filtro-tag.activo { background: var(--cielo-l); border-color: var(--cielo); color: var(--azul); font-weight: 600; }
@@ -392,6 +396,7 @@ nav {
 .resultados-count strong { color: var(--texto); font-weight: 700; }
 .count-sub { color: var(--texto3); font-size: 12px; margin-left: 8px; }
 .resultados-controles {
+  --ctrl-h: 36px;
   display: grid;
   grid-template-columns: repeat(2, minmax(170px, auto));
   justify-content: end;
@@ -409,7 +414,7 @@ nav {
   width: 1px; height: 20px; background: var(--borde); flex-shrink: 0;
 }
 .ctrl-select {
-  height: 32px; padding: 0 28px 0 10px;
+  height: var(--ctrl-h); padding: 0 28px 0 10px;
   border: 1.5px solid var(--borde); border-radius: 7px;
   font-size: 12px; font-family: 'Inter', sans-serif;
   color: var(--texto2); background: white; cursor: pointer;
@@ -421,7 +426,7 @@ nav {
 .ctrl-select:focus { border-color: var(--cielo); }
 .ctrl-select:hover { border-color: #c0bdb4; }
 .btn-copiar-busqueda {
-  height: 32px; padding: 0 12px;
+  height: var(--ctrl-h); padding: 0 12px;
   border: 1.5px solid var(--borde); border-radius: 7px;
   font-size: 12px; font-weight: 600;
   font-family: 'Inter', sans-serif;
@@ -462,10 +467,12 @@ nav {
 
 .vista-btns {
   display: flex; gap: 2px;
+  height: var(--ctrl-h);
   background: var(--bg2); border-radius: 8px; padding: 3px;
+  border: 1.5px solid var(--borde);
 }
 .vista-btn {
-  width: 30px; height: 26px; border-radius: 6px;
+  width: 30px; height: calc(var(--ctrl-h) - 8px); border-radius: 6px;
   border: none; background: transparent;
   color: var(--texto3); cursor: pointer;
   display: grid; place-items: center;
@@ -660,9 +667,9 @@ nav {
 }
 /* Widths by position — must mirror .row-* classes exactly */
 .oferta-row-header > :nth-child(1) { flex: 1 1 0; min-width: 0; overflow: hidden; padding-right: 8px; }
-.oferta-row-header > :nth-child(2) { flex: 0 0 90px;  width: 90px; }
-.oferta-row-header > :nth-child(3) { flex: 0 0 130px; width: 130px; }
-.oferta-row-header > :nth-child(4) { flex: 0 0 150px; width: 150px; text-align: right; padding-right: 6px; }
+.oferta-row-header > :nth-child(2) { flex: 0 0 82px;  width: 82px; }
+.oferta-row-header > :nth-child(3) { flex: 0 0 118px; width: 118px; }
+.oferta-row-header > :nth-child(4) { flex: 0 0 132px; width: 132px; text-align: right; padding-right: 6px; }
 .oferta-row-header > :nth-child(5) { flex: 0 0 36px;  width: 36px; }
 
 .col-sort {
@@ -691,7 +698,7 @@ nav {
 .oferta-row {
   display: flex; align-items: center;
   padding: 0 14px;
-  min-height: 56px;
+  min-height: 68px;
   border-bottom: 1px solid var(--bg2);
   cursor: pointer; transition: background .15s;
   background: white; box-sizing: border-box;
@@ -701,10 +708,10 @@ nav {
 .oferta-row.favorita { box-shadow: inset 3px 0 0 var(--acento); }
 
 /* Row cells — widths MUST match header :nth-child widths above */
-.row-main  { flex: 1 1 0; min-width: 0; overflow: hidden; padding: 10px 10px 10px 0; }
-.row-meta  { flex: 0 0 90px;  width: 90px;  overflow: hidden; display: flex; align-items: center; }
-.row-plazo { flex: 0 0 130px; width: 130px; overflow: hidden; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--texto3); white-space: nowrap; }
-.row-renta { flex: 0 0 150px; width: 150px; overflow: hidden; font-size: 12.5px; font-weight: 700; color: var(--texto); text-align: right; padding-right: 6px; line-height: 1.25;
+.row-main  { flex: 1 1 0; min-width: 0; overflow: hidden; padding: 12px 10px 12px 0; }
+.row-meta  { flex: 0 0 82px;  width: 82px;  overflow: hidden; display: flex; align-items: center; }
+.row-plazo { flex: 0 0 118px; width: 118px; overflow: hidden; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--texto3); white-space: normal; line-height: 1.3; }
+.row-renta { flex: 0 0 132px; width: 132px; overflow: hidden; font-size: 12.5px; font-weight: 700; color: var(--texto); text-align: right; padding-right: 6px; line-height: 1.25;
   display: flex; flex-direction: column; justify-content: center; align-items: flex-end; }
 .row-renta .renta-rango { display: block; font-size: 11px; font-weight: 500; color: var(--texto3); white-space: nowrap; }
 .row-renta .renta-principal { display: block; white-space: nowrap; }
@@ -726,11 +733,11 @@ nav {
 }
 .row-cargo  {
   font-size: 13px; font-weight: 600; color: var(--azul);
-  overflow: hidden; line-height: 1.25;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; line-height: 1.3;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
   margin-top: 2px;
 }
-.row-region { font-size: 10px; color: var(--texto3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.row-region { font-size: 10.5px; color: var(--texto3); overflow: hidden; text-overflow: ellipsis; margin-top: 3px; }
 
 /* ═══ SIDEBAR ═════════════════════════════════════════════════════════ */
 .sidebar { display: flex; flex-direction: column; gap: 16px; }
@@ -1549,19 +1556,19 @@ footer {
   .modal-info-grid { grid-template-columns: 1fr; }
   .ofertas-lista.cuadricula { grid-template-columns: 1fr; }
   /* Compacta en pantallas medianas: columnas más angostas, oculta fav */
-  .row-meta  { flex: 0 0 76px;  width: 76px; }
+  .row-meta  { flex: 0 0 72px;  width: 72px; }
   .row-plazo {
-    flex: 0 0 110px;  width: 110px; font-size: 11px;
+    flex: 0 0 102px;  width: 102px; font-size: 11px;
     white-space: normal; line-height: 1.25;
   }
   .row-renta {
-    flex: 0 0 120px;  width: 120px; font-size: 11.5px;
+    flex: 0 0 112px;  width: 112px; font-size: 11.5px;
     line-height: 1.25;
   }
   .row-renta .renta-rango { font-size: 10.5px; }
-  .oferta-row-header > :nth-child(2) { flex: 0 0 76px; width: 76px; }
-  .oferta-row-header > :nth-child(3) { flex: 0 0 110px; width: 110px; }
-  .oferta-row-header > :nth-child(4) { flex: 0 0 120px; width: 120px; }
+  .oferta-row-header > :nth-child(2) { flex: 0 0 72px; width: 72px; }
+  .oferta-row-header > :nth-child(3) { flex: 0 0 102px; width: 102px; }
+  .oferta-row-header > :nth-child(4) { flex: 0 0 112px; width: 112px; }
   .btn-fav-row { display: none; }
   .oferta-row-header > :nth-child(5) { display: none; }
   .resultados-controles {
@@ -1621,6 +1628,7 @@ footer {
   .filtros-rapidos { gap: 8px; padding-bottom: 12px; }
   .filtros-tags-wrap { gap: 6px; }
   .filtro-tag { font-size: 11px; padding: 4px 10px; }
+  .filtros-titulo { font-size: 11.5px; }
   /* Reducir espacio entre filtros y listado */
   .main { padding: 16px 16px 48px; gap: 16px; }
   .footer-inner { grid-template-columns: 1fr; gap: 24px; }
@@ -1654,26 +1662,26 @@ footer {
   /* Compacta en móvil: oculta tipo, compacta plazo/renta */
   .row-meta { display: none; }
   .oferta-row-header > :nth-child(2) { display: none; }
-  .row-plazo { flex: 0 0 92px; width: 92px; font-size: 10.5px; gap: 4px; white-space: normal; line-height: 1.25; }
-  .row-renta { flex: 0 0 104px; width: 104px; font-size: 11px; padding-right: 4px; line-height: 1.2; }
+  .row-plazo { flex: 0 0 88px; width: 88px; font-size: 10.5px; gap: 4px; white-space: normal; line-height: 1.25; }
+  .row-renta { flex: 0 0 98px; width: 98px; font-size: 11px; padding-right: 4px; line-height: 1.2; }
   .row-renta .renta-rango { font-size: 10px; }
-  .oferta-row-header > :nth-child(3) { flex: 0 0 92px; width: 92px; }
-  .oferta-row-header > :nth-child(4) { flex: 0 0 104px; width: 104px; padding-right: 4px; }
+  .oferta-row-header > :nth-child(3) { flex: 0 0 88px; width: 88px; }
+  .oferta-row-header > :nth-child(4) { flex: 0 0 98px; width: 98px; padding-right: 4px; }
   .col-sort, .col-sort-label { font-size: 10px; letter-spacing: .3px; }
-  .oferta-row { padding: 0 12px; min-height: 60px; }
+  .oferta-row { padding: 0 12px; min-height: 68px; }
   .oferta-row-header { padding: 0 12px; }
-  .row-main { padding: 8px 6px 8px 0; }
+  .row-main { padding: 10px 6px 10px 0; }
   .row-inst { font-size: 9.5px; }
-  .row-cargo { font-size: 12.5px; }
+  .row-cargo { font-size: 12.5px; -webkit-line-clamp: 3; }
   .row-region { font-size: 9.5px; }
 }
 @media (max-width: 420px) {
   /* Compacta en móvil muy estrecho: compactar columnas */
-  .row-plazo { flex: 0 0 82px; width: 82px; font-size: 10px; }
-  .row-renta { flex: 0 0 94px; width: 94px; font-size: 10.5px; }
+  .row-plazo { flex: 0 0 78px; width: 78px; font-size: 10px; }
+  .row-renta { flex: 0 0 88px; width: 88px; font-size: 10.5px; }
   .row-renta .renta-rango { font-size: 9.5px; }
-  .oferta-row-header > :nth-child(3) { flex: 0 0 82px; width: 82px; }
-  .oferta-row-header > :nth-child(4) { flex: 0 0 94px; width: 94px; }
+  .oferta-row-header > :nth-child(3) { flex: 0 0 78px; width: 78px; }
+  .oferta-row-header > :nth-child(4) { flex: 0 0 88px; width: 88px; }
   .oferta-row { padding: 0 10px; }
   .oferta-row-header { padding: 0 10px; }
   .col-sort, .col-sort-label { font-size: 9.5px; }

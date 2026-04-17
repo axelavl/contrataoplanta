@@ -1227,7 +1227,7 @@ function renderRowCompacta(oferta) {
   <div class="oferta-row${esFav ? ' favorita' : ''}" data-oferta-id="${oferta.id}" role="button" tabindex="0" aria-label="Ver detalle: ${escAttr(oferta.cargo)}">
     <div class="row-main">
       <div class="row-inst">${escHtml(oferta.institucion) || 'Institución pública'}</div>
-      <div class="row-cargo">${escHtml(oferta.cargo)}</div>
+      <div class="row-cargo" title="${escAttr(oferta.cargo)}">${escHtml(oferta.cargo)}</div>
       ${regionCompleta ? `<div class="row-region">🗺 ${escHtml(regionCompleta)}</div>` : ''}
     </div>
     <div class="row-meta">
