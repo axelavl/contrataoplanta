@@ -2275,11 +2275,16 @@ function _hostnameParaURL(hostname) {
 const _hostnameCrudo = window.location.hostname || '';
 const _hostnameNormalizado = _normalizarHostname(_hostnameCrudo);
 const _esLocalhost = _esEntornoLocal(_hostnameNormalizado);
+const _origenActual = (window.location.origin || '').replace(/\/+$/, '').toLowerCase();
 
 const _apiBases = [];
 const _agregarBase = (base) => {
   if (typeof base !== 'string') return;
-  const limpio = base.trim();
+  const limpio = base.trim().replace(/\/+$/, '');
+  // Evitar duplicar el origen actual como base absoluta: `''` (mismo origen)
+  // ya cubre ese caso y reintentarlo sólo enmascara el error real con un
+  // segundo "Failed to fetch".
+  if (limpio && limpio.toLowerCase() === _origenActual) return;
   if (!_apiBases.includes(limpio)) _apiBases.push(limpio);
 };
 
@@ -2329,13 +2334,16 @@ async function fetchApi(path, options = {}) {
       console.debug('[API] Intentando endpoint', { url, base });
       const resp = await fetch(url, options);
 
-      // Solo aceptar respuestas que vengan de la API real (Content-Type JSON).
-      // Si nginx u otro servidor devuelve HTML (ej. 404 de archivos estáticos),
-      // intentamos la siguiente base en vez de aceptar la respuesta inválida.
+      // Aceptar sólo respuestas que vengan de la API real (Content-Type JSON).
+      // Si nginx u otro servidor devuelve HTML (ej. 404 de archivos estáticos
+      // o 502 de un upstream caído), intentamos la siguiente base en vez de
+      // aceptar la respuesta inválida. Para JSON devolvemos siempre, incluso
+      // con 5xx: el backend respondió y el llamador puede mostrar el detalle
+      // real en lugar de volver a intentar contra fallbacks equivalentes.
       const ct = (resp.headers.get('content-type') || '').toLowerCase();
-      if (resp.status < 500 && ct.includes('application/json')) {
+      if (ct.includes('application/json')) {
         API_BASE_ACTIVA = base;
-        console.info('[API] Endpoint activo', { base: API_BASE_ACTIVA || '(mismo origen)', path });
+        console.info('[API] Endpoint activo', { base: API_BASE_ACTIVA || '(mismo origen)', path, status: resp.status });
         return resp;
       }
 

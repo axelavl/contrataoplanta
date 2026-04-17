@@ -604,8 +604,16 @@ app.add_middleware(
 
 @app.on_event("startup")
 def on_startup() -> None:
-    ensure_api_schema()
-    logger.info("API iniciada y esquema verificado")
+    # No bloquear el arranque si Postgres aún no responde: la API queda viva
+    # respondiendo 503 por request hasta que la DB vuelva. Si abortamos aquí,
+    # uvicorn cae y nginx devuelve 502/connection refused al frontend.
+    try:
+        ensure_api_schema()
+        logger.info("API iniciada y esquema verificado")
+    except Exception as exc:
+        logger.error(
+            "API iniciada sin validar esquema (DB no disponible aún): %s", exc
+        )
 
 
 @app.get("/api/ofertas")
