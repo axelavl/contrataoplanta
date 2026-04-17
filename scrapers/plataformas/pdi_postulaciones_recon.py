@@ -68,6 +68,26 @@ def _guess_payload_kind(response_text: str) -> str:
     return "text"
 
 
+def _safe_all_headers(message: Any) -> dict[str, str]:
+    """Obtiene headers completos (incluyendo cookies/autorización cuando aplique).
+
+    Playwright expone `headers` como una vista sanitizada para uso general.
+    Para preservar contexto replayable de tráfico se prioriza `all_headers()`.
+    """
+    try:
+        raw_headers = message.all_headers()
+    except Exception:
+        raw_headers = None
+
+    if isinstance(raw_headers, dict) and raw_headers:
+        return {str(k).lower(): str(v) for k, v in raw_headers.items()}
+
+    try:
+        return {str(k).lower(): str(v) for k, v in message.headers.items()}
+    except Exception:
+        return {}
+
+
 def run_recon(output_dir: Path, headless: bool = True, wait_ms: int = 15000) -> dict[str, Any]:
     from playwright.sync_api import sync_playwright
 
@@ -90,8 +110,8 @@ def run_recon(output_dir: Path, headless: bool = True, wait_ms: int = 15000) -> 
                 ok = resp.ok
             except Exception:
                 ok = None
-            req_headers = {k.lower(): v for k, v in req.headers.items()}
-            resp_headers = {k.lower(): v for k, v in resp.headers.items()}
+            req_headers = _safe_all_headers(req)
+            resp_headers = _safe_all_headers(resp)
             ctype = resp_headers.get("content-type", "")
             post_data = req.post_data
 
