@@ -3,33 +3,348 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>document.documentElement.classList.add('js-nav');</script>
 <title>Editorial laboral pública — contrata o planta .cl</title>
+<meta name="description" content="Guías paso a paso, glosario laboral y páginas por intención para encontrar empleo público en Chile.">
+<link rel="canonical" href="https://contrataoplanta.cl/editorial.html">
+<meta property="og:title" content="Editorial laboral pública — contrata o planta .cl">
+<meta property="og:description" content="Guías por etapa, glosario laboral público y landings por intención para empleo público en Chile.">
+<meta property="og:url" content="https://contrataoplanta.cl/editorial.html">
+<meta property="og:image" content="https://contrataoplanta.cl/og-default.jpg">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_CL">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Editorial laboral pública — contrata o planta .cl">
+<meta name="twitter:description" content="Guías y recursos para encontrar empleo público en Chile.">
+<meta name="twitter:image" content="https://contrataoplanta.cl/og-default.jpg">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="alternate icon" href="favicon-32x32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&display=swap" as="style">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="styles/shared-layout.css">
 <script defer data-website-id="UMAMI_WEBSITE_ID" src="https://analytics.contrataoplanta.cl/script.js"></script>
 <style>
-:root{--azul:#0A2E6E;--cielo:#1A6BCC;--bg:#F5F4EF;--bl:#FAFAF8;--b:#D9D7CF;--t:#111827;--t2:#4B5563;--acc:#E8A820;--r:12px}
-*{box-sizing:border-box;margin:0;padding:0} body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--t)}
-nav{position:sticky;top:0;background:rgba(10,46,110,.97);z-index:10}.nav-inner{max-width:1100px;margin:0 auto;padding:0 20px;height:56px;display:flex;align-items:center;gap:18px}
-.logo{font-family:Lora,serif;color:#fff;text-decoration:none;font-size:18px}.logo em{color:var(--acc)}
-.nav-links{display:flex;gap:10px;flex:1}.nav-links a{color:rgba(255,255,255,.62);text-decoration:none;font-size:13px;padding:6px 10px;border-radius:7px}.nav-links a:hover,.nav-links a.active{color:#fff;background:rgba(255,255,255,.1)}
-.nav-alerta{background:var(--acc);color:var(--azul);text-decoration:none;font-weight:600;font-size:12px;padding:7px 12px;border-radius:8px}
-main{max-width:980px;margin:0 auto;padding:42px 20px 70px}.hero{background:#fff;border:1px solid var(--b);border-radius:16px;padding:24px;margin-bottom:18px}
-.kicker{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--t2);margin-bottom:8px}.h1{font-family:Lora,serif;font-size:34px;color:var(--azul);line-height:1.15;margin-bottom:10px}
-.sub{color:var(--t2);line-height:1.7}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:16px}
-.card{background:var(--bl);border:1px solid var(--b);border-radius:var(--r);padding:16px}.card h2,.card h3{font-size:17px;color:var(--azul);margin-bottom:8px}.card p{color:var(--t2);font-size:14px;line-height:1.7}
-.links a{display:block;margin-top:7px;color:var(--cielo)} .cta{display:inline-block;margin-top:12px;background:var(--azul);color:#fff;text-decoration:none;padding:10px 14px;border-radius:9px;font-size:14px}
-ul{padding-left:18px;margin-top:8px}li{margin:5px 0;color:var(--t2)}
-footer{background:var(--azul);padding:28px 20px;color:rgba(255,255,255,.7);font-size:13px}
-@media(max-width:700px){.nav-links{display:none}.h1{font-size:28px}}
+:root {
+  --azul:   #0A2E6E; --azul-m: #1557C0; --cielo: #1A6BCC; --cielo-l:#D6E6F8;
+  --bg:     #F5F4EF; --bg2:   #EDECEA; --borde: #D9D7CF;
+  --texto:  #111827; --texto2:#4B5563; --texto3:#9CA3AF;
+  --blanco: #FAFAF8; --r:10px; --r-l:16px;
+  --sombra: 0 1px 3px rgba(0,0,0,0.08),0 4px 16px rgba(0,0,0,0.06);
+}
+
+.editorial-content {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+.editorial-intro {
+  font-size: 15px;
+  color: var(--texto2);
+  line-height: 1.7;
+  max-width: 680px;
+  margin-bottom: 32px;
+}
+
+.editorial-section-titulo {
+  font-family: 'Lora', Georgia, serif;
+  font-size: 20px;
+  color: var(--azul);
+  margin: 40px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 1.5px solid var(--borde);
+}
+
+.editorial-section-titulo:first-of-type { margin-top: 0; }
+
+.editorial-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.editorial-card {
+  background: var(--blanco);
+  border: 1px solid var(--borde);
+  border-radius: var(--r-l);
+  padding: 24px;
+  box-shadow: var(--sombra);
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.editorial-card:hover {
+  border-color: var(--cielo);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1), 0 6px 20px rgba(0,0,0,0.08);
+}
+
+.editorial-card-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--cielo);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  margin-bottom: 8px;
+}
+
+.editorial-card h3 {
+  font-family: 'Lora', Georgia, serif;
+  font-size: 17px;
+  color: var(--azul);
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+
+.editorial-card p {
+  font-size: 14px;
+  color: var(--texto2);
+  line-height: 1.7;
+  margin-bottom: 12px;
+}
+
+.editorial-card-link {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cielo);
+  text-decoration: none;
+  padding: 8px 16px;
+  border: 1px solid var(--cielo);
+  border-radius: 8px;
+  transition: all .15s;
+}
+
+.editorial-card-link:hover {
+  background: var(--cielo);
+  color: white;
+}
+
+.editorial-card-links {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.editorial-card-links a {
+  font-size: 14px;
+  color: var(--cielo);
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--bg);
+  transition: all .15s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.editorial-card-links a:hover {
+  background: var(--cielo-l);
+  color: var(--azul-m);
+}
+
+.editorial-card-links a::before {
+  content: '\2192';
+  font-size: 12px;
+  color: var(--texto3);
+}
+
+.editorial-cta {
+  background: var(--blanco);
+  border: 1px solid var(--borde);
+  border-radius: var(--r-l);
+  padding: 28px;
+  margin-top: 40px;
+  text-align: center;
+  box-shadow: var(--sombra);
+}
+
+.editorial-cta h2 {
+  font-family: 'Lora', Georgia, serif;
+  font-size: 20px;
+  color: var(--azul);
+  margin-bottom: 8px;
+}
+
+.editorial-cta p {
+  font-size: 14px;
+  color: var(--texto2);
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+
+.editorial-cta-btn {
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 600;
+  background: #E8A820;
+  color: var(--azul);
+  text-decoration: none;
+  padding: 10px 24px;
+  border-radius: 8px;
+  transition: opacity .15s;
+}
+
+.editorial-cta-btn:hover { opacity: 0.9; }
+
+@media (max-width: 600px) {
+  .page-titulo { font-size: 26px; }
+  .editorial-content { padding: 28px 20px 60px; }
+  .editorial-grid { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
-<nav><div class="nav-inner"><a href="index.html" class="logo">contrata <em>o</em> planta <em style="font-style:normal;color:rgba(255,255,255,.3)">.cl</em></a><div class="nav-links"><a href="index.html">Buscar empleos</a><a href="instituciones.html">Instituciones</a><a href="estadisticas.html">Estadísticas</a><a href="faq.html">FAQ</a><a href="editorial.html" class="active">Editorial</a></div><a href="index.html#alertas" class="nav-alerta">+ Crear alerta</a></div></nav>
-<main><section class="hero"><div class="kicker">Sección pública</div><h1 class="h1">Editorial laboral para empleo público en Chile</h1><p class="sub">Guías por etapa, glosario laboral público y páginas por intención/región/sector con enlaces a ofertas activas.</p></section>
-<section class="grid"><article class="card"><h2>Guías por etapa</h2><div class="links"><a href="guia-busqueda-empleo-publico.html">Búsqueda</a><a href="guia-preparacion-cv-sector-publico.html">Preparación</a><a href="guia-postulacion-empleos-publicos.html">Postulación</a><a href="guia-seguimiento-postulacion-publica.html">Seguimiento</a></div></article><article class="card"><h2>Glosario laboral</h2><p>Términos: contrata, planta, honorarios, grados EUS y más.</p><div class="links"><a href="glosario-laboral-publico.html">Abrir glosario público</a></div></article><article class="card"><h2>Páginas por intención</h2><div class="links"><a href="intencion-empleos-rm-administrativo.html">Administrativo en RM</a><a href="intencion-empleos-salud-valparaiso.html">Salud en Valparaíso</a><a href="intencion-empleos-educacion-biobio.html">Educación en Biobío</a></div></article></section>
-<section class="card" style="margin-top:12px"><h2>Plantilla SEO</h2><p>Estructura lista para artículos con H1 único, FAQ schema, interlinking y CTA a alertas.</p><div class="links"><a href="plantilla-seo-articulo.html">Ver plantilla de artículo</a></div></section></main>
-<footer><div style="max-width:980px;margin:0 auto">Editorial pública de contrataoplanta.cl · Información orientativa con enlaces directos a ofertas activas.</div></footer>
+<a class="skip-link" href="#contenido-principal">Saltar al contenido</a>
+
+<header>
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="logo">contrata <em>o</em> planta <em class="logo-domain-muted">.cl</em></a>
+    <div class="nav-links">
+      <a href="index.html">Buscar empleos</a>
+      <a href="favoritos.html" id="nav-favoritos" class="nav-link-favs">&#9825; Mis favoritos</a>
+      <a href="instituciones.html">Instituciones</a>
+      <a href="estadisticas.html">Estadísticas</a>
+      <a href="faq.html">Preguntas frecuentes</a>
+      <a href="editorial.html" class="active">Editorial</a>
+    </div>
+    <a href="index.html#alertas" class="nav-alerta">+ Crear alerta</a>
+  </div>
+</nav>
+</header>
+
+<main id="contenido-principal">
+
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <div class="page-kicker">Sección pública</div>
+    <h1 class="page-titulo">Editorial laboral para empleo público en Chile</h1>
+    <p class="page-sub">Guías por etapa, glosario laboral público y páginas por intención con enlaces a ofertas activas</p>
+  </div>
+</div>
+
+<div class="editorial-content">
+
+  <p class="editorial-intro">Hemos organizado el contenido en una ruta editorial clara: primero entiende cómo funciona el empleo público, luego prepara tu postulación y finalmente haz seguimiento. También puedes explorar ofertas por región y sector.</p>
+
+  <h2 class="editorial-section-titulo">Guías por etapa</h2>
+
+  <div class="editorial-grid">
+    <article class="editorial-card">
+      <div class="editorial-card-kicker">Etapa 1</div>
+      <h3>Búsqueda de empleo público</h3>
+      <p>Dónde buscar, qué fuentes revisar y cómo configurar alertas para no perder ninguna oportunidad.</p>
+      <a href="guia-busqueda-empleo-publico.html" class="editorial-card-link">Leer guía</a>
+    </article>
+    <article class="editorial-card">
+      <div class="editorial-card-kicker">Etapa 2</div>
+      <h3>Preparación del CV</h3>
+      <p>Cómo adaptar tu currículum al sector público: formatos, requisitos y errores comunes.</p>
+      <a href="guia-preparacion-cv-sector-publico.html" class="editorial-card-link">Leer guía</a>
+    </article>
+    <article class="editorial-card">
+      <div class="editorial-card-kicker">Etapa 3</div>
+      <h3>Proceso de postulación</h3>
+      <p>Paso a paso para completar tu postulación en empleospublicos.cl y portales institucionales.</p>
+      <a href="guia-postulacion-empleos-publicos.html" class="editorial-card-link">Leer guía</a>
+    </article>
+    <article class="editorial-card">
+      <div class="editorial-card-kicker">Etapa 4</div>
+      <h3>Seguimiento de postulación</h3>
+      <p>Qué esperar después de postular, plazos habituales y cómo consultar el estado de tu concurso.</p>
+      <a href="guia-seguimiento-postulacion-publica.html" class="editorial-card-link">Leer guía</a>
+    </article>
+  </div>
+
+  <h2 class="editorial-section-titulo">Glosario laboral</h2>
+
+  <div class="editorial-grid">
+    <article class="editorial-card">
+      <h3>Glosario del empleo público</h3>
+      <p>Definiciones claras de contrata, planta, honorarios, grados EUS, estamentos y todos los términos que necesitas conocer.</p>
+      <a href="glosario-laboral-publico.html" class="editorial-card-link">Abrir glosario</a>
+    </article>
+  </div>
+
+  <h2 class="editorial-section-titulo">Páginas por intención</h2>
+
+  <div class="editorial-grid">
+    <article class="editorial-card">
+      <h3>Empleos por región y sector</h3>
+      <p>Landings especializadas con ofertas activas filtradas por ubicación geográfica y área profesional.</p>
+      <div class="editorial-card-links">
+        <a href="intencion-empleos-rm-administrativo.html">Administrativo en RM</a>
+        <a href="intencion-empleos-salud-valparaiso.html">Salud en Valparaíso</a>
+        <a href="intencion-empleos-educacion-biobio.html">Educación en Biobío</a>
+      </div>
+    </article>
+  </div>
+
+  <h2 class="editorial-section-titulo">Plantilla SEO</h2>
+
+  <div class="editorial-grid">
+    <article class="editorial-card">
+      <h3>Plantilla de artículo</h3>
+      <p>Estructura lista para artículos con H1 único, FAQ schema, interlinking y CTA a alertas.</p>
+      <a href="plantilla-seo-articulo.html" class="editorial-card-link">Ver plantilla</a>
+    </article>
+  </div>
+
+  <div class="editorial-cta">
+    <h2>¿Buscas empleo público ahora?</h2>
+    <p>Configura una alerta personalizada y recibe las nuevas ofertas directamente en tu correo.</p>
+    <a href="index.html#alertas" class="editorial-cta-btn">+ Crear alerta gratuita</a>
+  </div>
+
+</div>
+
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <a href="index.html" class="logo logo-footer">contrata <em>o</em> planta <em class="logo-domain-muted">.cl</em></a>
+      <p class="footer-desc">La plataforma laboral del sector público chileno. 700+ instituciones registradas.</p>
+    </div>
+    <div>
+      <div class="footer-col-titulo">Explorar</div>
+      <a href="index.html" class="footer-link">Buscar empleos</a>
+      <a href="instituciones.html" class="footer-link">Por institución</a>
+      <a href="estadisticas.html" class="footer-link">Estadísticas</a>
+    </div>
+    <div>
+      <div class="footer-col-titulo">Comunidad</div>
+      <a href="faq.html" class="footer-link">Preguntas frecuentes</a>
+      <a href="editorial.html" class="footer-link">Editorial laboral</a>
+      <a href="favoritos.html" class="footer-link">Mis favoritos</a>
+    </div>
+    <div>
+      <div class="footer-col-titulo">Legal</div>
+      <a href="terminos.html" class="footer-link">Términos de uso</a>
+      <a href="privacidad.html" class="footer-link">Privacidad</a>
+      <a href="descargo.html" class="footer-link">Descargo</a>
+      <a href="mailto:hola@contrataoplanta.cl" class="footer-link">Contacto</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>&copy; 2026 contrata o planta .cl</span>
+    <span>Datos actualizados cada 6 horas &middot; No somos el Estado</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var favs = JSON.parse(localStorage.getItem('fav_contrataoplanta')||'[]');
+  var link = document.getElementById('nav-favoritos');
+  if(link && favs.length > 0){ link.textContent = '\u2665 Mis favoritos ('+favs.length+')'; link.style.color='white'; }
+})();
+</script>
+<script src="nav-mobile.js"></script>
+
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"¿Qué incluye esta sección editorial?","acceptedAnswer":{"@type":"Answer","text":"Incluye guías por etapa, glosario laboral y landings por intención con enlaces a ofertas activas."}},{"@type":"Question","name":"¿Puedo activar alertas desde aquí?","acceptedAnswer":{"@type":"Answer","text":"Sí, cada guía y landing enlaza al CTA de alertas personalizadas."}}]}</script>
-</body></html>
+</body>
+</html>

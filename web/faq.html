@@ -17,11 +17,14 @@
 <meta name="twitter:title" content="Preguntas frecuentes — contrata o planta .cl">
 <meta name="twitter:description" content="Respuestas rápidas sobre cómo usar la plataforma de empleo público.">
 <meta name="twitter:image" content="https://contrataoplanta.cl/og-default.jpg">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="alternate icon" href="favicon-32x32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&display=swap" as="style">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&display=swap">
-<!-- Umami Analytics — sin cookies, sin banner GDPR -->
+<link rel="stylesheet" href="styles/shared-layout.css">
 <script defer data-website-id="UMAMI_WEBSITE_ID" src="https://analytics.contrataoplanta.cl/script.js"></script>
 <style>
 :root {
@@ -31,95 +34,155 @@
   --blanco: #FAFAF8; --r:10px; --r-l:16px;
   --sombra: 0 1px 3px rgba(0,0,0,0.08),0 4px 16px rgba(0,0,0,0.06);
 }
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth;font-size:16px}
-body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--texto);-webkit-font-smoothing:antialiased;min-height:100vh}
 
-.skip-link{position:absolute;left:12px;top:-48px;z-index:1000;background:var(--azul, #0A2E6E);color:var(--blanco, #FAFAF8);padding:10px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;transition:top .2s}
-.skip-link:focus{top:10px}
-
-nav {
-  position: sticky; top: 0; z-index: 100;
-  background: rgba(10,46,110,0.97);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-}
-.nav-inner {
-  max-width: 1200px; margin: 0 auto;
-  padding: 0 24px;
-  display: flex; align-items: center; gap: 32px;
-  height: 56px;
-}
-.logo {
-  font-family: 'Lora', Georgia, serif;
-  font-size: 18px; color: white;
-  letter-spacing: -0.3px; white-space: nowrap;
-  text-decoration: none;
-}
-.logo em { color: #E8A820; font-style: italic; }
-.nav-links {
-  display: flex; gap: 4px; align-items: center; flex: 1;
-}
-.nav-links a {
-  font-size: 13px; color: rgba(255,255,255,0.55);
-  text-decoration: none; padding: 6px 12px;
-  border-radius: 6px; transition: all .15s;
-  font-weight: 500;
-}
-.nav-links a:hover, .nav-links a.active {
-  color: white; background: rgba(255,255,255,0.1);
-}
-.nav-link-favs { color: #E8A820 !important; }
-.nav-link-favs:hover, .nav-link-favs.active { background: rgba(232,168,32,0.15) !important; }
-.nav-alerta {
-  font-size: 12px; font-weight: 600;
-  background: #E8A820; color: #0A2E6E;
-  padding: 7px 16px; border-radius: 6px;
-  cursor: pointer; white-space: nowrap;
-  transition: opacity .15s; text-decoration: none;
-}
-.nav-alerta:hover { opacity: .9; }
-
-
-.page-content{max-width:740px;margin:0 auto;padding:48px 24px 80px}
-
-
-/* ACORDEÓN */
-.faq-item{border:1px solid var(--borde);border-radius:var(--r);margin-bottom:8px;overflow:hidden;background:var(--blanco)}
-.faq-pregunta{width:100%;text-align:left;background:none;border:none;cursor:pointer;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;gap:16px;font-family:'Inter',system-ui,sans-serif;font-size:15px;font-weight:600;color:var(--texto);line-height:1.4;transition:background .15s}
-.faq-pregunta:hover{background:var(--bg)}
-.faq-pregunta[aria-expanded="true"]{background:var(--bg2);color:var(--azul-m)}
-.faq-icono{flex-shrink:0;width:20px;height:20px;display:flex;align-items:center;justify-content:center;color:var(--texto3);transition:transform .2s}
-.faq-pregunta[aria-expanded="true"] .faq-icono{transform:rotate(45deg);color:var(--cielo)}
-.faq-respuesta{display:none;padding:0 20px 16px}
-.faq-respuesta p{font-size:14px;color:var(--texto2);line-height:1.8;margin-bottom:10px}
-.faq-respuesta p:last-child{margin-bottom:0}
-.faq-respuesta ul{margin:6px 0 10px 0;padding-left:18px;display:flex;flex-direction:column;gap:5px}
-.faq-respuesta ul li{font-size:14px;color:var(--texto2);line-height:1.6}
-.faq-respuesta a{color:var(--cielo);text-decoration:underline;text-decoration-color:rgba(26,107,204,.3)}
-.faq-respuesta a:hover{text-decoration-color:var(--cielo)}
-.faq-respuesta .nota{background:var(--cielo-l);border-left:3px solid var(--cielo);border-radius:0 8px 8px 0;padding:10px 14px;margin:12px 0;font-size:13px;color:var(--texto)}
-
-footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
-.footer-inner {
-  max-width: 1200px; margin: 0 auto;
-  display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
+.faq-layout {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+  display: grid;
+  grid-template-columns: 220px 1fr;
   gap: 40px;
+  align-items: start;
 }
-.footer-brand .logo { font-size: 20px; }
-.footer-desc { font-size: 13px; color: rgba(255,255,255,0.35); line-height: 1.7; max-width: 280px; font-weight: 300; }
-.footer-col-titulo { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; font-family: 'Inter', sans-serif; }
-.footer-link { display: block; font-size: 13px; color: rgba(255,255,255,0.5); text-decoration: none; margin-bottom: 8px; transition: color .15s; }
-.footer-link:hover { color: white; }
-.footer-bottom { max-width: 1200px; margin: 28px auto 0; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; font-size: 12px; color: rgba(255,255,255,0.25); }
-@media (max-width: 768px) { .footer-inner { grid-template-columns: 1fr 1fr; gap: 24px; } }
-@media (max-width: 480px) { .footer-inner { grid-template-columns: 1fr; } }
-@media(max-width:600px){.js-nav .nav-links{display:none}.page-titulo{font-size:26px}}
+
+.faq-sidebar {
+  position: sticky;
+  top: 76px;
+  background: var(--blanco);
+  border: 1px solid var(--borde);
+  border-radius: var(--r-l);
+  padding: 20px;
+  box-shadow: var(--sombra);
+}
+
+.faq-sidebar-titulo {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--texto3);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  margin-bottom: 14px;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.faq-sidebar a {
+  display: block;
+  font-size: 13px;
+  color: var(--texto2);
+  text-decoration: none;
+  padding: 7px 10px;
+  border-radius: 6px;
+  margin-bottom: 2px;
+  transition: all .15s;
+  line-height: 1.4;
+}
+
+.faq-sidebar a:hover {
+  color: var(--azul);
+  background: var(--bg);
+}
+
+.faq-sidebar a.active {
+  color: var(--azul-m);
+  background: var(--cielo-l);
+  font-weight: 600;
+}
+
+.faq-main {
+  min-width: 0;
+}
+
+.faq-categoria {
+  font-family: 'Lora', Georgia, serif;
+  font-size: 20px;
+  color: var(--azul);
+  margin: 40px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 1.5px solid var(--borde);
+  scroll-margin-top: 80px;
+}
+
+.faq-categoria:first-of-type { margin-top: 0; }
+
+.faq-item {
+  border: 1px solid var(--borde);
+  border-radius: var(--r);
+  margin-bottom: 8px;
+  overflow: hidden;
+  background: var(--blanco);
+}
+
+.faq-pregunta {
+  width: 100%; text-align: left; background: none; border: none;
+  cursor: pointer; padding: 16px 20px;
+  display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 15px; font-weight: 600; color: var(--texto);
+  line-height: 1.4; transition: background .15s;
+}
+.faq-pregunta:hover { background: var(--bg); }
+.faq-pregunta[aria-expanded="true"] { background: var(--bg2); color: var(--azul-m); }
+.faq-icono {
+  flex-shrink: 0; width: 20px; height: 20px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--texto3); transition: transform .2s;
+}
+.faq-pregunta[aria-expanded="true"] .faq-icono { transform: rotate(45deg); color: var(--cielo); }
+.faq-respuesta { display: none; padding: 0 20px 16px; }
+.faq-respuesta p { font-size: 14px; color: var(--texto2); line-height: 1.8; margin-bottom: 10px; }
+.faq-respuesta p:last-child { margin-bottom: 0; }
+.faq-respuesta ul { margin: 6px 0 10px 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; }
+.faq-respuesta ul li { font-size: 14px; color: var(--texto2); line-height: 1.6; }
+.faq-respuesta a { color: var(--cielo); text-decoration: underline; text-decoration-color: rgba(26,107,204,.3); }
+.faq-respuesta a:hover { text-decoration-color: var(--cielo); }
+.faq-respuesta .nota { background: var(--cielo-l); border-left: 3px solid var(--cielo); border-radius: 0 8px 8px 0; padding: 10px 14px; margin: 12px 0; font-size: 13px; color: var(--texto); }
+
+.faq-contacto {
+  background: var(--blanco);
+  border: 1px solid var(--borde);
+  border-radius: var(--r-l);
+  padding: 24px;
+  margin-top: 40px;
+  text-align: center;
+  box-shadow: var(--sombra);
+}
+.faq-contacto h2 {
+  font-family: 'Lora', Georgia, serif;
+  font-size: 18px;
+  color: var(--azul);
+  margin-bottom: 8px;
+}
+.faq-contacto p {
+  font-size: 14px;
+  color: var(--texto2);
+  line-height: 1.7;
+}
+.faq-contacto a {
+  color: var(--cielo);
+  text-decoration: underline;
+  text-decoration-color: rgba(26,107,204,.3);
+}
+.faq-contacto a:hover { text-decoration-color: var(--cielo); }
+
+@media (max-width: 900px) {
+  .faq-layout {
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: 32px 20px 60px;
+  }
+  .faq-sidebar {
+    position: static;
+    margin-bottom: 24px;
+  }
+}
+
+@media (max-width: 600px) {
+  .page-titulo { font-size: 26px; }
+}
 </style>
 </head>
 <body>
 <a class="skip-link" href="#contenido-principal">Saltar al contenido</a>
-
 
 <header>
 <nav>
@@ -127,7 +190,7 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
     <a href="index.html" class="logo">contrata <em>o</em> planta <em class="logo-domain-muted">.cl</em></a>
     <div class="nav-links">
       <a href="index.html">Buscar empleos</a>
-      <a href="favoritos.html" id="nav-favoritos" class="nav-link-favs">♡ Mis favoritos</a>
+      <a href="favoritos.html" id="nav-favoritos" class="nav-link-favs">&#9825; Mis favoritos</a>
       <a href="instituciones.html">Instituciones</a>
       <a href="estadisticas.html">Estadísticas</a>
       <a href="faq.html" class="active">Preguntas frecuentes</a>
@@ -148,180 +211,238 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
   </div>
 </div>
 
-<div class="page-content">
+<div class="faq-layout">
 
-  <h2 class="faq-categoria">Sobre la plataforma</h2>
+  <aside class="faq-sidebar" aria-label="Navegación FAQ">
+    <div class="faq-sidebar-titulo">Categorías</div>
+    <a href="#sobre-plataforma" class="active">Sobre la plataforma</a>
+    <a href="#buscar-filtrar">Buscar y filtrar</a>
+    <a href="#alertas">Alertas</a>
+    <a href="#postulacion">Postulación</a>
+    <a href="#cobertura">Cobertura y precisión</a>
+    <a href="#privacidad">Privacidad y datos</a>
+  </aside>
 
-  <div class="faq-item">
-    <button class="faq-pregunta" aria-expanded="false" onclick="toggleFaq(this)">
-      ¿Qué es contrata o planta .cl?
-      <span class="faq-icono">
-        <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </span>
-    </button>
-    <div class="faq-respuesta">
-      <p>Es un <strong>agregador independiente</strong> de ofertas de empleo del sector público chileno. Recopilamos y centralizamos concursos publicados en empleospublicos.cl, sitios web institucionales de ministerios, municipalidades, hospitales y otras entidades del Estado.</p>
-      <p>La plataforma no es gubernamental ni está afiliada a ningún organismo público. Es un proyecto independiente.</p>
+  <div class="faq-main">
+
+    <h2 class="faq-categoria" id="sobre-plataforma">Sobre la plataforma</h2>
+
+    <div class="faq-item">
+      <button class="faq-pregunta" aria-expanded="false" onclick="toggleFaq(this)">
+        ¿Qué es contrata o planta .cl?
+        <span class="faq-icono"><svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+      </button>
+      <div class="faq-respuesta">
+        <p>Es un <strong>agregador independiente</strong> de ofertas de empleo del sector público chileno. Recopilamos y centralizamos concursos publicados en empleospublicos.cl, sitios web institucionales de ministerios, municipalidades, hospitales y otras entidades del Estado.</p>
+        <p>La plataforma no es gubernamental ni está afiliada a ningún organismo público. Es un proyecto independiente.</p>
+      </div>
     </div>
-  </div>
 
-  <div class="faq-item">
-    <button class="faq-pregunta" aria-expanded="false" onclick="toggleFaq(this)">
-      ¿Es gratuito?
-      <span class="faq-icono">
-        <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </span>
-    </button>
-    <div class="faq-respuesta">
-      <p>Sí, completamente gratuito. No hay registro obligatorio, no hay planes de pago y no hay funciones premium. Todas las ofertas, filtros, alertas y estadísticas son de acceso libre.</p>
+    <div class="faq-item">
+      <button class="faq-pregunta" aria-expanded="false" onclick="toggleFaq(this)">
+        ¿Es gratuito?
+        <span class="faq-icono"><svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+      </button>
+      <div class="faq-respuesta">
+        <p>Sí, completamente gratuito. No hay registro obligatorio, no hay planes de pago y no hay funciones premium. Todas las ofertas, filtros, alertas y estadísticas son de acceso libre.</p>
+      </div>
     </div>
-  </div>
 
-  <div class="faq-item">
-    <button class="faq-pregunta" aria-expanded="false" onclick="toggleFaq(this)">
-      ¿De dónde proviene la información?
-      <span class="faq-icono">
-        <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </span>
-    </button>
-    <div class="faq-respuesta">
-      <p>Las ofertas provienen de fuentes públicas del Estado, principalmente:</p>
-      <ul>
-        <li>El portal oficial <strong>empleospublicos.cl</strong> del Servicio Civil.</li>
-        <li>Sitios web institucionales de municipalidades, ministerios y hospitales.</li>
-        <li>Portales de transparencia activa.</li>
-      </ul>
-      <p>Los datos se actualizan automáticamente mediante sistemas de recopilación. No publicamos ofertas inventadas ni de agencias privadas de reclutamiento.</p>
+    <div class="faq-item">
+      <button class="faq-pregunta" aria-expanded="false" onclick="toggleFaq(this)">
+        ¿De dónde proviene la información?
+        <span class="faq-icono"><svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+      </button>
+      <div class="faq-respuesta">
+        <p>Las ofertas provienen de fuentes públicas del Estado, principalmente:</p>
+        <ul>
+          <li>El portal oficial <strong>empleospublicos.cl</strong> del Servicio Civil.</li>
+          <li>Sitios web institucionales de municipalidades, ministerios y hospitales.</li>
+          <li>Portales de transparencia activa.</li>
+        </ul>
+        <p>Los datos se actualizan automáticamente mediante sistemas de recopilación. No publicamos ofertas inventadas ni de agencias privadas de reclutamiento.</p>
+      </div>
     </div>
-  </div>
 
-  <div class="faq-item">
-    <button class="faq-pregunta" aria-expanded="false" onclick="toggleFaq(this)">
-      ¿Con qué frecuencia se actualizan las ofertas?
-      <span class="faq-icono">
-        <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </span>
-    </button>
-    <div class="faq-respuesta">
-      <p>Los scrapers de empleospublicos.cl se ejecutan diariamente. Las fuentes institucionales adicionales (municipalidades, hospitales, etc.) se revisan con menor frecuencia, dependiendo del volumen y disponibilidad de cada sitio.</p>
-      <p>Cuando una oferta aparece marcada como "nueva", significa que fue detectada en las últimas 48 horas.</p>
+    <div class="faq-item">
+      <button class="faq-pregunta" aria-expanded="false" onclick="toggleFaq(this)">
+        ¿Con qué frecuencia se actualizan las ofertas?
+        <span class="faq-icono"><svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+      </button>
+      <div class="faq-respuesta">
+        <p>Los scrapers de empleospublicos.cl se ejecutan diariamente. Las fuentes institucionales adicionales (municipalidades, hospitales, etc.) se revisan con menor frecuencia, dependiendo del volumen y disponibilidad de cada sitio.</p>
+        <p>Cuando una oferta aparece marcada como "nueva", significa que fue detectada en las últimas 48 horas.</p>
+      </div>
     </div>
-  </div>
 
-  <h2 class="faq-categoria">Buscar y filtrar</h2>
+    <h2 class="faq-categoria" id="buscar-filtrar">Buscar y filtrar</h2>
 
-  <div class="faq-item">
-    <button class="faq-pregunta" aria-expanded="false" onclick="toggleFaq(this)">
-      ¿Cómo busco por cargo o institución?
-      <span class="faq-icono">
-        <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </span>
-    </button>
-    <div class="faq-respuesta">
-      <p>Usa la barra de búsqueda principal en la página de inicio. Puedes escribir el nombre del cargo (ej. "psicólogo"), el nombre de la institución (ej. "MINSAL") o cualquier término que aparezca en la descripción.</p>
-      <p>Combina la búsqueda con los filtros de región y sector para resultados más precisos.</p>
+    <div class="faq-item">
+      <button class="faq-pregunta" aria-expanded="false" onclick="toggleFaq(this)">
+        ¿Cómo busco por cargo o institución?
+        <span class="faq-icono"><svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+      </button>
+      <div class="faq-respuesta">
+        <p>Usa la <a href="index.html">barra de búsqueda principal</a> en la página de inicio. Puedes escribir el nombre del cargo (ej. "psicólogo"), el nombre de la institución (ej. "MINSAL") o cualquier término que aparezca en la descripción.</p>
+        <p>Combina la búsqueda con los filtros de región y sector para resultados más precisos.</p>
+      </div>
     </div>
-  </div>
 
-  <div class="faq-item">
-    <button class="faq-pregunta" aria-expanded="false" onclick="toggleFaq(this)">
-      ¿Qué significa cada tipo de contrato?
-      <span class="faq-icono">
-        <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </span>
-    </button>
-    <div class="faq-respuesta">
-      <ul>
-        <li><strong>Planta</strong> — cargo permanente en la dotación estable de la institución. Máxima estabilidad laboral.</li>
-        <li><strong>Contrata</strong> — cargo temporal, se renueva anualmente. Es el tipo más común en el sector público.</li>
-        <li><strong>Honorarios</strong> — prestación de servicios a honorarios. Sin beneficios de la ley laboral.</li>
-        <li><strong>Código del Trabajo</strong> — régimen laboral privado aplicado a algunas entidades públicas (hospitales, empresas del Estado).</li>
-      </ul>
+    <div class="faq-item">
+      <button class="faq-pregunta" aria-expanded="false" onclick="toggleFaq(this)">
+        ¿Qué significa cada tipo de contrato?
+        <span class="faq-icono"><svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+      </button>
+      <div class="faq-respuesta">
+        <ul>
+          <li><strong>Planta</strong> — cargo permanente en la dotación estable de la institución. Máxima estabilidad laboral.</li>
+          <li><strong>Contrata</strong> — cargo temporal, se renueva anualmente. Es el tipo más común en el sector público.</li>
+          <li><strong>Honorarios</strong> — prestación de servicios a honorarios. Sin beneficios de la ley laboral.</li>
+          <li><strong>Código del Trabajo</strong> — régimen laboral privado aplicado a algunas entidades públicas (hospitales, empresas del Estado).</li>
+        </ul>
+        <div class="nota">Puedes filtrar por tipo de contrato directamente en la <a href="index.html">página de búsqueda</a>.</div>
+      </div>
     </div>
-  </div>
 
-  <div class="faq-item">
-    <button class="faq-pregunta" aria-expanded="false" onclick="toggleFaq(this)">
-      ¿Qué es el grado EUS?
-      <span class="faq-icono">
-        <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </span>
-    </button>
-    <div class="faq-respuesta">
-      <p>El grado EUS es la categoría escalafonaria del cargo dentro de la Escala Única de Sueldos del sector público chileno. Los grados van del 1 (más alto) al 20 (más bajo), y determinan la remuneración base del cargo.</p>
-      <p>A menor número de grado, mayor es la remuneración y la jerarquía del cargo.</p>
+    <div class="faq-item">
+      <button class="faq-pregunta" aria-expanded="false" onclick="toggleFaq(this)">
+        ¿Qué es el grado EUS?
+        <span class="faq-icono"><svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+      </button>
+      <div class="faq-respuesta">
+        <p>El grado EUS es la categoría escalafonaria del cargo dentro de la Escala Única de Sueldos del sector público chileno. Los grados van del 1 (más alto) al 20 (más bajo), y determinan la remuneración base del cargo.</p>
+        <p>A menor número de grado, mayor es la remuneración y la jerarquía del cargo. Puedes consultar más detalles en nuestro <a href="glosario-laboral-publico.html">glosario laboral</a>.</p>
+      </div>
     </div>
-  </div>
 
-  <h2 class="faq-categoria">Alertas</h2>
-
-  <div class="faq-item">
-    <button class="faq-pregunta" aria-expanded="false" onclick="toggleFaq(this)">
-      ¿Cómo creo una alerta de empleo?
-      <span class="faq-icono">
-        <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </span>
-    </button>
-    <div class="faq-respuesta">
-      <p>En la página principal, busca la sección "Alertas de empleo" en el panel lateral. Ingresa tu correo electrónico y opcionalmente configura filtros (región, palabras clave, tipo de contrato). Recibirás un correo cuando aparezcan nuevas ofertas que coincidan.</p>
-      <div class="nota">No es necesario registrarte ni crear una cuenta para usar las alertas.</div>
+    <div class="faq-item">
+      <button class="faq-pregunta" aria-expanded="false" onclick="toggleFaq(this)">
+        ¿Puedo guardar ofertas que me interesan?
+        <span class="faq-icono"><svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+      </button>
+      <div class="faq-respuesta">
+        <p>Sí. Cada oferta tiene un botón de favorito (&#9825;). Al marcarlo, la oferta se guarda en tu navegador y puedes revisarla después desde la sección <a href="favoritos.html">Mis favoritos</a>.</p>
+        <p>Los favoritos se almacenan localmente en tu dispositivo y no requieren registro ni cuenta.</p>
+      </div>
     </div>
-  </div>
 
-  <div class="faq-item">
-    <button class="faq-pregunta" aria-expanded="false" onclick="toggleFaq(this)">
-      ¿Cómo cancelo una alerta?
-      <span class="faq-icono">
-        <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </span>
-    </button>
-    <div class="faq-respuesta">
-      <p>Cada correo de alerta incluye un enlace de cancelación al pie. Al hacer clic se elimina la suscripción de inmediato, sin más pasos.</p>
-      <p>También puedes escribirnos a <a href="mailto:hola@contrataoplanta.cl">hola@contrataoplanta.cl</a> indicando el correo de la suscripción que deseas eliminar.</p>
+    <h2 class="faq-categoria" id="alertas">Alertas</h2>
+
+    <div class="faq-item">
+      <button class="faq-pregunta" aria-expanded="false" onclick="toggleFaq(this)">
+        ¿Cómo creo una alerta de empleo?
+        <span class="faq-icono"><svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+      </button>
+      <div class="faq-respuesta">
+        <p>En la página principal, busca la sección "Alertas de empleo" en el panel lateral o haz clic en <a href="index.html#alertas">+ Crear alerta</a>. Ingresa tu correo electrónico y opcionalmente configura filtros (región, palabras clave, tipo de contrato). Recibirás un correo cuando aparezcan nuevas ofertas que coincidan.</p>
+        <div class="nota">No es necesario registrarte ni crear una cuenta para usar las alertas.</div>
+      </div>
     </div>
-  </div>
 
-  <h2 class="faq-categoria">Cobertura y precisión</h2>
-
-  <div class="faq-item">
-    <button class="faq-pregunta" aria-expanded="false" onclick="toggleFaq(this)">
-      ¿Están todas las ofertas del sector público?
-      <span class="faq-icono">
-        <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </span>
-    </button>
-    <div class="faq-respuesta">
-      <p>No. La cobertura es amplia pero no exhaustiva. Indexamos el portal empleospublicos.cl, que es la principal fuente oficial, más cientos de fuentes institucionales adicionales.</p>
-      <p>Algunas ofertas pueden no aparecer si la institución las publica solo en formatos inaccesibles (PDFs, plataformas con muros de autenticación, etc.) o si no han sido aún procesadas por nuestros sistemas.</p>
+    <div class="faq-item">
+      <button class="faq-pregunta" aria-expanded="false" onclick="toggleFaq(this)">
+        ¿Con qué frecuencia recibo alertas?
+        <span class="faq-icono"><svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+      </button>
+      <div class="faq-respuesta">
+        <p>Las alertas se envían cuando nuestro sistema detecta ofertas nuevas que coinciden con tus filtros. La frecuencia depende del volumen de publicaciones, pero no recibirás más de un correo por día para evitar saturarte.</p>
+      </div>
     </div>
-  </div>
 
-  <div class="faq-item">
-    <button class="faq-pregunta" aria-expanded="false" onclick="toggleFaq(this)">
-      Encontré un error en una oferta, ¿qué hago?
-      <span class="faq-icono">
-        <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </span>
-    </button>
-    <div class="faq-respuesta">
-      <p>Escríbenos a <a href="mailto:hola@contrataoplanta.cl">hola@contrataoplanta.cl</a> con el enlace a la oferta y la descripción del error. Lo revisaremos y corregiremos lo antes posible.</p>
-      <p>Si el error está en la fuente original (el sitio de la institución), también notifica a la institución directamente, ya que somos un agregador y solo reflejamos lo que publican.</p>
+    <div class="faq-item">
+      <button class="faq-pregunta" aria-expanded="false" onclick="toggleFaq(this)">
+        ¿Cómo cancelo una alerta?
+        <span class="faq-icono"><svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+      </button>
+      <div class="faq-respuesta">
+        <p>Cada correo de alerta incluye un enlace de cancelación al pie. Al hacer clic se elimina la suscripción de inmediato, sin más pasos.</p>
+        <p>También puedes escribirnos a <a href="mailto:hola@contrataoplanta.cl">hola@contrataoplanta.cl</a> indicando el correo de la suscripción que deseas eliminar.</p>
+      </div>
     </div>
-  </div>
 
-  <div class="faq-item">
-    <button class="faq-pregunta" aria-expanded="false" onclick="toggleFaq(this)">
-      ¿Puedo postular directamente desde este sitio?
-      <span class="faq-icono">
-        <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </span>
-    </button>
-    <div class="faq-respuesta">
-      <p>No. Somos un agregador informativo, no una plataforma de postulación. Cada oferta incluye un enlace directo a la fuente original donde puedes ver los detalles completos y aplicar.</p>
-      <p>Nunca enviamos tu información a ninguna institución pública.</p>
+    <h2 class="faq-categoria" id="postulacion">Postulación</h2>
+
+    <div class="faq-item">
+      <button class="faq-pregunta" aria-expanded="false" onclick="toggleFaq(this)">
+        ¿Puedo postular directamente desde este sitio?
+        <span class="faq-icono"><svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+      </button>
+      <div class="faq-respuesta">
+        <p>No. Somos un agregador informativo, no una plataforma de postulación. Cada oferta incluye un enlace directo a la fuente original donde puedes ver los detalles completos y aplicar.</p>
+        <p>Nunca enviamos tu información a ninguna institución pública.</p>
+      </div>
     </div>
-  </div>
 
+    <div class="faq-item">
+      <button class="faq-pregunta" aria-expanded="false" onclick="toggleFaq(this)">
+        ¿Cómo me preparo para postular a un empleo público?
+        <span class="faq-icono"><svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+      </button>
+      <div class="faq-respuesta">
+        <p>Hemos creado guías paso a paso en nuestra <a href="editorial.html">sección editorial</a> que cubren todo el proceso:</p>
+        <ul>
+          <li><a href="guia-busqueda-empleo-publico.html">Cómo buscar empleo público</a></li>
+          <li><a href="guia-preparacion-cv-sector-publico.html">Preparar tu CV para el sector público</a></li>
+          <li><a href="guia-postulacion-empleos-publicos.html">Proceso de postulación</a></li>
+          <li><a href="guia-seguimiento-postulacion-publica.html">Seguimiento de tu postulación</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <h2 class="faq-categoria" id="cobertura">Cobertura y precisión</h2>
+
+    <div class="faq-item">
+      <button class="faq-pregunta" aria-expanded="false" onclick="toggleFaq(this)">
+        ¿Están todas las ofertas del sector público?
+        <span class="faq-icono"><svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+      </button>
+      <div class="faq-respuesta">
+        <p>No. La cobertura es amplia pero no exhaustiva. Indexamos el portal empleospublicos.cl, que es la principal fuente oficial, más cientos de fuentes institucionales adicionales.</p>
+        <p>Algunas ofertas pueden no aparecer si la institución las publica solo en formatos inaccesibles (PDFs, plataformas con muros de autenticación, etc.) o si no han sido aún procesadas por nuestros sistemas.</p>
+        <div class="nota">Consulta el <a href="instituciones.html">directorio de instituciones</a> para ver cuáles están cubiertas.</div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-pregunta" aria-expanded="false" onclick="toggleFaq(this)">
+        Encontré un error en una oferta, ¿qué hago?
+        <span class="faq-icono"><svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+      </button>
+      <div class="faq-respuesta">
+        <p>Escríbenos a <a href="mailto:hola@contrataoplanta.cl">hola@contrataoplanta.cl</a> con el enlace a la oferta y la descripción del error. Lo revisaremos y corregiremos lo antes posible.</p>
+        <p>Si el error está en la fuente original (el sitio de la institución), también notifica a la institución directamente, ya que somos un agregador y solo reflejamos lo que publican.</p>
+      </div>
+    </div>
+
+    <h2 class="faq-categoria" id="privacidad">Privacidad y datos</h2>
+
+    <div class="faq-item">
+      <button class="faq-pregunta" aria-expanded="false" onclick="toggleFaq(this)">
+        ¿Almacenan mis datos personales?
+        <span class="faq-icono"><svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+      </button>
+      <div class="faq-respuesta">
+        <p>Solo almacenamos tu correo electrónico si decides crear una alerta, y lo usamos exclusivamente para enviarte las notificaciones que configuraste. No compartimos tu correo con terceros.</p>
+        <p>Los favoritos se guardan localmente en tu navegador y nunca salen de tu dispositivo. Puedes consultar nuestra <a href="privacidad.html">política de privacidad</a> para más detalles.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-pregunta" aria-expanded="false" onclick="toggleFaq(this)">
+        ¿Usan cookies?
+        <span class="faq-icono"><svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+      </button>
+      <div class="faq-respuesta">
+        <p>No usamos cookies de seguimiento ni de terceros. Nuestro sistema de analítica (Umami) funciona sin cookies y respeta tu privacidad. No se requiere banner GDPR.</p>
+      </div>
+    </div>
+
+    <div class="faq-contacto">
+      <h2>¿No encontraste lo que buscabas?</h2>
+      <p>Escríbenos a <a href="mailto:hola@contrataoplanta.cl">hola@contrataoplanta.cl</a> y te responderemos lo antes posible.</p>
+    </div>
+
+  </div>
 </div>
 
 </main>
@@ -353,33 +474,50 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
     </div>
   </div>
   <div class="footer-bottom">
-    <span>© 2026 contrata o planta .cl</span>
-    <span>Datos actualizados cada 6 horas · No somos el Estado</span>
+    <span>&copy; 2026 contrata o planta .cl</span>
+    <span>Datos actualizados cada 6 horas &middot; No somos el Estado</span>
   </div>
 </footer>
 
 <script>
 (function(){
-  const favs = JSON.parse(localStorage.getItem('fav_contrataoplanta')||'[]');
-  const link = document.getElementById('nav-favoritos');
-  if(link && favs.length > 0){ link.textContent = '♥ Mis favoritos ('+favs.length+')'; link.style.color='white'; }
+  var favs = JSON.parse(localStorage.getItem('fav_contrataoplanta')||'[]');
+  var link = document.getElementById('nav-favoritos');
+  if(link && favs.length > 0){ link.textContent = '\u2665 Mis favoritos ('+favs.length+')'; link.style.color='white'; }
 })();
 </script>
 
 <script>
 function toggleFaq(btn) {
-  const expanded = btn.getAttribute('aria-expanded') === 'true';
-  // Cierra todos
-  document.querySelectorAll('.faq-pregunta[aria-expanded="true"]').forEach(b => {
+  var expanded = btn.getAttribute('aria-expanded') === 'true';
+  document.querySelectorAll('.faq-pregunta[aria-expanded="true"]').forEach(function(b) {
     b.setAttribute('aria-expanded', 'false');
     b.nextElementSibling.style.display = 'none';
   });
-  // Abre el clickeado si estaba cerrado
   if (!expanded) {
     btn.setAttribute('aria-expanded', 'true');
     btn.nextElementSibling.style.display = 'block';
   }
 }
+
+(function() {
+  var links = document.querySelectorAll('.faq-sidebar a');
+  var cats = document.querySelectorAll('.faq-categoria');
+  function updateActive() {
+    var scrollY = window.scrollY || window.pageYOffset;
+    var current = '';
+    cats.forEach(function(cat) {
+      if (cat.offsetTop - 100 <= scrollY) {
+        current = cat.id;
+      }
+    });
+    links.forEach(function(a) {
+      a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+    });
+  }
+  window.addEventListener('scroll', updateActive, {passive: true});
+  updateActive();
+})();
 </script>
 <script src="nav-mobile.js"></script>
 
