@@ -213,17 +213,18 @@ nav {
 .ad-slot-sidebar {
   background: var(--bg2);
   border: 1.5px dashed var(--borde);
-  height: 250px; width: 100%;
+  height: 210px; width: 100%;
   color: var(--texto3);
   border-radius: var(--r-l);
   margin-bottom: 0;
+  opacity: .8;
 }
 .ad-slot-resultados {
   height: 72px; width: 100%;
   background: var(--bg2);
   border: 1px dashed var(--borde);
   border-radius: var(--r);
-  margin-top: 20px;
+  margin-top: 14px;
   display: flex; align-items: center; justify-content: center;
   color: var(--texto3);
 }
@@ -351,7 +352,7 @@ nav {
 /* ═══ LAYOUT PRINCIPAL ════════════════════════════════════════════════ */
 .main {
   max-width: 1200px; margin: 0 auto;
-  padding: 20px 24px 48px;
+  padding: 18px 24px 34px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 300px;
   gap: 24px;
@@ -362,7 +363,7 @@ nav {
 .sidebar { min-width: 0; overflow: hidden; }
 
 .data-update-global{
-  max-width:1200px;margin:8px auto 0;padding:0 24px 16px;
+  max-width:1200px;margin:6px auto 0;padding:0 24px 10px;
   font-size:13px;color:var(--texto3);
 }
 .data-update-global strong{color:var(--texto2)}
@@ -503,7 +504,7 @@ nav {
   background: var(--blanco);
   border: 1.5px solid var(--borde);
   border-radius: var(--r-l);
-  padding: 16px 18px;
+  padding: 15px 16px;
   cursor: pointer;
   transition: all .2s;
   position: relative;
@@ -528,7 +529,7 @@ nav {
 
 .oferta-header {
   display: flex; gap: 14px; align-items: flex-start;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 .oferta-logo {
   width: 44px; height: 44px;
@@ -543,7 +544,7 @@ nav {
 .oferta-meta { flex: 1; min-width: 0; }
 .oferta-institucion {
   font-size: 12px; font-weight: 600;
-  color: var(--cielo); margin-bottom: 3px;
+  color: var(--cielo); margin-bottom: 4px;
   text-transform: uppercase; letter-spacing: 0.3px;
   line-height: 1.3;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
@@ -552,9 +553,30 @@ nav {
 .oferta-cargo {
   font-family: 'Lora', Georgia, serif;
   font-size: 18px; color: var(--azul);
-  line-height: 1.24; margin-bottom: 6px;
+  line-height: 1.24; margin-bottom: 7px;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   overflow: hidden;
+}
+.oferta-cargo-link {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+  width: 100%;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+  transition: color .15s, text-decoration-color .15s;
+}
+.oferta-card:hover .oferta-cargo-link,
+.oferta-cargo-link:focus-visible {
+  color: var(--azul-m);
+  text-decoration-color: rgba(10,46,110,.4);
+  outline: none;
 }
 .oferta-tipo-wrap {
   display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
@@ -577,7 +599,7 @@ nav {
 .oferta-detalles {
   display: flex; gap: 16px; flex-wrap: wrap;
   font-size: 13px; color: var(--texto2);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 .oferta-detalle {
   display: flex; align-items: center; gap: 5px;
@@ -585,7 +607,8 @@ nav {
 .oferta-detalle svg { opacity: .5; flex-shrink: 0; }
 .oferta-renta {
   font-weight: 700; color: var(--texto);
-  font-size: 14px;
+  font-size: 14.5px;
+  margin-right: 6px;
 }
 .oferta-renta--muted {
   color: var(--texto3);
@@ -604,7 +627,7 @@ nav {
 .oferta-footer {
   display: flex; justify-content: space-between;
   align-items: center;
-  padding-top: 12px;
+  padding-top: 10px;
   border-top: 1px solid var(--bg2);
 }
 .oferta-plazo {
@@ -627,7 +650,7 @@ nav {
 
 .btn-detalle {
   font-size: 12px; font-weight: 600;
-  padding: 7px 16px; border-radius: 7px;
+  padding: 7px 14px; border-radius: 7px;
   background: var(--azul); color: white;
   border: none; cursor: pointer;
   font-family: 'Inter', sans-serif;
@@ -765,26 +788,28 @@ nav {
 
 .widget {
   background: var(--blanco);
-  border: 1px solid #e7edf5;
+  border: 1px solid #edf1f7;
   border-radius: var(--r-l);
   overflow: hidden;
   min-width: 0;
   word-break: break-word;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 }
 .widget-header {
-  padding: 12px 14px;
+  padding: 11px 13px;
   border-bottom: 1px solid var(--bg2);
   display: flex; justify-content: space-between; align-items: center;
+  background: #fbfdff;
 }
 .widget-titulo {
-  font-size: 13px; font-weight: 700;
-  color: var(--texto); letter-spacing: -0.2px;
+  font-size: 12.5px; font-weight: 700;
+  color: var(--texto2); letter-spacing: -0.1px;
 }
 .widget-ver-todo {
-  font-size: 11px; color: var(--cielo);
+  font-size: 10.5px; color: var(--texto3);
   text-decoration: none; font-weight: 600;
 }
-.widget-body { padding: 12px 14px; }
+.widget-body { padding: 11px 12px; }
 
 /* Widget sectores explorados */
 .sector-explorado {
@@ -1050,7 +1075,7 @@ nav {
 footer {
   background: var(--azul);
   padding: 40px 24px;
-  margin-top: 32px;
+  margin-top: 22px;
 }
 .footer-inner {
   max-width: 1200px; margin: 0 auto;
@@ -1096,7 +1121,7 @@ footer {
   background: var(--blanco);
   border-radius: var(--r-l);
   width: 100%; max-width: 680px;
-  max-height: 90vh; overflow-y: auto;
+  max-height: 88vh; overflow-y: auto;
   box-shadow: 0 24px 80px rgba(10,46,110,0.3);
   animation: slideUp .25s ease;
   transition: transform .2s ease, opacity .2s ease;
@@ -1117,7 +1142,7 @@ footer {
 }
 .modal-header {
   background: var(--azul);
-  padding: 16px 20px; border-radius: var(--r-l) var(--r-l) 0 0;
+  padding: 14px 20px; border-radius: var(--r-l) var(--r-l) 0 0;
   position: sticky; top: 0; z-index: 1;
 }
 .modal-close {
@@ -1208,9 +1233,9 @@ footer {
   display: flex; flex-direction: column; gap: 6px;
 }
 .modal-rich-text ul + p,
-.modal-rich-text ol + p { margin-top: 8px; }
+.modal-rich-text ol + p { margin-top: 10px; }
 .modal-rich-text .rt-heading + ul,
-.modal-rich-text .rt-heading + ol { margin-top: 4px; }
+.modal-rich-text .rt-heading + ol { margin-top: 6px; }
 .modal-rich-text li {
   position: relative;
   padding-left: 18px;
@@ -1309,7 +1334,7 @@ footer {
 }
 .modal-actions {
   display: flex; gap: 8px; flex-wrap: wrap;
-  padding: 12px 20px;
+  padding: 10px 20px;
   border-top: 1px solid var(--bg2);
   background: var(--blanco);
   position: sticky; bottom: 0;
@@ -1340,14 +1365,12 @@ footer {
 /* Barra de compartir en modal (RRSS + copiar enlace) */
 .modal-share {
   display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
-  padding: 10px 20px 16px;
+  padding: 8px 20px 14px;
   border-top: 1px solid var(--bg2);
   background: var(--blanco);
 }
-.modal-share-label {
-  font-size: .8rem; color: var(--texto2);
-  margin-right: 4px; font-weight: 500;
-}
+.btn-modal-sec--share { min-width: 124px; }
+.btn-modal-sec--share-link { text-decoration: none; display: inline-flex; align-items: center; }
 .share-btn {
   display: inline-flex; align-items: center; justify-content: center;
   width: 38px; height: 38px; border-radius: 50%;
@@ -1359,24 +1382,124 @@ footer {
 .share-btn svg { width: 18px; height: 18px; }
 .share-btn:hover { transform: translateY(-1px); }
 .share-btn:focus-visible { outline: 2px solid var(--cielo); outline-offset: 2px; }
-.share-btn--native:hover { background: var(--azul); color: white; border-color: var(--azul); }
 .share-btn--wa:hover     { background: #25D366; color: white; border-color: #25D366; }
-.share-btn--li:hover     { background: #0A66C2; color: white; border-color: #0A66C2; }
-.share-btn--fb:hover     { background: #1877F2; color: white; border-color: #1877F2; }
-.share-btn--x:hover      { background: #000;    color: white; border-color: #000;    }
-.share-btn--mail:hover   { background: var(--azul); color: white; border-color: var(--azul); }
 .share-btn--copy:hover   { background: var(--acento); color: var(--azul); border-color: var(--acento); }
 .share-btn--copy.is-copied {
   background: var(--verde); color: white; border-color: var(--verde);
 }
-.share-btn--ig:hover {
-  background: linear-gradient(45deg, #F58529 0%, #DD2A7B 50%, #8134AF 100%);
-  color: white; border-color: transparent;
+
+/* ═══ Visor interno de bases (PDF) ═════════════════════════════════════ */
+.bases-viewer-overlay {
+  position: fixed; inset: 0;
+  background: rgba(10,46,110,.65);
+  z-index: 10050;
+  display: flex; justify-content: center; align-items: center;
+  padding: 16px;
 }
-.share-btn--qr:hover { background: var(--azul); color: white; border-color: var(--azul); }
-/* El QR solo tiene sentido en escritorio: ocultarlo en móvil */
-@media (max-width: 600px) {
-  .share-btn--qr { display: none; }
+.bases-viewer-overlay[hidden] { display: none; }
+.bases-viewer-panel {
+  width: min(1200px, 100%);
+  height: min(92vh, 100dvh - 16px);
+  background: var(--blanco);
+  border-radius: var(--r-l);
+  box-shadow: var(--sombra-m);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.bases-viewer-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 16px;
+  background: var(--azul);
+  color: white;
+}
+.bases-viewer-kicker {
+  font-size: 11px;
+  opacity: .82;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin-bottom: 2px;
+}
+.bases-viewer-header h3 {
+  font-size: 18px;
+  font-family: 'Lora', Georgia, serif;
+  line-height: 1.2;
+}
+.bases-viewer-close {
+  width: 34px; height: 34px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(255,255,255,.17);
+  color: white;
+  cursor: pointer;
+}
+.bases-viewer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--bg2);
+}
+.bases-viewer-status {
+  font-size: 12px;
+  color: var(--texto2);
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--bg2);
+}
+.bases-viewer-content {
+  position: relative;
+  flex: 1;
+  background: var(--bg2);
+}
+.bases-viewer-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #EEF2F7;
+}
+.bases-viewer-frame.is-hidden { display: none; }
+.bases-viewer-fallback {
+  position: absolute; inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+  background: linear-gradient(180deg, #F8FAFC, #EEF2F7);
+}
+.bases-fallback-title {
+  color: var(--azul);
+  font-size: 18px;
+  font-weight: 700;
+}
+.bases-fallback-copy {
+  color: var(--texto2);
+  font-size: 14px;
+  max-width: 62ch;
+}
+.bases-fallback-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+@media (max-width: 768px) {
+  .bases-viewer-overlay { padding: 0; }
+  .bases-viewer-panel {
+    width: 100%;
+    height: 100dvh;
+    border-radius: 0;
+  }
+  .bases-viewer-header { padding: 12px; }
+  .bases-viewer-header h3 { font-size: 16px; }
+  .bases-viewer-actions {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding: 10px 12px;
+  }
+  .bases-viewer-actions .btn-modal-sec { flex-shrink: 0; height: 42px; font-size: 13px; }
+  .bases-viewer-status { padding: 8px 12px; }
+  .bases-viewer-fallback { padding: 16px 14px; }
+  .bases-fallback-title { font-size: 17px; }
 }
 
 /* Popover QR */
@@ -1470,16 +1593,11 @@ footer {
 .ig-btn--sec:hover { border-color: var(--cielo); color: var(--cielo); }
 .ig-btn--sec.is-copied { background: var(--verde); color: white; border-color: var(--verde); }
 @media (max-width: 600px) {
-  .modal-share {
-    gap: 10px; padding: 10px 16px 14px;
-    overflow-x: auto; flex-wrap: nowrap;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-  .modal-share::-webkit-scrollbar { display: none; }
-  .share-btn { width: 44px; height: 44px; }
-  .share-btn svg { width: 20px; height: 20px; }
-  .modal-share-label { display: none; }
+  .modal-share { gap: 8px; padding: 8px 16px 12px; }
+  .share-btn { width: 40px; height: 40px; }
+  .share-btn svg { width: 18px; height: 18px; }
+  .btn-modal-sec--share,
+  .btn-modal-sec--share-link { flex: 1; justify-content: center; }
 }
 
 /* Alerta de plazo en modal */
@@ -1640,7 +1758,7 @@ footer {
 }
 @media (max-width: 600px) {
   /* Ofertas: footer se apila para que los botones sean tappeables y no se recorten */
-  .oferta-card { padding: 16px 16px; }
+  .oferta-card { padding: 14px 14px; }
   .oferta-footer {
     flex-direction: column;
     align-items: stretch;
@@ -1659,23 +1777,22 @@ footer {
   .btn-ver, .btn-ver-off { flex: 1; text-align: center; }
   .oferta-plazo { font-size: 13px; }
   /* Vista tarjetas: fuentes más compactas en móvil */
-  .oferta-card { padding: 14px 14px; }
   .oferta-institucion { font-size: 11px; }
-  .oferta-cargo { font-size: 17px; line-height: 1.22; }
-  .oferta-detalles { font-size: 12px; gap: 10px; margin-bottom: 10px; }
+  .oferta-cargo { font-size: 16px; line-height: 1.2; }
+  .oferta-detalles { font-size: 11.5px; gap: 8px; margin-bottom: 8px; }
   .oferta-renta { font-size: 13px; }
   .badge { font-size: 10.5px; padding: 2px 7px; }
   .ofertas-lista.cuadricula .oferta-cargo { font-size: 15px; }
   .js-nav .nav-links { display: none; }
   .js-nav .nav-alerta { display: none; }
   /* Compactar el hero para que los filtros queden cerca del listado */
-  .hero { padding: 14px 16px 0; }
-  .hero-h1 { font-size: 24px; margin-bottom: 8px; letter-spacing: -0.2px; }
-  .hero-kicker { margin-bottom: 10px; }
-  .hero-sub { font-size: 13px; line-height: 1.45; margin-bottom: 10px; }
-  .hero-left { padding-bottom: 8px; }
+  .hero { padding: 12px 16px 0; }
+  .hero-h1 { font-size: 22px; margin-bottom: 7px; letter-spacing: -0.2px; }
+  .hero-kicker { margin-bottom: 8px; font-size: 10.5px; }
+  .hero-sub { font-size: 12.5px; line-height: 1.4; margin-bottom: 8px; max-width: 58ch; }
+  .hero-left { padding-bottom: 6px; }
   .hero-stats-bar { display: none; }
-  .buscador-wrap { padding: 12px 12px 0; margin-top: 2px; border-radius: var(--r) var(--r) 0 0; }
+  .buscador-wrap { padding: 10px 10px 0; margin-top: 2px; border-radius: var(--r) var(--r) 0 0; }
   .buscador-form { grid-template-columns: 1fr; gap: 8px; margin-bottom: 10px; }
   .buscador-form > .campo:first-child { grid-column: auto; }
   .buscador-fila2 { grid-template-columns: 1fr; gap: 8px; margin-bottom: 8px; }
@@ -1686,7 +1803,7 @@ footer {
   .filtro-tag { font-size: 11px; padding: 4px 10px; }
   .filtros-titulo { font-size: 11.5px; }
   /* Reducir espacio entre filtros y listado */
-  .main { padding: 12px 16px 40px; gap: 14px; }
+  .main { padding: 10px 16px 26px; gap: 12px; }
   .footer-inner { grid-template-columns: 1fr; gap: 24px; }
   .footer-bottom { flex-direction: column; gap: 4px; text-align: center; }
   .stat-grid { grid-template-columns: 1fr 1fr; }

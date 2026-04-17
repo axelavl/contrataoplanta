@@ -221,6 +221,19 @@
     });
   }
 
+  // En textos scrapeados es común ver encabezados conocidos pegados tras coma/punto
+  // o incluso sin ":" final. Este paso los separa a una línea propia para dar
+  // jerarquía visual consistente.
+  function splitOnKnownHeadersAnyContext(text) {
+    var tokens = KNOWN_HEADERS.slice()
+      .sort(function (a, b) { return b.length - a.length; })
+      .map(function (h) { return h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); });
+    var re = new RegExp('([.;])\\s+((?:' + tokens.join('|') + '))(?:\\s*:)?(?=\\s+[A-ZÁÉÍÓÚÑ]|\\n|$)', 'gi');
+    return text.replace(re, function (m, punct, header) {
+      return punct + '\n' + header + ':';
+    });
+  }
+
   function looksLikeListHeader(s) {
     return /(competencia|conocimiento|habilidad|requisito|funci[oó]n|especializaci[oó]n|capacitaci[oó]n|experiencia|formaci[oó]n|documento|antecedente|beneficio|perfil)/i.test(s);
   }
@@ -363,6 +376,41 @@
     return out.join('\n');
   }
 
+  // Convierte énfasis markdown o líneas con "encabezado + contenido" en
+  // bloques más claros:
+  //   "**Formación educacional** Ingeniero..." -> "Formación educacional:\nIngeniero..."
+  function liftEmphasizedHeaders(text) {
+    var lines = text.split('\n');
+    var out = [];
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i].trim();
+      if (!line) continue;
+
+      var mdInline = line.match(/^(?:\*\*|__)\s*([^*_:\n]{2,80}?)\s*(?:\*\*|__)\s*:?\s+(.+)$/);
+      if (mdInline && (isKnownHeader(mdInline[1]) || looksLikeListHeader(mdInline[1]))) {
+        out.push(mdInline[1].trim() + ':');
+        out.push(mdInline[2].trim());
+        continue;
+      }
+
+      var mdOnly = line.match(/^(?:\*\*|__)\s*([^*_:\n]{2,80}?)\s*(?:\*\*|__)\s*:?\s*$/);
+      if (mdOnly && (isKnownHeader(mdOnly[1]) || looksLikeListHeader(mdOnly[1]))) {
+        out.push(mdOnly[1].trim() + ':');
+        continue;
+      }
+
+      var plainInline = line.match(/^([A-ZÁÉÍÓÚÑ][^:]{2,70}?)(?:\s*:)?\s{2,}(.+)$/);
+      if (plainInline && (isKnownHeader(plainInline[1]) || looksLikeListHeader(plainInline[1]))) {
+        out.push(plainInline[1].trim() + ':');
+        out.push(plainInline[2].trim());
+        continue;
+      }
+
+      out.push(line);
+    }
+    return out.join('\n');
+  }
+
   // ─────────────────────────────────────────────────────────────
   // 5. Splitter: texto normalizado → bloques tipados
   // ─────────────────────────────────────────────────────────────
@@ -432,6 +480,8 @@
         return pre + '<strong>' + label + ':</strong>';
       }
     );
+    // Conserva énfasis inline pero evita negritas heredadas largas e invasivas.
+    esc = esc.replace(/(?:\*\*|__)([^*_]{2,120})(?:\*\*|__)/g, '<strong>$1</strong>');
     return esc;
   }
 
@@ -487,8 +537,10 @@
     if (!t) return '';
     t = dedupeConsecutiveLines(t);
     t = splitOnInlineKnownHeaders(t);
+    t = splitOnKnownHeadersAnyContext(t);
     t = explodeInlineListAfterHeader(t);
     t = explodeInlineEnumerations(t);
+    t = liftEmphasizedHeaders(t);
     t = liftInlineHeaders(t);
     t = t.split('\n').map(trim).filter(Boolean).join('\n');
     var blocks = splitIntoStructuredBlocks(t);
