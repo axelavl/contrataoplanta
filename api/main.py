@@ -109,26 +109,61 @@ OFFER_STATUS_SQL = (
 ACTIVE_OFFER_SQL = f"{OFFER_STATUS_SQL} IN ('active', 'closing_today')"
 SITE_URL = (os.getenv("SITE_URL", "https://contrataoplanta.cl") or "https://contrataoplanta.cl").rstrip("/")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "estadoemplea2026")
+# ADMIN_PATH: prefijo secreto de las rutas de administración.
+# Configura esta variable en Railway para ocultar el punto de entrada.
+# Ejemplo: ADMIN_PATH=f8a3d2e7  → rutas en /api/f8a3d2e7/stats, etc.
+ADMIN_PATH = os.getenv("ADMIN_PATH", "_gestion_ops").strip("/")
+
 _http_basic = HTTPBasic(auto_error=False)
 
+# ── Rate limiting en memoria (simple, por IP) ─────────────────
+import time as _time
+from collections import defaultdict as _defaultdict
 
-def _verify_admin(credentials: HTTPBasicCredentials | None = Depends(_http_basic)) -> str:
-    """Verifica HTTP Basic Auth para endpoints /api/admin/*."""
+_auth_failures: dict[str, list[float]] = _defaultdict(list)
+_RATE_WINDOW_SEG = 600   # 10 minutos
+_RATE_MAX_INTENTOS = 5   # máx. intentos fallidos por ventana
+
+
+def _check_rate_limit(ip: str) -> None:
+    ahora = _time.monotonic()
+    corte = ahora - _RATE_WINDOW_SEG
+    _auth_failures[ip] = [t for t in _auth_failures[ip] if t > corte]
+    if len(_auth_failures[ip]) >= _RATE_MAX_INTENTOS:
+        raise HTTPException(
+            status_code=429,
+            detail="Demasiados intentos fallidos. Espere 10 minutos.",
+            headers={"Retry-After": str(_RATE_WINDOW_SEG)},
+        )
+
+
+def _record_failure(ip: str) -> None:
+    _auth_failures[ip].append(_time.monotonic())
+
+
+def _verify_admin(
+    request: Request,
+    credentials: HTTPBasicCredentials | None = Depends(_http_basic),
+) -> str:
+    """Verifica HTTP Basic Auth + rate limiting para endpoints de administración."""
+    ip = (request.client.host if request.client else "unknown") or "unknown"
+    _check_rate_limit(ip)
     if credentials is None:
         raise HTTPException(
             status_code=401,
             detail="Autenticación requerida",
-            headers={"WWW-Authenticate": 'Basic realm="Admin"'},
+            headers={"WWW-Authenticate": 'Basic realm="Gestion"'},
         )
     pw_ok = secrets.compare_digest(
         credentials.password.encode("utf-8"),
         ADMIN_PASSWORD.encode("utf-8"),
     )
     if not pw_ok:
+        _record_failure(ip)
         raise HTTPException(
             status_code=401,
-            detail="Contraseña incorrecta",
-            headers={"WWW-Authenticate": 'Basic realm="Admin"'},
+            detail="Credenciales incorrectas",
+            headers={"WWW-Authenticate": 'Basic realm="Gestion"'},
         )
     return credentials.username
 WEB_INDEX_PATH = _PROJECT_ROOT / "web" / "index.html"
@@ -1674,7 +1709,7 @@ def web_root(request: Request, oferta: int | None = Query(None, ge=1)) -> Respon
 #  ADMIN API — protegida con HTTP Basic Auth (ADMIN_PASSWORD env var)
 # ════════════════════════════════════════════════════════════════════════════
 
-@app.get("/api/admin/stats", tags=["admin"])
+@app.get(f"/api/{ADMIN_PATH}/stats", tags=["admin"])
 def admin_stats(_user: str = Depends(_verify_admin)) -> dict[str, Any]:
     """Métricas completas para el dashboard de administración."""
     totales = execute_fetch_one("""
@@ -1738,7 +1773,7 @@ def admin_stats(_user: str = Depends(_verify_admin)) -> dict[str, Any]:
     }
 
 
-@app.get("/api/admin/ofertas", tags=["admin"])
+@app.get(f"/api/{ADMIN_PATH}/ofertas", tags=["admin"])
 def admin_ofertas(
     pagina: int = Query(1, ge=1),
     por_pagina: int = Query(50, ge=1, le=200),
@@ -1820,7 +1855,7 @@ def admin_ofertas(
     }
 
 
-@app.post("/api/admin/ofertas/{oferta_id}/toggle-activa", tags=["admin"])
+@app.post(f"/api/{ADMIN_PATH}/ofertas/{oferta_id}/toggle-activa", tags=["admin"])
 def admin_toggle_activa(
     oferta_id: int,
     _user: str = Depends(_verify_admin),
@@ -1840,7 +1875,7 @@ def admin_toggle_activa(
     return {"id": oferta_id, "activa": nuevo_estado}
 
 
-@app.put("/api/admin/ofertas/{oferta_id}", tags=["admin"])
+@app.put(f"/api/{ADMIN_PATH}/ofertas/{oferta_id}", tags=["admin"])
 def admin_editar_oferta(
     oferta_id: int,
     payload: dict[str, Any],
@@ -1867,7 +1902,7 @@ def admin_editar_oferta(
     return {"id": oferta_id, "updated": list(updates.keys())}
 
 
-@app.get("/api/admin/scraper-runs", tags=["admin"])
+@app.get(f"/api/{ADMIN_PATH}/scraper-runs", tags=["admin"])
 def admin_scraper_runs(
     limit: int = Query(20, ge=1, le=100),
     _user: str = Depends(_verify_admin),
@@ -1884,7 +1919,7 @@ def admin_scraper_runs(
     """, [limit])
 
 
-@app.get("/api/admin/evaluaciones", tags=["admin"])
+@app.get(f"/api/{ADMIN_PATH}/evaluaciones", tags=["admin"])
 def admin_evaluaciones(
     decision: str | None = Query(None),
     limit: int = Query(100, ge=1, le=500),
@@ -1917,7 +1952,7 @@ def admin_evaluaciones(
     """, params)
 
 
-@app.get("/api/admin/fuentes", tags=["admin"])
+@app.get(f"/api/{ADMIN_PATH}/fuentes", tags=["admin"])
 def admin_fuentes(
     con_ofertas: bool | None = Query(None),
     sector: str | None = Query(None),

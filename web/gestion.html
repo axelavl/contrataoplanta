@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EmpleoEstado</title>
+<!--
+  Panel de gestión interna.
+  URL de acceso:  /gestion.html?k=TU_ADMIN_PATH
+  donde TU_ADMIN_PATH es el valor de la variable de entorno ADMIN_PATH en Railway.
+  Sin el parámetro ?k= correcto esta página no muestra ningún contenido.
+-->
+<style>
+  :root {
+    --bg: #0f172a; --surface: #1e293b; --surface2: #273449;
+    --border: #334155; --text: #e2e8f0; --muted: #94a3b8;
+    --accent: #3b82f6; --accent-hover: #2563eb;
+    --green: #22c55e; --red: #ef4444; --yellow: #f59e0b; --orange: #f97316;
+    --radius: 8px; --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; min-height: 100vh; }
+
+  /* ── Auth ── */
+  #auth-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+  .auth-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 40px 36px; width: 340px; text-align: center;
+  }
+  .auth-card h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .auth-card p  { color: var(--muted); margin-bottom: 28px; font-size: 13px; }
+  .auth-card input {
+    width: 100%; padding: 10px 14px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius); color: var(--text); font-size: 14px; outline: none;
+    margin-bottom: 12px; transition: border-color .15s;
+  }
+  .auth-card input:focus { border-color: var(--accent); }
+  .auth-card button {
+    width: 100%; padding: 10px; background: var(--accent); color: #fff; border: none;
+    border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: background .15s;
+  }
+  .auth-card button:hover { background: var(--accent-hover); }
+  .auth-card button:disabled { opacity: .5; cursor: default; }
+  #auth-error { color: var(--red); font-size: 13px; margin-top: 10px; display: none; }
+
+  /* ── App ── */
+  #app { display: none; }
+  header {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px; height: 54px; position: sticky; top: 0; z-index: 10;
+  }
+  .header-brand { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .header-brand span { color: var(--accent); }
+  .header-right { display: flex; align-items: center; gap: 14px; }
+  .badge-live {
+    background: #15803d22; color: var(--green); border: 1px solid #16a34a55;
+    border-radius: 20px; padding: 2px 10px; font-size: 11px; font-weight: 600;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .badge-live::before { content: ''; width: 6px; height: 6px; background: var(--green); border-radius: 50%; }
+  .btn-logout {
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+    border-radius: var(--radius); padding: 5px 12px; cursor: pointer; font-size: 12px;
+    transition: all .15s;
+  }
+  .btn-logout:hover { border-color: var(--red); color: var(--red); }
+
+  nav {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    display: flex; padding: 0 24px; gap: 2px; overflow-x: auto;
+  }
+  nav button {
+    background: none; border: none; color: var(--muted); padding: 12px 16px;
+    cursor: pointer; font-size: 13px; font-weight: 500; border-bottom: 2px solid transparent;
+    transition: all .15s; white-space: nowrap;
+  }
+  nav button:hover { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main { padding: 24px; max-width: 1400px; margin: 0 auto; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── Stats ── */
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+    gap: 14px; margin-bottom: 28px;
+  }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 18px;
+  }
+  .stat-card .label { color: var(--muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+  .stat-card .value { font-size: 26px; font-weight: 700; }
+  .stat-card .sub   { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .stat-card.green .value { color: var(--green); }
+  .stat-card.red   .value { color: var(--red); }
+  .stat-card.blue  .value { color: var(--accent); }
+  .stat-card.yellow .value { color: var(--yellow); }
+
+  /* ── Section header ── */
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px; gap: 12px; flex-wrap: wrap;
+  }
+  .section-header h2 { font-size: 15px; font-weight: 600; }
+
+  /* ── Filters ── */
+  .filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+  .filters input, .filters select {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    border-radius: var(--radius); padding: 7px 11px; font-size: 13px; outline: none;
+    transition: border-color .15s;
+  }
+  .filters input:focus, .filters select:focus { border-color: var(--accent); }
+  .filters input[type=search] { min-width: 200px; }
+
+  /* ── Table ── */
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    background: var(--surface2); color: var(--muted); font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .05em; padding: 9px 13px;
+    border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap;
+  }
+  td { padding: 8px 13px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+  .text-muted { color: var(--muted); }
+  .text-small { font-size: 12px; }
+
+  /* ── Pills ── */
+  .pill {
+    display: inline-block; padding: 2px 8px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  .pill.green  { background: #15803d22; color: var(--green); border: 1px solid #16a34a44; }
+  .pill.red    { background: #dc262622; color: var(--red);   border: 1px solid #dc262644; }
+  .pill.yellow { background: #d9770622; color: var(--yellow);border: 1px solid #d9770644; }
+  .pill.blue   { background: #1d4ed822; color: #60a5fa;      border: 1px solid #1d4ed844; }
+  .pill.gray   { background: #33415522; color: var(--muted); border: 1px solid var(--border); }
+  .pill.orange { background: #c2410c22; color: var(--orange);border: 1px solid #c2410c44; }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px;
+    border-radius: var(--radius); border: none; font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: all .15s; text-decoration: none; white-space: nowrap;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-danger  { background: #dc262622; color: var(--red); border: 1px solid #dc262644; }
+  .btn-danger:hover { background: var(--red); color: #fff; }
+  .btn-sm      { padding: 4px 9px; font-size: 11px; }
+  .btn-ghost   { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--text); }
+  .btn-success { background: #15803d22; color: var(--green); border: 1px solid #16a34a44; }
+  .btn-success:hover { background: var(--green); color: #fff; }
+
+  /* ── Pagination ── */
+  .paginacion {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 11px 14px; border-top: 1px solid var(--border); flex-wrap: wrap; gap: 8px;
+  }
+  .paginacion span { color: var(--muted); font-size: 12px; }
+  .paginacion .pages { display: flex; gap: 5px; }
+  .paginacion .pages button {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    border-radius: 5px; padding: 4px 9px; cursor: pointer; font-size: 12px;
+  }
+  .paginacion .pages button:hover { border-color: var(--accent); color: var(--accent); }
+  .paginacion .pages button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .paginacion .pages button:disabled { opacity: .35; cursor: default; }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: #00000088;
+    z-index: 100; align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 26px; width: 540px; max-width: 95vw; max-height: 90vh; overflow-y: auto;
+  }
+  .modal h3 { font-size: 15px; font-weight: 600; margin-bottom: 18px; }
+  .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+  .form-group { margin-bottom: 13px; }
+  .form-group label { display: block; color: var(--muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 5px; }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    border-radius: var(--radius); padding: 8px 11px; font-size: 13px; outline: none; font-family: var(--font);
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); }
+  .form-group textarea { resize: vertical; min-height: 80px; }
+
+  /* ── Spinner / empty ── */
+  .spinner {
+    display: inline-block; width: 15px; height: 15px;
+    border: 2px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin .6s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-row td { text-align: center; padding: 36px; color: var(--muted); }
+  .empty-row td   { text-align: center; padding: 36px; color: var(--muted); }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed; bottom: 22px; right: 22px; z-index: 200;
+    background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 11px 16px; font-size: 13px; transform: translateY(70px); opacity: 0;
+    transition: all .22s; pointer-events: none; max-width: 300px;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.success { border-color: var(--green); color: var(--green); }
+  #toast.error   { border-color: var(--red);   color: var(--red); }
+
+  @media (max-width: 640px) {
+    main { padding: 14px; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    nav button { padding: 10px 9px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Auth screen ── -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <h1>🔒 Acceso restringido</h1>
+    <p>EmpleoEstado — gestión interna</p>
+    <input id="auth-pass" type="password" placeholder="Contraseña de acceso" autocomplete="current-password">
+    <button id="auth-btn">Entrar</button>
+    <div id="auth-error">Contraseña incorrecta o demasiados intentos</div>
+  </div>
+</div>
+
+<!-- ── App ── -->
+<div id="app">
+  <header>
+    <div class="header-brand"><span>EmpleoEstado</span> · Gestión</div>
+    <div class="header-right">
+      <div class="badge-live">Conectado</div>
+      <button class="btn-logout" onclick="logout()">Cerrar sesión</button>
+    </div>
+  </header>
+  <nav>
+    <button class="active" data-tab="dashboard">📊 Dashboard</button>
+    <button data-tab="ofertas">📋 Ofertas</button>
+    <button data-tab="scrapers">🤖 Scrapers</button>
+    <button data-tab="fuentes">🏛️ Fuentes</button>
+  </nav>
+  <main>
+
+    <!-- Dashboard -->
+    <div class="tab-panel active" id="tab-dashboard">
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card"><div class="label">Cargando…</div><div class="value"><span class="spinner"></span></div></div>
+      </div>
+      <div class="section-header">
+        <h2>Últimas corridas del scraper</h2>
+        <button class="btn btn-ghost btn-sm" onclick="loadDashboard()">↻ Actualizar</button>
+      </div>
+      <div class="table-wrap" style="margin-bottom:26px">
+        <table>
+          <thead><tr>
+            <th>Fecha</th><th>Estado</th><th>Modo</th>
+            <th>Evaluadas</th><th>Nuevas</th><th>Actualizadas</th>
+            <th>Errores</th><th>Precisión</th><th>Duración</th>
+          </tr></thead>
+          <tbody id="runs-tbody-dash">
+            <tr class="loading-row"><td colspan="9"><span class="spinner"></span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="section-header"><h2>Validez de URLs</h2></div>
+      <div class="stats-grid" id="url-stats-grid"></div>
+    </div>
+
+    <!-- Ofertas -->
+    <div class="tab-panel" id="tab-ofertas">
+      <div class="section-header">
+        <h2>Gestión de ofertas</h2>
+        <span id="ofertas-badge" class="pill gray"></span>
+      </div>
+      <div class="filters">
+        <input type="search" id="f-q" placeholder="🔍 Cargo / institución…" oninput="debounceSearch()">
+        <select id="f-activa" onchange="loadOfertas(1)">
+          <option value="">Todas</option>
+          <option value="true">Activas</option>
+          <option value="false">Inactivas</option>
+        </select>
+        <select id="f-url-rota" onchange="loadOfertas(1)">
+          <option value="">URL cualquiera</option>
+          <option value="true">URL rota</option>
+        </select>
+        <select id="f-sector" onchange="loadOfertas(1)">
+          <option value="">Todos los sectores</option>
+        </select>
+        <select id="f-orden" onchange="loadOfertas(1)">
+          <option value="reciente">Más recientes</option>
+          <option value="cierre">Por cierre</option>
+          <option value="cargo">Alfabético</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>ID</th><th>Cargo</th><th>Institución</th><th>Sector</th>
+            <th>Cierre</th><th>Estado</th><th>URL</th><th>Acciones</th>
+          </tr></thead>
+          <tbody id="ofertas-tbody">
+            <tr class="loading-row"><td colspan="8"><span class="spinner"></span></td></tr>
+          </tbody>
+        </table>
+        <div class="paginacion" id="ofertas-paginacion"></div>
+      </div>
+    </div>
+
+    <!-- Scrapers -->
+    <div class="tab-panel" id="tab-scrapers">
+      <div class="section-header">
+        <h2>Historial de corridas</h2>
+        <button class="btn btn-ghost btn-sm" onclick="loadScrapers()">↻ Actualizar</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Inicio</th><th>Fin</th><th>Estado</th><th>Modo</th>
+            <th>Instit.</th><th>Evalua.</th><th>EXTRACT</th>
+            <th>Nuevas</th><th>Actual.</th><th>Errores</th>
+            <th>Precisión</th><th>Duración</th><th>Notas</th>
+          </tr></thead>
+          <tbody id="scrapers-tbody">
+            <tr class="loading-row"><td colspan="13"><span class="spinner"></span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Fuentes -->
+    <div class="tab-panel" id="tab-fuentes">
+      <div class="section-header">
+        <h2>Instituciones / fuentes</h2>
+        <span id="fuentes-badge" class="pill gray"></span>
+      </div>
+      <div class="filters">
+        <select id="f-fuente-sector" onchange="loadFuentes()">
+          <option value="">Todos los sectores</option>
+        </select>
+        <select id="f-con-ofertas" onchange="loadFuentes()">
+          <option value="">Con y sin ofertas</option>
+          <option value="true">Con ofertas activas</option>
+          <option value="false">Sin ofertas activas</option>
+        </select>
+        <select id="f-decision" onchange="loadFuentes()">
+          <option value="">Todas las decisiones</option>
+          <option value="EXTRACT">EXTRACT</option>
+          <option value="SKIP">SKIP</option>
+          <option value="NO_DATA">NO_DATA</option>
+          <option value="ERROR">ERROR</option>
+          <option value="sin_evaluar">Sin evaluar</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>ID</th><th>Nombre</th><th>Sector</th>
+            <th>Extractor</th><th>Decisión</th><th>Confianza</th>
+            <th>Disponib.</th><th>HTTP</th><th>Ofertas</th><th>Última eval.</th>
+          </tr></thead>
+          <tbody id="fuentes-tbody">
+            <tr class="loading-row"><td colspan="10"><span class="spinner"></span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Modal editar oferta -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <h3>Editar oferta <span id="edit-id" style="color:var(--muted);font-weight:400"></span></h3>
+    <div class="form-group"><label>Cargo</label><input id="edit-cargo" type="text"></div>
+    <div class="form-group"><label>Descripción</label><textarea id="edit-descripcion" rows="3"></textarea></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>Fecha cierre</label><input id="edit-fecha-cierre" type="date"></div>
+      <div class="form-group"><label>Estado</label>
+        <select id="edit-estado">
+          <option value="activa">activa</option><option value="cerrada">cerrada</option>
+          <option value="vencida">vencida</option><option value="suspendida">suspendida</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>Región</label><input id="edit-region" type="text"></div>
+      <div class="form-group"><label>Tipo contrato</label><input id="edit-tipo-contrato" type="text"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEdit()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+
+// ── Configuración ──────────────────────────────────────────────
+const RAILWAY_BACKEND = 'https://contrataoplanta-production.up.railway.app';
+const API_BASE = (typeof window.__API_BASE === 'string' && window.__API_BASE.trim())
+  ? window.__API_BASE.trim()
+  : (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? '' : RAILWAY_BACKEND;
+
+// El path secreto de la API viene en el parámetro ?k= de la URL.
+// Sin él, la página permanece en blanco (el body CSS lo oculta todo).
+const _urlParams = new URLSearchParams(location.search);
+const ADMIN_PATH  = (_urlParams.get('k') || '').trim();
+
+// Si no hay ?k=, no revelar nada — redirigir al inicio
+if (!ADMIN_PATH) {
+  document.documentElement.innerHTML = '';
+  location.replace('/');
+}
+
+// ── Estado ─────────────────────────────────────────────────────
+let _creds = null;
+let _searchTimer = null;
+let _ofertasPagina = 1;
+let _editingId = null;
+
+// ── Auth ───────────────────────────────────────────────────────
+function buildAuthHeader(pass) {
+  // username fijo 'ops', la autenticación real es por contraseña
+  return 'Basic ' + btoa(unescape(encodeURIComponent('ops:' + pass)));
+}
+
+async function doLogin() {
+  const pass = document.getElementById('auth-pass').value;
+  if (!pass) return;
+  const header = buildAuthHeader(pass);
+  const btn = document.getElementById('auth-btn');
+  btn.textContent = 'Verificando…'; btn.disabled = true;
+  document.getElementById('auth-error').style.display = 'none';
+  try {
+    const r = await fetch(`${API_BASE}/api/${ADMIN_PATH}/stats`, {
+      headers: { Authorization: header }
+    });
+    if (r.status === 401 || r.status === 404) {
+      document.getElementById('auth-error').style.display = 'block';
+      btn.textContent = 'Entrar'; btn.disabled = false;
+      return;
+    }
+    if (r.status === 429) {
+      document.getElementById('auth-error').textContent = 'Demasiados intentos. Espera 10 minutos.';
+      document.getElementById('auth-error').style.display = 'block';
+      btn.textContent = 'Entrar'; btn.disabled = false;
+      return;
+    }
+    _creds = { header };
+    // Guardar en sessionStorage con el path para esta sesión de navegador
+    sessionStorage.setItem('_gc', JSON.stringify({ pass, k: ADMIN_PATH }));
+    showApp();
+  } catch(e) {
+    document.getElementById('auth-error').textContent = 'Error de red: ' + e.message;
+    document.getElementById('auth-error').style.display = 'block';
+    btn.textContent = 'Entrar'; btn.disabled = false;
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem('_gc');
+  _creds = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('auth-pass').value = '';
+  document.getElementById('auth-btn').textContent = 'Entrar';
+  document.getElementById('auth-btn').disabled = false;
+}
+
+function showApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  loadDashboard();
+}
+
+// ── API helper ─────────────────────────────────────────────────
+async function api(endpoint, options = {}) {
+  const opts = {
+    ...options,
+    headers: { Authorization: _creds.header, 'Content-Type': 'application/json', ...(options.headers||{}) }
+  };
+  const r = await fetch(`${API_BASE}/api/${ADMIN_PATH}${endpoint}`, opts);
+  if (r.status === 401) { logout(); throw new Error('Sesión expirada'); }
+  if (r.status === 429) throw new Error('Rate limit: demasiados intentos. Espera 10 min.');
+  if (!r.ok) {
+    const txt = await r.text().catch(() => '');
+    throw new Error(`HTTP ${r.status}: ${txt.slice(0,120)}`);
+  }
+  return r.json();
+}
+
+// ── Toast ──────────────────────────────────────────────────────
+function toast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'show ' + type;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.className = ''; }, 3000);
+}
+
+// ── Tabs ───────────────────────────────────────────────────────
+document.querySelectorAll('nav button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + tab).classList.add('active');
+    if (tab === 'ofertas')  loadOfertas(1);
+    else if (tab === 'scrapers') loadScrapers();
+    else if (tab === 'fuentes')  loadFuentes();
+  });
+});
+
+// ── Utils ──────────────────────────────────────────────────────
+function fmtDate(v) {
+  if (!v) return '<span class="text-muted">—</span>';
+  const d = new Date(v);
+  return isNaN(d) ? v : d.toLocaleDateString('es-CL',{day:'2-digit',month:'short',year:'numeric'});
+}
+function fmtDt(v) {
+  if (!v) return '<span class="text-muted">—</span>';
+  const d = new Date(v);
+  if (isNaN(d)) return v;
+  return d.toLocaleDateString('es-CL',{day:'2-digit',month:'short'}) + ' ' +
+         d.toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
+}
+function fmtDur(s) {
+  if (s == null) return '—';
+  return s < 60 ? `${Math.round(s)}s` : `${Math.floor(s/60)}m ${Math.round(s%60)}s`;
+}
+function pill(t, c) {
+  if (!t) return '<span class="text-muted">—</span>';
+  return `<span class="pill ${c}">${t}</span>`;
+}
+function decisionPill(d) {
+  const m = { EXTRACT:'green', SKIP:'gray', NO_DATA:'yellow', ERROR:'red', sin_evaluar:'gray' };
+  return pill(d, m[d]||'gray');
+}
+function runPill(s) {
+  const m = { completado:'green', en_curso:'blue', error:'red', cancelado:'yellow' };
+  return pill(s, m[s]||'gray');
+}
+function trunc(s, n=38) {
+  if (!s) return '<span class="text-muted">—</span>';
+  return s.length > n ? s.slice(0,n) + '…' : s;
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const d = await api('/stats');
+    renderStatCards(d);
+    renderRunsTable(d.scraper_runs||[], 'runs-tbody-dash', 9);
+    renderUrlStats(d.url_validez||{});
+    populateSectors(d.por_sector||[]);
+  } catch(e) {
+    toast('Error stats: ' + e.message, 'error');
+  }
+}
+
+function renderStatCards(d) {
+  const t = d.totales||{};
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card blue"><div class="label">Ofertas activas</div><div class="value">${(t.activas||0).toLocaleString()}</div><div class="sub">de ${(t.total||0).toLocaleString()} total</div></div>
+    <div class="stat-card"><div class="label">Instituciones</div><div class="value">${(t.instituciones||0).toLocaleString()}</div></div>
+    <div class="stat-card green"><div class="label">URLs válidas</div><div class="value">${(t.urls_validas||0).toLocaleString()}</div></div>
+    <div class="stat-card red"><div class="label">URLs rotas</div><div class="value">${(t.urls_rotas||0).toLocaleString()}</div></div>
+    <div class="stat-card yellow"><div class="label">Sin validar</div><div class="value">${(t.urls_sin_validar||0).toLocaleString()}</div></div>
+    <div class="stat-card"><div class="label">Revisión pendiente</div><div class="value">${(t.needs_review||0).toLocaleString()}</div></div>
+  `;
+}
+
+function renderUrlStats(uv) {
+  const g = document.getElementById('url-stats-grid');
+  if (!Object.keys(uv).length) { g.innerHTML=''; return; }
+  g.innerHTML = `
+    <div class="stat-card green"><div class="label">url_oferta OK</div><div class="value">${(uv.url_oferta_validas||0).toLocaleString()}</div></div>
+    <div class="stat-card red"><div class="label">url_oferta rota</div><div class="value">${(uv.url_oferta_rotas||0).toLocaleString()}</div></div>
+    <div class="stat-card green"><div class="label">url_bases OK</div><div class="value">${(uv.url_bases_validas||0).toLocaleString()}</div></div>
+    <div class="stat-card red"><div class="label">url_bases rota</div><div class="value">${(uv.url_bases_rotas||0).toLocaleString()}</div></div>
+    <div class="stat-card yellow"><div class="label">Sin chequear hoy</div><div class="value">${(uv.sin_chequear_hoy||0).toLocaleString()}</div></div>
+  `;
+}
+
+function renderRunsTable(runs, tbodyId, cols) {
+  const tbody = document.getElementById(tbodyId);
+  if (!runs.length) { tbody.innerHTML=`<tr class="empty-row"><td colspan="${cols}">Sin datos</td></tr>`; return; }
+  tbody.innerHTML = runs.map(r => `<tr>
+    <td class="text-small">${fmtDt(r.started_at)}</td>
+    <td>${runPill(r.status)}</td>
+    <td><span class="pill gray">${r.run_mode||'?'}</span></td>
+    <td class="text-muted">${r.total_evaluadas??'—'}</td>
+    <td style="color:var(--green)">${r.total_nuevas??'—'}</td>
+    <td style="color:var(--accent)">${r.total_actualizadas??'—'}</td>
+    <td style="color:${r.total_errores?'var(--red)':'var(--muted)'}">${r.total_errores??'—'}</td>
+    <td class="text-muted">${r.tasa_precision!=null?r.tasa_precision+'%':'—'}</td>
+    <td class="text-muted text-small">${fmtDur(r.duracion_segundos)}</td>
+  </tr>`).join('');
+}
+
+function populateSectors(ps) {
+  const ss = [...new Set(ps.map(s=>s.sector).filter(Boolean))].sort();
+  ['f-sector','f-fuente-sector'].forEach(id => {
+    const el = document.getElementById(id); if (!el) return;
+    const cur = el.value;
+    el.innerHTML = `<option value="">Todos los sectores</option>` +
+      ss.map(s=>`<option value="${s}"${s===cur?' selected':''}>${s}</option>`).join('');
+  });
+}
+
+// ── OFERTAS ───────────────────────────────────────────────────
+function debounceSearch() {
+  clearTimeout(_searchTimer);
+  _searchTimer = setTimeout(() => loadOfertas(1), 350);
+}
+
+async function loadOfertas(pag=1) {
+  _ofertasPagina = pag;
+  const p = new URLSearchParams({
+    pagina: pag, por_pagina: 25,
+    orden: document.getElementById('f-orden').value,
+  });
+  const q = document.getElementById('f-q').value.trim();
+  const a = document.getElementById('f-activa').value;
+  const u = document.getElementById('f-url-rota').value;
+  const s = document.getElementById('f-sector').value;
+  if (q) p.set('q', q);
+  if (a) p.set('activa', a);
+  if (u) p.set('url_rota', u);
+  if (s) p.set('sector', s);
+
+  const tbody = document.getElementById('ofertas-tbody');
+  tbody.innerHTML = `<tr class="loading-row"><td colspan="8"><span class="spinner"></span></td></tr>`;
+  try {
+    const d = await api(`/ofertas?${p}`);
+    renderOfertasTable(d.ofertas||[]);
+    renderPaginacion(d, 'ofertas-paginacion', loadOfertas);
+    document.getElementById('ofertas-badge').textContent = `${(d.total||0).toLocaleString()} ofertas`;
+  } catch(e) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="8" style="color:var(--red)">Error: ${e.message}</td></tr>`;
+  }
+}
+
+function renderOfertasTable(ofertas) {
+  const tbody = document.getElementById('ofertas-tbody');
+  if (!ofertas.length) { tbody.innerHTML='<tr class="empty-row"><td colspan="8">Sin resultados</td></tr>'; return; }
+  tbody.innerHTML = ofertas.map(o => {
+    const activa = o.activa !== false;
+    const urlIcon = o.url_oferta ? (o.url_oferta_valida===false?'🔴':o.url_oferta_valida===true?'🟢':'⚪') : '—';
+    return `<tr>
+      <td class="text-muted text-small">${o.id}</td>
+      <td style="max-width:240px"><div title="${o.cargo||''}">${trunc(o.cargo,36)}</div></td>
+      <td class="text-small text-muted" style="max-width:180px">${trunc(o.institucion_nombre,28)}</td>
+      <td class="text-small text-muted">${trunc(o.sector_real||'',20)}</td>
+      <td class="text-small">${o.fecha_cierre?fmtDate(o.fecha_cierre):'<span class="text-muted">—</span>'}</td>
+      <td>${activa?pill('activa','green'):pill(o.estado||'inactiva','red')}</td>
+      <td title="${o.url_oferta||''}">${urlIcon}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-sm ${activa?'btn-danger':'btn-success'}" onclick="toggleActiva(${o.id},${activa})">${activa?'Desactivar':'Activar'}</button>
+        <button class="btn btn-ghost btn-sm" style="margin-left:4px" onclick="openEdit(${o.id},${JSON.stringify(o).replace(/"/g,'&quot;')})">✏️</button>
+        ${o.url_oferta?`<a href="${o.url_oferta}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" style="margin-left:4px">🔗</a>`:''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderPaginacion(d, id, fn) {
+  const el = document.getElementById(id);
+  if (!d.paginas || d.paginas <= 1) { el.innerHTML=''; return; }
+  const cur=d.pagina, tot=d.paginas;
+  const pages=[];
+  const s=Math.max(1,cur-2), e=Math.min(tot,cur+2);
+  if (s>1) pages.push(1,'…');
+  for(let i=s;i<=e;i++) pages.push(i);
+  if (e<tot) pages.push('…',tot);
+  el.innerHTML = `
+    <span>${d.total.toLocaleString()} resultados · pág. ${cur}/${tot}</span>
+    <div class="pages">
+      <button ${cur<=1?'disabled':''} onclick="${fn.name}(${cur-1})">‹</button>
+      ${pages.map(p=>p==='…'?`<button disabled>…</button>`:`<button class="${p===cur?'active':''}" onclick="${fn.name}(${p})">${p}</button>`).join('')}
+      <button ${cur>=tot?'disabled':''} onclick="${fn.name}(${cur+1})">›</button>
+    </div>`;
+}
+
+async function toggleActiva(id, estadoActual) {
+  try {
+    const r = await api(`/ofertas/${id}/toggle-activa`, { method:'POST' });
+    toast(`Oferta ${id} → ${r.activa?'activada ✓':'desactivada'}`);
+    loadOfertas(_ofertasPagina);
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+// ── EDIT MODAL ────────────────────────────────────────────────
+function openEdit(id, o) {
+  _editingId = id;
+  document.getElementById('edit-id').textContent = `#${id}`;
+  document.getElementById('edit-cargo').value = o.cargo||'';
+  document.getElementById('edit-descripcion').value = o.descripcion||'';
+  document.getElementById('edit-fecha-cierre').value = o.fecha_cierre ? o.fecha_cierre.slice(0,10) : '';
+  document.getElementById('edit-estado').value = o.estado||'activa';
+  document.getElementById('edit-region').value = o.region||'';
+  document.getElementById('edit-tipo-contrato').value = o.tipo_contrato||'';
+  document.getElementById('edit-modal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('edit-modal').classList.remove('open');
+  _editingId = null;
+}
+async function saveEdit() {
+  if (!_editingId) return;
+  const raw = {
+    cargo:         document.getElementById('edit-cargo').value,
+    descripcion:   document.getElementById('edit-descripcion').value||null,
+    fecha_cierre:  document.getElementById('edit-fecha-cierre').value||null,
+    estado:        document.getElementById('edit-estado').value,
+    region:        document.getElementById('edit-region').value||null,
+    tipo_contrato: document.getElementById('edit-tipo-contrato').value||null,
+  };
+  const payload = Object.fromEntries(Object.entries(raw).filter(([,v])=>v!=null&&v!==''));
+  try {
+    await api(`/ofertas/${_editingId}`, { method:'PUT', body:JSON.stringify(payload) });
+    toast('Oferta actualizada ✓');
+    closeModal();
+    loadOfertas(_ofertasPagina);
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+document.getElementById('edit-modal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
+
+// ── SCRAPERS ──────────────────────────────────────────────────
+async function loadScrapers() {
+  const tbody = document.getElementById('scrapers-tbody');
+  tbody.innerHTML = `<tr class="loading-row"><td colspan="13"><span class="spinner"></span></td></tr>`;
+  try {
+    const runs = await api('/scraper-runs?limit=50');
+    if (!runs.length) { tbody.innerHTML='<tr class="empty-row"><td colspan="13">Sin corridas</td></tr>'; return; }
+    tbody.innerHTML = runs.map(r=>`<tr>
+      <td class="text-small">${fmtDt(r.started_at)}</td>
+      <td class="text-small">${fmtDt(r.finished_at)}</td>
+      <td>${runPill(r.status)}</td>
+      <td><span class="pill gray">${r.run_mode||'?'}</span></td>
+      <td class="text-muted">${r.total_instituciones??'—'}</td>
+      <td class="text-muted">${r.total_evaluadas??'—'}</td>
+      <td class="text-muted">${r.total_extract??'—'}</td>
+      <td style="color:var(--green)">${r.total_nuevas??'—'}</td>
+      <td style="color:var(--accent)">${r.total_actualizadas??'—'}</td>
+      <td style="color:${r.total_errores?'var(--red)':'var(--muted)'}">${r.total_errores??'—'}</td>
+      <td class="text-muted">${r.tasa_precision!=null?r.tasa_precision+'%':'—'}</td>
+      <td class="text-small text-muted">${fmtDur(r.duracion_segundos)}</td>
+      <td class="text-small text-muted" title="${r.notas||''}">${trunc(r.notas,28)}</td>
+    </tr>`).join('');
+  } catch(e) {
+    tbody.innerHTML=`<tr class="empty-row"><td colspan="13" style="color:var(--red)">Error: ${e.message}</td></tr>`;
+  }
+}
+
+// ── FUENTES ───────────────────────────────────────────────────
+async function loadFuentes() {
+  const tbody = document.getElementById('fuentes-tbody');
+  tbody.innerHTML = `<tr class="loading-row"><td colspan="10"><span class="spinner"></span></td></tr>`;
+  const p = new URLSearchParams();
+  const s = document.getElementById('f-fuente-sector').value;
+  const c = document.getElementById('f-con-ofertas').value;
+  const dv = document.getElementById('f-decision').value;
+  if (s) p.set('sector', s);
+  if (c) p.set('con_ofertas', c);
+  try {
+    let fs = await api(`/fuentes?${p}`);
+    if (dv) fs = fs.filter(f=>(f.ultima_decision||'sin_evaluar')===dv);
+    document.getElementById('fuentes-badge').textContent = `${fs.length.toLocaleString()} instituciones`;
+    if (!fs.length) { tbody.innerHTML='<tr class="empty-row"><td colspan="10">Sin resultados</td></tr>'; return; }
+    const em = {wordpress:'blue',generic:'gray',custom_trabajando:'orange',custom_hiringroom:'orange',
+                custom_buk:'orange',empleos_publicos:'blue',custom_playwright:'yellow'};
+    tbody.innerHTML = fs.map(f=>`<tr>
+      <td class="text-muted text-small">${f.id}</td>
+      <td style="max-width:220px"><div title="${f.nombre||''}">${trunc(f.nombre||'—',32)}</div></td>
+      <td class="text-small text-muted">${trunc(f.sector||'—',20)}</td>
+      <td>${f.recommended_extractor?`<span class="pill ${em[f.recommended_extractor]||'gray'}">${f.recommended_extractor}</span>`:'<span class="text-muted">—</span>'}</td>
+      <td>${decisionPill(f.ultima_decision||'sin_evaluar')}</td>
+      <td class="text-muted text-small">${f.confidence!=null?Math.round(f.confidence*100)+'%':'—'}</td>
+      <td class="text-muted text-small">${f.availability!=null?Math.round(f.availability*100)+'%':'—'}</td>
+      <td class="text-small">${f.http_status?`<span class="${f.http_status<400?'text-muted':'pill red'}">${f.http_status}</span>`:'—'}</td>
+      <td style="color:${f.oferta_count>0?'var(--green)':'var(--muted)'};font-weight:${f.oferta_count>0?600:400}">${f.oferta_count??0}</td>
+      <td class="text-small text-muted">${f.ultima_evaluacion?fmtDate(f.ultima_evaluacion):'—'}</td>
+    </tr>`).join('');
+  } catch(e) {
+    tbody.innerHTML=`<tr class="empty-row"><td colspan="10" style="color:var(--red)">Error: ${e.message}</td></tr>`;
+  }
+}
+
+// ── Keyboard ───────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key==='Escape') closeModal();
+  if (e.key==='Enter' && document.getElementById('auth-screen').style.display!=='none') doLogin();
+});
+document.getElementById('auth-btn').addEventListener('click', doLogin);
+
+// ── Auto-login ─────────────────────────────────────────────────
+(function() {
+  const saved = sessionStorage.getItem('_gc');
+  if (!saved) return;
+  try {
+    const { pass, k } = JSON.parse(saved);
+    // Solo restaurar sesión si el path coincide con el actual
+    if (k !== ADMIN_PATH) { sessionStorage.removeItem('_gc'); return; }
+    _creds = { header: buildAuthHeader(pass) };
+    showApp();
+  } catch(e) { sessionStorage.removeItem('_gc'); }
+})();
+</script>
+</body>
+</html>
