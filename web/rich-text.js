@@ -59,6 +59,32 @@
   ];
 
   const HEADER_TOKENS = new Set(KNOWN_HEADERS.map(function (h) { return h.toLowerCase(); }));
+  const HEADING_CANONICAL_MAP = {
+    'resumen ejecutivo': 'Resumen ejecutivo',
+    'requisitos principales': 'Requisitos principales',
+    'requisitos del cargo': 'Requisitos principales',
+    'descripcion': 'Descripción',
+    'descripción': 'Descripción',
+    'detalles del cargo': 'Detalles del cargo',
+    'formacion educacional': 'Formación educacional',
+    'formación educacional': 'Formación educacional',
+    'especializacion y capacitacion': 'Especialización y capacitación',
+    'especialización y capacitación': 'Especialización y capacitación',
+    'competencias requeridas': 'Competencias requeridas',
+    'objetivo del cargo': 'Objetivo del cargo',
+    'funciones del cargo': 'Funciones del cargo',
+    'perfil del cargo': 'Perfil del cargo',
+    'conocimientos tecnicos': 'Conocimientos técnicos',
+    'conocimientos técnicos': 'Conocimientos técnicos',
+    'habilidades': 'Habilidades',
+    'requisitos especificos': 'Requisitos específicos',
+    'requisitos específicos': 'Requisitos específicos',
+    'requisitos deseables': 'Requisitos deseables',
+    'experiencia': 'Experiencia'
+  };
+  const PRIMARY_SECTION_HEADERS = new Set([
+    'resumen ejecutivo', 'requisitos principales', 'descripcion', 'descripción', 'detalles del cargo'
+  ]);
 
   const EXCLUYENTE_NEEDLES = [
     'excluyente', 'excluyentes', 'obligatori', 'legales', 'mínimo', 'minimo'
@@ -110,6 +136,24 @@
       prev = key;
     }
     return out.join('\n');
+  }
+
+  function collapseSplitKnownHeaders(lines) {
+    var out = [];
+    for (var i = 0; i < lines.length; i++) {
+      var current = trim(lines[i]);
+      var next = trim(lines[i + 1] || '');
+      if (current && next) {
+        var merged = (current + ' ' + next).replace(/\s+/g, ' ').trim();
+        if (isKnownHeader(merged)) {
+          out.push(merged + ':');
+          i++;
+          continue;
+        }
+      }
+      out.push(lines[i]);
+    }
+    return out;
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -234,6 +278,19 @@
     });
   }
 
+  function splitStackedKnownHeaders(text) {
+    var tokens = KNOWN_HEADERS.slice()
+      .sort(function (a, b) { return b.length - a.length; })
+      .map(function (h) { return h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); });
+    var re = new RegExp('\\b((?:' + tokens.join('|') + ')):\\s+(.+?)\\s+((?:' + tokens.join('|') + ')):', 'gi');
+    return text.split('\n').map(function (line) {
+      if (!line || line.indexOf(':') === -1) return line;
+      return line.replace(re, function (m, h1, body, h2) {
+        return h1 + ':\n' + trim(body) + '\n' + h2 + ':';
+      });
+    }).join('\n');
+  }
+
   function looksLikeListHeader(s) {
     return /(competencia|conocimiento|habilidad|requisito|funci[oó]n|especializaci[oó]n|capacitaci[oó]n|experiencia|formaci[oó]n|documento|antecedente|beneficio|perfil)/i.test(s);
   }
@@ -349,6 +406,19 @@
     return 'neutral';
   }
 
+  function normalizeHeadingText(text) {
+    var cleaned = String(text || '').replace(/[:.\s]+$/, '').trim();
+    if (!cleaned) return '';
+    var key = headingKey(cleaned);
+    if (HEADING_CANONICAL_MAP[key]) return HEADING_CANONICAL_MAP[key];
+    return cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
+  }
+
+  function headingLevel(text) {
+    var key = headingKey(text);
+    return PRIMARY_SECTION_HEADERS.has(key) ? 'section' : 'subsection';
+  }
+
   // "Header: contenido corto" (sin ser un ítem) → separa en dos líneas
   // para que el header pueda clasificarse como heading.
   function liftInlineHeaders(text) {
@@ -446,10 +516,10 @@
       }
       if (isKnownHeader(line) || isHeadingColon(line) || (isAllCaps(line) && line.length <= 80)) {
         flush();
-        var clean = line.replace(/[:.\s]+$/, '').trim();
+        var clean = normalizeHeadingText(line);
         var tone = classifyHeaderTone(clean);
         currentTone = tone;
-        blocks.push({ type: 'heading', text: clean, tone: tone });
+        blocks.push({ type: 'heading', text: clean, tone: tone, level: headingLevel(clean) });
         continue;
       }
       flush();
@@ -529,16 +599,13 @@
 
   function renderInline(s) {
     var esc = escHtml(s);
-    esc = esc.replace(
-      /(^|[\s\(\[¿¡\.;])([A-ZÁÉÍÓÚÑ][A-Za-zÁÉÍÓÚÑáéíóúñ0-9][A-Za-zÁÉÍÓÚÑáéíóúñ0-9\s\/\-]{0,34}?):(?=\s|$)/g,
-      function (m, pre, label) {
-        var words = label.trim().split(/\s+/).length;
-        if (words > 4) return m;
-        return pre + '<strong>' + label + ':</strong>';
-      }
-    );
     // Conserva énfasis inline pero evita negritas heredadas largas e invasivas.
-    esc = esc.replace(/(?:\*\*|__)([^*_]{2,120})(?:\*\*|__)/g, '<strong>$1</strong>');
+    esc = esc.replace(/(?:\*\*|__)([^*_]{2,80})(?:\*\*|__)/g, function (m, inner) {
+      var t = trim(inner);
+      if (t.length > 44) return t;
+      if (/[.!?]/.test(t)) return t;
+      return '<strong>' + t + '</strong>';
+    });
     return esc;
   }
 
@@ -552,8 +619,9 @@
     for (var i = 0; i < blocks.length; i++) {
       var b = blocks[i];
       if (b.type === 'heading') {
+        var levelClass = b.level === 'section' ? ' rt-heading--section' : ' rt-heading--subsection';
         var toneH = b.tone && b.tone !== 'neutral' ? ' rt-heading--' + b.tone : '';
-        out.push('<h4 class="rt-heading' + toneH + '">' + escHtml(b.text) + '</h4>');
+        out.push('<h4 class="rt-heading' + levelClass + toneH + '">' + escHtml(b.text) + '</h4>');
       } else if (b.type === 'list') {
         var tag = b.style === 'number' ? 'ol' : 'ul';
         var toneL = b.tone && b.tone !== 'neutral' ? ' rt-list--' + b.tone : '';
@@ -596,10 +664,12 @@
     t = dedupeConsecutiveLines(t);
     t = splitOnInlineKnownHeaders(t);
     t = splitOnKnownHeadersAnyContext(t);
+    t = splitStackedKnownHeaders(t);
     t = explodeInlineListAfterHeader(t);
     t = explodeInlineEnumerations(t);
     t = liftEmphasizedHeaders(t);
     t = liftInlineHeaders(t);
+    t = collapseSplitKnownHeaders(t.split('\n')).join('\n');
     t = t.split('\n').map(trim).filter(Boolean).join('\n');
     var blocks = splitIntoStructuredBlocks(t);
     return renderStructuredContent(blocks, options || {});
