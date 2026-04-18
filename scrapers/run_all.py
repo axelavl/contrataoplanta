@@ -134,13 +134,23 @@ def _resolve_fuente_id(institucion: dict[str, Any], evaluation: Any, fuentes_ind
     return None
 
 
-def _build_discovery_catalog(loader: CatalogLoader, *, limit: int | None = None) -> list[dict[str, Any]]:
+def _build_discovery_catalog(
+    loader: CatalogLoader,
+    *,
+    limit: int | None = None,
+    skip_empleos_publicos: bool = False,
+) -> list[dict[str, Any]]:
     bundle = loader.load(prefer_json=True)
     items = [
         inst
         for inst in bundle.instituciones
         if inst.get("url_empleo") or inst.get("sitio_web")
     ]
+    if skip_empleos_publicos:
+        items = [
+            inst for inst in items
+            if "empleospublicos.cl" not in str(inst.get("url_empleo", ""))
+        ]
     return items[:limit] if limit else items
 
 
@@ -326,14 +336,15 @@ def _build_scrapers(runtime_sources: list[RuntimeSource]) -> list[BaseScraper]:
             continue
         if evaluation.recommended_extractor not in SUPPORTED_RUNTIME_EXTRACTORS:
             continue
-        if item.fuente_id is None:
-            continue
+        # fuente_id puede ser None si la tabla fuentes no está poblada —
+        # los scrapers aceptan None y la columna ofertas.fuente_id es nullable.
 
         if evaluation.recommended_extractor == ExtractorKind.SCRAPER_EMPLEOS_PUBLICOS:
-            if empleos_publicos_agregado:
-                continue
-            scrapers.append(EmpleosPublicosScraper(fuente_id=item.fuente_id))
-            empleos_publicos_agregado = True
+            # EmpleosPublicosScraper usa arquitectura legacy (ejecutar() propio,
+            # no implementa descubrir_ofertas). Se ejecuta aparte si es necesario.
+            if not empleos_publicos_agregado:
+                log.info("SCRAPER_EMPLEOS_PUBLICOS detectado — se omite del despacho BaseScraper (correr por separado)")
+                empleos_publicos_agregado = True
             continue
 
         if evaluation.recommended_extractor in {
@@ -497,6 +508,16 @@ async def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--catalog-json", help="Ruta alternativa al catalogo JSON.")
     parser.add_argument("--catalog-xlsx", help="Ruta alternativa al catalogo XLSX.")
     parser.add_argument("--limit", type=int, help="Limitar fuentes para una corrida parcial.")
+    parser.add_argument(
+        "--ids",
+        type=str,
+        help="Lista de IDs de instituciones separados por coma para correr solo esas (ej: 315,387,562).",
+    )
+    parser.add_argument(
+        "--skip-empleos-publicos",
+        action="store_true",
+        help="Excluir instituciones cuya url_empleo apunta a empleospublicos.cl (útil para probar scrapers de portales propios).",
+    )
     parser.add_argument("--evaluate-only", action="store_true", help="Solo ejecutar discovery+evaluation.")
     parser.add_argument(
         "--force-evaluate",
@@ -524,7 +545,16 @@ async def main(argv: list[str] | None = None) -> int:
     loader = CatalogLoader(json_path=args.catalog_json, xlsx_path=args.catalog_xlsx)
     fuentes_index = _load_fuentes_index()
     audit_store = AuditStore()
-    catalog_sources = _build_discovery_catalog(loader, limit=args.limit)
+    catalog_sources = _build_discovery_catalog(
+        loader,
+        limit=args.limit,
+        skip_empleos_publicos=getattr(args, "skip_empleos_publicos", False),
+    )
+    # Filtrar por IDs específicos si se indica --ids
+    if getattr(args, "ids", None):
+        target_ids = {int(x.strip()) for x in args.ids.split(",") if x.strip()}
+        catalog_sources = [s for s in catalog_sources if s.get("id") in target_ids]
+        log.info("--ids activo: filtrando a %d instituciones: %s", len(catalog_sources), sorted(target_ids))
 
     # ── Filtrado por cooldown de retry_policy ──────────────────────────────
     if args.force_evaluate:

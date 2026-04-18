@@ -19,7 +19,7 @@ if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scrapers.base import (
-    BaseScraper,
+    LegacyBaseScraper as BaseScraper,  # EmpleosPublicosScraper usa la API legacy síncrona
     clean_text,
     normalize_key,
     normalize_region,
@@ -110,6 +110,7 @@ class EmpleosPublicosScraper(BaseScraper):
         # 30 detalles concurrentes: empíricamente la API soporta ese paralelismo
         # sin throttle agresivo. El semáforo evita saturar el servidor.
         self._detail_semaphore = asyncio.Semaphore(30)
+
 
     def fetch_ofertas(self) -> list[dict[str, Any]]:
         return asyncio.run(self._fetch_ofertas_async())
