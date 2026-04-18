@@ -253,6 +253,7 @@
     <button data-tab="scrapers">🤖 Scrapers</button>
     <button data-tab="fuentes">🏛️ Fuentes</button>
     <button data-tab="revision">🔍 Revisión</button>
+    <button data-tab="alertas">📧 Alertas</button>
     <button data-tab="acciones">⚡ Acciones</button>
     <button data-tab="config">⚙️ Config</button>
   </nav>
@@ -293,7 +294,10 @@
     <div class="tab-panel" id="tab-ofertas">
       <div class="section-header">
         <h2>Gestión de ofertas</h2>
-        <span id="ofertas-badge" class="pill gray"></span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span id="ofertas-badge" class="pill gray"></span>
+          <button class="btn btn-ghost btn-sm" onclick="exportOfertas()">⬇ CSV</button>
+        </div>
       </div>
       <div class="filters">
         <input type="search" id="f-q" placeholder="🔍 Cargo / institución…" oninput="debounceSearch()">
@@ -318,7 +322,7 @@
       <div class="table-wrap">
         <table>
           <thead><tr>
-            <th>ID</th><th>Cargo</th><th>Institución</th><th>Sector</th>
+            <th>ID</th><th>Cargo / Institución</th><th>Sector</th><th>Región</th>
             <th>Cierre</th><th>Estado</th><th>URL</th><th>Acciones</th>
           </tr></thead>
           <tbody id="ofertas-tbody">
@@ -333,18 +337,22 @@
     <div class="tab-panel" id="tab-scrapers">
       <div class="section-header">
         <h2>Historial de corridas</h2>
-        <button class="btn btn-ghost btn-sm" onclick="loadScrapers()">↻ Actualizar</button>
+        <div style="display:flex;gap:8px;align-items:center">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer">
+            <input type="checkbox" id="scrapers-con-detalle" onchange="loadScrapers()"> Con detalle de instituciones
+          </label>
+          <button class="btn btn-ghost btn-sm" onclick="loadScrapers()">↻ Actualizar</button>
+        </div>
       </div>
       <div class="table-wrap">
         <table>
           <thead><tr>
             <th>Inicio</th><th>Fin</th><th>Estado</th><th>Modo</th>
-            <th>Instit.</th><th>Evalua.</th><th>EXTRACT</th>
-            <th>Nuevas</th><th>Actual.</th><th>Errores</th>
-            <th>Precisión</th><th>Duración</th><th>Notas</th>
+            <th>Instit.</th><th>Nuevas</th><th>Actual.</th><th>Errores</th>
+            <th>Precisión</th><th>Duración</th><th>Notas / Instituciones</th>
           </tr></thead>
           <tbody id="scrapers-tbody">
-            <tr class="loading-row"><td colspan="13"><span class="spinner"></span></td></tr>
+            <tr class="loading-row"><td colspan="11"><span class="spinner"></span></td></tr>
           </tbody>
         </table>
       </div>
@@ -381,6 +389,59 @@
           </tr></thead>
           <tbody id="rev-tbody">
             <tr class="loading-row"><td colspan="7"><span class="spinner"></span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Alertas / Suscripciones -->
+    <div class="tab-panel" id="tab-alertas">
+      <div class="section-header">
+        <h2>Alertas por email</h2>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="loadAlertas()">↻ Actualizar</button>
+          <button class="btn btn-primary btn-sm" onclick="abrirTestEmail()">✉️ Email de prueba</button>
+        </div>
+      </div>
+
+      <!-- Resumen stats -->
+      <div class="stats-grid" id="alertas-stats" style="margin-bottom:20px"></div>
+
+      <!-- Envío manual -->
+      <div class="table-wrap" style="padding:20px;margin-bottom:20px">
+        <h3 style="font-size:14px;font-weight:600;margin-bottom:14px">📤 Disparar envío de alertas</h3>
+        <div class="filters" style="margin-bottom:12px">
+          <input id="al-email-filtro" type="email" placeholder="Solo a este email (opcional)">
+          <input id="al-horas" type="number" value="24" min="1" max="168" style="width:100px" title="Ofertas de últimas N horas">
+          <label style="display:flex;align-items:center;gap:6px;color:var(--muted);cursor:pointer">
+            <input id="al-dry-run" type="checkbox"> Dry run (simular)
+          </label>
+          <button class="btn btn-primary" onclick="enviarAlertas()">▶ Enviar ahora</button>
+        </div>
+        <div id="al-resultado" style="display:none;padding:12px;background:var(--bg);border-radius:var(--radius);border:1px solid var(--border);font-size:13px"></div>
+      </div>
+
+      <!-- Tabla de suscriptores -->
+      <div class="section-header">
+        <h2>Suscriptores activos</h2>
+        <div style="display:flex;gap:8px">
+          <select id="f-sub-activa" onchange="loadAlertas()">
+            <option value="">Todos</option>
+            <option value="true" selected>Activos</option>
+            <option value="false">Inactivos</option>
+          </select>
+          <a id="al-export-link" class="btn btn-ghost btn-sm" href="#" onclick="exportSubs(event)">⬇ CSV</a>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>ID</th><th>Email</th><th>Región</th><th>Término</th>
+            <th>Sector</th><th>Tipo contrato</th><th>Frecuencia</th>
+            <th>Estado</th><th>Desde</th><th>Acción</th>
+          </tr></thead>
+          <tbody id="subs-tbody">
+            <tr class="loading-row"><td colspan="10"><span class="spinner"></span></td></tr>
           </tbody>
         </table>
       </div>
@@ -579,7 +640,21 @@
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="form-group"><label>Región</label><input id="fm-region" type="text"></div>
-      <div class="form-group"><label>Plataforma empleo</label><input id="fm-plataforma" type="text" placeholder="wordpress, generic…"></div>
+      <div class="form-group"><label>Plataforma / Tipo scraper</label>
+      <select id="fm-plataforma">
+        <option value="">— Sin definir —</option>
+        <option value="wordpress">wordpress</option>
+        <option value="generic">generic</option>
+        <option value="custom_trabajando">custom_trabajando (Trabajando.com)</option>
+        <option value="custom_hiringroom">custom_hiringroom (HiringRoom)</option>
+        <option value="custom_buk">custom_buk (Buk)</option>
+        <option value="custom_playwright">custom_playwright (Playwright/JS)</option>
+        <option value="custom_policia">custom_policia (Carabineros/PDI)</option>
+        <option value="custom_ffaa">custom_ffaa (FF.AA.)</option>
+        <option value="empleos_publicos">empleos_publicos (Portal central)</option>
+        <option value="skip">skip (omitir)</option>
+      </select>
+    </div>
     </div>
     <div class="form-group"><label>URL empleo</label><input id="fm-url" type="url" placeholder="https://…"></div>
     <div class="form-group" id="fm-notas-group"><label>Notas admin</label><textarea id="fm-notas" rows="2"></textarea></div>
@@ -709,6 +784,7 @@ document.querySelectorAll('nav button').forEach(btn => {
     else if (tab === 'scrapers') loadScrapers();
     else if (tab === 'fuentes')  loadFuentes();
     else if (tab === 'revision') loadRevision();
+    else if (tab === 'alertas')  loadAlertas();
     else if (tab === 'config')   loadConfig();
   });
 });
@@ -849,18 +925,24 @@ function renderOfertasTable(ofertas) {
   if (!ofertas.length) { tbody.innerHTML='<tr class="empty-row"><td colspan="8">Sin resultados</td></tr>'; return; }
   tbody.innerHTML = ofertas.map(o => {
     const activa = o.activa !== false;
-    const urlIcon = o.url_oferta ? (o.url_oferta_valida===false?'🔴':o.url_oferta_valida===true?'🟢':'⚪') : '—';
+    const urlOk  = o.url_oferta_valida;
+    const urlIcon = o.url_oferta ? (urlOk===false?'🔴':urlOk===true?'🟢':'⚪') : '<span class="text-muted">—</span>';
+    const inst = o.institucion_display || o.institucion_nombre || '<span class="text-muted">—</span>';
+    const qs = escJson(o);
     return `<tr>
       <td class="text-muted text-small">${o.id}</td>
-      <td style="max-width:240px"><div title="${o.cargo||''}">${trunc(o.cargo,36)}</div></td>
-      <td class="text-small text-muted" style="max-width:180px">${trunc(o.institucion_nombre,28)}</td>
-      <td class="text-small text-muted">${trunc(o.sector_real||'',20)}</td>
+      <td style="max-width:220px">
+        <div title="${o.cargo||''}" style="font-weight:500">${trunc(o.cargo,36)}</div>
+        <div class="text-small text-muted" title="${inst}">${trunc(inst,34)}</div>
+      </td>
+      <td class="text-small text-muted">${trunc(o.sector_real||'',18)}</td>
+      <td class="text-small text-muted">${trunc(o.region||'',14)}</td>
       <td class="text-small">${o.fecha_cierre?fmtDate(o.fecha_cierre):'<span class="text-muted">—</span>'}</td>
       <td>${activa?pill('activa','green'):pill(o.estado||'inactiva','red')}</td>
-      <td title="${o.url_oferta||''}">${urlIcon}</td>
+      <td style="text-align:center" title="${o.url_oferta||''}">${urlIcon}</td>
       <td style="white-space:nowrap">
-        <button class="btn btn-sm ${activa?'btn-danger':'btn-success'}" onclick="toggleActiva(${o.id},${activa})">${activa?'Desactivar':'Activar'}</button>
-        <button class="btn btn-ghost btn-sm" style="margin-left:4px" onclick="openEdit(${o.id},${JSON.stringify(o).replace(/"/g,'&quot;')})">✏️</button>
+        <button class="btn btn-sm ${activa?'btn-danger':'btn-success'}" onclick="toggleActiva(${o.id},${activa})">${activa?'Pausar':'Activar'}</button>
+        <button class="btn btn-ghost btn-sm" style="margin-left:4px" onclick="openEdit(${o.id},${qs})">✏️</button>
         ${o.url_oferta?`<a href="${o.url_oferta}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" style="margin-left:4px">🔗</a>`:''}
       </td>
     </tr>`;
@@ -932,27 +1014,61 @@ document.getElementById('edit-modal').addEventListener('click', e => { if(e.targ
 // ── SCRAPERS ──────────────────────────────────────────────────
 async function loadScrapers() {
   const tbody = document.getElementById('scrapers-tbody');
-  tbody.innerHTML = `<tr class="loading-row"><td colspan="13"><span class="spinner"></span></td></tr>`;
+  const conDetalle = document.getElementById('scrapers-con-detalle').checked;
+  tbody.innerHTML = `<tr class="loading-row"><td colspan="11"><span class="spinner"></span></td></tr>`;
   try {
-    const runs = await api('/scraper-runs?limit=50');
-    if (!runs.length) { tbody.innerHTML='<tr class="empty-row"><td colspan="13">Sin corridas</td></tr>'; return; }
-    tbody.innerHTML = runs.map(r=>`<tr>
-      <td class="text-small">${fmtDt(r.started_at)}</td>
-      <td class="text-small">${fmtDt(r.finished_at)}</td>
-      <td>${runPill(r.status)}</td>
-      <td><span class="pill gray">${r.run_mode||'?'}</span></td>
-      <td class="text-muted">${r.total_instituciones??'—'}</td>
-      <td class="text-muted">${r.total_evaluadas??'—'}</td>
-      <td class="text-muted">${r.total_extract??'—'}</td>
-      <td style="color:var(--green)">${r.total_nuevas??'—'}</td>
-      <td style="color:var(--accent)">${r.total_actualizadas??'—'}</td>
-      <td style="color:${r.total_errores?'var(--red)':'var(--muted)'}">${r.total_errores??'—'}</td>
-      <td class="text-muted">${r.tasa_precision!=null?r.tasa_precision+'%':'—'}</td>
-      <td class="text-small text-muted">${fmtDur(r.duracion_segundos)}</td>
-      <td class="text-small text-muted" title="${r.notas||''}">${trunc(r.notas,28)}</td>
-    </tr>`).join('');
+    const runs = await api(`/scraper-runs?limit=50&con_detalle=${conDetalle}`);
+    if (!runs.length) { tbody.innerHTML='<tr class="empty-row"><td colspan="11">Sin corridas</td></tr>'; return; }
+    tbody.innerHTML = runs.map(r => {
+      // Celda de notas / instituciones
+      let notasCell = `<span class="text-muted">${trunc(r.notas,28)||'—'}</span>`;
+      if (conDetalle && r.instituciones?.length) {
+        const insts = r.instituciones;
+        const conNuevas = insts.filter(i=>i.nuevas>0);
+        const conErrores = insts.filter(i=>i.errores>0);
+        notasCell = `
+          <details>
+            <summary style="cursor:pointer;color:var(--accent);font-size:12px">
+              ${insts.length} instituciones · ${conNuevas.length} con nuevas${conErrores.length?` · <span style="color:var(--red)">${conErrores.length} errores</span>`:''}
+            </summary>
+            <div style="margin-top:8px;max-height:200px;overflow-y:auto;font-size:11px">
+              <table style="width:100%;border-collapse:collapse">
+                <thead><tr style="color:var(--muted);border-bottom:1px solid var(--border)">
+                  <th style="text-align:left;padding:2px 6px">Institución</th>
+                  <th style="text-align:right;padding:2px 4px">Enc.</th>
+                  <th style="text-align:right;padding:2px 4px;color:var(--green)">Nuevas</th>
+                  <th style="text-align:right;padding:2px 4px">Exist.</th>
+                  <th style="text-align:right;padding:2px 4px;color:var(--red)">Err.</th>
+                </tr></thead>
+                <tbody>
+                  ${insts.map(i=>`<tr style="border-bottom:1px solid #ffffff08">
+                    <td style="padding:2px 6px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${i.nombre}">${trunc(i.nombre,32)}</td>
+                    <td style="text-align:right;padding:2px 4px;color:var(--muted)">${i.encontradas}</td>
+                    <td style="text-align:right;padding:2px 4px;color:${i.nuevas>0?'var(--green)':'var(--muted)'};font-weight:${i.nuevas>0?600:400}">${i.nuevas}</td>
+                    <td style="text-align:right;padding:2px 4px;color:var(--muted)">${i.existian}</td>
+                    <td style="text-align:right;padding:2px 4px;color:${i.errores>0?'var(--red)':'var(--muted)'}">${i.errores||'—'}</td>
+                  </tr>`).join('')}
+                </tbody>
+              </table>
+            </div>
+          </details>`;
+      }
+      return `<tr>
+        <td class="text-small">${fmtDt(r.started_at)}</td>
+        <td class="text-small">${fmtDt(r.finished_at)}</td>
+        <td>${runPill(r.status)}</td>
+        <td><span class="pill gray">${r.run_mode||'batch'}</span></td>
+        <td class="text-muted">${r.total_instituciones??'—'}</td>
+        <td style="color:var(--green);font-weight:${r.total_nuevas?600:400}">${r.total_nuevas??'—'}</td>
+        <td style="color:var(--accent)">${r.total_actualizadas??'—'}</td>
+        <td style="color:${r.total_errores?'var(--red)':'var(--muted)'}">${r.total_errores??'—'}</td>
+        <td class="text-muted">${r.tasa_precision!=null?r.tasa_precision+'%':'—'}</td>
+        <td class="text-small text-muted">${fmtDur(r.duracion_segundos)}</td>
+        <td class="text-small">${notasCell}</td>
+      </tr>`;
+    }).join('');
   } catch(e) {
-    tbody.innerHTML=`<tr class="empty-row"><td colspan="13" style="color:var(--red)">Error: ${e.message}</td></tr>`;
+    tbody.innerHTML=`<tr class="empty-row"><td colspan="11" style="color:var(--red)">Error: ${e.message}</td></tr>`;
   }
 }
 
@@ -992,6 +1108,154 @@ async function loadFuentes() {
   } catch(e) {
     tbody.innerHTML=`<tr class="empty-row"><td colspan="10" style="color:var(--red)">Error: ${e.message}</td></tr>`;
   }
+}
+
+// ── Helper: serializar objetos a atributo HTML ─────────────────
+function escJson(obj) {
+  return JSON.stringify(obj).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// ── Export CSV ─────────────────────────────────────────────────
+async function exportOfertas() {
+  const q = document.getElementById('f-q').value.trim();
+  const a = document.getElementById('f-activa').value;
+  const s = document.getElementById('f-sector').value;
+  const p = new URLSearchParams();
+  if (q) p.set('q', q);
+  if (a) p.set('activa', a);
+  if (s) p.set('sector', s);
+  // Descarga directa con auth header (fetch + Blob)
+  try {
+    const r = await fetch(`${API_BASE}/api/${ADMIN_PATH}/ofertas/export?${p}`, {
+      headers: { Authorization: _creds.header }
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a2 = document.createElement('a');
+    a2.href = url; a2.download = 'ofertas.csv'; a2.click();
+    URL.revokeObjectURL(url);
+    toast('CSV descargado ✓');
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+async function exportSubs(e) {
+  e.preventDefault();
+  try {
+    const r = await fetch(`${API_BASE}/api/${ADMIN_PATH}/suscripciones/export`, {
+      headers: { Authorization: _creds.header }
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a2 = document.createElement('a');
+    a2.href = url; a2.download = 'suscripciones.csv'; a2.click();
+    URL.revokeObjectURL(url);
+    toast('CSV descargado ✓');
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+// ── ALERTAS / SUSCRIPCIONES ────────────────────────────────────
+async function loadAlertas() {
+  const activa = document.getElementById('f-sub-activa').value;
+  const tbody = document.getElementById('subs-tbody');
+  tbody.innerHTML = `<tr class="loading-row"><td colspan="10"><span class="spinner"></span></td></tr>`;
+  document.getElementById('alertas-stats').innerHTML = '';
+  try {
+    const p = new URLSearchParams();
+    if (activa) p.set('activa', activa);
+    const d = await api(`/suscripciones?${p}`);
+    const r = d.resumen||{};
+    document.getElementById('alertas-stats').innerHTML = `
+      <div class="stat-card blue"><div class="label">Total suscriptores</div><div class="value">${r.total??0}</div></div>
+      <div class="stat-card green"><div class="label">Activos</div><div class="value">${r.activas??0}</div></div>
+      <div class="stat-card"><div class="label">Emails únicos</div><div class="value">${r.emails_unicos??0}</div></div>
+      <div class="stat-card"><div class="label">Con región</div><div class="value">${r.con_region??0}</div></div>
+      <div class="stat-card"><div class="label">Con término</div><div class="value">${r.con_termino??0}</div></div>
+      <div class="stat-card"><div class="label">Con sector</div><div class="value">${r.con_sector??0}</div></div>
+    `;
+    const subs = d.suscripciones||[];
+    if (!subs.length) {
+      tbody.innerHTML='<tr class="empty-row"><td colspan="10">Sin suscriptores</td></tr>';
+      return;
+    }
+    tbody.innerHTML = subs.map(s=>`<tr>
+      <td class="text-muted text-small">${s.id}</td>
+      <td>${s.email}</td>
+      <td class="text-small text-muted">${s.region||'—'}</td>
+      <td class="text-small text-muted">${s.termino||'—'}</td>
+      <td class="text-small text-muted">${s.sector||'—'}</td>
+      <td class="text-small text-muted">${s.tipo_contrato||'—'}</td>
+      <td><span class="pill gray">${s.frecuencia||'diaria'}</span></td>
+      <td>${s.activa?pill('activo','green'):pill('inactivo','gray')}</td>
+      <td class="text-small text-muted">${fmtDate(s.creada_en)}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-ghost btn-sm" onclick="testEmailSub('${s.email}')">✉️</button>
+        ${s.activa?`<button class="btn btn-danger btn-sm" style="margin-left:4px" onclick="desactivarSub(${s.id},'${s.email}')">✕</button>`:''}
+      </td>
+    </tr>`).join('');
+  } catch(e) {
+    tbody.innerHTML=`<tr class="empty-row"><td colspan="10" style="color:var(--red)">Error: ${e.message}</td></tr>`;
+  }
+}
+
+async function enviarAlertas() {
+  const emailFiltro = document.getElementById('al-email-filtro').value.trim();
+  const horas = parseInt(document.getElementById('al-horas').value)||24;
+  const dryRun = document.getElementById('al-dry-run').checked;
+  const res = document.getElementById('al-resultado');
+  res.style.display='block';
+  res.innerHTML='<span class="spinner"></span> Procesando…';
+  try {
+    const r = await api('/alertas/enviar', {
+      method:'POST',
+      body: JSON.stringify({ email: emailFiltro||undefined, horas, dry_run: dryRun }),
+    });
+    const icon = dryRun ? '🧪' : '✅';
+    res.innerHTML = `${icon} ${dryRun?'Simulación':'Envío'} completado ·
+      <strong>${r.enviados}</strong> enviados ·
+      <strong>${r.errores}</strong> errores ·
+      <strong>${r.sin_coincidencias}</strong> sin coincidencias
+      ${r.detalles?.length?`<details style="margin-top:8px"><summary style="cursor:pointer;color:var(--accent)">Ver detalle (${r.detalles.length})</summary>
+        <div style="margin-top:8px;display:grid;gap:4px">
+          ${r.detalles.map(d=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid var(--border)">
+            <span>${d.email}</span>
+            <span style="color:${d.resultado==='enviado'?'var(--green)':d.resultado==='error'?'var(--red)':'var(--muted)'}">
+              ${d.resultado} · ${d.coincidencias} oferta${d.coincidencias!==1?'s':''}
+            </span>
+          </div>`).join('')}
+        </div></details>`:''}`;
+    if (!dryRun && r.enviados > 0) toast(`${r.enviados} alertas enviadas ✓`);
+    else if (dryRun) toast(`Simulación: ${r.enviados} se enviarían`);
+  } catch(e) {
+    res.innerHTML=`<span style="color:var(--red)">Error: ${e.message}</span>`;
+    toast('Error: '+e.message,'error');
+  }
+}
+
+let _testEmailModal = null;
+function abrirTestEmail() {
+  const email = prompt('Email de prueba:');
+  if (!email) return;
+  testEmailSub(email);
+}
+
+async function testEmailSub(email) {
+  if (!confirm(`Enviar email de prueba a ${email}?`)) return;
+  try {
+    const r = await api('/alertas/test-email', { method:'POST', body:JSON.stringify({email}) });
+    if (r.ok) toast(`Email de prueba enviado a ${email} ✓`);
+    else toast(`Error: ${r.error}`, 'error');
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+async function desactivarSub(id, email) {
+  if (!confirm(`¿Desactivar suscripción de ${email}?`)) return;
+  try {
+    await api(`/suscripciones/${id}`, { method:'DELETE' });
+    toast(`Suscripción de ${email} desactivada ✓`);
+    loadAlertas();
+  } catch(e) { toast('Error: '+e.message,'error'); }
 }
 
 // ── DIAGNÓSTICO ───────────────────────────────────────────────

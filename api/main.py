@@ -370,6 +370,26 @@ def ensure_api_schema() -> None:
         "CREATE INDEX IF NOT EXISTS idx_alertas_email ON alertas_suscripciones (LOWER(email))",
         "ALTER TABLE alertas_suscripciones ADD COLUMN IF NOT EXISTS sector VARCHAR(100)",
         "ALTER TABLE alertas_suscripciones ADD COLUMN IF NOT EXISTS frecuencia VARCHAR(20) DEFAULT 'diaria'",
+        # Columnas extendidas para scraper_runs (compatibilidad con admin panel)
+        "ALTER TABLE scraper_runs ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ",
+        "ALTER TABLE scraper_runs ADD COLUMN IF NOT EXISTS finished_at TIMESTAMPTZ",
+        "ALTER TABLE scraper_runs ADD COLUMN IF NOT EXISTS status VARCHAR(20)",
+        "ALTER TABLE scraper_runs ADD COLUMN IF NOT EXISTS run_mode VARCHAR(50)",
+        "ALTER TABLE scraper_runs ADD COLUMN IF NOT EXISTS total_evaluadas INTEGER DEFAULT 0",
+        "ALTER TABLE scraper_runs ADD COLUMN IF NOT EXISTS total_extract INTEGER DEFAULT 0",
+        "ALTER TABLE scraper_runs ADD COLUMN IF NOT EXISTS total_skip INTEGER DEFAULT 0",
+        "ALTER TABLE scraper_runs ADD COLUMN IF NOT EXISTS notas TEXT",
+        # Rellenar started_at desde ejecutado_en para filas antiguas
+        "UPDATE scraper_runs SET started_at = ejecutado_en WHERE started_at IS NULL AND ejecutado_en IS NOT NULL",
+        "UPDATE scraper_runs SET status = 'completado' WHERE status IS NULL AND duracion_segundos IS NOT NULL",
+        # Tabla de configuración editable del sitio
+        """
+        CREATE TABLE IF NOT EXISTS site_config (
+            clave VARCHAR(100) PRIMARY KEY,
+            valor TEXT,
+            actualizado_en TIMESTAMP DEFAULT NOW()
+        )
+        """,
     ]
     with get_cursor() as (connection, cursor):
         for statement in statements:
@@ -1788,11 +1808,18 @@ def admin_stats(_user: str = Depends(_verify_admin)) -> dict[str, Any]:
     """)
 
     scraper_runs = execute_fetch_all("""
-        SELECT id, started_at, status, total_instituciones, total_evaluadas,
-               total_extract, total_skip, total_nuevas, total_actualizadas,
-               total_errores, tasa_precision, duracion_segundos
+        SELECT id,
+               COALESCE(started_at, ejecutado_en) AS started_at,
+               COALESCE(status, CASE WHEN duracion_segundos IS NOT NULL THEN 'completado' ELSE NULL END) AS status,
+               COALESCE(total_instituciones, 0) AS total_instituciones,
+               COALESCE(total_evaluadas, 0) AS total_evaluadas,
+               COALESCE(total_extract, 0) AS total_extract,
+               COALESCE(total_nuevas, total_encontradas, 0) AS total_nuevas,
+               COALESCE(total_actualizadas, 0) AS total_actualizadas,
+               COALESCE(total_errores, 0) AS total_errores,
+               tasa_precision, duracion_segundos
         FROM scraper_runs
-        ORDER BY started_at DESC NULLS LAST
+        ORDER BY COALESCE(started_at, ejecutado_en) DESC NULLS LAST
         LIMIT 10
     """)
 
@@ -1859,8 +1886,10 @@ def admin_ofertas(
         params.append(f"%{region}%")
 
     if q:
-        conditions.append("(o.cargo ILIKE %s OR o.institucion_nombre ILIKE %s)")
-        params.extend([f"%{q}%", f"%{q}%"])
+        conditions.append(
+            "(o.cargo ILIKE %s OR o.institucion_nombre ILIKE %s OR i.nombre ILIKE %s)"
+        )
+        params.extend([f"%{q}%", f"%{q}%", f"%{q}%"])
 
     where_clause = ("WHERE " + " AND ".join(conditions)) if conditions else ""
 
@@ -1874,14 +1903,21 @@ def admin_ofertas(
 
     sql = f"""
         SELECT
-            o.id, o.cargo, o.institucion_nombre, o.region, o.sector,
+            o.id, o.cargo,
+            o.institucion_nombre,
+            COALESCE(NULLIF(TRIM(o.institucion_nombre),''), i.nombre, 'Sin institución') AS institucion_display,
+            COALESCE(i.sigla, i.nombre_corto) AS inst_sigla,
+            o.region, o.sector,
             COALESCE(i.sector, o.sector, 'Sin sector') AS sector_real,
             o.tipo_contrato, o.fecha_cierre, o.fecha_publicacion,
             o.activa, o.estado, o.url_oferta, o.url_oferta_valida,
             o.url_bases, o.url_bases_valida,
             o.renta_bruta_min, o.renta_bruta_max,
             o.fecha_scraped, o.detectada_en,
-            o.institucion_id, i.sector AS inst_sector
+            o.institucion_id, o.descripcion,
+            o.overall_quality_score, o.needs_review,
+            i.sector AS inst_sector, i.nombre AS inst_nombre_catalogo,
+            i.url_empleo AS inst_url_empleo
         {ofertas_base_sql()}
         {where_clause}
         ORDER BY {order_sql}
@@ -1956,24 +1992,96 @@ def admin_editar_oferta(
 @app.get(f"/api/{ADMIN_PATH}/scraper-runs", tags=["admin"])
 def admin_scraper_runs(
     limit: int = Query(20, ge=1, le=100),
+    con_detalle: bool = Query(False, description="Incluir resumen por institución"),
     _user: str = Depends(_verify_admin),
 ) -> list[dict[str, Any]]:
     """Historial de corridas del scraper con detalle."""
-    return execute_fetch_all("""
-        SELECT id, started_at, finished_at, status, run_mode,
-               total_instituciones, total_evaluadas, total_extract, total_skip,
-               total_nuevas, total_actualizadas, total_vencidas, total_descartadas,
-               total_errores, tasa_precision, duracion_segundos, notas
+    rows = execute_fetch_all("""
+        SELECT id,
+               COALESCE(started_at, ejecutado_en) AS started_at,
+               finished_at,
+               COALESCE(status, CASE WHEN duracion_segundos IS NOT NULL THEN 'completado' ELSE NULL END) AS status,
+               COALESCE(run_mode, 'batch') AS run_mode,
+               COALESCE(total_instituciones, 0) AS total_instituciones,
+               COALESCE(total_evaluadas, 0) AS total_evaluadas,
+               COALESCE(total_extract, 0) AS total_extract,
+               COALESCE(total_skip, 0) AS total_skip,
+               COALESCE(total_nuevas, total_encontradas, 0) AS total_nuevas,
+               COALESCE(total_actualizadas, 0) AS total_actualizadas,
+               COALESCE(total_vencidas, total_cerradas, 0) AS total_vencidas,
+               COALESCE(total_descartadas, 0) AS total_descartadas,
+               COALESCE(total_errores, 0) AS total_errores,
+               tasa_precision, duracion_segundos, notas, detalle
         FROM scraper_runs
-        ORDER BY started_at DESC NULLS LAST
+        ORDER BY COALESCE(started_at, ejecutado_en) DESC NULLS LAST
         LIMIT %s
     """, [limit])
+
+    # Extraer resumen por institución del JSONB si se pide
+    for row in rows:
+        detalle = row.pop("detalle", None) or {}
+        if con_detalle and detalle and isinstance(detalle, dict):
+            reports = detalle.get("reports") or {}
+            instituciones_resumen = []
+            for nombre, rep in reports.items():
+                if isinstance(rep, dict):
+                    instituciones_resumen.append({
+                        "nombre": nombre,
+                        "encontradas": rep.get("total_encontradas", 0),
+                        "nuevas": rep.get("guardadas", 0),
+                        "existian": rep.get("ya_existian", 0),
+                        "errores": rep.get("errores", 0),
+                    })
+            # Ordenar: primero las que tienen nuevas, luego por nombre
+            instituciones_resumen.sort(key=lambda x: (-x["nuevas"], x["nombre"]))
+            row["instituciones"] = instituciones_resumen
+        else:
+            row["instituciones"] = None
+
+    return rows
+
+
+@app.get(f"/api/{ADMIN_PATH}/scraper-runs/{{run_id}}", tags=["admin"])
+def admin_scraper_run_detalle(
+    run_id: int,
+    _user: str = Depends(_verify_admin),
+) -> dict[str, Any]:
+    """Detalle completo de una corrida del scraper, incluyendo reporte por institución."""
+    row = execute_fetch_one("""
+        SELECT id,
+               COALESCE(started_at, ejecutado_en) AS started_at,
+               finished_at, status, run_mode,
+               total_instituciones, total_evaluadas, total_extract, total_skip,
+               total_nuevas, total_actualizadas, total_vencidas, total_descartadas,
+               total_errores, tasa_precision, duracion_segundos, notas, detalle
+        FROM scraper_runs WHERE id = %s
+    """, [run_id])
+
+    if not row:
+        raise HTTPException(404, "Corrida no encontrada")
+
+    detalle = row.pop("detalle", None) or {}
+    reports = (detalle.get("reports") or {}) if isinstance(detalle, dict) else {}
+    instituciones = []
+    for nombre, rep in reports.items():
+        if isinstance(rep, dict):
+            instituciones.append({
+                "nombre": nombre,
+                "encontradas": rep.get("total_encontradas", 0),
+                "nuevas": rep.get("guardadas", 0),
+                "existian": rep.get("ya_existian", 0),
+                "errores": rep.get("errores", 0),
+            })
+    instituciones.sort(key=lambda x: (-x["nuevas"], x["nombre"]))
+    row["instituciones"] = instituciones
+    row["total_con_detalle"] = len(instituciones)
+    return row
 
 
 @app.get(f"/api/{ADMIN_PATH}/evaluaciones", tags=["admin"])
 def admin_evaluaciones(
     decision: str | None = Query(None),
-    limit: int = Query(100, ge=1, le=500),
+    limit: int = Query(200, ge=1, le=1000),
     _user: str = Depends(_verify_admin),
 ) -> list[dict[str, Any]]:
     """Última evaluación por institución (gatekeeper)."""
@@ -2070,10 +2178,10 @@ def admin_scraper_catalog(
         if not _SOURCE_STATUS_AVAILABLE:
             return [
                 {"id": i.get("id"), "nombre": i.get("nombre"), "sector": i.get("sector"), "url_empleo": i.get("url_empleo")}
-                for i in instituciones[:200]
+                for i in instituciones
             ]
         enriched = []
-        for item in instituciones[:300]:  # limitar para no bloquear el thread
+        for item in instituciones:  # catálogo completo (~640 instituciones)
             try:
                 info = enrich_with_status(item)
                 enriched.append({
@@ -2673,6 +2781,261 @@ def admin_diagnostico(
         "ok"
     )
     return resultado
+
+
+# ── Admin: gestión de suscripciones y alertas por email ──────────────────────
+
+@app.get(f"/api/{ADMIN_PATH}/suscripciones", tags=["admin"])
+def admin_suscripciones(
+    activa: bool | None = Query(None),
+    limit: int = Query(200, ge=1, le=1000),
+    _user: str = Depends(_verify_admin),
+) -> dict[str, Any]:
+    """Lista de suscriptores de alertas con estadísticas."""
+    where = ""
+    params: list[Any] = []
+    if activa is not None:
+        where = "WHERE activa = %s"
+        params = [activa]
+
+    subs = execute_fetch_all(
+        f"""SELECT id, email, region, termino, tipo_contrato, sector,
+                   frecuencia, activa, creada_en, actualizada_en
+            FROM alertas_suscripciones
+            {where}
+            ORDER BY creada_en DESC
+            LIMIT %s""",
+        params + [limit],
+    )
+    resumen = execute_fetch_one(
+        """SELECT
+            COUNT(*)                     AS total,
+            COUNT(*) FILTER(WHERE activa)                     AS activas,
+            COUNT(*) FILTER(WHERE NOT activa)                 AS inactivas,
+            COUNT(DISTINCT LOWER(email))                      AS emails_unicos,
+            COUNT(*) FILTER(WHERE region IS NOT NULL)         AS con_region,
+            COUNT(*) FILTER(WHERE termino IS NOT NULL)        AS con_termino,
+            COUNT(*) FILTER(WHERE sector IS NOT NULL)         AS con_sector
+           FROM alertas_suscripciones""",
+        [],
+    ) or {}
+    return {"resumen": resumen, "suscripciones": subs}
+
+
+@app.delete(f"/api/{ADMIN_PATH}/suscripciones/{{sub_id}}", tags=["admin"])
+def admin_eliminar_suscripcion(
+    sub_id: int,
+    _user: str = Depends(_verify_admin),
+) -> dict[str, Any]:
+    """Elimina (o desactiva) una suscripción."""
+    with get_cursor() as (conn, cur):
+        cur.execute(
+            "UPDATE alertas_suscripciones SET activa=FALSE, actualizada_en=NOW() WHERE id=%s",
+            [sub_id],
+        )
+        if cur.rowcount == 0:
+            raise HTTPException(404, "Suscripción no encontrada")
+        conn.commit()
+    return {"id": sub_id, "desactivada": True}
+
+
+@app.post(f"/api/{ADMIN_PATH}/alertas/enviar", tags=["admin"])
+def admin_enviar_alertas(
+    payload: dict[str, Any],
+    _user: str = Depends(_verify_admin),
+) -> dict[str, Any]:
+    """
+    Dispara el envío de alertas manualmente.
+
+    Body (opcional):
+      - email: str   — solo para ese suscriptor
+      - horas: int   — ventana de ofertas nuevas (default 24)
+      - dry_run: bool — no envía, solo calcula coincidencias
+    """
+    from api.services.email_alerts import enviar_alerta_ofertas as _enviar
+
+    email_filtro = payload.get("email")
+    horas = int(payload.get("horas", 24))
+    dry_run = bool(payload.get("dry_run", False))
+
+    where_sub = "WHERE activa = TRUE"
+    params_sub: list[Any] = []
+    if email_filtro:
+        where_sub += " AND LOWER(email) = LOWER(%s)"
+        params_sub.append(email_filtro)
+
+    suscripciones = execute_fetch_all(
+        f"SELECT * FROM alertas_suscripciones {where_sub} ORDER BY creada_en",
+        params_sub,
+    )
+    if not suscripciones:
+        return {"ok": True, "enviados": 0, "msg": "Sin suscripciones activas"}
+
+    enviados, errores, sin_ofertas = 0, 0, 0
+    detalles: list[dict[str, Any]] = []
+
+    for sub in suscripciones:
+        where_parts = [ACTIVE_OFFER_SQL]
+        params_q: list[Any] = []
+        where_parts.append(
+            f"COALESCE(o.fecha_scraped, o.detectada_en, o.actualizada_en) >= NOW() - INTERVAL '{horas} hours'"
+        )
+        if sub.get("region"):
+            where_parts.append("COALESCE(o.region, i.region, '') ILIKE %s")
+            params_q.append(f"%{sub['region']}%")
+        if sub.get("termino"):
+            where_parts.append("(o.cargo ILIKE %s OR COALESCE(o.descripcion,'') ILIKE %s)")
+            params_q.extend([f"%{sub['termino']}%", f"%{sub['termino']}%"])
+        if sub.get("tipo_contrato"):
+            where_parts.append("COALESCE(NULLIF(o.tipo_contrato,''),NULLIF(o.tipo_cargo,'')) ILIKE %s")
+            params_q.append(f"%{sub['tipo_contrato']}%")
+        if sub.get("sector"):
+            where_parts.append("COALESCE(i.sector, o.sector,'') ILIKE %s")
+            params_q.append(f"%{sub['sector']}%")
+
+        ofertas = execute_fetch_all(
+            f"""{ofertas_select_sql()}
+                {ofertas_base_sql()}
+                WHERE {" AND ".join(where_parts)}
+                ORDER BY fecha_scraped DESC NULLS LAST
+                LIMIT 20""",
+            params_q,
+        )
+
+        det: dict[str, Any] = {"email": sub["email"], "coincidencias": len(ofertas)}
+        if not ofertas:
+            sin_ofertas += 1
+            det["resultado"] = "sin_coincidencias"
+        elif dry_run:
+            det["resultado"] = "dry_run"
+        else:
+            r = _enviar(
+                email=sub["email"],
+                ofertas=ofertas,
+                filtros={k: sub.get(k) for k in ("region","termino","tipo_contrato","sector")},
+            )
+            if r.get("ok"):
+                enviados += 1
+                det["resultado"] = "enviado"
+                det["resend_id"] = r.get("id")
+            else:
+                errores += 1
+                det["resultado"] = "error"
+                det["error"] = r.get("error")
+        detalles.append(det)
+
+    return {
+        "ok": True,
+        "total_suscripciones": len(suscripciones),
+        "enviados": enviados,
+        "errores": errores,
+        "sin_coincidencias": sin_ofertas,
+        "dry_run": dry_run,
+        "detalles": detalles,
+    }
+
+
+@app.post(f"/api/{ADMIN_PATH}/alertas/test-email", tags=["admin"])
+def admin_test_email(
+    payload: dict[str, Any],
+    _user: str = Depends(_verify_admin),
+) -> dict[str, Any]:
+    """
+    Envía un email de prueba con las últimas 3 ofertas activas.
+
+    Body: { email: str (requerido) }
+    """
+    from api.services.email_alerts import enviar_alerta_ofertas as _enviar
+
+    email = (payload.get("email") or "").strip()
+    if not email:
+        raise HTTPException(400, "email requerido")
+
+    ofertas = execute_fetch_all(
+        f"""{ofertas_select_sql()}
+            {ofertas_base_sql()}
+            WHERE {ACTIVE_OFFER_SQL}
+            ORDER BY COALESCE(o.fecha_scraped, o.detectada_en) DESC NULLS LAST
+            LIMIT 3""",
+        [],
+    )
+    if not ofertas:
+        raise HTTPException(404, "No hay ofertas activas para el email de prueba")
+
+    result = _enviar(email=email, ofertas=ofertas, filtros={"_test": True})
+    return {"ok": result.get("ok"), "email": email, "ofertas": len(ofertas), "resend_id": result.get("id"), "error": result.get("error")}
+
+
+@app.get(f"/api/{ADMIN_PATH}/suscripciones/export", tags=["admin"])
+def admin_export_suscripciones(
+    _user: str = Depends(_verify_admin),
+) -> Response:
+    """Exporta suscripciones activas como CSV."""
+    import csv, io
+    subs = execute_fetch_all(
+        "SELECT id, email, region, termino, tipo_contrato, sector, frecuencia, creada_en FROM alertas_suscripciones WHERE activa=TRUE ORDER BY creada_en",
+        [],
+    )
+    buf = io.StringIO()
+    writer = csv.DictWriter(buf, fieldnames=["id","email","region","termino","tipo_contrato","sector","frecuencia","creada_en"])
+    writer.writeheader()
+    for row in subs:
+        writer.writerow({k: (str(v) if v is not None else "") for k,v in row.items() if k in writer.fieldnames})
+    return Response(
+        content=buf.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=suscripciones.csv"},
+    )
+
+
+@app.get(f"/api/{ADMIN_PATH}/ofertas/export", tags=["admin"])
+def admin_export_ofertas(
+    activa: str | None = Query(None),
+    sector: str | None = Query(None),
+    q: str | None = Query(None),
+    _user: str = Depends(_verify_admin),
+) -> Response:
+    """Exporta ofertas filtradas como CSV (máx. 5000 filas)."""
+    import csv, io
+    conditions = []
+    params: list[Any] = []
+    if activa == "true":
+        conditions.append("o.activa = TRUE")
+    elif activa == "false":
+        conditions.append("o.activa = FALSE")
+    if sector:
+        conditions.append("i.sector = %s")
+        params.append(sector)
+    if q:
+        conditions.append("(o.cargo ILIKE %s OR o.institucion_nombre ILIKE %s OR i.nombre ILIKE %s)")
+        params.extend([f"%{q}%", f"%{q}%", f"%{q}%"])
+
+    where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
+    rows = execute_fetch_all(
+        f"""SELECT o.id,
+               COALESCE(NULLIF(TRIM(o.institucion_nombre),''), i.nombre, '') AS institucion,
+               o.cargo, o.region,
+               COALESCE(i.sector, o.sector, '') AS sector,
+               o.tipo_contrato, o.fecha_publicacion, o.fecha_cierre,
+               o.activa, o.estado, o.url_oferta, o.url_oferta_valida,
+               o.renta_bruta_min, o.renta_bruta_max
+            {ofertas_base_sql()}
+            {where}
+            ORDER BY COALESCE(o.fecha_scraped,o.detectada_en) DESC NULLS LAST
+            LIMIT 5000""",
+        params,
+    )
+    buf = io.StringIO()
+    campos = ["id","institucion","cargo","region","sector","tipo_contrato","fecha_publicacion","fecha_cierre","activa","estado","url_oferta","url_oferta_valida","renta_bruta_min","renta_bruta_max"]
+    writer = csv.DictWriter(buf, fieldnames=campos, extrasaction="ignore")
+    writer.writeheader()
+    for row in rows:
+        writer.writerow({k: (str(v) if v is not None else "") for k,v in row.items()})
+    return Response(
+        content=buf.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=ofertas.csv"},
+    )
 
 
 # ── Fin endpoints admin ───────────────────────────────────────────────────────
