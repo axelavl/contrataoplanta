@@ -1,15 +1,22 @@
-/* ribbon-data.js — llena el ribbon reusando los datos que ya carga la home.
-   Estrategia:
-   1. Si en la página existen los elementos #hs-activas/#hs-instituciones/
-      #data-last-update (home), copia sus valores al ribbon cuando cambian.
-   2. Si NO existen (páginas internas), hace su propio fetch al API.
-   Así evitamos una doble request y nos aseguramos que el ribbon siempre
-   refleje la misma fuente de verdad que el resto del sitio.
+/* ribbon-data.js — llena el ribbon con datos del API.
+   Estrategia robusta con polling para evitar timing issues:
+   1. Cada 500ms chequea si los elementos de la home (#hs-activas, etc.)
+      ya tienen valores. Si sí, los copia al ribbon.
+   2. En paralelo, hace fetch propio al API para obtener "cierran hoy"
+      y como fallback por si el DOM copy no funciona.
+   3. Se detiene cuando todos los slots están poblados o a los 30 seg.
 */
 (function () {
   'use strict';
 
   var RAILWAY_BACKEND = 'https://contrataoplanta-production.up.railway.app';
+  var DBG = true; // poner false cuando esté estable
+
+  function log() {
+    if (!DBG || !window.console) return;
+    var args = Array.prototype.slice.call(arguments);
+    console.log.apply(console, ['[ribbon-data]'].concat(args));
+  }
 
   function apiBase() {
     if (window.__API_BASE) return window.__API_BASE;
@@ -32,102 +39,71 @@
     return Math.floor(minutos / 1440) + ' d';
   }
 
+  function getRibbonSlot(id) { return document.getElementById(id); }
+
+  function isFilled(el) {
+    if (!el) return false;
+    var t = (el.textContent || '').trim();
+    return t && t !== '—' && t !== '-';
+  }
+
   function setText(id, value) {
-    var el = document.getElementById(id);
+    var el = getRibbonSlot(id);
     if (el && value != null && value !== '') {
       el.textContent = value;
     }
   }
 
-  // 1) Intentar copiar desde elementos ya llenos en la home
   function copyFromDom() {
     var hsA = document.getElementById('hs-activas');
     var hsI = document.getElementById('hs-instituciones');
-    var lu = document.getElementById('data-last-update');
     var countSub = document.getElementById('count-sub');
 
-    if (hsA && hsA.textContent.trim() && hsA.textContent.trim() !== '—') {
+    if (isFilled(hsA)) {
       setText('ribbon-vigentes', hsA.textContent.trim());
+      log('copied vigentes from #hs-activas:', hsA.textContent.trim());
     }
-    if (hsI && hsI.textContent.trim() && hsI.textContent.trim() !== '—') {
+    if (isFilled(hsI)) {
       setText('ribbon-instituciones', hsI.textContent.trim());
+      log('copied instituciones from #hs-instituciones:', hsI.textContent.trim());
     }
-
-    // Tiempo: preferimos #count-sub porque ya viene formateado "hace X min"
     if (countSub && countSub.textContent) {
-      var m = countSub.textContent.match(/hace\s+([^·]+)/i);
+      var m = countSub.textContent.match(/hace\s+([^·]+?)(?:\s*$|\s*·)/i);
       if (m && m[1]) {
         setText('ribbon-actualizado', m[1].trim());
-      }
-    } else if (lu && lu.textContent && !/cargando|disponible/i.test(lu.textContent)) {
-      // Fallback: intentar parsear si data-last-update tiene una fecha
-      var parsed = new Date(lu.textContent);
-      if (!isNaN(parsed.getTime())) {
-        var ago = timeAgoFromIso(parsed.toISOString());
-        if (ago) setText('ribbon-actualizado', ago);
+        log('copied actualizado from #count-sub:', m[1].trim());
       }
     }
   }
 
-  // 2) Fallback: fetch directo al API (para páginas que no llenan #hs-*)
   async function fetchAndFill() {
     try {
-      var resp = await fetch(apiBase() + '/api/estadisticas', {
-        signal: (window.AbortSignal && AbortSignal.timeout) ? AbortSignal.timeout(8000) : undefined
-      });
+      log('fetching', apiBase() + '/api/estadisticas');
+      var resp = await fetch(apiBase() + '/api/estadisticas');
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       var data = await resp.json();
-
-      var ago = timeAgoFromIso(data.ultima_actualizacion);
-      if (ago) setText('ribbon-actualizado', ago);
-      if (data.instituciones_activas != null) setText('ribbon-instituciones', fmt(data.instituciones_activas));
-      if (data.activas_hoy != null) setText('ribbon-vigentes', fmt(data.activas_hoy));
-      if (data.cierran_hoy != null) setText('ribbon-cierran', fmt(data.cierran_hoy));
-    } catch (err) {
-      if (window.console && console.warn) console.warn('ribbon-data: fetch falló', err);
-    }
-  }
-
-  function init() {
-    if (!document.querySelector('.ribbon')) return;
-
-    // Intento inmediato por si el DOM ya está poblado
-    copyFromDom();
-
-    // Observar cambios en los slots que la home llena dinámicamente
-    var targets = ['hs-activas', 'hs-instituciones', 'data-last-update', 'count-sub']
-      .map(function (id) { return document.getElementById(id); })
-      .filter(Boolean);
-
-    if (targets.length) {
-      var obs = new MutationObserver(copyFromDom);
-      targets.forEach(function (el) {
-        obs.observe(el, { childList: true, characterData: true, subtree: true });
+      log('fetched data:', {
+        activas_hoy: data.activas_hoy,
+        instituciones_activas: data.instituciones_activas,
+        cierran_hoy: data.cierran_hoy,
+        ultima_actualizacion: data.ultima_actualizacion
       });
-      // Dejar de escuchar después de 15 seg (ya debería haber cargado)
-      setTimeout(function () { obs.disconnect(); }, 15000);
-    } else {
-      // Página sin los elementos típicos de stats — hacemos fetch directo.
-      fetchAndFill();
-    }
 
-    // Siempre hacer fetch para "cierran hoy" que no está en el DOM de la home
-    // (lo dejamos en segundo plano; si falla, el "—" queda)
-    fetchCierranHoy();
-  }
+      if (!isFilled(getRibbonSlot('ribbon-actualizado'))) {
+        var ago = timeAgoFromIso(data.ultima_actualizacion);
+        if (ago) setText('ribbon-actualizado', ago);
+      }
+      if (!isFilled(getRibbonSlot('ribbon-instituciones')) && data.instituciones_activas != null) {
+        setText('ribbon-instituciones', fmt(data.instituciones_activas));
+      }
+      if (!isFilled(getRibbonSlot('ribbon-vigentes')) && data.activas_hoy != null) {
+        setText('ribbon-vigentes', fmt(data.activas_hoy));
+      }
+      if (data.cierran_hoy != null) {
+        setText('ribbon-cierran', fmt(data.cierran_hoy));
+      }
 
-  async function fetchCierranHoy() {
-    var el = document.getElementById('ribbon-cierran');
-    if (!el || (el.textContent.trim() && el.textContent.trim() !== '—')) return;
-    try {
-      var resp = await fetch(apiBase() + '/api/estadisticas', {
-        signal: (window.AbortSignal && AbortSignal.timeout) ? AbortSignal.timeout(8000) : undefined
-      });
-      if (!resp.ok) return;
-      var data = await resp.json();
-      if (data.cierran_hoy != null) setText('ribbon-cierran', fmt(data.cierran_hoy));
-
-      // Bonus: también llenar #data-last-update si dice "no disponible"
+      // También llenar #data-last-update si está en "no disponible"
       var lu = document.getElementById('data-last-update');
       if (lu && /no disponible|cargando/i.test(lu.textContent) && data.ultima_actualizacion) {
         var fecha = new Date(data.ultima_actualizacion);
@@ -135,13 +111,44 @@
           lu.textContent = fecha.toLocaleString('es-CL', { dateStyle: 'medium', timeStyle: 'short' });
         }
       }
-    } catch (e) {}
+    } catch (err) {
+      log('fetch failed:', err && err.message);
+    }
   }
 
-  document.addEventListener('shell:ready', function () {
-    // shell:ready se dispara después de que los partials se montan
-    setTimeout(init, 50);
-  });
+  function allRibbonFilled() {
+    var ids = ['ribbon-actualizado', 'ribbon-instituciones', 'ribbon-vigentes', 'ribbon-cierran'];
+    return ids.every(function (id) { return isFilled(getRibbonSlot(id)); });
+  }
+
+  function init() {
+    if (!document.querySelector('.ribbon')) {
+      log('no .ribbon on page, skipping');
+      return;
+    }
+    log('init — poll + fetch');
+
+    // Intento inmediato (por si ya está todo cargado)
+    copyFromDom();
+
+    // Polling cada 500ms durante 30s para copiar valores de la home
+    var tries = 0;
+    var maxTries = 60;
+    var poller = setInterval(function () {
+      copyFromDom();
+      tries++;
+      if (allRibbonFilled() || tries >= maxTries) {
+        log('polling stopped, tries:', tries, 'allFilled:', allRibbonFilled());
+        clearInterval(poller);
+      }
+    }, 500);
+
+    // Fetch paralelo al API para cierran_hoy y fallback
+    fetchAndFill();
+  }
+
+  // Múltiples triggers para máxima robustez
+  document.addEventListener('shell:ready', function () { setTimeout(init, 50); });
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function () { setTimeout(init, 50); });
