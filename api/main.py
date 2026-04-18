@@ -105,7 +105,14 @@ OFFER_STATUS_SQL = (
     "END"
 )
 ACTIVE_OFFER_SQL = f"{OFFER_STATUS_SQL} IN ('active', 'closing_today')"
-SITE_URL = (os.getenv("SITE_URL", "https://contrataoplanta.cl") or "https://contrataoplanta.cl").rstrip("/")
+# Dominio público del frontend. Los dominios de marca históricos
+# (contrataoplanta.cl / estadoemplea.cl / empleoestado.cl) ya no resuelven
+# en DNS — si se filtran a un og:image o og:url, el crawler recibe NXDOMAIN
+# y el unfurl no se renderiza. Apuntamos a Cloudflare Pages por defecto.
+SITE_URL = (
+    os.getenv("SITE_URL", "https://estadoemplea.pages.dev")
+    or "https://estadoemplea.pages.dev"
+).rstrip("/")
 WEB_INDEX_PATH = _PROJECT_ROOT / "web" / "index.html"
 DEFAULT_OG_IMAGE = f"{SITE_URL}/og-default.jpg"
 STATUS_LEGACY_MAP = {

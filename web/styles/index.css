@@ -1758,6 +1758,99 @@ footer {
 .share-btn--copy.is-copied {
   background: var(--verde); color: white; border-color: var(--verde);
 }
+/* Gradiente IG — refuerza reconocimiento visual de la marca. */
+.share-btn--ig:hover {
+  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+  color: white;
+  border-color: transparent;
+}
+
+/* ─── Previsualización OG dentro del modal de detalle ────────────── */
+.og-preview {
+  margin: 10px 0 0;
+  padding: 12px;
+  border: 1px dashed var(--borde);
+  border-radius: var(--r-m, 12px);
+  background: var(--fondo2, #f8fafc);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.og-preview[hidden] { display: none; }
+.og-preview-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--texto3, #6b7280);
+}
+.og-preview-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1200 / 630;
+  overflow: hidden;
+  border-radius: var(--r-s, 8px);
+  background: #0A2E6E;
+  box-shadow: 0 1px 3px rgba(10, 46, 110, .12);
+}
+.og-preview-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0;
+  transition: opacity .25s ease;
+}
+.og-preview:not(.og-preview--loading):not(.og-preview--error) .og-preview-frame img {
+  opacity: 1;
+}
+.og-preview-estado {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, .9);
+  background: rgba(10, 46, 110, .6);
+  backdrop-filter: blur(2px);
+}
+.og-preview-estado[hidden] { display: none; }
+.og-preview--error .og-preview-estado {
+  color: #fee2e2;
+  background: rgba(153, 27, 27, .75);
+}
+.og-preview-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.og-preview-btn {
+  flex: 1 1 140px;
+  text-align: center;
+  padding: 8px 12px;
+  border: 1.5px solid var(--borde);
+  border-radius: 999px;
+  background: white;
+  color: var(--texto);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.og-preview-btn:hover {
+  background: var(--azul, #0A2E6E);
+  color: white;
+  border-color: var(--azul, #0A2E6E);
+}
+.og-preview-btn--alt:hover {
+  background: linear-gradient(45deg, #f09433 0%, #dc2743 50%, #bc1888 100%);
+  border-color: transparent;
+  color: white;
+}
 
 /* ═══ Acciones de bases oficiales (sin visor embebido) ══════════════════ */
 .bases-viewer-overlay {
