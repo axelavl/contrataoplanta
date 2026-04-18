@@ -507,6 +507,12 @@ async def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run all scraping pipeline with gatekeeper.")
     parser.add_argument("--catalog-json", help="Ruta alternativa al catalogo JSON.")
     parser.add_argument("--catalog-xlsx", help="Ruta alternativa al catalogo XLSX.")
+    parser.add_argument(
+        "--mode",
+        choices=["production", "development", "staging"],
+        default="development",
+        help="Modo de ejecución (no cambia el comportamiento, sirve para trazabilidad en logs).",
+    )
     parser.add_argument("--limit", type=int, help="Limitar fuentes para una corrida parcial.")
     parser.add_argument(
         "--ids",
@@ -530,7 +536,7 @@ async def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    log.info("Inicio run_all gatekeeper %s", datetime.now().isoformat(timespec="seconds"))
+    log.info("Inicio run_all gatekeeper %s modo=%s", datetime.now().isoformat(timespec="seconds"), args.mode)
     t0 = time.monotonic()
     db_enabled = True
     try:
