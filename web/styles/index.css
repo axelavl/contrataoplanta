@@ -286,6 +286,12 @@ nav {
   text-transform: uppercase; letter-spacing: 0.5px;
   font-family: 'Inter', sans-serif;
 }
+.campo-ayuda {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--texto3);
+  line-height: 1.35;
+}
 .campo input, .campo select {
   height: 44px; padding: 0 14px;
   width: 100%;
@@ -330,6 +336,105 @@ nav {
   background-position: right 12px center;
   padding-right: 36px;
 }
+.comunas-selector { position: relative; }
+.comunas-trigger {
+  width: 100%;
+  min-height: 44px;
+  border: 1.5px solid var(--borde);
+  border-radius: var(--r);
+  background: #fff;
+  color: var(--texto);
+  padding: 8px 36px 8px 14px;
+  font: 500 14px 'Inter', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  text-align: left;
+  position: relative;
+}
+.comunas-trigger::after {
+  content: '';
+  position: absolute;
+  right: 12px;
+  width: 16px;
+  height: 16px;
+  background: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+}
+.comunas-trigger:focus-visible { border-color: var(--cielo); box-shadow: 0 0 0 3px rgba(26,107,204,0.12); outline: none; }
+.comunas-trigger-meta { color: var(--texto3); font-size: 12px; white-space: nowrap; }
+.comunas-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  background: #fff;
+  border: 1px solid var(--borde);
+  border-radius: var(--r);
+  box-shadow: var(--sombra-m);
+  z-index: 60;
+  padding: 10px;
+  display: grid;
+  gap: 10px;
+}
+.comunas-panel-header { display: flex; justify-content: space-between; align-items: center; }
+.comunas-panel-header h3 { font-size: 14px; color: var(--texto); margin: 0; font-family: 'Inter', sans-serif; }
+.comunas-close { border: 0; background: transparent; color: var(--texto3); cursor: pointer; font-size: 14px; }
+.comunas-search-wrap input {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--borde);
+  border-radius: var(--r);
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+}
+.comunas-seleccionadas { display: flex; flex-wrap: wrap; gap: 6px; min-height: 18px; }
+.comuna-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  border: 1px solid var(--borde);
+  background: var(--bg2);
+  color: var(--texto2);
+}
+.comuna-chip button { border: 0; background: transparent; cursor: pointer; color: var(--texto3); font-size: 11px; padding: 0; line-height: 1; }
+.comunas-lista {
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid var(--bg2);
+  border-radius: var(--r);
+}
+.comuna-item { display: flex; align-items: flex-start; gap: 8px; padding: 9px 10px; border-bottom: 1px solid var(--bg2); cursor: pointer; }
+.comuna-item:last-child { border-bottom: none; }
+.comuna-item strong { font-size: 13px; color: var(--texto); font-weight: 500; }
+.comuna-item small { display: block; margin-top: 2px; color: var(--texto3); font-size: 11px; }
+.comunas-acciones {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--bg2);
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+}
+.btn-comunas-limpiar,
+.btn-comunas-aplicar {
+  height: 38px;
+  border-radius: var(--r);
+  border: 1.5px solid var(--borde);
+  padding: 0 12px;
+  font: 600 12px 'Inter', sans-serif;
+  cursor: pointer;
+}
+.btn-comunas-aplicar { background: var(--azul); color: #fff; border-color: var(--azul); }
+.btn-comunas-limpiar { background: #fff; color: var(--texto2); }
+.comunas-vacio { padding: 14px; text-align: center; font-size: 12px; color: var(--texto3); }
 .btn-buscar {
   height: 44px; margin-top: 22px;
   padding: 0 28px;
@@ -1869,6 +1974,21 @@ footer {
   .filtros-tags-wrap { gap: 6px; }
   .filtro-tag { font-size: 11px; padding: 4px 10px; }
   .filtros-titulo { font-size: 11.5px; }
+  .comunas-panel {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    border-radius: 14px 14px 0 0;
+    max-height: min(80vh, 620px);
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+    box-shadow: 0 -10px 30px rgba(0,0,0,.2);
+  }
+  .comunas-lista { max-height: 42vh; }
+  .comuna-item { padding: 11px 10px; }
+  .btn-comunas-limpiar,
+  .btn-comunas-aplicar { flex: 1; min-height: 42px; }
   /* Reducir espacio entre filtros y listado */
   .main { margin-top: -10px; padding: 14px 16px 26px; gap: 12px; border-radius: 14px 14px 0 0; background: var(--bg); box-shadow: 0 -12px 24px rgba(10, 46, 110, 0.11); }
   .footer-inner { grid-template-columns: 1fr; gap: 24px; }

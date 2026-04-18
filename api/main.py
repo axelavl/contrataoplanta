@@ -364,6 +364,7 @@ def build_ofertas_filters(
     area_profesional: str | None = None,
     renta_min: int | None = None,
     ciudad: str | None = None,
+    comunas: str | None = None,
     cierra_pronto: bool = False,
     nuevas: bool = False,
     solo_activas: bool = True,
@@ -421,7 +422,15 @@ def build_ofertas_filters(
         where.append("(o.renta_bruta_min >= %s OR o.renta_bruta_max >= %s)")
         params.extend([renta_min, renta_min])
 
-    if ciudad:
+    if comunas:
+        lista_comunas = [item.strip() for item in comunas.split(",") if item.strip()]
+        if lista_comunas:
+            clauses = []
+            for item in lista_comunas:
+                clauses.append("o.ciudad ILIKE %s")
+                params.append(f"%{item}%")
+            where.append("(" + " OR ".join(clauses) + ")")
+    elif ciudad:
         where.append("o.ciudad ILIKE %s")
         params.append(f"%{ciudad}%")
 
@@ -660,6 +669,7 @@ def get_ofertas(
     area_profesional: str | None = Query(None),
     renta_min: int | None = Query(None, ge=0),
     ciudad: str | None = Query(None),
+    comunas: str | None = Query(None, description="Lista de comunas separadas por coma"),
     cierra_pronto: bool = Query(False),
     nuevas: bool = Query(False),
     vista: str = Query("vigentes", pattern="^(vigentes|cerradas|todas)$"),
@@ -679,6 +689,7 @@ def get_ofertas(
         area_profesional=area_profesional,
         renta_min=renta_min,
         ciudad=ciudad,
+        comunas=comunas,
         cierra_pronto=cierra_pronto,
         nuevas=nuevas,
         solo_activas=only_active,

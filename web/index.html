@@ -97,6 +97,32 @@
           </select>
         </div>
         <div class="campo">
+          <label>Ciudad / Comuna</label>
+          <div class="comunas-selector" id="comunas-selector">
+            <button class="comunas-trigger" id="filtro-comunas-trigger" type="button" aria-expanded="false" aria-controls="comunas-panel">
+              <span id="filtro-comunas-resumen">Seleccionar comunas</span>
+              <span class="comunas-trigger-meta" id="filtro-comunas-meta"></span>
+            </button>
+            <div class="comunas-panel" id="comunas-panel" hidden>
+              <div class="comunas-panel-header">
+                <h3>Seleccionar comunas</h3>
+                <button type="button" class="comunas-close" id="comunas-cerrar" aria-label="Cerrar selector">✕</button>
+              </div>
+              <div class="comunas-search-wrap">
+                <input type="search" id="filtro-comunas-busqueda" placeholder="Buscar comuna o región...">
+              </div>
+              <div class="comunas-seleccionadas" id="comunas-seleccionadas"></div>
+              <div class="comunas-lista" id="comunas-lista"></div>
+              <div class="comunas-acciones">
+                <button type="button" class="btn-comunas-limpiar" id="comunas-limpiar">Limpiar</button>
+                <button type="button" class="btn-comunas-aplicar" id="comunas-aplicar">Aplicar</button>
+              </div>
+            </div>
+          </div>
+          <input type="hidden" id="filtro-ciudad" value="">
+          <small class="campo-ayuda">Puedes elegir comunas de distintas regiones. Si eliges comunas, tienen prioridad territorial.</small>
+        </div>
+        <div class="campo">
           <label>Sector</label>
           <select id="filtro-sector">
             <option value="">Todos los sectores</option>
@@ -120,13 +146,6 @@
             <button class="autocomplete-clear" id="btn-clear-inst" style="display:none" title="Limpiar">✕</button>
             <div class="autocomplete-dropdown" id="autocomplete-dropdown"></div>
           </div>
-        </div>
-        <div class="campo">
-          <label>Ciudad / Comuna</label>
-          <select id="filtro-ciudad" onchange="debounceBuscar()">
-            <option value="">Todas las comunas</option>
-            <!-- Se carga dinámicamente al seleccionar región -->
-          </select>
         </div>
         <div class="campo">
           <label>Renta mínima</label>
@@ -676,11 +695,14 @@ const estado = {
   institucion_id: null,
   renta_min: null,
   ciudad: '',
+  comunas: [],
   vista_listado: 'vigentes',
 };
-const TIPOS_POR_DEFECTO = ['planta','contrata','honorarios','codigo_trabajo','otro','no_informa'];
 const ORDEN_SHARE_DEFAULT = 'recientes';
 let _ofertasPorId = new Map();
+let _comunasCatalogo = [];
+let _comunasPanelAbierto = false;
+let _comunasDraft = [];
 
 function getConfigPorPagina(vista = estado.vista) {
   return POR_PAGINA_CONFIG[vista] || POR_PAGINA_CONFIG.cards;
@@ -711,6 +733,21 @@ let _debounceTimer = null;
 function debounceBuscar(ms = 400) {
   clearTimeout(_debounceTimer);
   _debounceTimer = setTimeout(buscar, ms);
+}
+
+function comunaNormalizada(valor) {
+  return String(valor || '')
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
+function resumenComunasSeleccionadas(comunas = []) {
+  if (!Array.isArray(comunas) || comunas.length === 0) return 'Seleccionar comunas';
+  if (comunas.length === 1) return comunas[0];
+  if (comunas.length === 2) return `${comunas[0]}, ${comunas[1]}`;
+  return `${comunas[0]}, ${comunas[1]} +${comunas.length - 2}`;
 }
 
 // ── Mapas de tipo de contrato a clase CSS + etiqueta legible ─────────────
@@ -1658,13 +1695,17 @@ async function cargarOfertas() {
 
   const params = new URLSearchParams({ pagina: estado.pagina, por_pagina: estado.por_pagina, orden: estado.orden });
   if (estado.q)              params.set('q', estado.q);
-  if (estado.region)         params.set('region', estado.region);
+  if (estado.region && (!Array.isArray(estado.comunas) || estado.comunas.length === 0)) params.set('region', estado.region);
   if (estado.sector)         params.set('sector', estado.sector);
   if (estado.cierra_pronto && estado.vista_listado === 'vigentes')  params.set('cierra_pronto', 'true');
   if (estado.nuevas)         params.set('nuevas', 'true');
   if (estado.institucion_id) params.set('institucion', estado.institucion_id);
   if (estado.renta_min)      params.set('renta_min', estado.renta_min);
-  if (estado.ciudad)         params.set('ciudad', estado.ciudad);
+  if (Array.isArray(estado.comunas) && estado.comunas.length > 0) {
+    params.set('comunas', estado.comunas.join(','));
+  } else if (estado.ciudad) {
+    params.set('ciudad', estado.ciudad);
+  }
   // Tipos activos: enviar solo cuando es un subconjunto propio del catálogo.
   // Si están todos activos o ninguno, no filtrar para incluir todos los tipos.
   const TIPOS_CATALOGO_UI = ['planta','contrata','honorarios','codigo_trabajo','otro','no_informa'];
@@ -2560,7 +2601,11 @@ function buscar() {
   estado.q         = document.getElementById('input-cargo').value.trim();
   estado.region    = document.getElementById('filtro-region').value;
   estado.sector    = document.getElementById('filtro-sector').value;
-  estado.ciudad    = document.getElementById('filtro-ciudad').value.trim();
+  estado.comunas   = (document.getElementById('filtro-ciudad').value || '')
+    .split(',')
+    .map((c) => c.trim())
+    .filter(Boolean);
+  estado.ciudad    = estado.comunas[0] || '';
   const rawRenta = document.getElementById('filtro-renta-min').value.replace(/\D/g, '');
   estado.renta_min = rawRenta ? rawRenta : null;
   estado.pagina    = 1;
@@ -2873,7 +2918,7 @@ document.getElementById('bases-viewer')?.addEventListener('click', (e) => {
 function construirUrlBusqueda() {
   const url = new URL(window.location.href);
   // Limpiar params previos
-  ['q','region','sector','tipos','pagina','ciudad','renta_min','institucion','orden','cierra_pronto','nuevas','vista'].forEach(k => url.searchParams.delete(k));
+  ['q','region','sector','tipos','pagina','ciudad','comunas','renta_min','institucion','orden','cierra_pronto','nuevas','vista'].forEach(k => url.searchParams.delete(k));
   const setOrDel = (k, v) => {
     if (v === null || v === undefined || v === '' || v === false ||
         (Array.isArray(v) && v.length === 0)) return;
@@ -2883,7 +2928,8 @@ function construirUrlBusqueda() {
   setOrDel('region', estado.region);
   setOrDel('sector', estado.sector);
   setOrDel('tipos', estado.tipos);
-  setOrDel('ciudad', estado.ciudad);
+  setOrDel('comunas', estado.comunas);
+  setOrDel('ciudad', Array.isArray(estado.comunas) && estado.comunas.length > 0 ? '' : estado.ciudad);
   setOrDel('renta_min', estado.renta_min);
   setOrDel('institucion', estado.institucion_id);
   setOrDel('orden', estado.orden);
@@ -2910,7 +2956,8 @@ function sincronizarURL() {
     setOrDel('region', estado.region);
     setOrDel('sector', estado.sector);
     setOrDel('tipos', estado.tipos);
-    setOrDel('ciudad', estado.ciudad);
+    setOrDel('comunas', estado.comunas);
+    setOrDel('ciudad', Array.isArray(estado.comunas) && estado.comunas.length > 0 ? '' : estado.ciudad);
     setOrDel('renta_min', estado.renta_min);
     setOrDel('institucion', estado.institucion_id);
     setOrDel('orden', estado.orden);
@@ -2933,10 +2980,13 @@ function _tiposIguales(a = [], b = []) {
 function hayFiltrosActivos() {
   const tiposFiltran = Array.isArray(estado.tipos) && !_tiposIguales(estado.tipos, TIPOS_POR_DEFECTO);
   return Boolean(
-    estado.q?.trim() || estado.region || estado.sector || estado.ciudad ||
+    estado.q?.trim() || estado.region || estado.sector || estado.ciudad || (estado.comunas || []).length ||
     estado.renta_min || estado.institucion_id || estado.cierra_pronto || estado.nuevas ||
     estado.vista_listado !== 'vigentes' || estado.orden !== ORDEN_POR_DEFECTO ||
     tiposFiltran
+  );
+}
+
 function _tiposEsDefault(tipos = []) {
   if (!Array.isArray(tipos) || tipos.length !== TIPOS_POR_DEFECTO.length) return false;
   return [...tipos].sort().join(',') === [...TIPOS_POR_DEFECTO].sort().join(',');
@@ -2946,7 +2996,7 @@ function _tiposEsDefault(tipos = []) {
 function hayEstadoCompartibleReal() {
   const tieneTiposPersonalizados = Array.isArray(estado.tipos) && !_tiposEsDefault(estado.tipos);
   return Boolean(
-    estado.q || estado.region || estado.sector || estado.ciudad ||
+    estado.q || estado.region || estado.sector || estado.ciudad || (estado.comunas || []).length ||
     estado.renta_min || estado.institucion_id ||
     estado.cierra_pronto || estado.nuevas || estado.sin_experiencia ||
     estado.vista_listado !== 'vigentes' ||
@@ -2968,7 +3018,11 @@ function _resumenFiltros() {
   if (estado.q) partes.push(`"${estado.q}"`);
   if (estado.region) partes.push(estado.region);
   if (estado.sector) partes.push(estado.sector);
-  if (estado.ciudad) partes.push(estado.ciudad);
+  if (Array.isArray(estado.comunas) && estado.comunas.length) {
+    partes.push(resumenComunasSeleccionadas(estado.comunas));
+  } else if (estado.ciudad) {
+    partes.push(estado.ciudad);
+  }
   if (Array.isArray(estado.tipos) && estado.tipos.length) partes.push(estado.tipos.join('/'));
   return partes.length
     ? `Empleos públicos: ${partes.join(' · ')}`
@@ -3089,10 +3143,16 @@ function restaurarFiltrosDesdeURL() {
     if (params.has('institucion')) {
       estado.institucion_id = params.get('institucion') || null;
     }
-    if (params.has('ciudad')) {
+    if (params.has('comunas')) {
+      estado.comunas = (params.get('comunas') || '').split(',').map((c) => c.trim()).filter(Boolean);
+      estado.ciudad = estado.comunas[0] || '';
+      const inputComunas = document.getElementById('filtro-ciudad');
+      if (inputComunas) inputComunas.value = estado.comunas.join(',');
+    } else if (params.has('ciudad')) {
       estado.ciudad = params.get('ciudad') || '';
-      const sel = document.getElementById('filtro-ciudad');
-      if (sel) sel.value = estado.ciudad;
+      estado.comunas = estado.ciudad ? [estado.ciudad] : [];
+      const inputComunas = document.getElementById('filtro-ciudad');
+      if (inputComunas) inputComunas.value = estado.comunas.join(',');
     }
     if (params.has('renta_min')) {
       const renta = Number(params.get('renta_min'));
@@ -3245,40 +3305,157 @@ async function cargarRegiones() {
 
     // Store region codes for comuna loading
     window._regionesDPA = regiones;
+    await cargarCatalogoComunas();
+    renderResumenComunas();
   } catch (err) {
     console.warn('Error cargando regiones DPA:', err);
   }
 }
 
-// Cargar comunas al cambiar de región
-async function cargarComunas(codigoRegion) {
-  const sel = document.getElementById('filtro-ciudad');
-  if (!sel) return;
-  while (sel.options.length > 1) sel.remove(1);
-  if (!codigoRegion) return;
-
+async function cargarCatalogoComunas() {
   try {
-    const resp = await fetchApi(`/api/regiones/${codigoRegion}/comunas`);
-    if (!resp.ok) return;
-    const comunas = await resp.json();
-    comunas.forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = c.nombre;
-      opt.textContent = c.nombre;
-      sel.appendChild(opt);
+    if (!Array.isArray(window._regionesDPA) || window._regionesDPA.length === 0) return;
+    const peticiones = window._regionesDPA.map(async (r) => {
+      const resp = await fetchApi(`/api/regiones/${r.codigo}/comunas`);
+      if (!resp.ok) return [];
+      const comunas = await resp.json();
+      return comunas.map((c) => ({
+        nombre: c.nombre,
+        region: r.nombre,
+        key: comunaNormalizada(c.nombre),
+      }));
     });
+    const resueltas = await Promise.all(peticiones);
+    _comunasCatalogo = resueltas.flat().sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+    renderListaComunas();
   } catch (err) {
-    console.warn('Error cargando comunas:', err);
+    console.warn('Error cargando catálogo de comunas:', err);
   }
 }
 
-// Listener para cargar comunas cuando cambia la región
-document.getElementById('filtro-region')?.addEventListener('change', function() {
-  const selected = this.options[this.selectedIndex];
-  const codigo = selected?.dataset?.codigo || '';
-  cargarComunas(codigo);
-  debounceBuscar();
-});
+function renderResumenComunas() {
+  const resumen = document.getElementById('filtro-comunas-resumen');
+  const meta = document.getElementById('filtro-comunas-meta');
+  const input = document.getElementById('filtro-ciudad');
+  if (!resumen || !meta || !input) return;
+  const seleccion = Array.isArray(estado.comunas) ? estado.comunas : [];
+  input.value = seleccion.join(',');
+  resumen.textContent = resumenComunasSeleccionadas(seleccion);
+  meta.textContent = seleccion.length > 1 ? `${seleccion.length} seleccionadas` : '';
+}
+
+function renderSeleccionComunas() {
+  const cont = document.getElementById('comunas-seleccionadas');
+  if (!cont) return;
+  if (!_comunasDraft.length) {
+    cont.innerHTML = '';
+    return;
+  }
+  cont.innerHTML = _comunasDraft.map((c) => (
+    `<span class="comuna-chip">${escHtml(c)} <button type="button" data-remove-comuna="${escAttr(c)}">✕</button></span>`
+  )).join('');
+  cont.querySelectorAll('button[data-remove-comuna]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const comuna = btn.dataset.removeComuna;
+      _comunasDraft = _comunasDraft.filter((c) => c !== comuna);
+      renderSeleccionComunas();
+      renderListaComunas();
+    });
+  });
+}
+
+function renderListaComunas() {
+  const lista = document.getElementById('comunas-lista');
+  const q = document.getElementById('filtro-comunas-busqueda')?.value || '';
+  if (!lista) return;
+  const qNorm = comunaNormalizada(q);
+  const filtradas = _comunasCatalogo.filter((item) => {
+    if (!qNorm) return true;
+    return item.key.includes(qNorm) || comunaNormalizada(item.region).includes(qNorm);
+  });
+  if (!filtradas.length) {
+    lista.innerHTML = '<div class="comunas-vacio">No hay coincidencias para tu búsqueda.</div>';
+    return;
+  }
+  lista.innerHTML = filtradas.map((item) => {
+    const checked = _comunasDraft.includes(item.nombre) ? 'checked' : '';
+    return `
+      <label class="comuna-item">
+        <input type="checkbox" value="${escAttr(item.nombre)}" ${checked}>
+        <span><strong>${escHtml(item.nombre)}</strong><small>${escHtml(item.region)}</small></span>
+      </label>
+    `;
+  }).join('');
+  lista.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
+    checkbox.addEventListener('change', () => {
+      const comuna = checkbox.value;
+      if (checkbox.checked) {
+        if (!_comunasDraft.includes(comuna)) _comunasDraft.push(comuna);
+      } else {
+        _comunasDraft = _comunasDraft.filter((c) => c !== comuna);
+      }
+      _comunasDraft.sort((a, b) => a.localeCompare(b, 'es'));
+      renderSeleccionComunas();
+    });
+  });
+}
+
+function abrirSelectorComunas() {
+  const panel = document.getElementById('comunas-panel');
+  const trigger = document.getElementById('filtro-comunas-trigger');
+  if (!panel || !trigger) return;
+  _comunasDraft = [...(estado.comunas || [])];
+  _comunasPanelAbierto = true;
+  panel.hidden = false;
+  trigger.setAttribute('aria-expanded', 'true');
+  renderSeleccionComunas();
+  renderListaComunas();
+  document.getElementById('filtro-comunas-busqueda')?.focus();
+}
+
+function cerrarSelectorComunas() {
+  const panel = document.getElementById('comunas-panel');
+  const trigger = document.getElementById('filtro-comunas-trigger');
+  if (!panel || !trigger) return;
+  _comunasPanelAbierto = false;
+  panel.hidden = true;
+  trigger.setAttribute('aria-expanded', 'false');
+}
+
+function aplicarSelectorComunas() {
+  estado.comunas = [..._comunasDraft];
+  estado.ciudad = estado.comunas[0] || '';
+  renderResumenComunas();
+  cerrarSelectorComunas();
+  debounceBuscar(150);
+}
+
+function inicializarSelectorComunas() {
+  const trigger = document.getElementById('filtro-comunas-trigger');
+  const cerrar = document.getElementById('comunas-cerrar');
+  const limpiar = document.getElementById('comunas-limpiar');
+  const aplicar = document.getElementById('comunas-aplicar');
+  const search = document.getElementById('filtro-comunas-busqueda');
+  if (!trigger || !cerrar || !limpiar || !aplicar || !search) return;
+
+  trigger.addEventListener('click', () => (_comunasPanelAbierto ? cerrarSelectorComunas() : abrirSelectorComunas()));
+  cerrar.addEventListener('click', cerrarSelectorComunas);
+  limpiar.addEventListener('click', () => {
+    _comunasDraft = [];
+    search.value = '';
+    renderSeleccionComunas();
+    renderListaComunas();
+  });
+  aplicar.addEventListener('click', aplicarSelectorComunas);
+  search.addEventListener('input', () => renderListaComunas());
+  document.addEventListener('click', (e) => {
+    if (!_comunasPanelAbierto) return;
+    const wrap = document.getElementById('comunas-selector');
+    if (wrap && !wrap.contains(e.target)) cerrarSelectorComunas();
+  });
+  document.getElementById('filtro-region')?.addEventListener('change', debounceBuscar);
+  renderResumenComunas();
+}
 
 // ═══ MAILCHECK — Validación de email en tiempo real ═══════════════════════
 let _mailcheckTimer = null;
@@ -3422,6 +3599,7 @@ const _originalBuscar = typeof buscar === 'function' ? buscar : null;
 })();
 
 // ═══ INICIALIZACIÓN DE INTEGRACIONES ══════════════════════════════════════
+inicializarSelectorComunas();
 cargarRegiones();
 initMailcheck();
 initMeilisearchAutocomplete();
