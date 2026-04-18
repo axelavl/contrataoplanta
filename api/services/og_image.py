@@ -55,22 +55,31 @@ logger = logging.getLogger(__name__)
 
 Format = Literal["horizontal", "square"]
 
-# ── Paleta (idéntica a favicon.svg / frontend) ───────────────────────────
-NAVY = (10, 46, 110)
-NAVY_DEEP = (7, 32, 78)
-NAVY_SOFT = (20, 60, 135)
+# ── Paleta ──────────────────────────────────────────────────────────────
+# Basada en favicon.svg + tokens del frontend, con agregados para chips y
+# capas (el glow superior, sombras simuladas, bg de cards).
+NAVY = (10, 46, 110)          # primario
+NAVY_DEEP = (6, 28, 70)       # fondo inferior del gradiente
+NAVY_SOFT = (22, 62, 135)     # highlight superior
+NAVY_ELEV = (18, 54, 118)     # fondo de info-cards (sutilmente más claro que navy)
+NAVY_EDGE = (32, 78, 160)     # borde de info-cards
 GOLD = (232, 168, 32)
 GOLD_SOFT = (245, 196, 85)
+GOLD_DEEP = (178, 124, 18)    # hover/bottom del botón CTA
 WHITE = (250, 250, 248)
 WHITE_DIM = (220, 222, 230)
-TEXT_DIM = (180, 190, 210)
+TEXT_DIM = (170, 184, 214)    # labels dentro de info-cards
 ALERT = (228, 79, 79)
 ALERT_SOFT = (255, 110, 110)
+ALERT_DEEP = (170, 42, 42)
 
-# ── Dimensiones por variante ─────────────────────────────────────────────
+# ── Dimensiones por variante ────────────────────────────────────────────
+# Ajustadas para que el titular convive con las info-cards + CTA en ambos
+# formatos sin pisarse. Si el cargo es muy largo el shrink lo baja en vez
+# de sumar líneas.
 _SPEC: dict[Format, dict[str, int]] = {
-    "horizontal": {"w": 1200, "h": 630, "pad": 64, "title": 72, "sub": 38},
-    "square":     {"w": 1080, "h": 1080, "pad": 80, "title": 78, "sub": 42},
+    "horizontal": {"w": 1200, "h": 630, "pad": 52, "title": 64, "sub": 28},
+    "square":     {"w": 1080, "h": 1080, "pad": 68, "title": 82, "sub": 36},
 }
 
 _LOGO_CACHE_ENABLED = os.getenv("OG_FETCH_LOGOS", "1").strip().lower() not in {"0", "false", "no"}
@@ -280,278 +289,645 @@ def _format_renta(oferta: dict[str, Any]) -> str | None:
 
 
 # ── Primitivas de dibujo ─────────────────────────────────────────────────
-def _gradient_background(draw: ImageDraw.ImageDraw, w: int, h: int) -> None:
-    # Gradiente vertical navy → navy_deep (cheap, una línea por y).
+def _gradient_background(img: Image.Image) -> None:
+    """Fondo con gradiente vertical + halo superior izquierdo.
+
+    El halo simula iluminación de estudio: da profundidad sin recurrir a
+    texturas complejas. Se pinta sobre una capa RGBA y se compone encima.
+    """
+    w, h = img.size
+    draw = ImageDraw.Draw(img)
+    # Gradiente vertical navy soft (arriba) → navy deep (abajo).
     for y in range(h):
         t = y / max(1, h - 1)
-        r = int(NAVY[0] * (1 - t) + NAVY_DEEP[0] * t)
-        g = int(NAVY[1] * (1 - t) + NAVY_DEEP[1] * t)
-        b = int(NAVY[2] * (1 - t) + NAVY_DEEP[2] * t)
+        r = int(NAVY_SOFT[0] * (1 - t) + NAVY_DEEP[0] * t)
+        g = int(NAVY_SOFT[1] * (1 - t) + NAVY_DEEP[1] * t)
+        b = int(NAVY_SOFT[2] * (1 - t) + NAVY_DEEP[2] * t)
         draw.line([(0, y), (w, y)], fill=(r, g, b))
 
+    # Halo suave arriba a la izquierda — se logra con un ellipse blur-like
+    # dibujado en varias capas concéntricas de opacidad decreciente. Evita
+    # ImageFilter.GaussianBlur por costo; 6 anillos quedan suficientemente
+    # suaves a la resolución del card.
+    halo = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    hd = ImageDraw.Draw(halo)
+    cx, cy, radio = int(w * 0.18), int(h * 0.10), int(min(w, h) * 0.55)
+    for i in range(6):
+        alpha = int(18 * (1 - i / 6))
+        r_i = radio - i * int(radio * 0.12)
+        hd.ellipse([cx - r_i, cy - r_i, cx + r_i, cy + r_i], fill=(255, 255, 255, alpha))
+    img.alpha_composite(halo)
 
-def _draw_logo_mark(img: Image.Image, domain: str | None, sigla: str, center: tuple[int, int], radius: int) -> None:
-    """Dibuja un logo redondo. Usa Clearbit si hay dominio, si no una disc+sigla."""
-    cx, cy = center
+
+def _draw_logo_chip(
+    img: Image.Image,
+    domain: str | None,
+    sigla: str,
+    *,
+    top_left: tuple[int, int],
+    size: int,
+) -> None:
+    """Tarjeta cuadrada blanca redondeada con el logo de la institución.
+
+    Reemplaza el disco circular anterior. La tarjeta se percibe como un
+    "elevado" sobre el fondo, con sombra simulada por un rect gris debajo
+    desplazado 2-3 px. Si no hay logo, se pinta la sigla en navy centrada.
+    """
+    x, y = top_left
     draw = ImageDraw.Draw(img)
-    # Anillo dorado siempre como marco: refuerza branding y esconde bordes feos.
-    draw.ellipse([cx - radius - 6, cy - radius - 6, cx + radius + 6, cy + radius + 6], fill=GOLD)
-    draw.ellipse([cx - radius, cy - radius, cx + radius, cy + radius], fill=WHITE)
+    radius = int(size * 0.22)
+
+    # Sombra simulada: rectángulo más oscuro, desplazado.
+    draw.rounded_rectangle(
+        [x + 3, y + 5, x + size + 3, y + size + 5],
+        radius=radius,
+        fill=(0, 0, 0, 70),
+    )
+    # Tarjeta blanca.
+    draw.rounded_rectangle(
+        [x, y, x + size, y + size],
+        radius=radius,
+        fill=WHITE,
+        outline=GOLD,
+        width=3,
+    )
 
     logo = _load_institution_logo(domain)
     if logo is not None:
-        # Ajusta el logo dentro del círculo y aplica máscara circular.
-        size = radius * 2 - 12
-        logo = logo.resize((size, size), Image.LANCZOS)
-        mask = Image.new("L", (size, size), 0)
-        ImageDraw.Draw(mask).ellipse([0, 0, size, size], fill=255)
-        img.paste(logo, (cx - size // 2, cy - size // 2), mask)
+        inner = size - int(size * 0.22)
+        logo = logo.resize((inner, inner), Image.LANCZOS)
+        # Máscara redondeada alineada con el chip para no tapar el borde dorado.
+        inner_radius = max(0, radius - int(size * 0.08))
+        mask = Image.new("L", (inner, inner), 0)
+        ImageDraw.Draw(mask).rounded_rectangle([0, 0, inner, inner], radius=inner_radius, fill=255)
+        img.paste(logo, (x + (size - inner) // 2, y + (size - inner) // 2), mask)
         return
 
-    # Fallback: sigla centrada en dorado sobre el disco blanco.
-    text = sigla
-    size = int(radius * 0.95) if len(text) <= 2 else int(radius * 0.72)
-    f = _load("bold", max(24, size))
-    tw = draw.textlength(text, font=f)
-    # ascent/descent aproximados para centrar verticalmente.
+    # Fallback: sigla bold centrada en navy.
+    letras = sigla[:3] if len(sigla) <= 3 else sigla[:3]
+    f_size = int(size * 0.42) if len(letras) >= 3 else int(size * 0.52)
+    f = _load("bold", max(24, f_size))
+    tw = draw.textlength(letras, font=f)
     th = f.size
     draw.text(
-        (cx - tw / 2, cy - th / 2 - th * 0.1),
-        text,
+        (x + size / 2 - tw / 2, y + size / 2 - th * 0.62),
+        letras,
         font=f,
         fill=NAVY,
     )
 
 
-def _draw_pill(
+def _draw_icon(
     draw: ImageDraw.ImageDraw,
+    kind: str,
+    center: tuple[int, int],
+    color: tuple[int, int, int],
+    *,
+    scale: float = 1.0,
+) -> None:
+    """Iconos vectoriales simples dibujados con Pillow (evitan fuentes emoji).
+
+    ``scale`` multiplica todas las medidas para que el mismo icono rinda
+    bien dentro de chips pequeños (36px) o en el centro del badge de
+    alerta (48px).
+    """
+    cx, cy = center
+    s = scale
+
+    def _s(v: float) -> int:
+        return int(round(v * s))
+
+    if kind == "pin":
+        # Gota invertida (ubicación).
+        draw.pieslice(
+            [cx - _s(10), cy - _s(14), cx + _s(10), cy + _s(6)],
+            180, 360, fill=color,
+        )
+        draw.polygon(
+            [(cx - _s(10), cy - _s(4)), (cx + _s(10), cy - _s(4)), (cx, cy + _s(12))],
+            fill=color,
+        )
+        draw.ellipse([cx - _s(4), cy - _s(8), cx + _s(4), cy], fill=WHITE)
+    elif kind == "briefcase":
+        draw.rounded_rectangle(
+            [cx - _s(12), cy - _s(6), cx + _s(12), cy + _s(10)], radius=_s(3), fill=color,
+        )
+        draw.rectangle([cx - _s(6), cy - _s(10), cx + _s(6), cy - _s(6)], fill=color)
+        draw.line([cx - _s(12), cy + _s(2), cx + _s(12), cy + _s(2)], fill=WHITE, width=max(2, _s(2)))
+    elif kind == "clock":
+        draw.ellipse(
+            [cx - _s(12), cy - _s(12), cx + _s(12), cy + _s(12)], outline=color, width=max(2, _s(2)),
+        )
+        draw.line([cx, cy, cx, cy - _s(8)], fill=color, width=max(2, _s(2)))
+        draw.line([cx, cy, cx + _s(6), cy + _s(2)], fill=color, width=max(2, _s(2)))
+    elif kind == "alert":
+        # Triángulo con ! interno, silueta interna blanca para contraste.
+        draw.polygon(
+            [(cx, cy - _s(14)), (cx + _s(14), cy + _s(10)), (cx - _s(14), cy + _s(10))],
+            fill=color,
+        )
+        draw.line([cx, cy - _s(6), cx, cy + _s(4)], fill=WHITE, width=max(3, _s(3)))
+        draw.ellipse([cx - _s(2), cy + _s(6), cx + _s(2), cy + _s(10)], fill=WHITE)
+    elif kind == "money":
+        draw.ellipse(
+            [cx - _s(12), cy - _s(12), cx + _s(12), cy + _s(12)], outline=color, width=max(2, _s(2)),
+        )
+        f = _load("bold", max(14, _s(20)))
+        tw = draw.textlength("$", font=f)
+        draw.text((cx - tw / 2, cy - _s(13)), "$", font=f, fill=color)
+    elif kind == "arrow":
+        # Flecha de CTA (línea + cabeza).
+        draw.line([cx - _s(10), cy, cx + _s(10), cy], fill=color, width=max(3, _s(3)))
+        draw.polygon(
+            [(cx + _s(10), cy - _s(7)), (cx + _s(18), cy), (cx + _s(10), cy + _s(7))],
+            fill=color,
+        )
+    elif kind == "check":
+        draw.line(
+            [cx - _s(10), cy, cx - _s(2), cy + _s(8)], fill=color, width=max(3, _s(3)),
+        )
+        draw.line(
+            [cx - _s(2), cy + _s(8), cx + _s(12), cy - _s(8)], fill=color, width=max(3, _s(3)),
+        )
+
+
+def _draw_icon_chip(
+    img: Image.Image,
+    kind: str,
+    center: tuple[int, int],
+    *,
+    chip_r: int,
+    fill: tuple[int, int, int],
+    icon_color: tuple[int, int, int] = WHITE,
+    icon_scale: float = 1.1,
+) -> None:
+    """Círculo relleno con un icono vectorial dentro. Usado en info-cards."""
+    cx, cy = center
+    draw = ImageDraw.Draw(img)
+    draw.ellipse([cx - chip_r, cy - chip_r, cx + chip_r, cy + chip_r], fill=fill)
+    _draw_icon(draw, kind, (cx, cy), icon_color, scale=icon_scale)
+
+
+def _draw_info_card(
+    img: Image.Image,
+    *,
+    xy: tuple[int, int],
+    size: tuple[int, int],
+    icon: str,
+    label: str,
+    value: str,
+    value_font: ImageFont.FreeTypeFont,
+    label_font: ImageFont.FreeTypeFont,
+    accent: tuple[int, int, int] = GOLD,
+) -> None:
+    """Tarjeta de información con icono-chip + label + valor.
+
+    Layout interno:
+      ┌──────────────────────────────┐
+      │ ⬤icon    UBICACIÓN           │  label (11–15pt, gold)
+      │          Puente Alto · RM    │  valor (18–28pt, bold, blanco)
+      └──────────────────────────────┘
+    El chip tiene fondo dorado; el card tiene fondo navy_elev con borde
+    navy_edge. El valor encoge su tipografía si no entra a la primera, y
+    sólo como último recurso se trunca con "…".
+    """
+    x, y = xy
+    w, h = size
+    draw = ImageDraw.Draw(img)
+
+    draw.rounded_rectangle(
+        [x, y, x + w, y + h],
+        radius=18,
+        fill=NAVY_ELEV,
+        outline=NAVY_EDGE,
+        width=2,
+    )
+
+    chip_r = int(h * 0.22)
+    chip_cx = x + chip_r + 16
+    chip_cy = y + h // 2
+    _draw_icon_chip(img, icon, (chip_cx, chip_cy), chip_r=chip_r, fill=accent, icon_color=NAVY, icon_scale=1.0)
+
+    text_left = chip_cx + chip_r + 14
+    text_right = x + w - 16
+    max_text_w = max(40, text_right - text_left)
+
+    # Label en mayúsculas.
+    label_up = label.upper()
+    draw.text(
+        (text_left, y + h * 0.22 - label_font.size * 0.5),
+        label_up,
+        font=label_font,
+        fill=accent,
+    )
+
+    # Auto-fit del valor: probamos el tamaño original; si no cabe, bajamos
+    # hasta 16pt. Sólo si ni a 16pt entra, truncamos con "…".
+    v_font = value_font
+    min_size = 16
+    while draw.textlength(value, font=v_font) > max_text_w and v_font.size > min_size:
+        v_font = _load("bold", max(min_size, v_font.size - 2))
+    truncated = value
+    while draw.textlength(truncated, font=v_font) > max_text_w and len(truncated) > 6:
+        truncated = truncated[:-2].rstrip(" ,.-") + "…"
+    draw.text(
+        (text_left, y + h * 0.58 - v_font.size * 0.5),
+        truncated,
+        font=v_font,
+        fill=WHITE,
+    )
+
+
+def _draw_cta_button(
+    img: Image.Image,
+    *,
     xy: tuple[int, int],
     text: str,
     font: ImageFont.FreeTypeFont,
-    icon: str,
-    *,
-    outline: tuple[int, int, int] = GOLD,
-    fg: tuple[int, int, int] = WHITE,
-    pad_x: int = 22,
-    height: int = 56,
-) -> int:
-    """Dibuja una pill con icono vectorial + label. Devuelve el ancho usado."""
+) -> tuple[int, int]:
+    """Botón CTA dorado con flecha. Devuelve (width, height) del botón."""
     x, y = xy
-    label = text
-    tw = draw.textlength(label, font=font)
-    icon_w = 28
-    gap = 10
-    inner_w = int(icon_w + gap + tw)
-    pill_w = inner_w + pad_x * 2
+    draw = ImageDraw.Draw(img)
+    pad_x = 30
+    height = int(font.size * 2.0)
+    arrow_w = 28
+    gap = 14
+    text_w = int(draw.textlength(text, font=font))
+    width = text_w + arrow_w + gap + pad_x * 2
+
+    # Sombra sutil por debajo (simula elevación).
     draw.rounded_rectangle(
-        [x, y, x + pill_w, y + height],
+        [x + 2, y + 4, x + width + 2, y + height + 4],
         radius=height // 2,
+        fill=(0, 0, 0, 120),
+    )
+    # Botón gold con borde deep gold.
+    draw.rounded_rectangle(
+        [x, y, x + width, y + height],
+        radius=height // 2,
+        fill=GOLD,
+        outline=GOLD_DEEP,
+        width=2,
+    )
+    # Texto navy (mejor contraste en gold).
+    draw.text(
+        (x + pad_x, y + height / 2 - font.size * 0.62),
+        text,
+        font=font,
+        fill=NAVY_DEEP,
+    )
+    # Flecha a la derecha.
+    _draw_icon(
+        draw, "arrow",
+        (x + pad_x + text_w + gap + arrow_w // 2, y + height // 2),
+        NAVY_DEEP, scale=1.0,
+    )
+    return width, height
+
+
+def _draw_status_pill(
+    img: Image.Image,
+    *,
+    xy: tuple[int, int],
+    text: str,
+    font: ImageFont.FreeTypeFont,
+    alerta: bool,
+) -> tuple[int, int]:
+    """Pill de estado en el header (superior derecha).
+
+    - Alerta (cierra pronto): fondo rojo sólido con icono de alerta.
+    - Normal: fondo navy elevado con borde dorado + icono reloj.
+    """
+    x, y = xy
+    draw = ImageDraw.Draw(img)
+    pad_x = 20
+    icon_w = 22
+    gap = 10
+    height = int(font.size * 1.9)
+    text_w = int(draw.textlength(text, font=font))
+    width = text_w + icon_w + gap + pad_x * 2
+
+    if alerta:
+        bg, outline, fg, icon_kind = ALERT, ALERT_SOFT, WHITE, "alert"
+    else:
+        bg, outline, fg, icon_kind = NAVY_ELEV, GOLD, WHITE, "clock"
+
+    draw.rounded_rectangle(
+        [x, y, x + width, y + height],
+        radius=height // 2,
+        fill=bg,
         outline=outline,
         width=2,
     )
-    icon_cx = x + pad_x + icon_w // 2
-    icon_cy = y + height // 2
-    _draw_icon(draw, icon, (icon_cx, icon_cy), outline)
-    # Aproxima centrado vertical del texto (Pillow carece de line-height trivial).
-    draw.text((x + pad_x + icon_w + gap, y + height / 2 - font.size * 0.62), label, font=font, fill=fg)
-    return pill_w
+    _draw_icon(draw, icon_kind, (x + pad_x + icon_w // 2, y + height // 2), fg, scale=0.85)
+    draw.text(
+        (x + pad_x + icon_w + gap, y + height / 2 - font.size * 0.62),
+        text,
+        font=font,
+        fill=fg,
+    )
+    return width, height
 
 
-def _draw_icon(draw: ImageDraw.ImageDraw, kind: str, center: tuple[int, int], color: tuple[int, int, int]) -> None:
-    """Iconos vectoriales simples dibujados con Pillow (evitan fuentes emoji)."""
-    cx, cy = center
-    if kind == "pin":
-        # Gota invertida (ubicación).
-        draw.pieslice([cx - 10, cy - 14, cx + 10, cy + 6], 180, 360, fill=color)
-        draw.polygon([(cx - 10, cy - 4), (cx + 10, cy - 4), (cx, cy + 12)], fill=color)
-        draw.ellipse([cx - 4, cy - 8, cx + 4, cy], fill=WHITE)
-    elif kind == "briefcase":
-        draw.rounded_rectangle([cx - 12, cy - 6, cx + 12, cy + 10], radius=2, fill=color)
-        draw.rectangle([cx - 6, cy - 10, cx + 6, cy - 6], fill=color)
-        draw.line([cx - 12, cy + 2, cx + 12, cy + 2], fill=WHITE, width=2)
-    elif kind == "clock":
-        draw.ellipse([cx - 12, cy - 12, cx + 12, cy + 12], outline=color, width=2)
-        draw.line([cx, cy, cx, cy - 8], fill=color, width=2)
-        draw.line([cx, cy, cx + 6, cy + 2], fill=color, width=2)
-    elif kind == "alert":
-        draw.polygon([(cx, cy - 14), (cx + 14, cy + 10), (cx - 14, cy + 10)], fill=color)
-        draw.line([cx, cy - 6, cx, cy + 4], fill=WHITE, width=3)
-        draw.ellipse([cx - 2, cy + 6, cx + 2, cy + 10], fill=WHITE)
-    elif kind == "money":
-        draw.ellipse([cx - 12, cy - 12, cx + 12, cy + 12], outline=color, width=2)
-        f = _load("bold", 18)
-        tw = draw.textlength("$", font=f)
-        draw.text((cx - tw / 2, cy - 12), "$", font=f, fill=color)
+def _draw_brand_mark(img: Image.Image, top_left: tuple[int, int], *, size: int = 44) -> int:
+    """Disco navy con anillo dorado + wordmark "estadoemplea"."""
+    x, y = top_left
+    draw = ImageDraw.Draw(img)
+    # Disco con anillo dorado (versión simplificada del favicon).
+    r = size // 2
+    cx, cy = x + r, y + r
+    draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=GOLD)
+    draw.ellipse([cx - r + 4, cy - r + 4, cx + r - 4, cy + r - 4], fill=NAVY_DEEP)
+    draw.ellipse([cx - 6, cy - 6, cx + 6, cy + 6], fill=WHITE)
+
+    # Wordmark.
+    f_brand = _load("bold", int(size * 0.48))
+    f_kicker = _load("regular", int(size * 0.32))
+    brand_x = x + size + 14
+    draw.text((brand_x, y + size * 0.06), "estadoemplea", font=f_brand, fill=WHITE)
+    draw.text(
+        (brand_x, y + size * 0.60),
+        "empleo público · Chile",
+        font=f_kicker,
+        fill=TEXT_DIM,
+    )
+    # Retorna el alto ocupado para que el caller posicione la banda.
+    return size
+
+
+def _shrink_cargo(
+    draw: ImageDraw.ImageDraw,
+    cargo: str,
+    max_w: int,
+    *,
+    start_size: int,
+    min_size: int,
+    max_lines: int,
+) -> tuple[ImageFont.FreeTypeFont, list[str]]:
+    """Elige el tamaño de fuente más grande que quepa en max_lines líneas."""
+    size = start_size
+    while size >= min_size:
+        font = _load("bold", size)
+        lines = _wrap(cargo, font, max_w, draw)
+        if len(lines) <= max_lines:
+            return font, lines
+        size -= 4
+    font = _load("bold", min_size)
+    return font, _truncate_lines(_wrap(cargo, font, max_w, draw), max_lines)
 
 
 # ── Renderizador principal ───────────────────────────────────────────────
 def render_offer_card(oferta: dict[str, Any], fmt: Format = "horizontal") -> bytes:
-    """Renderiza la tarjeta OG y devuelve bytes PNG.
+    """Renderiza la tarjeta OG/RRSS y devuelve bytes PNG.
 
     ``fmt``:
       - ``"horizontal"`` → 1200x630 (Open Graph / Twitter / LinkedIn / WhatsApp).
       - ``"square"``     → 1080x1080 (Instagram, mensajería cuadrada).
+
+    Composición visual (top → bottom):
+
+      1. **Acento dorado** vertical en el borde izquierdo (8–12 px).
+      2. **Header**: brand mark + wordmark a la izquierda, pill de estado a
+         la derecha (alerta roja si cierra en ≤3 días, navy+gold si normal).
+      3. **Logo-chip** institucional (tarjeta blanca con borde dorado), en
+         la esquina superior derecha del bloque de título.
+      4. **Kicker** "OFERTA VIGENTE" / "CONCURSO PÚBLICO" en dorado, caps.
+      5. **Cargo** titular (bold, autoshrink, hasta 3 líneas en horizontal
+         / 4 en cuadrada).
+      6. **Institución** en blanco tenue.
+      7. **Info-cards** (2 o 3 según formato): icono-chip dorado + label
+         en mayúsculas + valor bold. Cubre ubicación, modalidad y
+         remuneración.
+      8. **CTA**: botón dorado con flecha + dominio al costado.
+      9. **Línea dorada inferior** de marca.
     """
     spec = _SPEC.get(fmt) or _SPEC["horizontal"]
     W, H, PAD = spec["w"], spec["h"], spec["pad"]
     title_size, sub_size = spec["title"], spec["sub"]
 
-    img = Image.new("RGB", (W, H), NAVY)
+    # Canvas RGBA para permitir compositing del halo + sombras.
+    img = Image.new("RGBA", (W, H), NAVY_DEEP)
+    _gradient_background(img)
     d = ImageDraw.Draw(img)
-    _gradient_background(d, W, H)
 
-    # Banda superior de marca (navy_soft) para separar el kicker del titular.
-    band_h = int(H * 0.11) if fmt == "horizontal" else int(H * 0.09)
-    d.rectangle([0, 0, W, band_h], fill=NAVY_DEEP)
+    # ── 1. Acento dorado izquierdo ──────────────────────────────────────
+    accent_w = 10 if fmt == "horizontal" else 14
+    d.rectangle([0, 0, accent_w, H], fill=GOLD)
 
-    # Logo institucional / disco con sigla, en esquina superior derecha.
-    sigla_text = _sigla_fallback(
-        oferta.get("institucion"),
-        oferta.get("sigla"),
-    )
-    logo_domain = oferta.get("institucion_sitio_web")
-    # Radio proporcional al ancho de la banda.
-    logo_r = int(band_h * 0.55)
-    logo_cx = W - PAD - logo_r
-    logo_cy = band_h + logo_r - int(band_h * 0.25)
-    _draw_logo_mark(img, logo_domain, sigla_text, (logo_cx, logo_cy), logo_r)
-
-    # Kicker de marca.
-    f_kicker = _load("bold", 26 if fmt == "horizontal" else 28)
-    kicker_text = "ESTADOEMPLEA · EMPLEO PÚBLICO CHILE"
-    d.text((PAD, int(band_h / 2 - 16)), kicker_text, font=f_kicker, fill=GOLD)
-
-    # Zona de texto principal (evita pisar el logo/disco).
-    content_left = PAD
+    content_left = accent_w + PAD
     content_right = W - PAD
-    # Reserva visual para el logo en el área derecha (solo aplica al titular).
-    title_right = logo_cx - logo_r - 24
-    title_max_w = max(200, title_right - content_left)
 
-    # ── Cargo (titular) ──
+    # ── 2. Header: brand (izq) + status pill (der) ──────────────────────
+    brand_y = PAD - 10 if fmt == "horizontal" else PAD - 6
+    brand_size = 44 if fmt == "horizontal" else 56
+    _draw_brand_mark(img, (content_left, brand_y), size=brand_size)
+
+    cierre_text, alerta = _format_cierre(oferta)
+    if cierre_text:
+        f_status = _load("bold", 20 if fmt == "horizontal" else 24)
+        short = _shorten_cierre(cierre_text)
+        # Medimos primero para anclar el pill desde la derecha (evita pisar
+        # el logo-chip que vive en la esquina superior derecha del título).
+        pill_w = _measure_status_pill(d, short, f_status)
+        pill_h = int(f_status.size * 1.9)
+        pill_x = content_right - pill_w
+        pill_y = brand_y + (brand_size - pill_h) // 2
+        _draw_status_pill(img, xy=(pill_x, pill_y), text=short, font=f_status, alerta=alerta)
+
+    # ── 3. Logo-chip institucional ──────────────────────────────────────
+    sigla_text = _sigla_fallback(oferta.get("institucion"), oferta.get("sigla"))
+    logo_domain = oferta.get("institucion_sitio_web")
+    chip_size = 132 if fmt == "horizontal" else 168
+    chip_x = content_right - chip_size
+    chip_y = brand_y + brand_size + (28 if fmt == "horizontal" else 40)
+    _draw_logo_chip(img, logo_domain, sigla_text, top_left=(chip_x, chip_y), size=chip_size)
+
+    # ── 4. Kicker ───────────────────────────────────────────────────────
+    # Pequeño eyebrow label arriba del titular; señala urgencia o tipo.
+    kicker_label = _pick_kicker(oferta)
+    f_kicker = _load("bold", 18 if fmt == "horizontal" else 22)
+    kicker_y = brand_y + brand_size + (28 if fmt == "horizontal" else 48)
+    d.text((content_left, kicker_y), kicker_label, font=f_kicker, fill=GOLD)
+
+    # ── 5. Cargo (titular) ──────────────────────────────────────────────
     cargo = (oferta.get("cargo") or "Oferta laboral").strip()
-    f_cargo = _load("bold", title_size)
-    max_title_lines = 3 if fmt == "horizontal" else 4
-    cargo_lines = _truncate_lines(_wrap(cargo, f_cargo, title_max_w, d), max_title_lines)
-    # Reduce tamaño si el cargo sigue sin caber en max_title_lines a title_size.
-    while len(cargo_lines) >= max_title_lines and f_cargo.size > 44:
-        smaller = f_cargo.size - 6
-        f_cargo = _load("bold", smaller)
-        cargo_lines = _truncate_lines(_wrap(cargo, f_cargo, title_max_w, d), max_title_lines)
-
-    title_y0 = band_h + int(PAD * 0.9)
-    y = title_y0
-    line_h = int(f_cargo.size * 1.14)
+    # Área del título: respeta el logo-chip en ambos formatos. El chip
+    # vive en la esquina superior derecha; el título se trunca antes de
+    # llegar a él para no chocar con el borde dorado.
+    chip_guard_x = chip_x - 28
+    title_right = chip_guard_x
+    title_max_w = max(240, title_right - content_left)
+    max_title_lines = 2 if fmt == "horizontal" else 3
+    f_cargo, cargo_lines = _shrink_cargo(
+        d, cargo,
+        title_max_w,
+        start_size=title_size,
+        min_size=40 if fmt == "horizontal" else 52,
+        max_lines=max_title_lines,
+    )
+    # Si todavía no entra en las líneas target, permitimos una línea extra
+    # en horizontal (casos extremos) antes de truncar.
+    if len(cargo_lines) > max_title_lines and fmt == "horizontal":
+        max_title_lines = 3
+        f_cargo, cargo_lines = _shrink_cargo(
+            d, cargo, title_max_w, start_size=58, min_size=40, max_lines=3,
+        )
+    title_y = kicker_y + (30 if fmt == "horizontal" else 40)
+    y = title_y
+    line_h = int(f_cargo.size * 1.08)
     for line in cargo_lines:
         d.text((content_left, y), line, font=f_cargo, fill=WHITE)
         y += line_h
 
-    # ── Institución ──
+    # ── 6. Institución ──────────────────────────────────────────────────
     institucion = (oferta.get("institucion") or "Institución pública").strip()
     f_inst = _load("regular", sub_size)
-    inst_max_w = content_right - content_left
+    # La institución también respeta el logo-chip en horizontal si éste
+    # baja más que el título.
+    inst_max_w = max(240, title_right - content_left) if fmt == "horizontal" and y < chip_y + chip_size else content_right - content_left
     inst_lines = _truncate_lines(_wrap(institucion, f_inst, inst_max_w, d), 2)
-    y += int(sub_size * 0.4)
+    y += int(sub_size * 0.3)
     for line in inst_lines:
-        d.text((content_left, y), line, font=f_inst, fill=WHITE_DIM)
-        y += int(sub_size * 1.25)
+        d.text((content_left, y), line, font=f_inst, fill=TEXT_DIM)
+        y += int(sub_size * 1.20)
 
-    # ── Cierre / alerta ──
-    cierre_text, alerta = _format_cierre(oferta)
-    if cierre_text:
-        y += int(sub_size * 0.5)
-        pill_h = 56 if fmt == "horizontal" else 62
-        f_cierre = _load("bold", 26 if fmt == "horizontal" else 30)
-        if alerta:
-            # Badge rojo sólido — debe cortar visualmente el layout.
-            tw = d.textlength(cierre_text, font=f_cierre)
-            icon_w = 28
-            gap = 12
-            pad_x = 24
-            badge_w = int(tw + icon_w + gap + pad_x * 2)
-            d.rounded_rectangle(
-                [content_left, y, content_left + badge_w, y + pill_h],
-                radius=pill_h // 2,
-                fill=ALERT,
-                outline=ALERT_SOFT,
-                width=2,
-            )
-            icon_cx = content_left + pad_x + icon_w // 2
-            _draw_icon(d, "alert", (icon_cx, y + pill_h // 2), WHITE)
-            d.text(
-                (content_left + pad_x + icon_w + gap, y + pill_h / 2 - f_cierre.size * 0.62),
-                cierre_text,
-                font=f_cierre,
-                fill=WHITE,
-            )
-            y += pill_h + 16
-        else:
-            _draw_pill(
-                d,
-                (content_left, y),
-                cierre_text,
-                f_cierre,
-                icon="clock",
-                outline=GOLD,
-                fg=WHITE,
-                height=pill_h,
-            )
-            y += pill_h + 16
+    # ── 7. Info-cards (ubicación · modalidad · remuneración) ────────────
+    card_entries = _build_info_cards(oferta)
 
-    # ── Pills secundarias (región · tipo · renta) ──
-    f_pill = _load("bold", 24 if fmt == "horizontal" else 28)
-    region_text_parts = []
+    # Calcula espacio disponible entre `y` y la zona del CTA.
+    cta_block_h = (88 if fmt == "horizontal" else 108)
+    bottom_guard = PAD - 8
+    cards_top_min = y + (20 if fmt == "horizontal" else 32)
+    cards_bottom_max = H - bottom_guard - cta_block_h - 18
+
+    if card_entries and cards_bottom_max - cards_top_min >= 80:
+        card_h = 92 if fmt == "horizontal" else 126
+        gap = 14 if fmt == "horizontal" else 20
+        available_w = content_right - content_left
+        n = min(len(card_entries), 3)
+        card_w = (available_w - gap * (n - 1)) // n
+        cards_y = cards_bottom_max - card_h
+        f_value = _load("bold", 22 if fmt == "horizontal" else 28)
+        f_label = _load("bold", 12 if fmt == "horizontal" else 15)
+        cx = content_left
+        for icon, label, value in card_entries[:n]:
+            _draw_info_card(
+                img,
+                xy=(cx, cards_y),
+                size=(card_w, card_h),
+                icon=icon,
+                label=label,
+                value=value,
+                value_font=f_value,
+                label_font=f_label,
+            )
+            cx += card_w + gap
+
+    # ── 8. CTA dorado + dominio ─────────────────────────────────────────
+    f_cta = _load("bold", 24 if fmt == "horizontal" else 30)
+    cta_y = H - bottom_guard - int(f_cta.size * 2.0)
+    cta_width, _ = _draw_cta_button(
+        img,
+        xy=(content_left, cta_y),
+        text="Postula ahora",
+        font=f_cta,
+    )
+    # Dominio al costado del botón, alineado al centro vertical.
+    f_domain = _load("regular", 18 if fmt == "horizontal" else 22)
+    dom_x = content_left + cta_width + 22
+    dom_text = "estadoemplea.pages.dev"
+    d.text(
+        (dom_x, cta_y + f_cta.size * 0.30),
+        dom_text,
+        font=f_domain,
+        fill=TEXT_DIM,
+    )
+
+    # ── 9. Línea dorada inferior ────────────────────────────────────────
+    d.rectangle([0, H - 4, W, H], fill=GOLD)
+
+    # Pasamos de RGBA a RGB al exportar (PNG puede ser RGB; ahorra peso).
+    buf = BytesIO()
+    img.convert("RGB").save(buf, format="PNG", optimize=True)
+    return buf.getvalue()
+
+
+def _pick_kicker(oferta: dict[str, Any]) -> str:
+    """Mini eyebrow label encima del titular, según estado de la oferta."""
+    estado = str(oferta.get("estado") or "").lower()
+    if estado == "closing_today":
+        return "CIERRA HOY · POSTULA AHORA"
+    dias = oferta.get("dias_restantes")
+    if isinstance(dias, int) and 0 <= dias <= 3:
+        return "ÚLTIMOS DÍAS · OFERTA VIGENTE"
+    tipo = (oferta.get("tipo_contrato") or "").strip().upper()
+    if tipo:
+        return f"OFERTA VIGENTE · {tipo}"
+    return "OFERTA VIGENTE · SECTOR PÚBLICO"
+
+
+def _shorten_cierre(text: str) -> str:
+    """Versión abreviada (mayúsculas, 2–4 palabras) para el pill del header."""
+    upper = text.upper()
+    if "HOY" in upper:
+        return "CIERRA HOY"
+    if "MAÑANA" in upper:
+        return "CIERRA MAÑANA"
+    # "Cierra en N días — postula ya" → "CIERRA EN N DÍAS"
+    if "—" in text:
+        text = text.split("—", 1)[0].strip()
+    lower = text.lower()
+    # "Quedan N días para postular" → "N DÍAS RESTAN"
+    if lower.startswith("quedan ") and "para postular" in lower:
+        num_part = text[7:].lower().replace("para postular", "").strip()
+        return f"{num_part} restan".upper()
+    # "N días para postular" → "N DÍAS RESTAN"
+    if "para postular" in lower:
+        return text.lower().replace("para postular", "").strip().upper() + " RESTAN"
+    if lower.startswith("cierra "):
+        return text.upper()
+    return text.upper()
+
+
+def _measure_status_pill(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.FreeTypeFont) -> int:
+    """Mide el ancho que tomará el pill de estado con _draw_status_pill."""
+    pad_x = 20
+    icon_w = 22
+    gap = 10
+    text_w = int(draw.textlength(text, font=font))
+    return text_w + icon_w + gap + pad_x * 2
+
+
+def _build_info_cards(oferta: dict[str, Any]) -> list[tuple[str, str, str]]:
+    """Ensambla las 2–3 info-cards que aparecen sobre el CTA.
+
+    Devuelve tuples ``(icon, LABEL, valor)``. Omite tarjetas sin datos —
+    el layout se adapta al total de cards recibidas.
+    """
+    cards: list[tuple[str, str, str]] = []
+
+    # Ubicación
     region = (oferta.get("region") or "").strip()
     ciudad = (oferta.get("ciudad") or "").strip()
+    ubic_parts: list[str] = []
     if ciudad and (not region or ciudad.lower() not in region.lower()):
-        region_text_parts.append(ciudad)
+        ubic_parts.append(ciudad)
     if region:
-        region_text_parts.append(region)
-    region_label = " · ".join(region_text_parts)
+        ubic_parts.append(region)
+    if ubic_parts:
+        cards.append(("pin", "Ubicación", " · ".join(ubic_parts)))
 
-    pills: list[tuple[str, str]] = []
-    if region_label:
-        pills.append(("pin", region_label))
+    # Modalidad / tipo de contrato
     tipo = (oferta.get("tipo_contrato") or "").strip()
     if tipo:
-        pills.append(("briefcase", tipo.title()))
+        cards.append(("briefcase", "Modalidad", tipo.title()))
+
+    # Remuneración
     renta = _format_renta(oferta)
     if renta:
-        pills.append(("money", renta))
+        cards.append(("money", "Remuneración", renta))
 
-    # La CTA queda fija en el pie: reserva ese espacio y coloca las pills
-    # inmediatamente encima para no chocar con el borde inferior.
-    cta_h = 48 if fmt == "horizontal" else 58
-    cta_bottom = H - PAD
-    cta_top = cta_bottom - cta_h
-    pill_h = 52 if fmt == "horizontal" else 58
-    pills_y = cta_top - pill_h - 22
-
-    # Si el texto ya invadió esa zona (cargo muy largo + institución),
-    # sacrifica las pills; el CTA y el cierre son más importantes.
-    if pills and y < pills_y - 8:
-        px = content_left
-        max_row_w = content_right - content_left
-        for icon, label in pills:
-            # Trunca labels excesivamente largos para no romper la fila.
-            while f_pill.getlength(label) > max_row_w - 100 and len(label) > 20:
-                label = label[:-2].rstrip(" ,.-") + "…"
-            width = _draw_pill(d, (px, pills_y), label, f_pill, icon=icon, height=pill_h)
-            px += width + 12
-            if px > content_right - 120:
-                break
-
-    # ── CTA inferior ──
-    f_cta = _load("bold", 26 if fmt == "horizontal" else 30)
-    cta_text = "postula en estadoemplea.pages.dev  →"
-    d.text((content_left, cta_top + cta_h / 2 - f_cta.size * 0.62), cta_text, font=f_cta, fill=GOLD)
-
-    # Línea dorada fina como acento de marca.
-    d.rectangle([0, H - 6, W, H], fill=GOLD)
-
-    buf = BytesIO()
-    img.save(buf, format="PNG", optimize=True)
-    return buf.getvalue()
+    return cards
 
 
 __all__ = ["render_offer_card", "Format"]
