@@ -19,7 +19,7 @@ import json
 import sys
 import time
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import urlparse
 
@@ -36,6 +36,7 @@ from scrapers.base import (
     limpiar_vencidas,
     setup_logging,
 )
+from scrapers.frequency_policy import should_evaluate_now
 from scrapers.empleos_publicos import EmpleosPublicosScraper
 from scrapers.evaluation.audit_store import AuditStore
 from scrapers.evaluation.catalog_loader import CatalogLoader
@@ -141,6 +142,67 @@ def _build_discovery_catalog(loader: CatalogLoader, *, limit: int | None = None)
         if inst.get("url_empleo") or inst.get("sitio_web")
     ]
     return items[:limit] if limit else items
+
+
+def _load_last_evaluations() -> dict[int, tuple[str | None, datetime | None]]:
+    """Carga la última retry_policy y evaluated_at por institucion_id desde source_evaluations.
+
+    Returns:
+        Dict ``{institucion_id: (retry_policy_str, evaluated_at)}``.
+        Las claves son ``int``; el valor puede tener ``None`` en cualquier campo.
+    """
+    result: dict[int, tuple[str | None, datetime | None]] = {}
+    try:
+        with conexion() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT DISTINCT ON (institucion_id)
+                        institucion_id,
+                        retry_policy,
+                        evaluated_at
+                    FROM source_evaluations
+                    WHERE institucion_id IS NOT NULL
+                    ORDER BY institucion_id, evaluated_at DESC
+                    """
+                )
+                for inst_id, retry_policy, evaluated_at in cur.fetchall():
+                    result[inst_id] = (retry_policy, evaluated_at)
+    except Exception as exc:
+        log.warning("No se pudo cargar source_evaluations para cooldown: %s", exc)
+    return result
+
+
+def _partition_by_cooldown(
+    sources: list[dict[str, Any]],
+    last_evaluations: dict[int, tuple[str | None, datetime | None]],
+    *,
+    now: datetime | None = None,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Separa fuentes en (due, in_cooldown).
+
+    ``due`` son las que deben evaluarse ahora.
+    ``in_cooldown`` son las que aún no han cumplido su cooldown desde la
+    última evaluación y se saltan en esta corrida.
+    """
+    due: list[dict[str, Any]] = []
+    in_cooldown: list[dict[str, Any]] = []
+    _now = now or datetime.now(tz=timezone.utc)
+    for source in sources:
+        inst_id = source.get("id")
+        if inst_id is None:
+            due.append(source)
+            continue
+        entry = last_evaluations.get(int(inst_id))
+        if entry is None:
+            due.append(source)
+            continue
+        retry_policy, last_evaluated_at = entry
+        if should_evaluate_now(retry_policy=retry_policy, last_evaluated_at=last_evaluated_at, now=_now):
+            due.append(source)
+        else:
+            in_cooldown.append(source)
+    return due, in_cooldown
 
 
 async def _evaluate_sources(
@@ -436,6 +498,15 @@ async def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--catalog-xlsx", help="Ruta alternativa al catalogo XLSX.")
     parser.add_argument("--limit", type=int, help="Limitar fuentes para una corrida parcial.")
     parser.add_argument("--evaluate-only", action="store_true", help="Solo ejecutar discovery+evaluation.")
+    parser.add_argument(
+        "--force-evaluate",
+        action="store_true",
+        help=(
+            "Ignorar cooldowns de retry_policy y re-evaluar todas las fuentes. "
+            "Por defecto las fuentes con evaluación reciente se saltan según su "
+            "retry_policy (critical=3h, high=6h, … eventual=168h)."
+        ),
+    )
     args = parser.parse_args(argv)
 
     log.info("Inicio run_all gatekeeper %s", datetime.now().isoformat(timespec="seconds"))
@@ -454,7 +525,37 @@ async def main(argv: list[str] | None = None) -> int:
     fuentes_index = _load_fuentes_index()
     audit_store = AuditStore()
     catalog_sources = _build_discovery_catalog(loader, limit=args.limit)
-    runtime_sources = await _evaluate_sources(catalog_sources, audit_store=audit_store, fuentes_index=fuentes_index)
+
+    # ── Filtrado por cooldown de retry_policy ──────────────────────────────
+    if args.force_evaluate:
+        log.info("--force-evaluate activo: se evaluarán las %d fuentes sin respetar cooldown.", len(catalog_sources))
+        sources_to_evaluate = catalog_sources
+    else:
+        last_evaluations = _load_last_evaluations()
+        sources_to_evaluate, in_cooldown = _partition_by_cooldown(catalog_sources, last_evaluations)
+        if in_cooldown:
+            log.info(
+                "Retry-policy cooldown: %d fuentes en cooldown (se saltan), %d fuentes a evaluar ahora.",
+                len(in_cooldown),
+                len(sources_to_evaluate),
+            )
+            # Resumen de por qué están en cooldown
+            cooldown_by_policy: dict[str, int] = {}
+            for src in in_cooldown:
+                inst_id = src.get("id")
+                policy = (last_evaluations.get(int(inst_id), (None, None))[0] or "unknown") if inst_id else "unknown"
+                cooldown_by_policy[policy] = cooldown_by_policy.get(policy, 0) + 1
+            log.info("Distribución cooldown por retry_policy: %s", cooldown_by_policy)
+        else:
+            log.info("Todas las %d fuentes están listas para evaluación.", len(sources_to_evaluate))
+
+    if not sources_to_evaluate:
+        log.info("No hay fuentes a evaluar en esta corrida (todas en cooldown). Finalizando.")
+        if db_enabled:
+            cerrar_pool()
+        return 0
+
+    runtime_sources = await _evaluate_sources(sources_to_evaluate, audit_store=audit_store, fuentes_index=fuentes_index)
     _print_evaluation_summary(runtime_sources)
 
     reports: list[PrecisionReport] = []

@@ -126,6 +126,53 @@ def profile_for_tier(tier: FrequencyTier) -> TierProfile:
     return TIER_PROFILES[tier]
 
 
+def cooldown_hours_for_retry_policy(retry_policy: str | None) -> int:
+    """Horas de cooldown antes de re-evaluar una fuente según su última retry_policy.
+
+    ``RetryPolicy`` en models.py usa los mismos valores de string que
+    ``FrequencyTier``, por lo que se resuelven directamente en ``TIER_HOURS``.
+    Si el valor no es reconocido, se aplica el cooldown de MEDIUM (12 h).
+    """
+    if not retry_policy:
+        return TIER_HOURS[FrequencyTier.MEDIUM]
+    try:
+        tier = FrequencyTier(retry_policy.strip().lower())
+        return TIER_HOURS[tier]
+    except ValueError:
+        return TIER_HOURS[FrequencyTier.MEDIUM]
+
+
+def should_evaluate_now(
+    *,
+    retry_policy: str | None,
+    last_evaluated_at: "datetime | None",  # type: ignore[name-defined]  # forward ref
+    now: "datetime | None" = None,
+) -> bool:
+    """Decide si una fuente debe re-evaluarse en la corrida actual.
+
+    Una fuente entra en cooldown desde su última evaluación por el número de
+    horas que indica su ``retry_policy``.  Si nunca fue evaluada, siempre
+    se incluye.
+
+    Args:
+        retry_policy: Valor de ``RetryPolicy`` de la última evaluación guardada.
+        last_evaluated_at: ``evaluated_at`` de esa evaluación (timezone-aware).
+        now: Momento de referencia (por defecto ``datetime.now(UTC)``).
+
+    Returns:
+        ``True`` si la fuente debe evaluarse ahora, ``False`` si sigue en cooldown.
+    """
+    if last_evaluated_at is None:
+        return True
+    from datetime import datetime, timezone, timedelta
+    _now = now or datetime.now(tz=timezone.utc)
+    # Normalizar a UTC si last_evaluated_at es naive
+    if last_evaluated_at.tzinfo is None:
+        last_evaluated_at = last_evaluated_at.replace(tzinfo=timezone.utc)
+    cooldown = timedelta(hours=cooldown_hours_for_retry_policy(retry_policy))
+    return (_now - last_evaluated_at) >= cooldown
+
+
 def default_tier_for(
     *,
     kind: ScraperKind,
@@ -211,8 +258,10 @@ __all__ = [
     "TIER_HOURS",
     "TIER_PROFILES",
     "TierProfile",
+    "cooldown_hours_for_retry_policy",
     "default_tier_for",
     "hours_for_tier",
     "profile_for_tier",
     "resolve_tier",
+    "should_evaluate_now",
 ]
