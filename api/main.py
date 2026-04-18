@@ -2335,6 +2335,346 @@ async def admin_revalidar_urls(
     return {"ok": True, "pid": proc.pid, "workers": workers, "limit": limit}
 
 
+# ── Admin: gestión de fuentes (instituciones) ────────────────────────────────
+
+@app.get(f"/api/{ADMIN_PATH}/fuentes/{{fuente_id}}", tags=["admin"])
+def admin_get_fuente(
+    fuente_id: int,
+    _user: str = Depends(_verify_admin),
+) -> dict[str, Any]:
+    """Detalle de una institución con su última evaluación y últimas 10 ofertas."""
+    inst = execute_fetch_one(
+        "SELECT * FROM instituciones WHERE id = %s", [fuente_id]
+    )
+    if not inst:
+        raise HTTPException(404, "Institución no encontrada")
+    eval_row = execute_fetch_one(
+        """SELECT decision, recommended_extractor, retry_policy, confidence,
+                  reason_detail, availability, http_status, open_calls_status, evaluated_at
+           FROM source_evaluations WHERE institucion_id = %s
+           ORDER BY evaluated_at DESC LIMIT 1""",
+        [fuente_id],
+    )
+    ofertas = execute_fetch_all(
+        """SELECT id, cargo, activa, estado, fecha_cierre, url_oferta_valida, fecha_scraped
+           FROM ofertas WHERE institucion_id = %s
+           ORDER BY COALESCE(fecha_scraped, detectada_en) DESC NULLS LAST LIMIT 10""",
+        [fuente_id],
+    )
+    return {"institucion": inst, "evaluacion": eval_row, "ultimas_ofertas": ofertas}
+
+
+@app.put(f"/api/{ADMIN_PATH}/fuentes/{{fuente_id}}", tags=["admin"])
+def admin_editar_fuente(
+    fuente_id: int,
+    payload: dict[str, Any],
+    _user: str = Depends(_verify_admin),
+) -> dict[str, Any]:
+    """
+    Edita campos de una institución.
+
+    Campos permitidos: nombre, sigla, sector, region, url_empleo, plataforma_empleo,
+    activa, notas_admin.
+    """
+    CAMPOS = {"nombre", "sigla", "sector", "region", "url_empleo",
+              "plataforma_empleo", "activa", "notas_admin"}
+    updates = {k: v for k, v in payload.items() if k in CAMPOS}
+    if not updates:
+        raise HTTPException(400, "Sin campos válidos")
+    set_clause = ", ".join(f"{c} = %s" for c in updates)
+    vals = list(updates.values()) + [fuente_id]
+    with get_cursor() as (conn, cur):
+        cur.execute(
+            f"UPDATE instituciones SET {set_clause} WHERE id = %s",
+            vals,
+        )
+        if cur.rowcount == 0:
+            raise HTTPException(404, "Institución no encontrada")
+        conn.commit()
+    return {"id": fuente_id, "updated": list(updates.keys())}
+
+
+@app.post(f"/api/{ADMIN_PATH}/fuentes", tags=["admin"])
+def admin_crear_fuente(
+    payload: dict[str, Any],
+    _user: str = Depends(_verify_admin),
+) -> dict[str, Any]:
+    """
+    Crea una nueva institución en el catálogo interno.
+
+    Campos: nombre* (requerido), sigla, sector, region, url_empleo, plataforma_empleo.
+    También crea una entrada en source_overrides.json con status=experimental.
+    """
+    nombre = (payload.get("nombre") or "").strip()
+    if not nombre:
+        raise HTTPException(400, "nombre es requerido")
+
+    with get_cursor() as (conn, cur):
+        cur.execute(
+            """INSERT INTO instituciones
+               (nombre, sigla, sector, region, url_empleo, plataforma_empleo)
+               VALUES (%s, %s, %s, %s, %s, %s)
+               RETURNING id""",
+            [
+                nombre,
+                payload.get("sigla") or None,
+                payload.get("sector") or None,
+                payload.get("region") or None,
+                payload.get("url_empleo") or None,
+                payload.get("plataforma_empleo") or None,
+            ],
+        )
+        row = cur.fetchone()
+        new_id = (row["id"] if isinstance(row, dict) else row[0]) if row else None
+        conn.commit()
+
+    logger.info(f"[admin] nueva institución creada: {new_id} — {nombre}")
+    return {"id": new_id, "nombre": nombre}
+
+
+@app.delete(f"/api/{ADMIN_PATH}/fuentes/{{fuente_id}}", tags=["admin"])
+def admin_desactivar_fuente(
+    fuente_id: int,
+    _user: str = Depends(_verify_admin),
+) -> dict[str, Any]:
+    """
+    Desactiva una fuente: marca todas sus ofertas activas como cerradas
+    y añade la institución a source_overrides.json con status=disabled.
+    """
+    # Contar ofertas activas
+    row = execute_fetch_one(
+        "SELECT COUNT(*) AS n FROM ofertas WHERE institucion_id=%s AND activa=TRUE",
+        [fuente_id],
+    )
+    n = int(row.get("n") or 0) if row else 0
+
+    with get_cursor() as (conn, cur):
+        cur.execute(
+            "UPDATE ofertas SET activa=FALSE, estado='cerrada', actualizada_en=NOW() WHERE institucion_id=%s AND activa=TRUE",
+            [fuente_id],
+        )
+        conn.commit()
+
+    # Añadir override en source_overrides.json
+    try:
+        import json as _json
+        overrides_path = _PROJECT_ROOT / "scrapers" / "source_overrides.json"
+        if overrides_path.exists():
+            with open(overrides_path, encoding="utf-8") as f:
+                overrides = _json.load(f)
+        else:
+            overrides = {}
+        overrides[str(fuente_id)] = {"status": "disabled", "reason": f"desactivado via admin por {_user}"}
+        with open(overrides_path, "w", encoding="utf-8") as f:
+            _json.dump(overrides, f, ensure_ascii=False, indent=2)
+    except Exception as exc:
+        logger.warning(f"[admin] no se pudo actualizar source_overrides.json: {exc}")
+
+    return {"id": fuente_id, "ofertas_cerradas": n}
+
+
+# ── Admin: bandeja de revisión manual ────────────────────────────────────────
+
+@app.get(f"/api/{ADMIN_PATH}/revision", tags=["admin"])
+def admin_revision_queue(
+    limit: int = Query(50, ge=1, le=200),
+    tipo: str | None = Query(None),  # url_rota | sin_sector | calidad_baja | sin_fecha | texto_corto
+    _user: str = Depends(_verify_admin),
+) -> dict[str, Any]:
+    """
+    Bandeja de ofertas que requieren revisión manual, clasificadas por tipo de problema.
+
+    Tipos: url_rota, sin_sector, calidad_baja, sin_fecha, texto_corto, duplicado_posible
+    """
+    categorias: dict[str, Any] = {}
+
+    # 1. URLs rotas (activas con url_oferta_valida=FALSE)
+    if not tipo or tipo == "url_rota":
+        rows = execute_fetch_all(
+            """SELECT id, cargo, institucion_nombre, url_oferta, url_bases,
+                      url_oferta_valida, url_bases_valida, fecha_cierre,
+                      url_valida_chequeada_en
+               FROM ofertas
+               WHERE activa=TRUE AND (url_oferta_valida=FALSE OR url_bases_valida=FALSE)
+               ORDER BY url_valida_chequeada_en DESC NULLS LAST
+               LIMIT %s""",
+            [limit],
+        )
+        categorias["url_rota"] = {"total": len(rows), "items": rows}
+
+    # 2. Sin sector asignado
+    if not tipo or tipo == "sin_sector":
+        rows = execute_fetch_all(
+            """SELECT o.id, o.cargo, o.institucion_nombre, o.sector, o.region,
+                      o.fecha_cierre, o.activa
+               FROM ofertas o
+               LEFT JOIN instituciones i ON i.id=o.institucion_id
+               WHERE o.activa=TRUE
+                 AND COALESCE(o.sector, i.sector, '') = ''
+               ORDER BY COALESCE(o.fecha_scraped, o.detectada_en) DESC NULLS LAST
+               LIMIT %s""",
+            [limit],
+        )
+        categorias["sin_sector"] = {"total": len(rows), "items": rows}
+
+    # 3. Calidad baja (overall_quality_score < 0.4 o needs_review=TRUE)
+    if not tipo or tipo == "calidad_baja":
+        rows = execute_fetch_all(
+            """SELECT id, cargo, institucion_nombre, overall_quality_score,
+                      needs_review, fecha_cierre, activa
+               FROM ofertas
+               WHERE activa=TRUE
+                 AND (overall_quality_score < 0.4 OR needs_review=TRUE)
+               ORDER BY overall_quality_score ASC NULLS FIRST
+               LIMIT %s""",
+            [limit],
+        )
+        categorias["calidad_baja"] = {"total": len(rows), "items": rows}
+
+    # 4. Sin fecha de cierre (puede estar publicada sin límite claro)
+    if not tipo or tipo == "sin_fecha":
+        rows = execute_fetch_all(
+            """SELECT id, cargo, institucion_nombre, sector, fecha_cierre,
+                      COALESCE(fecha_scraped, detectada_en) AS detectada
+               FROM ofertas
+               WHERE activa=TRUE AND fecha_cierre IS NULL
+               ORDER BY COALESCE(fecha_scraped, detectada_en) DESC NULLS LAST
+               LIMIT %s""",
+            [limit],
+        )
+        categorias["sin_fecha"] = {"total": len(rows), "items": rows}
+
+    # 5. Descripción muy corta (< 80 chars) — probable extracción fallida
+    if not tipo or tipo == "texto_corto":
+        rows = execute_fetch_all(
+            """SELECT id, cargo, institucion_nombre,
+                      CHAR_LENGTH(COALESCE(descripcion,'')) AS desc_len,
+                      descripcion, fecha_cierre, activa
+               FROM ofertas
+               WHERE activa=TRUE
+                 AND CHAR_LENGTH(COALESCE(descripcion,'')) < 80
+               ORDER BY CHAR_LENGTH(COALESCE(descripcion,'')) ASC
+               LIMIT %s""",
+            [limit],
+        )
+        categorias["texto_corto"] = {"total": len(rows), "items": rows}
+
+    # Resumen de totales por categoría
+    resumen = {k: v["total"] for k, v in categorias.items()}
+    return {"resumen": resumen, "categorias": categorias}
+
+
+@app.post(f"/api/{ADMIN_PATH}/revision/{{oferta_id}}/marcar-revisada", tags=["admin"])
+def admin_marcar_revisada(
+    oferta_id: int,
+    payload: dict[str, Any],
+    _user: str = Depends(_verify_admin),
+) -> dict[str, Any]:
+    """Marca una oferta como revisada (needs_review=FALSE) y guarda una nota opcional."""
+    nota = (payload.get("nota") or "").strip()
+    with get_cursor() as (conn, cur):
+        cur.execute(
+            """UPDATE ofertas
+               SET needs_review=FALSE, actualizada_en=NOW()
+               WHERE id=%s""",
+            [oferta_id],
+        )
+        if cur.rowcount == 0:
+            raise HTTPException(404, "Oferta no encontrada")
+        conn.commit()
+    logger.info(f"[admin] oferta {oferta_id} marcada revisada por {_user}. Nota: {nota}")
+    return {"id": oferta_id, "revisada": True}
+
+
+# ── Admin: diagnóstico y alertas ─────────────────────────────────────────────
+
+@app.get(f"/api/{ADMIN_PATH}/diagnostico", tags=["admin"])
+def admin_diagnostico(
+    _user: str = Depends(_verify_admin),
+) -> dict[str, Any]:
+    """
+    Diagnóstico completo del estado de la plataforma.
+    Devuelve contadores de alertas agrupados por categoría.
+    """
+    resultado: dict[str, Any] = {}
+
+    # Ofertas con problemas
+    problemas = execute_fetch_one(
+        """SELECT
+            COUNT(*) FILTER (WHERE activa=TRUE AND url_oferta_valida=FALSE) AS url_oferta_rota,
+            COUNT(*) FILTER (WHERE activa=TRUE AND url_bases_valida=FALSE) AS url_bases_rota,
+            COUNT(*) FILTER (WHERE activa=TRUE AND needs_review=TRUE) AS needs_review,
+            COUNT(*) FILTER (WHERE activa=TRUE AND fecha_cierre < CURRENT_DATE) AS vencidas_activas,
+            COUNT(*) FILTER (WHERE activa=TRUE AND CHAR_LENGTH(COALESCE(descripcion,''))<80) AS descripcion_corta,
+            COUNT(*) FILTER (WHERE activa=TRUE AND sector IS NULL AND institucion_id IS NULL) AS sin_sector,
+            COUNT(*) FILTER (WHERE activa=TRUE AND fecha_cierre IS NULL) AS sin_fecha_cierre,
+            COUNT(*) FILTER (
+                WHERE activa=TRUE
+                  AND url_valida_chequeada_en IS NOT NULL
+                  AND url_valida_chequeada_en < NOW() - INTERVAL '48 hours'
+            ) AS url_no_chequeada_48h
+           FROM ofertas""",
+        [],
+    ) or {}
+    resultado["ofertas"] = problemas
+
+    # Scrapers: última corrida y estado
+    ultima_corrida = execute_fetch_one(
+        """SELECT started_at, status, total_nuevas, total_errores, duracion_segundos
+           FROM scraper_runs ORDER BY started_at DESC NULLS LAST LIMIT 1""",
+        [],
+    )
+    resultado["ultima_corrida"] = ultima_corrida
+
+    # Horas desde última corrida
+    if ultima_corrida and ultima_corrida.get("started_at"):
+        horas_row = execute_fetch_one(
+            "SELECT EXTRACT(EPOCH FROM (NOW() - %s))/3600 AS horas",
+            [ultima_corrida["started_at"]],
+        )
+        resultado["horas_desde_ultima_corrida"] = round(float(horas_row["horas"]), 1) if horas_row else None
+
+    # Fuentes sin evaluar o con decisión ERROR
+    fuentes_problema = execute_fetch_one(
+        """SELECT
+            COUNT(*) FILTER (WHERE ev.decision='ERROR') AS fuentes_error,
+            COUNT(*) FILTER (WHERE ev.decision IS NULL) AS fuentes_sin_evaluar,
+            COUNT(*) FILTER (
+                WHERE ev.evaluated_at IS NOT NULL
+                  AND ev.evaluated_at < NOW() - INTERVAL '7 days'
+            ) AS fuentes_eval_antigua
+           FROM instituciones i
+           LEFT JOIN LATERAL (
+               SELECT decision, evaluated_at FROM source_evaluations
+               WHERE institucion_id=i.id ORDER BY evaluated_at DESC LIMIT 1
+           ) ev ON TRUE""",
+        [],
+    ) or {}
+    resultado["fuentes"] = fuentes_problema
+
+    # Nivel de alerta global
+    alertas: list[dict[str, Any]] = []
+    o = problemas
+    if int(o.get("vencidas_activas") or 0) > 0:
+        alertas.append({"nivel":"warning","mensaje": f"{o['vencidas_activas']} ofertas activas con fecha ya vencida","accion":"bulk-desactivar"})
+    if int(o.get("url_oferta_rota") or 0) > 50:
+        alertas.append({"nivel":"warning","mensaje": f"{o['url_oferta_rota']} ofertas con URL de oferta rota","accion":"revalidar-urls"})
+    if int(o.get("needs_review") or 0) > 0:
+        alertas.append({"nivel":"info","mensaje": f"{o['needs_review']} ofertas pendientes de revisión manual","accion":"revision"})
+    if resultado.get("horas_desde_ultima_corrida") and resultado["horas_desde_ultima_corrida"] > 26:
+        alertas.append({"nivel":"error","mensaje": f"Última corrida hace {resultado['horas_desde_ultima_corrida']:.0f}h — posible falla del timer","accion":"scraper-runs"})
+    if int(fuentes_problema.get("fuentes_error") or 0) > 10:
+        alertas.append({"nivel":"warning","mensaje": f"{fuentes_problema['fuentes_error']} fuentes con decisión ERROR","accion":"evaluaciones"})
+
+    resultado["alertas"] = alertas
+    resultado["nivel_global"] = (
+        "error"   if any(a["nivel"]=="error"   for a in alertas) else
+        "warning" if any(a["nivel"]=="warning" for a in alertas) else
+        "ok"
+    )
+    return resultado
+
+
 # ── Fin endpoints admin ───────────────────────────────────────────────────────
 
 

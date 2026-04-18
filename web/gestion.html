@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EmpleoEstado</title>
+<title>Gestión interna — contrata o planta .cl</title>
 <!--
   Panel de gestión interna.
   URL de acceso:  /gestion.html?k=TU_ADMIN_PATH
@@ -225,6 +225,8 @@
 </head>
 <body>
 
+<a href="#app" class="skip-link" style="position:absolute;left:-9999px;top:0;background:var(--accent);color:#fff;padding:6px 12px;border-radius:0 0 var(--radius) 0;z-index:999;font-size:13px">Saltar al contenido</a>
+
 <!-- ── Auth screen ── -->
 <div id="auth-screen">
   <div class="auth-card">
@@ -250,6 +252,7 @@
     <button data-tab="ofertas">📋 Ofertas</button>
     <button data-tab="scrapers">🤖 Scrapers</button>
     <button data-tab="fuentes">🏛️ Fuentes</button>
+    <button data-tab="revision">🔍 Revisión</button>
     <button data-tab="acciones">⚡ Acciones</button>
     <button data-tab="config">⚙️ Config</button>
   </nav>
@@ -278,6 +281,12 @@
       </div>
       <div class="section-header"><h2>Validez de URLs</h2></div>
       <div class="stats-grid" id="url-stats-grid"></div>
+
+      <div class="section-header" style="margin-top:24px">
+        <h2>Diagnóstico del sistema</h2>
+        <button class="btn btn-ghost btn-sm" onclick="loadDiagnostico()">↻ Verificar</button>
+      </div>
+      <div id="diag-alertas" style="display:grid;gap:10px"></div>
     </div>
 
     <!-- Ofertas -->
@@ -336,6 +345,42 @@
           </tr></thead>
           <tbody id="scrapers-tbody">
             <tr class="loading-row"><td colspan="13"><span class="spinner"></span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Revisión manual -->
+    <div class="tab-panel" id="tab-revision">
+      <div class="section-header">
+        <h2>Bandeja de revisión manual</h2>
+        <button class="btn btn-ghost btn-sm" onclick="loadRevision()">↻ Actualizar</button>
+      </div>
+
+      <!-- Filtro por tipo -->
+      <div class="filters" style="margin-bottom:16px">
+        <select id="rev-tipo" onchange="loadRevision()">
+          <option value="">Todos los problemas</option>
+          <option value="url_rota">🔴 URL rota</option>
+          <option value="sin_sector">🏷️ Sin sector</option>
+          <option value="calidad_baja">⚠️ Calidad baja</option>
+          <option value="sin_fecha">📅 Sin fecha de cierre</option>
+          <option value="texto_corto">📄 Descripción corta</option>
+        </select>
+      </div>
+
+      <!-- Resumen contadores -->
+      <div class="stats-grid" id="rev-resumen" style="margin-bottom:20px"></div>
+
+      <!-- Tabla de items -->
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>ID</th><th>Cargo</th><th>Institución</th>
+            <th>Problema</th><th>Detalle</th><th>Cierre</th><th>Acciones</th>
+          </tr></thead>
+          <tbody id="rev-tbody">
+            <tr class="loading-row"><td colspan="7"><span class="spinner"></span></td></tr>
           </tbody>
         </table>
       </div>
@@ -457,7 +502,10 @@
     <div class="tab-panel" id="tab-fuentes">
       <div class="section-header">
         <h2>Instituciones / fuentes</h2>
-        <span id="fuentes-badge" class="pill gray"></span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span id="fuentes-badge" class="pill gray"></span>
+          <button class="btn btn-primary btn-sm" onclick="openCrearFuente()">+ Nueva fuente</button>
+        </div>
       </div>
       <div class="filters">
         <select id="f-fuente-sector" onchange="loadFuentes()">
@@ -482,7 +530,7 @@
           <thead><tr>
             <th>ID</th><th>Nombre</th><th>Sector</th>
             <th>Extractor</th><th>Decisión</th><th>Confianza</th>
-            <th>Disponib.</th><th>HTTP</th><th>Ofertas</th><th>Última eval.</th>
+            <th>Disponib.</th><th>HTTP</th><th>Ofertas</th><th>Última eval.</th><th>Acciones</th>
           </tr></thead>
           <tbody id="fuentes-tbody">
             <tr class="loading-row"><td colspan="10"><span class="spinner"></span></td></tr>
@@ -516,6 +564,28 @@
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
       <button class="btn btn-primary" onclick="saveEdit()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal editar/crear fuente -->
+<div class="modal-overlay" id="fuente-modal">
+  <div class="modal">
+    <h3 id="fuente-modal-title">Institución</h3>
+    <div class="form-group"><label>Nombre *</label><input id="fm-nombre" type="text"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>Sigla</label><input id="fm-sigla" type="text"></div>
+      <div class="form-group"><label>Sector</label><input id="fm-sector" type="text"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>Región</label><input id="fm-region" type="text"></div>
+      <div class="form-group"><label>Plataforma empleo</label><input id="fm-plataforma" type="text" placeholder="wordpress, generic…"></div>
+    </div>
+    <div class="form-group"><label>URL empleo</label><input id="fm-url" type="url" placeholder="https://…"></div>
+    <div class="form-group" id="fm-notas-group"><label>Notas admin</label><textarea id="fm-notas" rows="2"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeFuenteModal()">Cancelar</button>
+      <button class="btn btn-primary" id="fm-save-btn" onclick="saveFuente()">Guardar</button>
     </div>
   </div>
 </div>
@@ -638,6 +708,7 @@ document.querySelectorAll('nav button').forEach(btn => {
     if (tab === 'ofertas')  loadOfertas(1);
     else if (tab === 'scrapers') loadScrapers();
     else if (tab === 'fuentes')  loadFuentes();
+    else if (tab === 'revision') loadRevision();
     else if (tab === 'config')   loadConfig();
   });
 });
@@ -687,6 +758,7 @@ async function loadDashboard() {
   } catch(e) {
     toast('Error stats: ' + e.message, 'error');
   }
+  loadDiagnostico();
 }
 
 function renderStatCards(d) {
@@ -912,11 +984,233 @@ async function loadFuentes() {
       <td class="text-small">${f.http_status?`<span class="${f.http_status<400?'text-muted':'pill red'}">${f.http_status}</span>`:'—'}</td>
       <td style="color:${f.oferta_count>0?'var(--green)':'var(--muted)'};font-weight:${f.oferta_count>0?600:400}">${f.oferta_count??0}</td>
       <td class="text-small text-muted">${f.ultima_evaluacion?fmtDate(f.ultima_evaluacion):'—'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-ghost btn-sm" onclick="openEditarFuente(${f.id})">✏️</button>
+        <button class="btn btn-danger btn-sm" style="margin-left:4px" onclick="desactivarFuente(${f.id},'${(f.nombre||'').replace(/'/g,'').slice(0,25)}')">🗑️</button>
+      </td>
     </tr>`).join('');
   } catch(e) {
     tbody.innerHTML=`<tr class="empty-row"><td colspan="10" style="color:var(--red)">Error: ${e.message}</td></tr>`;
   }
 }
+
+// ── DIAGNÓSTICO ───────────────────────────────────────────────
+async function loadDiagnostico() {
+  const el = document.getElementById('diag-alertas');
+  el.innerHTML = '<span class="spinner"></span>';
+  try {
+    const d = await api('/diagnostico');
+    const nivel = d.nivel_global;
+    const nivelColor = {ok:'var(--green)', warning:'var(--yellow)', error:'var(--red)'}[nivel]||'var(--muted)';
+    const alertas = d.alertas||[];
+
+    // Fila de estado global
+    let html = `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;gap:12px">
+      <span style="font-size:20px">${{ok:'✅',warning:'⚠️',error:'🚨'}[nivel]||'ℹ️'}</span>
+      <span style="font-weight:600;color:${nivelColor}">Sistema ${nivel==='ok'?'en orden':`con ${alertas.length} alerta(s)`}</span>
+    </div>`;
+
+    // Alertas individuales
+    alertas.forEach(a => {
+      const bg = {error:'#dc262218',warning:'#d9770618',info:'#1d4ed818'}[a.nivel]||'var(--surface)';
+      const co = {error:'var(--red)',warning:'var(--yellow)',info:'#60a5fa'}[a.nivel]||'var(--muted)';
+      html += `<div style="background:${bg};border:1px solid ${co}44;border-radius:var(--radius);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <span style="color:${co}">${a.mensaje}</span>
+        <button class="btn btn-ghost btn-sm" onclick="irA('${a.accion}')">Ver →</button>
+      </div>`;
+    });
+
+    // Detalle numérico
+    const o = d.ofertas||{};
+    html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px">
+      <div style="font-weight:600;margin-bottom:10px;font-size:13px">Detalles</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;font-size:12px;color:var(--muted)">
+        ${[
+          ['Ofertas vencidas activas', o.vencidas_activas, 'var(--yellow)'],
+          ['URLs oferta rotas', o.url_oferta_rota, 'var(--red)'],
+          ['URLs bases rotas', o.url_bases_rota, 'var(--red)'],
+          ['Pendientes revisión', o.needs_review, 'var(--yellow)'],
+          ['Sin fecha de cierre', o.sin_fecha_cierre, null],
+          ['Descripción corta', o.descripcion_corta, null],
+          ['URLs sin chequear 48h', o.url_no_chequeada_48h, 'var(--yellow)'],
+        ].map(([label,val,color])=>`
+          <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:3px 0">
+            <span>${label}</span>
+            <strong style="${color&&val>0?`color:${color}`:''}">${val??0}</strong>
+          </div>
+        `).join('')}
+        ${d.horas_desde_ultima_corrida!=null?`
+          <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:3px 0">
+            <span>Horas desde última corrida</span>
+            <strong style="${d.horas_desde_ultima_corrida>24?'color:var(--yellow)':''}">${d.horas_desde_ultima_corrida}h</strong>
+          </div>
+        `:''}
+      </div>
+    </div>`;
+
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = `<div style="color:var(--red)">Error: ${e.message}</div>`;
+  }
+}
+
+function irA(accion) {
+  const tabMap = {
+    'bulk-desactivar':'acciones','revalidar-urls':'acciones','revision':'revision',
+    'scraper-runs':'scrapers','evaluaciones':'fuentes',
+  };
+  const tab = tabMap[accion]||'dashboard';
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  const btn = document.querySelector(`[data-tab=${tab}]`);
+  if (btn) btn.classList.add('active');
+  const panel = document.getElementById('tab-'+tab);
+  if (panel) panel.classList.add('active');
+  if (tab==='revision') loadRevision();
+  else if (tab==='scrapers') loadScrapers();
+}
+
+// ── REVISIÓN ───────────────────────────────────────────────────
+async function loadRevision() {
+  const tipo = document.getElementById('rev-tipo').value;
+  const tbody = document.getElementById('rev-tbody');
+  tbody.innerHTML = `<tr class="loading-row"><td colspan="7"><span class="spinner"></span></td></tr>`;
+  document.getElementById('rev-resumen').innerHTML = '';
+  try {
+    const d = await api(`/revision${tipo?'?tipo='+tipo:''}&limit=100`);
+    // Resumen de contadores
+    const resumen = d.resumen||{};
+    const etiquetas = {url_rota:'🔴 URL rota', sin_sector:'🏷️ Sin sector',
+      calidad_baja:'⚠️ Calidad baja', sin_fecha:'📅 Sin fecha', texto_corto:'📄 Desc. corta'};
+    document.getElementById('rev-resumen').innerHTML = Object.entries(resumen).map(([k,v])=>`
+      <div class="stat-card ${v>0?'yellow':''}">
+        <div class="label">${etiquetas[k]||k}</div>
+        <div class="value">${v}</div>
+      </div>`).join('');
+
+    // Unir todos los items con su tipo
+    const items = [];
+    const cats = d.categorias||{};
+    Object.entries(cats).forEach(([tipo_k, cat]) => {
+      (cat.items||[]).forEach(item => items.push({...item, _tipo: tipo_k}));
+    });
+
+    if (!items.length) {
+      tbody.innerHTML='<tr class="empty-row"><td colspan="7">✅ Sin ofertas pendientes de revisión</td></tr>';
+      return;
+    }
+
+    const probPill = {
+      url_rota: '<span class="pill red">URL rota</span>',
+      sin_sector: '<span class="pill yellow">Sin sector</span>',
+      calidad_baja: '<span class="pill yellow">Calidad baja</span>',
+      sin_fecha: '<span class="pill gray">Sin fecha</span>',
+      texto_corto: '<span class="pill gray">Desc. corta</span>',
+    };
+
+    tbody.innerHTML = items.map(item => {
+      let detalle = '—';
+      if (item._tipo==='url_rota') detalle = `of:${item.url_oferta_valida===false?'❌':'✓'} base:${item.url_bases_valida===false?'❌':'✓'}`;
+      else if (item._tipo==='calidad_baja') detalle = item.overall_quality_score!=null?`score: ${(item.overall_quality_score*100).toFixed(0)}%`:'needs_review';
+      else if (item._tipo==='texto_corto') detalle = `${item.desc_len||0} chars`;
+      else if (item._tipo==='sin_sector') detalle = item.sector||'(vacío)';
+      return `<tr>
+        <td class="text-muted text-small">${item.id}</td>
+        <td style="max-width:220px">${trunc(item.cargo,34)}</td>
+        <td class="text-small text-muted">${trunc(item.institucion_nombre,28)}</td>
+        <td>${probPill[item._tipo]||item._tipo}</td>
+        <td class="text-small text-muted">${detalle}</td>
+        <td class="text-small">${item.fecha_cierre?fmtDate(item.fecha_cierre):'<span class="text-muted">—</span>'}</td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-ghost btn-sm" onclick="openEdit(${item.id},${JSON.stringify(item).replace(/"/g,'&quot;')})">✏️ Editar</button>
+          <button class="btn btn-success btn-sm" style="margin-left:4px" onclick="marcarRevisada(${item.id})">✓ OK</button>
+          <button class="btn btn-danger btn-sm" style="margin-left:4px" onclick="toggleActiva(${item.id},true)">🗑️</button>
+          ${item.url_oferta?`<a href="${item.url_oferta}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" style="margin-left:4px">🔗</a>`:''}
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML=`<tr class="empty-row"><td colspan="7" style="color:var(--red)">Error: ${e.message}</td></tr>`;
+  }
+}
+
+async function marcarRevisada(id) {
+  try {
+    await api(`/revision/${id}/marcar-revisada`, { method:'POST', body:'{}' });
+    toast(`Oferta ${id} marcada como revisada ✓`);
+    loadRevision();
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+// ── FUENTES (edit/create/delete) ───────────────────────────────
+let _fuenteEditId = null;
+
+function openCrearFuente() {
+  _fuenteEditId = null;
+  document.getElementById('fuente-modal-title').textContent = 'Nueva institución';
+  document.getElementById('fm-save-btn').textContent = 'Crear';
+  ['fm-nombre','fm-sigla','fm-sector','fm-region','fm-plataforma','fm-url','fm-notas'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('fuente-modal').classList.add('open');
+}
+
+async function openEditarFuente(id) {
+  _fuenteEditId = id;
+  document.getElementById('fuente-modal-title').textContent = `Editar institución #${id}`;
+  document.getElementById('fm-save-btn').textContent = 'Guardar';
+  try {
+    const d = await api(`/fuentes/${id}`);
+    const i = d.institucion||{};
+    document.getElementById('fm-nombre').value    = i.nombre||'';
+    document.getElementById('fm-sigla').value     = i.sigla||'';
+    document.getElementById('fm-sector').value    = i.sector||'';
+    document.getElementById('fm-region').value    = i.region||'';
+    document.getElementById('fm-plataforma').value= i.plataforma_empleo||'';
+    document.getElementById('fm-url').value       = i.url_empleo||'';
+    document.getElementById('fm-notas').value     = i.notas_admin||'';
+    document.getElementById('fuente-modal').classList.add('open');
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+function closeFuenteModal() {
+  document.getElementById('fuente-modal').classList.remove('open');
+  _fuenteEditId = null;
+}
+
+async function saveFuente() {
+  const payload = {
+    nombre:            document.getElementById('fm-nombre').value,
+    sigla:             document.getElementById('fm-sigla').value||null,
+    sector:            document.getElementById('fm-sector').value||null,
+    region:            document.getElementById('fm-region').value||null,
+    plataforma_empleo: document.getElementById('fm-plataforma').value||null,
+    url_empleo:        document.getElementById('fm-url').value||null,
+    notas_admin:       document.getElementById('fm-notas').value||null,
+  };
+  try {
+    if (_fuenteEditId) {
+      await api(`/fuentes/${_fuenteEditId}`, { method:'PUT', body:JSON.stringify(payload) });
+      toast('Institución actualizada ✓');
+    } else {
+      const r = await api('/fuentes', { method:'POST', body:JSON.stringify(payload) });
+      toast(`Institución creada — ID ${r.id} ✓`);
+    }
+    closeFuenteModal();
+    loadFuentes();
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+async function desactivarFuente(id, nombre) {
+  if (!confirm(`¿Desactivar "${nombre}" (ID ${id})?\nSe cerrarán todas sus ofertas activas y se añadirá a la lista de fuentes deshabilitadas.`)) return;
+  try {
+    const r = await api(`/fuentes/${id}`, { method:'DELETE' });
+    toast(`Fuente ${id} desactivada · ${r.ofertas_cerradas} ofertas cerradas ✓`);
+    loadFuentes();
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+document.getElementById('fuente-modal').addEventListener('click', e => { if(e.target===e.currentTarget) closeFuenteModal(); });
 
 // ── ACCIONES ──────────────────────────────────────────────────
 document.getElementById('run-mode').addEventListener('change', function() {
