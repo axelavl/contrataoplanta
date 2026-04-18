@@ -1370,15 +1370,19 @@ footer {
 }
 .modal-close:hover { background: rgba(255,255,255,0.25); }
 .modal-body { padding: 20px 22px 18px; }
-.modal-seccion { margin-bottom: 24px; }
+.modal-seccion { margin-bottom: 28px; }
 .modal-seccion:last-child { margin-bottom: 10px; }
+/* Título principal de sección: identidad visual fuerte con barra de acento */
 .modal-seccion-titulo {
-  font-size: 12px; font-weight: 800;
-  text-transform: uppercase; letter-spacing: 1px;
-  color: var(--texto);
-  margin: 0 0 12px 0;
+  font-size: 13px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--azul);
+  margin: 0 0 14px 0;
+  padding-left: 12px;
   font-family: 'Inter', sans-serif;
   line-height: 1.25;
+  position: relative;
+  border-left: 4px solid var(--acento);
 }
 .modal-summary-note {
   margin-top: 10px;
@@ -1421,20 +1425,35 @@ footer {
 }
 .modal-rich-text h4,
 .modal-rich-text .rt-heading {
-  font-size: 14px;
-  font-weight: 660;
-  color: #1F2937;
-  margin: 16px 0 8px 0;
-  letter-spacing: -0.1px; line-height: 1.35;
+  /* Subtítulo intermedio: sobrio y claramente subordinado al título principal */
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--texto2);
+  text-transform: none;
+  letter-spacing: 0;
+  margin: 18px 0 6px 0;
+  line-height: 1.35;
   display: block;
 }
 .modal-rich-text .rt-heading--section {
-  font-size: 12px;
+  /* Cuando el rich-text contiene un título "de sección" dentro del cuerpo,
+     lo igualamos al título principal de la sección (barra lateral + acento). */
+  font-size: 13px;
   text-transform: uppercase;
-  letter-spacing: .9px;
-  font-weight: 780;
+  letter-spacing: 1.4px;
+  font-weight: 800;
+  color: var(--azul);
   margin: 24px 0 12px 0;
-  color: #0F274A;
+  padding-left: 12px;
+  border-left: 4px solid var(--acento);
+}
+.modal-rich-text .rt-heading--subsection {
+  /* Subtítulo interno: minúsculas + peso medio + color atenuado */
+  color: var(--texto2);
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: none;
+  letter-spacing: 0;
 }
 .modal-rich-text > .rt-heading:first-child,
 .modal-rich-text > .rt-heading--section:first-child { margin-top: 0; }
@@ -1535,11 +1554,12 @@ footer {
     padding: 24px 28px 22px;
   }
   .modal-seccion {
-    margin-bottom: 28px;
+    margin-bottom: 32px;
   }
   .modal-seccion-titulo {
-    font-size: 12.5px;
-    margin-bottom: 14px;
+    font-size: 14px;
+    margin-bottom: 16px;
+    padding-left: 14px;
   }
   .modal-rich-text {
     font-size: 14.5px;
@@ -1821,13 +1841,14 @@ footer {
   .share-btn--copy { min-width: 116px; }
 }
 
-/* Alerta de plazo en modal */
+/* Alerta de plazo en modal: aviso breve de urgencia (no duplica datos del resumen) */
 .modal-plazo-alert {
   display: flex; align-items: center; gap: 12px;
-  padding: 12px 14px; border-radius: var(--r);
-  margin-bottom: 16px;
+  padding: 10px 14px; border-radius: var(--r);
+  margin-bottom: 18px;
   border: 1.5px solid transparent;
 }
+.modal-plazo-fecha:empty { display: none; }
 .modal-plazo-alert.status-closed { background: #F3F4F6; border-color: #D1D5DB; }
 .modal-plazo-alert.status-closing-today { background: var(--naran-l); border-color: #FDE68A; }
 .modal-plazo-alert.status-active { background: var(--verde-l); border-color: #86EFAC; }

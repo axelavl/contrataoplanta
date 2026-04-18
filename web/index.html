@@ -449,9 +449,17 @@
       <div class="modal-seccion">
         <div class="modal-seccion-titulo">Resumen ejecutivo</div>
         <div class="modal-info-grid">
-          <div class="modal-info-item" id="summary-item-renta">
-            <div class="modal-info-label">💰 Renta bruta</div>
-            <div class="modal-info-val" id="modal-renta">—</div>
+          <div class="modal-info-item" id="summary-item-publicacion">
+            <div class="modal-info-label">🕒 Publicada</div>
+            <div class="modal-info-val" id="modal-fecha-publicacion">—</div>
+          </div>
+          <div class="modal-info-item" id="summary-item-cierre">
+            <div class="modal-info-label">📅 Fecha de cierre</div>
+            <div class="modal-info-val" id="modal-fecha-cierre">—</div>
+          </div>
+          <div class="modal-info-item" id="summary-item-ubicacion">
+            <div class="modal-info-label">📍 Ubicación</div>
+            <div class="modal-info-val" id="modal-ubicacion">—</div>
           </div>
           <div class="modal-info-item" id="summary-item-tipo">
             <div class="modal-info-label">📋 Tipo de contrato</div>
@@ -461,17 +469,9 @@
             <div class="modal-info-label">⏱ Jornada</div>
             <div class="modal-info-val" id="modal-jornada">—</div>
           </div>
-          <div class="modal-info-item" id="summary-item-ubicacion">
-            <div class="modal-info-label">📍 Ubicación</div>
-            <div class="modal-info-val" id="modal-ubicacion">—</div>
-          </div>
-          <div class="modal-info-item" id="summary-item-cierre">
-            <div class="modal-info-label">📅 Fecha de cierre</div>
-            <div class="modal-info-val" id="modal-fecha-cierre">—</div>
-          </div>
-          <div class="modal-info-item" id="summary-item-publicacion">
-            <div class="modal-info-label">🕒 Publicada</div>
-            <div class="modal-info-val" id="modal-fecha-publicacion">—</div>
+          <div class="modal-info-item" id="summary-item-renta">
+            <div class="modal-info-label">💰 Renta bruta</div>
+            <div class="modal-info-val" id="modal-renta">—</div>
           </div>
         </div>
         <div class="modal-summary-note" id="modal-summary-note" hidden></div>
@@ -1183,29 +1183,101 @@ const PORTALES_EMPLEO = new Set([
   'sistemadeconcursos.cl','mitrabajodigno.cl','ucampus.net',
 ]);
 
+function esDominioPortal(dominio) {
+  if (!dominio) return false;
+  const d = dominio.toLowerCase().replace(/^www\./, '');
+  for (const portal of PORTALES_EMPLEO) {
+    if (d === portal || d.endsWith('.' + portal)) return true;
+  }
+  return false;
+}
+
+// Catálogo curado de fallback cuando el backend no provee institucion_sitio_web
+// y no podemos inferir el dominio desde url_oferta (p. ej. oferta intermediada
+// por empleospublicos.cl). La clave se compara contra el nombre normalizado.
 const DOMINIOS_INSTITUCIONALES_REFERENCIA = [
   ['ministerio de salud', 'minsal.cl'],
+  ['ministerio de educacion', 'mineduc.cl'],
+  ['ministerio de hacienda', 'hacienda.cl'],
+  ['ministerio del interior', 'interior.gob.cl'],
+  ['ministerio de relaciones exteriores', 'minrel.gob.cl'],
+  ['ministerio de defensa', 'defensa.cl'],
+  ['ministerio de justicia', 'minjusticia.gob.cl'],
+  ['ministerio de obras publicas', 'mop.gob.cl'],
+  ['ministerio de vivienda', 'minvu.cl'],
+  ['ministerio de transportes', 'mtt.gob.cl'],
+  ['ministerio de agricultura', 'minagri.gob.cl'],
+  ['ministerio de mineria', 'minmineria.cl'],
+  ['ministerio de energia', 'energia.gob.cl'],
+  ['ministerio de medio ambiente', 'mma.gob.cl'],
+  ['ministerio de economia', 'economia.gob.cl'],
+  ['ministerio de desarrollo social', 'desarrollosocialyfamilia.gob.cl'],
+  ['ministerio de la mujer', 'minmujeryeg.gob.cl'],
+  ['ministerio de cultura', 'cultura.gob.cl'],
+  ['ministerio del deporte', 'mindep.cl'],
+  ['ministerio de ciencia', 'minciencia.gob.cl'],
+  ['ministerio del trabajo', 'mintrab.gob.cl'],
   ['servicio de salud metropolitano', 'redsalud.gob.cl'],
   ['subsecretaria de salud', 'minsal.cl'],
   ['poder judicial', 'pjud.cl'],
   ['fiscalia', 'fiscaliadechile.cl'],
+  ['contraloria general de la republica', 'contraloria.cl'],
   ['superintendencia de pensiones', 'spensiones.cl'],
   ['superintendencia de salud', 'supersalud.gob.cl'],
+  ['superintendencia de educacion', 'supereduc.cl'],
+  ['superintendencia de valores', 'cmfchile.cl'],
+  ['comision para el mercado financiero', 'cmfchile.cl'],
   ['servicio de impuestos internos', 'sii.cl'],
   ['tesoreria general de la republica', 'tesoreria.cl'],
   ['direccion del trabajo', 'dt.gob.cl'],
+  ['direccion de compras', 'chilecompra.cl'],
   ['junji', 'junji.cl'],
-  ['fundacion inte', 'integra.cl'],
+  ['fundacion integra', 'integra.cl'],
   ['junta nacional de jardines', 'junji.cl'],
+  ['junta nacional de auxilio escolar', 'junaeb.cl'],
   ['carabineros de chile', 'carabineros.cl'],
   ['policia de investigaciones', 'investigaciones.cl'],
   ['gendarmeria de chile', 'gendarmeria.gob.cl'],
+  ['servicio nacional de aduanas', 'aduana.cl'],
+  ['servicio agricola y ganadero', 'sag.gob.cl'],
+  ['corporacion nacional forestal', 'conaf.cl'],
+  ['instituto nacional de estadisticas', 'ine.cl'],
+  ['instituto de previsión social', 'ips.gob.cl'],
+  ['instituto de seguridad laboral', 'isl.gob.cl'],
+  ['sercotec', 'sercotec.cl'],
+  ['corfo', 'corfo.cl'],
+  ['sence', 'sence.cl'],
+  ['conadi', 'conadi.gob.cl'],
+  ['sernac', 'sernac.cl'],
+  ['sernapesca', 'sernapesca.cl'],
+  ['sernatur', 'sernatur.cl'],
+  ['sernameg', 'sernameg.gob.cl'],
+  ['dipres', 'dipres.gob.cl'],
+  ['cgr', 'contraloria.cl'],
   ['municipalidad de santiago', 'municipalidaddesantiago.cl'],
   ['municipalidad de puente alto', 'mpuentealto.cl'],
   ['municipalidad de maipu', 'maipu.cl'],
   ['municipalidad de la florida', 'laflorida.cl'],
+  ['municipalidad de las condes', 'lascondes.cl'],
+  ['municipalidad de providencia', 'providencia.cl'],
+  ['municipalidad de vitacura', 'vitacura.cl'],
+  ['municipalidad de nunoa', 'nunoa.cl'],
+  ['municipalidad de la reina', 'lareina.cl'],
+  ['municipalidad de penalolen', 'penalolen.cl'],
+  ['municipalidad de san bernardo', 'sanbernardo.cl'],
+  ['municipalidad de concepcion', 'concepcion.cl'],
+  ['municipalidad de valparaiso', 'munivalparaiso.cl'],
+  ['municipalidad de vina del mar', 'munivina.cl'],
+  ['municipalidad de temuco', 'temuco.cl'],
+  ['municipalidad de antofagasta', 'municipalidadantofagasta.cl'],
+  ['municipalidad de la serena', 'laserena.cl'],
+  ['municipalidad de iquique', 'municipioiquique.cl'],
+  ['municipalidad de arica', 'municipalidadarica.cl'],
   ['hospital clinico', 'redsalud.gob.cl'],
 ];
+
+// Cache de resolución para evitar recalcular en cada renderCard.
+const _LOGO_CACHE = new Map();
 
 function imgFavFallback(img) {
   const fallback = img.dataset.fallback || '🏢';
@@ -1233,24 +1305,73 @@ function dominioDesdeUrl(url) {
 function dominioInstitucionalPorNombre(nombreInstitucion) {
   const key = comunaNormalizada(nombreInstitucion || '');
   if (!key) return '';
-  const hit = DOMINIOS_INSTITUCIONALES_REFERENCIA.find(([needle]) => key.includes(needle));
-  return hit ? hit[1] : '';
+  // Preferimos la coincidencia más larga para evitar falsos positivos cortos
+  // (p. ej. "ministerio" choca con muchos, pero "ministerio de salud" es preciso).
+  let best = null;
+  for (const [needle, domain] of DOMINIOS_INSTITUCIONALES_REFERENCIA) {
+    if (key.includes(needle) && (!best || needle.length > best.needle.length)) {
+      best = { needle, domain };
+    }
+  }
+  return best ? best.domain : '';
+}
+
+function normalizarDominio(dominio) {
+  return (dominio || '').trim().toLowerCase().replace(/^www\./, '');
 }
 
 function resolverDominioInstitucional(oferta) {
-  const oficial = dominioDesdeUrl(oferta?.institucion_url_empleo || '');
-  if (oficial) return { domain: oficial, confiable: true, fuente: 'Dominio oficial declarado por la institución' };
+  const cacheKey = [
+    oferta?.institucion_id || '',
+    oferta?.institucion || '',
+    oferta?.institucion_sitio_web || '',
+    oferta?.institucion_url_empleo || '',
+    oferta?.url_oferta || '',
+  ].join('|');
+  if (_LOGO_CACHE.has(cacheKey)) return _LOGO_CACHE.get(cacheKey);
 
-  const dominioOferta = dominioDesdeUrl(oferta?.url_oferta || '');
-  if (dominioOferta && ![...PORTALES_EMPLEO].some((p) => dominioOferta.endsWith(p))) {
-    return { domain: dominioOferta, confiable: true, fuente: 'Dominio directo de la oferta institucional' };
+  // 1. Sitio web oficial expuesto por la API desde el catálogo maestro.
+  //    Es la fuente más confiable: nunca resuelve al portal intermediario.
+  const sitioApi = normalizarDominio(dominioDesdeUrl(oferta?.institucion_sitio_web || '') || oferta?.institucion_sitio_web || '');
+  if (sitioApi && !esDominioPortal(sitioApi)) {
+    const res = { domain: sitioApi, confiable: true, fuente: 'Sitio web oficial declarado en catálogo institucional' };
+    _LOGO_CACHE.set(cacheKey, res);
+    return res;
   }
 
-  const porNombre = dominioInstitucionalPorNombre(oferta?.institucion || '');
-  if (porNombre) return { domain: porNombre, confiable: true, fuente: 'Dominio institucional sugerido por catálogo de referencia' };
+  // 2. url_empleo declarada en la tabla instituciones: aceptable sólo si NO
+  //    es un portal intermediario (empleospublicos.cl, trabajando, buk, etc.).
+  const oficial = normalizarDominio(dominioDesdeUrl(oferta?.institucion_url_empleo || ''));
+  if (oficial && !esDominioPortal(oficial)) {
+    const res = { domain: oficial, confiable: true, fuente: 'Dominio oficial declarado por la institución' };
+    _LOGO_CACHE.set(cacheKey, res);
+    return res;
+  }
 
-  if (dominioOferta) return { domain: dominioOferta, confiable: false, fuente: 'Portal externo de intermediación' };
-  return { domain: '', confiable: false, fuente: 'Sin dominio verificable' };
+  // 3. Dominio directo de la URL de la oferta: confiable si la institución
+  //    publica en su propio dominio y no pasa por un portal.
+  const dominioOferta = normalizarDominio(dominioDesdeUrl(oferta?.url_oferta || ''));
+  if (dominioOferta && !esDominioPortal(dominioOferta)) {
+    const res = { domain: dominioOferta, confiable: true, fuente: 'Dominio directo de la oferta institucional' };
+    _LOGO_CACHE.set(cacheKey, res);
+    return res;
+  }
+
+  // 4. Catálogo curado por nombre normalizado (fallback robusto para ofertas
+  //    intermediadas cuando el backend no trajo institucion_sitio_web).
+  const porNombre = dominioInstitucionalPorNombre(oferta?.institucion || '');
+  if (porNombre) {
+    const res = { domain: porNombre, confiable: true, fuente: 'Dominio institucional sugerido por catálogo curado' };
+    _LOGO_CACHE.set(cacheKey, res);
+    return res;
+  }
+
+  // 5. Fallback visual neutro (sin logo): mejor mostrar ícono de sector que
+  //    usar el logo de un portal intermediario. NUNCA devolvemos el dominio
+  //    del portal como si fuera la institución.
+  const res = { domain: '', confiable: false, fuente: 'Sin dominio institucional verificable' };
+  _LOGO_CACHE.set(cacheKey, res);
+  return res;
 }
 
 function getInstIcon(oferta) {
@@ -2109,22 +2230,22 @@ async function abrirModal(ofertaId) {
     document.getElementById('modal-btn-postular')?.focus();
   }, 50);
 
-  // Reset de contenido mientras carga
+  // Reset de contenido mientras carga (orden: fechas → ubicación → contrato → jornada → renta)
   document.getElementById('modal-kicker').textContent = 'Cargando…';
   document.getElementById('modal-cargo').textContent = '';
   document.getElementById('modal-badges').innerHTML = '';
-  document.getElementById('modal-renta').textContent = '—';
+  document.getElementById('modal-fecha-publicacion').textContent = '—';
+  document.getElementById('modal-fecha-cierre').textContent = '—';
+  document.getElementById('modal-ubicacion').textContent = '—';
   document.getElementById('modal-tipo-contrato').textContent = '—';
   document.getElementById('modal-jornada').textContent = '—';
-  document.getElementById('modal-ubicacion').textContent = '—';
-  document.getElementById('modal-fecha-cierre').textContent = '—';
-  document.getElementById('modal-fecha-publicacion').textContent = '—';
-  document.getElementById('summary-item-renta').hidden = false;
+  document.getElementById('modal-renta').textContent = '—';
+  document.getElementById('summary-item-publicacion').hidden = false;
+  document.getElementById('summary-item-cierre').hidden = false;
+  document.getElementById('summary-item-ubicacion').hidden = false;
   document.getElementById('summary-item-tipo').hidden = false;
   document.getElementById('summary-item-jornada').hidden = false;
-  document.getElementById('summary-item-ubicacion').hidden = false;
-  document.getElementById('summary-item-cierre').hidden = false;
-  document.getElementById('summary-item-publicacion').hidden = false;
+  document.getElementById('summary-item-renta').hidden = false;
   const summaryNote = document.getElementById('modal-summary-note');
   summaryNote.hidden = true;
   summaryNote.textContent = '';
@@ -2159,16 +2280,11 @@ async function abrirModal(ofertaId) {
       regionCompleta ? `<span class="badge badge-region">🗺 ${escHtml(regionCompleta)}${ciudad ? ' · ' + escHtml(ciudad) : ''}</span>` : '',
     ].join('');
 
-    // Alerta de plazo
+    // Alerta de plazo — aviso breve de urgencia, sin repetir datos del resumen
     alertBox.className = 'modal-plazo-alert ' + detalle.clase;
     document.getElementById('modal-plazo-icon').textContent = detalle.icon;
     document.getElementById('modal-plazo-label').textContent = detalle.label;
-    const fechaCierre = o.fecha_cierre ? formatFecha(o.fecha_cierre) : '';
-    const frescuraMod = frescuraTexto(o);
-    const partes = [detalle.sub];
-    if (fechaCierre) partes.push(`Fecha de cierre: ${fechaCierre}`);
-    if (frescuraMod) partes.push(frescuraMod);
-    document.getElementById('modal-plazo-fecha').textContent = partes.join(' · ');
+    document.getElementById('modal-plazo-fecha').textContent = detalle.sub || '';
 
     // Resumen ejecutivo (prioriza datos útiles y oculta ruido)
     const jornadaTexto = jornadaValida(o.jornada);
@@ -2176,12 +2292,12 @@ async function abrirModal(ofertaId) {
     const fechaCierreLabel = o.fecha_cierre ? formatFecha(o.fecha_cierre) : 'No informada';
     const fechaPublicacionLabel = o.fecha_publicacion ? formatFecha(o.fecha_publicacion) : 'No informada';
     const visibleCount = [
-      _setSummaryField('summary-item-renta', renta || ''),
+      _setSummaryField('summary-item-publicacion', fechaPublicacionLabel),
+      _setSummaryField('summary-item-cierre', fechaCierreLabel),
+      _setSummaryField('summary-item-ubicacion', ubicacion || ''),
       _setSummaryField('summary-item-tipo', tipoLabel || ''),
       _setSummaryField('summary-item-jornada', jornadaTexto || ''),
-      _setSummaryField('summary-item-ubicacion', ubicacion || ''),
-      _setSummaryField('summary-item-cierre', fechaCierreLabel),
-      _setSummaryField('summary-item-publicacion', fechaPublicacionLabel),
+      _setSummaryField('summary-item-renta', renta || ''),
     ].filter(Boolean).length;
     if (visibleCount < 3) {
       summaryNote.textContent = 'Algunos datos no fueron informados claramente por la fuente original. Revisa las bases para validar el detalle completo.';

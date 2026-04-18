@@ -450,12 +450,145 @@ def dias_restantes(value: date | None) -> int | None:
     return (value - date.today()).days
 
 
+# ───── Resolución de sitio web real por institución ──────────────────────────
+# El catálogo JSON (repositorio_instituciones_publicas_chile.json) contiene
+# `sitio_web` — el dominio oficial de la institución — incluso cuando su
+# `url_empleo` apunta al portal intermediario (empleospublicos.cl, etc.).
+# Esa información NO vive en la tabla `instituciones`, así que la cargamos
+# en memoria a partir del JSON y la cacheamos por mtime del archivo.
+
+_PORTAL_DOMAINS_LOWER = {
+    "empleospublicos.cl", "www.empleospublicos.cl",
+    "trabajando.com", "www.trabajando.com",
+    "trabajando.cl", "www.trabajando.cl",
+    "hiringroom.com", "www.hiringroom.com",
+    "buk.cl", "www.buk.cl",
+    "chileatiende.cl", "www.chileatiende.cl",
+    "empleos.gob.cl", "www.empleos.gob.cl",
+    "postulaciones.cl", "www.postulaciones.cl",
+    "sistemadeconcursos.cl", "www.sistemadeconcursos.cl",
+    "mitrabajodigno.cl", "www.mitrabajodigno.cl",
+    "ucampus.net", "www.ucampus.net",
+}
+
+_sitio_web_cache: dict[str, Any] = {"mtime": 0.0, "by_name": {}, "by_id": {}}
+
+
+def _fold_institution_name(value: str | None) -> str:
+    if not value:
+        return ""
+    import unicodedata
+    folded = unicodedata.normalize("NFD", value)
+    folded = "".join(ch for ch in folded if unicodedata.category(ch) != "Mn")
+    folded = re.sub(r"[^a-zA-Z0-9\s]", " ", folded.lower())
+    folded = re.sub(r"\s+", " ", folded).strip()
+    return folded
+
+
+def _extract_root_domain(url: str | None) -> str | None:
+    if not url:
+        return None
+    try:
+        from urllib.parse import urlparse
+        host = urlparse(url if "://" in url else f"https://{url}").hostname or ""
+    except Exception:
+        return None
+    host = host.strip().lower().lstrip(".")
+    if not host:
+        return None
+    if host in _PORTAL_DOMAINS_LOWER:
+        return None
+    # Remueve www. para que logo.clearbit.com tenga mejor hit rate.
+    return host[4:] if host.startswith("www.") else host
+
+
+def _load_sitio_web_map() -> dict[str, Any]:
+    """Mapea nombre normalizado de institución → dominio oficial (sitio_web)."""
+    if not _CATALOG_PATH.exists():
+        return _sitio_web_cache
+    try:
+        mtime = _CATALOG_PATH.stat().st_mtime
+    except OSError:
+        return _sitio_web_cache
+    if _sitio_web_cache["mtime"] == mtime and _sitio_web_cache["by_name"]:
+        return _sitio_web_cache
+    try:
+        payload = json.loads(_CATALOG_PATH.read_text(encoding="utf-8-sig"))
+    except Exception:
+        return _sitio_web_cache
+    insts = payload.get("instituciones") if isinstance(payload, dict) else payload
+    if not isinstance(insts, list):
+        return _sitio_web_cache
+    by_name: dict[str, str] = {}
+    by_id: dict[int, str] = {}
+    for inst in insts:
+        domain = _extract_root_domain(inst.get("sitio_web"))
+        if not domain:
+            continue
+        nombre = inst.get("nombre")
+        if nombre:
+            key = _fold_institution_name(nombre)
+            if key:
+                by_name.setdefault(key, domain)
+        sigla = inst.get("sigla")
+        if sigla:
+            key_sigla = _fold_institution_name(sigla)
+            if key_sigla:
+                by_name.setdefault(key_sigla, domain)
+        inst_id = inst.get("id")
+        if isinstance(inst_id, int):
+            by_id.setdefault(inst_id, domain)
+    _sitio_web_cache["mtime"] = mtime
+    _sitio_web_cache["by_name"] = by_name
+    _sitio_web_cache["by_id"] = by_id
+    return _sitio_web_cache
+
+
+def resolve_institucion_sitio_web(
+    institucion: str | None, institucion_id: int | None = None
+) -> str | None:
+    """Devuelve el dominio oficial (sin esquema) de la institución o None.
+
+    Estrategia:
+      1. Match por `institucion_id` en el catálogo (más preciso).
+      2. Match por nombre normalizado.
+      3. Match por contención parcial (p. ej. "Municipalidad de X" contiene
+         una entrada "Municipalidad de X" del catálogo).
+    """
+    cache = _load_sitio_web_map()
+    by_id = cache.get("by_id") or {}
+    by_name = cache.get("by_name") or {}
+    if isinstance(institucion_id, int) and institucion_id in by_id:
+        return by_id[institucion_id]
+    key = _fold_institution_name(institucion)
+    if not key:
+        return None
+    if key in by_name:
+        return by_name[key]
+    # Match por contención: escoger la entrada del catálogo con la clave más
+    # larga contenida en el nombre consultado (evita falsos positivos cortos).
+    best: tuple[int, str] | None = None
+    for catalog_key, domain in by_name.items():
+        if len(catalog_key) < 10:
+            continue
+        if catalog_key in key:
+            if best is None or len(catalog_key) > best[0]:
+                best = (len(catalog_key), domain)
+    return best[1] if best else None
+
+
 def serialize_offer(row: dict[str, Any]) -> dict[str, Any]:
     data = dict(row)
     data["dias_restantes"] = dias_restantes(data.get("fecha_cierre"))
     estado = str(data.get("estado") or "unknown").strip().lower()
     data["estado_normalizado"] = estado
     data["estado_legacy"] = STATUS_LEGACY_MAP.get(estado, "desconocido")
+    # Expone el sitio web real de la institución (desde el catálogo JSON), para
+    # que el frontend pueda resolver el logo correcto aunque la oferta venga
+    # intermediada por Empleos Públicos u otros portales.
+    data["institucion_sitio_web"] = resolve_institucion_sitio_web(
+        data.get("institucion"), data.get("institucion_id")
+    )
     return data
 
 

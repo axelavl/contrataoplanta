@@ -97,6 +97,45 @@
   // prosa/redacción (verbos conjugados, conectores) → no se divide.
   const PROSE_TOKENS = /\b(es|son|debe|deberá|debera|tendrá|tendra|tiene|requiere|corresponde|corresponderá|correspondera|realizar|realizará|realizara|evaluar|evaluará|evaluara|coordinar|coordinará|coordinara|gestionar|supervisar|elaborar|elaborará|elaborara|apoyar|colaborar|desarrollar|mantener|velar|asegurar|implementar|participar|liderar|además|ademas|sin embargo|por lo tanto|de acuerdo|así como|asi como|entre otros|entre otras)\b/i;
 
+  // Verbos de acción en infinitivo: señal de inicio de función/responsabilidad.
+  // Cada función típicamente empieza con uno de estos. Cuando aparecen ≥2 en
+  // un mismo párrafo, podemos partirlo en viñetas con alta certeza.
+  const ACTION_VERBS = [
+    'apoyar', 'realizar', 'registrar', 'elaborar', 'coordinar', 'brindar',
+    'ejecutar', 'supervisar', 'gestionar', 'desempeñar', 'desempenar',
+    'asistir', 'participar', 'colaborar', 'controlar', 'velar', 'monitorear',
+    'monitorizar', 'analizar', 'redactar', 'mantener', 'asegurar',
+    'implementar', 'liderar', 'desarrollar', 'revisar', 'programar',
+    'atender', 'identificar', 'organizar', 'planificar', 'proponer',
+    'generar', 'preparar', 'entregar', 'evaluar', 'tramitar', 'documentar',
+    'proveer', 'acompañar', 'acompanar', 'archivar', 'tomar', 'verificar',
+    'proyectar', 'estudiar', 'diseñar', 'disenar', 'formular', 'canalizar',
+    'comunicar', 'informar', 'reportar', 'facilitar', 'sistematizar',
+    'consolidar', 'resolver', 'derivar', 'gestionar', 'fiscalizar',
+    'instruir', 'capacitar', 'orientar', 'promover', 'administrar',
+    'digitar', 'notificar', 'entregar', 'recibir', 'solicitar', 'emitir',
+    'custodiar'
+  ];
+  const ACTION_VERB_SET = new Set(ACTION_VERBS);
+  const ACTION_VERBS_PATTERN = Array.from(ACTION_VERB_SET).sort(function (a, b) {
+    return b.length - a.length;
+  }).map(function (v) {
+    // Mayúscula inicial opcional + acepta tildes en primera letra.
+    return v.replace(/^(\w)/, function (c) {
+      var map = { a: '[AaÁá]', e: '[EeÉé]', i: '[IiÍí]', o: '[OoÓó]', u: '[UuÚú]' };
+      return map[c.toLowerCase()] || ('[' + c.toUpperCase() + c.toLowerCase() + ']');
+    });
+  }).join('|');
+  // Ej: \b(Apoyar|Realizar|...)\b
+  const ACTION_VERB_LEAD_RE = new RegExp('\\b(' + ACTION_VERBS_PATTERN + ')\\b', 'g');
+
+  // Conectores que pueden aparecer dentro de un ítem Title-Case sin romperlo.
+  const TITLE_CASE_CONNECTORS = new Set([
+    'de', 'del', 'en', 'con', 'para', 'y', 'e', 'o', 'a', 'la', 'el',
+    'los', 'las', 'al', 'por', 'según', 'segun', 'sobre', 'entre',
+    'u', 'vs', 'e/'
+  ]);
+
   // ─────────────────────────────────────────────────────────────
   // 2. Normalización
   // ─────────────────────────────────────────────────────────────
@@ -655,6 +694,228 @@
   }
 
   // ─────────────────────────────────────────────────────────────
+  // 7.b Heurísticas de salvataje: texto corrido → lista con ítems
+  //
+  // Objetivo: cuando un párrafo llega mal formateado desde el origen y el
+  // encabezado previo sugiere que debería ser una lista (funciones,
+  // especialización, competencias, etc.), intentamos separarlo con reglas
+  // conservadoras. Si la certeza es baja, devolvemos null y el párrafo
+  // se renderiza tal cual.
+  // ─────────────────────────────────────────────────────────────
+
+  // Nombre normalizado del encabezado previo → qué tipo de splitting aplicar.
+  function sectionSplitHint(headingText) {
+    if (!headingText) return null;
+    var key = headingKey(headingText);
+    if (/funci[oó]n|responsabilidad|actividad|tarea/.test(key)) return 'verbs';
+    if (/especializaci[oó]n|capacitaci[oó]n|curso|competencia|habilidad|conocimiento|formaci[oó]n/.test(key)) return 'titlecase';
+    if (/requisito|perfil|experiencia|documento/.test(key)) return 'flexible';
+    return null;
+  }
+
+  // Separa un párrafo por verbos de acción cuando hay ≥2 y se detectan
+  // fronteras claras. Regla principal: "frase. Verbo" se convierte en ítem.
+  // Fallback: si ≥3 verbos están presentes y no hay puntuación fuerte entre
+  // ellos, partimos en cada ocurrencia.
+  function splitByActionVerbs(text) {
+    if (!text) return null;
+    var matches = text.match(ACTION_VERB_LEAD_RE);
+    if (!matches || matches.length < 2) return null;
+    // Limitación: si hay prosa clara (primera persona conjugada, etc.) abortar.
+    if (/\b(soy|somos|fui|fuimos|seré|serán|será|tendré|tendrás)\b/i.test(text)) return null;
+
+    // 1) Split por "puntuación + Verbo" (señal fuerte).
+    var working = text.replace(
+      new RegExp('([.;])\\s+(?=(?:' + ACTION_VERBS_PATTERN + ')\\b)', 'g'),
+      '$1\n'
+    );
+
+    // 2) Si lo anterior no generó suficientes saltos y detectamos ≥3 verbos
+    //    en una sola línea sin puntuación intermedia, partimos antes de cada
+    //    verbo (evitando el primero).
+    var lines = working.split('\n').map(trim).filter(Boolean);
+    if (lines.length < 2) {
+      // Sin puntuación entre verbos: intento agresivo pero validado.
+      var parts = [];
+      var lastIdx = 0;
+      var re = new RegExp('(^|\\s)(' + ACTION_VERBS_PATTERN + ')\\b', 'g');
+      var m;
+      var hits = [];
+      while ((m = re.exec(text)) !== null) {
+        hits.push({ idx: m.index + (m[1] ? m[1].length : 0), verb: m[2] });
+      }
+      if (hits.length < 3) return null;
+      for (var i = 0; i < hits.length; i++) {
+        var start = hits[i].idx;
+        var end = (i + 1 < hits.length) ? hits[i + 1].idx : text.length;
+        parts.push(text.slice(start, end).trim().replace(/[.;,\s]+$/, ''));
+        lastIdx = end;
+      }
+      lines = parts.filter(Boolean);
+    }
+
+    // Validaciones conservadoras
+    if (lines.length < 2) return null;
+    if (lines.some(function (l) { return l.length > 320; })) return null;
+    // Cada ítem debe empezar (o casi) con un verbo de acción reconocido.
+    var startsWithVerb = function (l) {
+      var first = (l.match(/^[A-Za-zÁÉÍÓÚÑáéíóúñ]+/) || [''])[0].toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return ACTION_VERB_SET.has(first) ||
+        ACTION_VERB_SET.has(first.replace(/n$/, 'ñ')); // "acompanar" → "acompañar"
+    };
+    var verbItems = lines.filter(startsWithVerb).length;
+    if (verbItems < Math.max(2, Math.ceil(lines.length * 0.7))) return null;
+    return lines.map(cleanItem);
+  }
+
+  // Separa un párrafo que es concatenación de ítems en Title Case sin
+  // puntuación entre ellos (ej.: "Atención de Público Gestión Documental
+  // Cursos técnicos ..."). Cada ítem comienza con mayúscula y puede contener
+  // conectores en minúscula.
+  function splitTitleCaseRunOn(text) {
+    if (!text) return null;
+    // Si ya tiene viñetas, saltos de línea o abundante puntuación, no tocar.
+    if (/\n/.test(text)) return null;
+    if ((text.match(/[.!?;]/g) || []).length >= 2) return null;
+    if (text.length < 60) return null;
+
+    // Tokenización preservando paréntesis/corchetes.
+    var rawTokens = text.match(/\([^)]*\)|\[[^\]]*\]|[^\s]+/g) || [];
+    if (rawTokens.length < 8) return null;
+
+    // Debe empezar con mayúscula.
+    if (!/^[A-ZÁÉÍÓÚÑ]/.test(rawTokens[0])) return null;
+
+    var items = [];
+    var current = [];
+    var isCap = function (tok) { return /^[A-ZÁÉÍÓÚÑ]/.test(tok); };
+    var isConnector = function (tok) {
+      return TITLE_CASE_CONNECTORS.has(tok.toLowerCase());
+    };
+    var isParen = function (tok) { return /^[(\[]/.test(tok); };
+
+    for (var i = 0; i < rawTokens.length; i++) {
+      var tok = rawTokens[i];
+      // Paréntesis siempre se adhieren al ítem actual.
+      if (isParen(tok)) {
+        current.push(tok);
+        continue;
+      }
+      if (isCap(tok) && current.length >= 2) {
+        var last = current[current.length - 1];
+        // Si el token previo es un conector, NO cortamos (ej: "Manejo de ERP").
+        if (isConnector(last)) {
+          current.push(tok);
+          continue;
+        }
+        items.push(current.join(' '));
+        current = [tok];
+        continue;
+      }
+      current.push(tok);
+    }
+    if (current.length) items.push(current.join(' '));
+
+    // Fusiona ítems finales de una sola palabra (ej. "ChileCompra") con el
+    // ítem previo. Esto evita cortar marcas/compuestos que quedaron sueltos
+    // al final.
+    while (items.length >= 2) {
+      var tail = items[items.length - 1];
+      if (/\s/.test(tail)) break;
+      if (tail.length < 4) break;
+      items[items.length - 2] = items[items.length - 2] + ' ' + tail;
+      items.pop();
+    }
+
+    // Corrige el patrón "PalabraMayus OtraMayus resto..." al final: suele
+    // significar que la primera mayúscula era cola del ítem anterior (marca,
+    // acrónimo) y el resto es un ítem nuevo independiente.
+    //   "ChileCompra Probidad administrativa y transparencia"
+    //   → cola "ChileCompra" pega en el ítem previo; nuevo ítem
+    //   "Probidad administrativa y transparencia".
+    if (items.length >= 2) {
+      var lastItem = items[items.length - 1];
+      var lastMatch = lastItem.match(/^([A-ZÁÉÍÓÚÑ][\wáéíóúñ\-]{2,19})\s+([A-ZÁÉÍÓÚÑ][a-záéíóúñ][^]*)$/);
+      if (lastMatch) {
+        items[items.length - 2] = items[items.length - 2] + ' ' + lastMatch[1];
+        items[items.length - 1] = lastMatch[2].trim();
+      }
+    }
+
+    // Limpia puntuación final de cada ítem antes de validar (la puntuación
+    // terminal del párrafo completo NO debe invalidar el splitting).
+    items = items.map(function (it) { return it.trim().replace(/[.,;:]+$/, ''); });
+
+    // Validaciones conservadoras
+    if (items.length < 4) return null;
+    var hasBadItem = items.some(function (it) {
+      var words = it.trim().split(/\s+/);
+      if (words.length > 10) return true;
+      if (it.length > 90) return true;
+      if (/[.!?]/.test(it)) return true;
+      return false;
+    });
+    if (hasBadItem) return null;
+
+    // Si >15% de ítems resultantes son de 1 palabra, baja certeza → abortar.
+    var singles = items.filter(function (it) { return it.split(/\s+/).length === 1; }).length;
+    if (singles / items.length > 0.15) return null;
+
+    return items.map(cleanItem);
+  }
+
+  // Fallback tolerante para encabezados de "requisito/perfil": si existe un
+  // patrón claro de texto corrido con muchos verbos, tratarlo como funciones;
+  // si parece listado Title Case, tratarlo como tal; si no, dejar como está.
+  function splitFlexibleParagraph(text) {
+    var byVerbs = splitByActionVerbs(text);
+    if (byVerbs) return byVerbs;
+    var byTitleCase = splitTitleCaseRunOn(text);
+    if (byTitleCase) return byTitleCase;
+    return null;
+  }
+
+  // Recorre los bloques estructurados y convierte párrafos sueltos en listas
+  // cuando el encabezado previo sugiere contenido listable.
+  function postProcessListyParagraphs(blocks) {
+    if (!blocks || !blocks.length) return blocks;
+    var out = [];
+    var lastHeading = '';
+    for (var i = 0; i < blocks.length; i++) {
+      var b = blocks[i];
+      if (b.type === 'heading') {
+        lastHeading = b.text;
+        out.push(b);
+        continue;
+      }
+      if (b.type !== 'paragraph') {
+        out.push(b);
+        continue;
+      }
+      var hint = sectionSplitHint(lastHeading);
+      var items = null;
+      if (hint === 'verbs') items = splitByActionVerbs(b.text);
+      else if (hint === 'titlecase') items = splitTitleCaseRunOn(b.text);
+      else if (hint === 'flexible') items = splitFlexibleParagraph(b.text);
+      // Sin pista de contexto: sólo intentamos verbos cuando hay muy alta certeza
+      // (≥4 verbos). Protege frente a falsos positivos en párrafos normales.
+      else {
+        var verbMatches = (b.text.match(ACTION_VERB_LEAD_RE) || []).length;
+        if (verbMatches >= 4 && b.text.length > 160) {
+          items = splitByActionVerbs(b.text);
+        }
+      }
+      if (items && items.length >= 2) {
+        out.push({ type: 'list', style: 'bullet', items: items, tone: 'neutral' });
+      } else {
+        out.push(b);
+      }
+    }
+    return out;
+  }
+
+  // ─────────────────────────────────────────────────────────────
   // 8. API pública
   // ─────────────────────────────────────────────────────────────
   function format(rawText, options) {
@@ -672,6 +933,7 @@
     t = collapseSplitKnownHeaders(t.split('\n')).join('\n');
     t = t.split('\n').map(trim).filter(Boolean).join('\n');
     var blocks = splitIntoStructuredBlocks(t);
+    blocks = postProcessListyParagraphs(blocks);
     return renderStructuredContent(blocks, options || {});
   }
 
@@ -696,7 +958,11 @@
     format: format,
     normalize: normalizeText,
     splitBlocks: splitIntoStructuredBlocks,
-    installToggleHandler: installToggleHandler
+    installToggleHandler: installToggleHandler,
+    // Helpers de parsing expuestos para pruebas/reúso.
+    splitByActionVerbs: splitByActionVerbs,
+    splitTitleCaseRunOn: splitTitleCaseRunOn,
+    splitFlexibleParagraph: splitFlexibleParagraph
   };
 
   // Compatibilidad con llamadas existentes: truncado por defecto activado.
