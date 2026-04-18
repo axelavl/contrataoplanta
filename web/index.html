@@ -2660,8 +2660,17 @@ function abrirIG(oferta, url, ogUrl) {
   const modal = document.getElementById('ig-modal');
   const dl = document.getElementById('ig-descargar');
   const cp = document.getElementById('ig-copiar');
-  dl.href = ogUrl;
-  dl.setAttribute('download', `oferta-${oferta.id}.png`);
+  // Para Instagram usamos la variante cuadrada 1080x1080 (más natural en
+  // feed y stories). `ogUrl` llega con el formato por defecto (horizontal
+  // 1200x630), así que forzamos la query `format=square`.
+  let igUrl = ogUrl;
+  try {
+    const u = new URL(ogUrl, window.location.origin);
+    u.searchParams.set('format', 'square');
+    igUrl = u.toString();
+  } catch { /* fallback: deja la URL tal cual */ }
+  dl.href = igUrl;
+  dl.setAttribute('download', `oferta-${oferta.id}-instagram.png`);
   cp.classList.remove('is-copied');
   cp.textContent = '📋 Copiar enlace';
   cp.onclick = async () => {
