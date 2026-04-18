@@ -3,36 +3,41 @@
     <div class="nav-inner">
       <a href="index.html" class="logo" aria-label="Inicio · contrata o planta punto cl">
         <span class="logo-mark" aria-hidden="true">
-          <!-- Isotipo: pórtico institucional (tres columnas + frontón) con
-               acento dorado que remite al carácter confiable y público del sitio.
-               Sustituye el antiguo monograma "CP" plano. -->
-          <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true">
-            <defs>
-              <linearGradient id="logoMarkGrad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-                <stop offset="0" stop-color="#2F6BC4"/>
-                <stop offset="1" stop-color="#0A2E6E"/>
-              </linearGradient>
-            </defs>
-            <rect x="1" y="1" width="30" height="30" rx="9" fill="url(#logoMarkGrad)"/>
-            <path d="M5.5 11.5 L16 6.5 L26.5 11.5" stroke="#FAFAF8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-            <rect x="7.6"  y="12.5" width="2.6" height="9.4" rx="0.6" fill="#FAFAF8"/>
-            <rect x="14.7" y="12.5" width="2.6" height="9.4" rx="0.6" fill="#FAFAF8"/>
-            <rect x="21.8" y="12.5" width="2.6" height="9.4" rx="0.6" fill="#FAFAF8"/>
-            <rect x="5.5"  y="22"   width="21"  height="2.2" rx="0.6" fill="#FAFAF8"/>
-            <circle cx="16" cy="6.4" r="1.35" fill="#E8A820"/>
+          <!-- Logo "o" itálica con punto de acento — identidad v2 -->
+          <svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true">
+            <rect class="logo-bg" width="44" height="44" rx="11"/>
+            <g transform="translate(22 22) skewX(-10) translate(-22 -22)">
+              <circle class="logo-ring" cx="21" cy="22.5" r="9" fill="none" stroke-width="3.2"/>
+              <circle class="logo-dot" cx="29.5" cy="15" r="2.5"/>
+            </g>
           </svg>
         </span>
         <span class="logo-wordmark">
           <span class="logo-name">contrata <em>o</em> planta <em class="logo-domain-muted">.cl</em></span>
-          <span class="logo-tagline">empleo público confiable</span>
+          <span class="logo-tagline">La plataforma laboral del sector público chileno</span>
         </span>
       </a>
+
       <div class="nav-links">
-        <a href="index.html" data-nav="home">Buscar empleos</a>
-        <a href="favoritos.html" id="nav-favoritos" class="nav-link-favs" data-nav="favoritos">♡ Mis favoritos</a>
+        <a href="index.html" data-nav="home">Buscar</a>
+        <a href="favoritos.html" id="nav-favoritos" class="nav-link-favs" data-nav="favoritos">♡ Favoritos</a>
         <a href="estadisticas.html" data-nav="estadisticas">Estadísticas</a>
-        <a href="faq.html" data-nav="faq">Preguntas frecuentes</a>
         <a href="ruta-ingreso-empleo-publico.html" data-nav="ruta">Ruta de ingreso</a>
+        <a href="faq.html" data-nav="faq">FAQ</a>
+
+        <div class="theme-toggle" role="group" aria-label="Cambiar tema">
+          <button id="light-btn" type="button" aria-label="Tema claro" title="Tema claro">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="4"></circle>
+              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+            </svg>
+          </button>
+          <button id="dark-btn" type="button" aria-label="Tema oscuro" title="Tema oscuro">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   </nav>

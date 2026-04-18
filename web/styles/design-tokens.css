@@ -1,32 +1,134 @@
+/* ══════════════════════════════════════════════════════════════════════
+   design-tokens.css — Sistema de tokens contrata o planta .cl
+   v2 (redesign) · Mantiene los nombres anteriores (--azul, --cielo,
+   --acento, etc.) como aliases para no romper CSS existente, y añade
+   la nueva paleta canónica (--navy, --gold, etc.) + soporte dark mode.
+   ══════════════════════════════════════════════════════════════════════ */
+
 :root {
+  /* ── Tipografía ──────────────────────────────────────────────────── */
   --font-sans: 'Inter', system-ui, sans-serif;
-  --font-serif: 'Lora', Georgia, serif;
+  --font-serif: 'Fraunces', Georgia, serif;
 
-  --azul: #0A2E6E;
-  --azul-m: #1557C0;
-  --cielo: #1A6BCC;
-  --cielo-l: #D6E6F8;
-  --acento: #E8A820;
-  --acento-l: #FFF4D6;
+  /* ── NUEVA paleta canónica · modo claro ──────────────────────────── */
+  --bg: #FDFCF8;
+  --bg-subtle: #F3F0E6;
+  --bg-deeper: #EBE7D9;
+  --surface: #FFFFFF;
+  --surface-hover: #FBF9F3;
+  --border: #E5E1D2;
+  --border-soft: #EEEADC;
+  --border-strong: #D1CBB8;
 
-  --bg: #F5F4EF;
-  --bg2: #EDECEA;
-  --borde: #D9D7CF;
-  --blanco: #FAFAF8;
+  --navy-deep: #142E6B;      /* ribbon, footer */
+  --navy: #254BA0;           /* primario — CTAs, tabs, avatares */
+  --navy-bright: #2E58B5;    /* hover states */
+  --navy-80: #3057AA;
+  --navy-60: #5570BD;
+  --navy-ink: #0B1E48;       /* títulos */
+  --navy-tint: #E1E8F6;      /* fondo chips info, avatares */
 
-  --texto: #111827;
-  --texto2: #4B5563;
-  --texto3: #9CA3AF;
+  --gold: #C88724;
+  --gold-soft: #E5A946;
+  --gold-brilliant: #F2C26A; /* para texto sobre navy */
+  --gold-dim: #A66E1B;       /* eyebrow, detalles sutiles */
+  --gold-bg: #FBE4C0;
+  --gold-ink: #5C3A10;
 
-  --verde: #16A34A;
-  --verde-l: #DCFCE7;
-  --naran: #D97706;
-  --naran-l: #FEF3C7;
-  --rojo: #DC2626;
-  --rojo-l: #FEE2E2;
+  --sage: #2F6E4E;
+  --sage-soft: #DAEADE;
+  --terra: #B23B24;          /* urgencia crítica (cierra mañana) */
+  --terra-soft: #F6DDD5;
+  --amber: #C87A0C;          /* urgencia media (2-3 días) */
+  --amber-soft: #FBE4BE;
 
-  --sombra: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
+  --text: #18202F;
+  --text-80: #2E3445;
+  --text-60: #4B5167;
+  --text-40: #747B91;
+  --text-muted: #8E94A6;
+
+  --shadow-sm: 0 1px 2px rgba(14, 32, 70, 0.04);
+  --shadow: 0 1px 2px rgba(14, 32, 70, 0.04), 0 12px 28px rgba(14, 32, 70, 0.07);
+  --shadow-strong: 0 24px 48px rgba(14, 32, 70, 0.14);
+
+  /* Logo tokens — facilitan overrides por tema */
+  --logo-bg: var(--navy);
+  --logo-fg: var(--gold-brilliant);
+
+  /* ── ALIASES legacy · CSS existente sigue funcionando ────────────── */
+  --azul: var(--navy-deep);       /* era #0A2E6E */
+  --azul-m: var(--navy);          /* era #1557C0 */
+  --cielo: var(--navy);           /* era #1A6BCC */
+  --cielo-l: var(--navy-tint);    /* era #D6E6F8 */
+  --acento: var(--gold);          /* era #E8A820 */
+  --acento-l: var(--gold-bg);     /* era #FFF4D6 */
+  --bg2: var(--bg-subtle);        /* era #EDECEA */
+  --borde: var(--border);         /* era #D9D7CF */
+  --blanco: var(--surface);       /* era #FAFAF8 */
+  --texto: var(--text);           /* era #111827 */
+  --texto2: var(--text-60);       /* era #4B5563 */
+  --texto3: var(--text-40);       /* era #9CA3AF */
+  --verde: var(--sage);           /* era #16A34A */
+  --verde-l: var(--sage-soft);    /* era #DCFCE7 */
+  --naran: var(--amber);          /* era #D97706 */
+  --naran-l: var(--amber-soft);   /* era #FEF3C7 */
+  --rojo: var(--terra);           /* era #DC2626 */
+  --rojo-l: var(--terra-soft);    /* era #FEE2E2 */
+  --sombra: var(--shadow);
   --r: 10px;
   --r-l: 16px;
   --radius: 12px;
+
+  color-scheme: light;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   MODO OSCURO — tokens auditados para contraste WCAG AA
+   ══════════════════════════════════════════════════════════════════════ */
+:root[data-theme="dark"] {
+  --bg: #0A1426;
+  --bg-subtle: #10203D;
+  --bg-deeper: #0A1426;
+  --surface: #152847;
+  --surface-hover: #1C345A;
+  --border: #2A4068;
+  --border-soft: #1F3356;
+  --border-strong: #3B547F;
+
+  --navy-deep: #0A1426;
+  --navy: #3057AA;
+  --navy-bright: #3E68C4;
+  --navy-80: #2B4585;
+  --navy-60: #4A6AAD;
+  --navy-ink: #E5EDF9;
+  --navy-tint: rgba(127, 169, 221, 0.14);
+
+  --gold: #EAB858;
+  --gold-soft: #F5D289;
+  --gold-brilliant: #F5D289;
+  --gold-dim: #C99939;
+  --gold-bg: rgba(234, 184, 88, 0.14);
+  --gold-ink: #F5D289;
+
+  --sage: #8FCDA5;
+  --sage-soft: rgba(143, 205, 165, 0.16);
+  --terra: #EB8A75;
+  --terra-soft: rgba(235, 138, 117, 0.18);
+  --amber: #E5A946;
+  --amber-soft: rgba(229, 169, 70, 0.15);
+
+  --text: #ECE8DB;
+  --text-80: #DAD6C8;
+  --text-60: #B8C0D2;
+  --text-40: #9AA2B6;
+  --text-muted: #8B93A8;
+
+  --shadow-sm: 0 1px 0 rgba(255,255,255,0.03) inset;
+  --shadow: 0 1px 0 rgba(255,255,255,0.03) inset, 0 10px 24px rgba(0,0,0,0.35);
+
+  --logo-bg: var(--surface);
+  --logo-fg: var(--gold);
+
+  color-scheme: dark;
 }
