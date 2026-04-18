@@ -822,3 +822,268 @@ body, .hero, .buscador-wrap, .oferta-card, .widget, .filtro-tag, .ribbon {
   border-color: rgba(255, 255, 255, 0.1);
 }
 :root[data-theme="dark"] .oferta-logo img { background: rgba(255, 255, 255, 0.9); }
+
+/* ══════════════════════════════════════════════════════════════════════
+   BUSCADOR COMPACTO · colapsa a cargo + región + buscar
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Grid del form con el botón Buscar al final de la primera fila */
+.buscador-form {
+  display: grid !important;
+  grid-template-columns: 2.2fr 1fr 1fr 1fr auto !important;
+  gap: 14px !important;
+  align-items: end !important;
+}
+
+.btn-buscar-compact {
+  align-self: end;
+  height: 42px !important;
+  padding: 0 22px !important;
+  white-space: nowrap;
+}
+
+/* Campo comunas: mismo look que inputs/selects */
+.comunas-trigger {
+  background: var(--bg) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text) !important;
+  border-radius: 8px !important;
+  padding: 11px 14px !important;
+  font-size: 14.5px !important;
+  font-family: inherit !important;
+  font-weight: 400 !important;
+  text-align: left !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+}
+.comunas-trigger:hover { border-color: var(--navy-60) !important; }
+.comunas-trigger[aria-expanded="true"] {
+  border-color: var(--navy) !important;
+  box-shadow: 0 0 0 3px var(--navy-tint) !important;
+}
+.comunas-trigger-meta {
+  color: var(--text-60);
+  font-size: 12.5px;
+  margin-left: auto;
+}
+/* En dark consistency */
+:root[data-theme="dark"] .comunas-trigger {
+  background: var(--bg) !important;
+  border-color: var(--borde) !important;
+  color: var(--texto) !important;
+}
+
+/* Toggle "+ Más filtros" */
+.filtros-toggle-wrap {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-start;
+}
+.btn-filtros-mas {
+  background: transparent;
+  border: none;
+  color: var(--navy);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.15s;
+}
+.btn-filtros-mas:hover { color: var(--navy-deep); }
+:root[data-theme="dark"] .btn-filtros-mas { color: var(--acento); }
+:root[data-theme="dark"] .btn-filtros-mas:hover { color: var(--gold-soft, #F5D289); }
+.btn-filtros-mas .icon {
+  display: inline-grid;
+  place-items: center;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--navy-tint);
+  color: var(--navy);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+}
+:root[data-theme="dark"] .btn-filtros-mas .icon {
+  background: rgba(234, 184, 88, 0.18);
+  color: var(--acento);
+}
+
+/* ESTADO COLAPSADO (default): solo Cargo + Región + Buscar */
+.buscador-wrap:not(.is-expanded) .buscador-form {
+  grid-template-columns: 2.2fr 1fr auto !important;
+}
+.buscador-wrap:not(.is-expanded) .buscador-form > .campo:nth-child(3),
+.buscador-wrap:not(.is-expanded) .buscador-form > .campo:nth-child(4),
+.buscador-wrap:not(.is-expanded) .buscador-fila2,
+.buscador-wrap:not(.is-expanded) .filtros-rapidos {
+  display: none !important;
+}
+
+/* ESTADO EXPANDIDO: ocultar el botón duplicado de fila1 */
+.buscador-wrap.is-expanded .btn-buscar-compact {
+  display: none !important;
+}
+.buscador-wrap.is-expanded .buscador-fila2 {
+  display: grid !important;
+  grid-template-columns: 2fr 1fr auto !important;
+  gap: 14px !important;
+  align-items: end !important;
+  margin-top: 14px;
+}
+.buscador-wrap.is-expanded .filtros-rapidos {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+/* Hacer el buscador un poco más compacto */
+.buscador-wrap {
+  padding: 18px 20px !important;
+}
+.campo label {
+  margin-bottom: 5px !important;
+}
+
+/* Mobile: siempre expandido en mobile o stacked */
+@media (max-width: 720px) {
+  .buscador-form {
+    grid-template-columns: 1fr !important;
+  }
+  .buscador-wrap:not(.is-expanded) .buscador-form {
+    grid-template-columns: 1fr !important;
+  }
+  .btn-buscar-compact { width: 100%; }
+  .buscador-wrap.is-expanded .buscador-fila2 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   HEADER STICKY · asegurar que queda siempre arriba
+   ══════════════════════════════════════════════════════════════════════ */
+header nav,
+header {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 100 !important;
+}
+/* Ribbon NO sticky — se va con el scroll */
+.ribbon { position: relative; z-index: 50; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   LIMPIEZA · remover "Última actualización de datos" al final
+   (ya la mostramos en el ribbon arriba)
+   ══════════════════════════════════════════════════════════════════════ */
+.data-update-global {
+  display: none !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   SIDEBAR · alineación y consistencia de widgets
+   ══════════════════════════════════════════════════════════════════════ */
+.widget {
+  border-radius: 12px !important;
+}
+.widget-titulo {
+  font-family: var(--font-serif) !important;
+  font-size: 16.5px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.012em !important;
+  color: var(--navy-ink) !important;
+  margin-bottom: 4px !important;
+}
+:root[data-theme="dark"] .widget-titulo { color: var(--acento) !important; }
+.widget-titulo::before { display: none !important; }
+
+/* Labels de formulario alerta más consistentes */
+.alerta-label {
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
+  color: var(--text-40) !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  margin-bottom: 4px !important;
+  line-height: 1.2 !important;
+  min-height: 24px;
+  display: block;
+}
+:root[data-theme="dark"] .alerta-label { color: var(--texto3) !important; }
+
+/* Grid de Región/Condición y Sector/Frecuencia con altura consistente */
+.alerta-row {
+  gap: 10px !important;
+  row-gap: 10px !important;
+}
+.alerta-row > div > label {
+  /* Reservar altura para que los labels largos no desalineen */
+  min-height: 32px;
+  align-items: flex-end;
+  display: flex;
+}
+.alerta-form input,
+.alerta-form select {
+  font-size: 13.5px !important;
+  padding: 9px 11px !important;
+  min-height: 40px;
+  line-height: 1.3;
+}
+
+/* Botón activar alerta consistente */
+.btn-alerta {
+  height: 42px !important;
+  font-size: 13.5px !important;
+  border-radius: 8px !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   RESULTADOS · consistencia de tipografía
+   ══════════════════════════════════════════════════════════════════════ */
+.resultados-count strong {
+  font-size: 18px !important;
+}
+.resultados-count .count-sub {
+  font-size: 12px !important;
+}
+.estado-listado-copy {
+  font-size: 13px !important;
+  line-height: 1.5;
+}
+
+/* Error state de ofertas más limpio */
+.ofertas-error,
+.listado-error,
+[data-listado-error] {
+  border-radius: 10px !important;
+  padding: 28px 20px !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   AJUSTES EN DARK para buscador
+   ══════════════════════════════════════════════════════════════════════ */
+:root[data-theme="dark"] .buscador-wrap {
+  background: var(--blanco);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .campo input,
+:root[data-theme="dark"] .campo select {
+  background: var(--bg) !important;
+  color: var(--texto) !important;
+  border-color: var(--borde) !important;
+}
+:root[data-theme="dark"] .campo input:focus,
+:root[data-theme="dark"] .campo select:focus {
+  border-color: var(--acento) !important;
+  box-shadow: 0 0 0 3px rgba(234, 184, 88, 0.2) !important;
+}
+:root[data-theme="dark"] .campo label {
+  color: var(--texto3) !important;
+}
