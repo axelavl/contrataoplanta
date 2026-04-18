@@ -509,6 +509,41 @@
       "notes": "https://cftdemagallanes.cl/trabaja-con-nosotros/"
     },
 
+    {"_comment": "=== Municipios verificados — promovidos tras validación e2e 2026-04-18 ==="},
+
+    {
+      "id": 562,
+      "status": "active",
+      "kind": "wordpress",
+      "frequency_tier": "low",
+      "reason": "Municipalidad de Pucón — WordPress listing verificado (?page_id=89). Solo convocatorias expiradas en evaluación inicial; normal en municipios pequeños",
+      "notes": "https://municipalidadpucon.cl/?page_id=89 — gatekeeper: wordpress_listing, 50% confianza, only_expired_calls"
+    },
+    {
+      "id": 387,
+      "status": "active",
+      "kind": "wordpress",
+      "frequency_tier": "low",
+      "reason": "Municipalidad de Independencia — WordPress trabaja-con-nosotros verificado. Gatekeeper clasifica como wordpress_post por estructura de página, no señal negativa",
+      "notes": "https://www.independencia.cl/trabaja-con-nosotros/ — gatekeeper: wordpress_post, 30% confianza"
+    },
+    {
+      "id": 315,
+      "status": "experimental",
+      "kind": "wordpress",
+      "frequency_tier": "low",
+      "reason": "Municipalidad de Copiapó — WordPress listing verificado pero evidencia contradictoria (15% confianza). Experimental hasta confirmar calidad de extracción",
+      "notes": "https://copiapo.cl/index.php/direccion-rrhh/ — gatekeeper: wordpress_listing, 15% confianza, unknown_status"
+    },
+    {
+      "id": 538,
+      "status": "manual_review",
+      "kind": "generic",
+      "frequency_tier": "eventual",
+      "reason": "Municipalidad de Tucapel — página de transparencia PHP (?id_seccion=18) con listado genérico de documentos, no fichas de oferta parseable. Requiere scraper custom o URL diferente",
+      "notes": "http://www.munitucapel.cl/transparencia/articulos.php?id_seccion=18&id_categoria=105&dominio=M — gatekeeper: listing_page scraper_generic_fallback, 30% confianza, unknown_status"
+    },
+
     {"_comment": "=== Gobiernos Regionales y Delegaciones Presidenciales ==="},
 
     {
