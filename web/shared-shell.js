@@ -79,6 +79,7 @@
       ensureScript('theme-toggle.js', 'theme-toggle-script');
       ensureScript('ribbon-data.js', 'ribbon-data-script');
       ensureScript('logo-fallback.js', 'logo-fallback-script');
+      ensureScript('search-toggle.js', 'search-toggle-script');
       return loadPartial('site-footer', 'partials/footer.html');
     })
     .then(function () {
