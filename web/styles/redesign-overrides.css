@@ -353,3 +353,205 @@
   .buscador-wrap { padding: 16px; }
   .oferta-card { padding: 16px 18px; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   THEME TOGGLE · pill switch en el header
+   ══════════════════════════════════════════════════════════════════════ */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  position: relative;
+  margin-left: 8px;
+}
+.theme-toggle button {
+  background: transparent;
+  border: none;
+  width: 28px; height: 28px;
+  border-radius: 999px;
+  display: grid; place-items: center;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.55);
+  transition: color 0.2s, background 0.2s;
+  padding: 0;
+  position: relative;
+  z-index: 1;
+}
+.theme-toggle button svg { width: 14px; height: 14px; stroke-width: 2; }
+.theme-toggle button:hover { color: rgba(255, 255, 255, 0.9); }
+.theme-toggle button.is-active {
+  color: var(--acento);
+  background: rgba(255, 255, 255, 0.1);
+}
+.theme-toggle button:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 1px;
+}
+
+/* En páginas interiores (shared-layout) el nav también es navy oscuro,
+   así que estos estilos aplican igual. No necesito variante light. */
+
+/* ══════════════════════════════════════════════════════════════════════
+   RIBBON · freshness bar sobre el header
+   ══════════════════════════════════════════════════════════════════════ */
+.ribbon {
+  background: #050C1A;
+  color: rgba(244, 241, 232, 0.75);
+  font-size: 12.5px;
+  letter-spacing: 0.01em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.ribbon-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 8px 24px;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.ribbon-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.ribbon-item strong {
+  color: #F2C26A;
+  font-weight: 600;
+}
+.ribbon-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #6CB989;
+  box-shadow: 0 0 0 0 rgba(108, 185, 137, 0.5);
+  animation: ribbon-pulse 2s infinite;
+  display: inline-block;
+}
+@keyframes ribbon-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(108, 185, 137, 0.5); }
+  50% { box-shadow: 0 0 0 5px rgba(108, 185, 137, 0); }
+}
+@media (max-width: 600px) {
+  .ribbon-inner { gap: 14px; font-size: 12px; padding: 7px 14px; }
+  .ribbon-item--sm-hide { display: none; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   DARK MODE · activa cuando data-theme="dark" en <html>
+   Los tokens legacy ya se invierten en design-tokens.css. Acá refuerzo
+   donde el CSS existente hardcodea colores y no responde a tokens.
+   ══════════════════════════════════════════════════════════════════════ */
+:root[data-theme="dark"] body {
+  background: var(--bg);
+  color: var(--texto);
+}
+:root[data-theme="dark"] .hero {
+  background: var(--bg);
+}
+:root[data-theme="dark"] .hero-h1 { color: var(--texto); }
+:root[data-theme="dark"] .hero-sub { color: var(--texto2); }
+:root[data-theme="dark"] .hero-stat-pill {
+  background: var(--blanco);
+  border-color: var(--borde);
+  color: var(--texto2);
+}
+:root[data-theme="dark"] .hero-stat-pill strong { color: var(--acento); }
+
+:root[data-theme="dark"] .buscador-wrap {
+  background: var(--blanco);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .campo input,
+:root[data-theme="dark"] .campo select {
+  background: var(--bg);
+  color: var(--texto);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .campo label { color: var(--texto3); }
+
+:root[data-theme="dark"] .filtro-tag {
+  background: var(--blanco);
+  border-color: var(--borde);
+  color: var(--texto);
+}
+:root[data-theme="dark"] .filtro-tag.activo {
+  background: var(--acento);
+  color: var(--azul);
+  border-color: var(--acento);
+}
+
+:root[data-theme="dark"] .oferta-card {
+  background: var(--blanco);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .oferta-card:hover {
+  background: #1C345A;
+}
+:root[data-theme="dark"] .oferta-institucion { color: var(--acento); }
+:root[data-theme="dark"] .oferta-cargo,
+:root[data-theme="dark"] .oferta-cargo-link { color: var(--texto); }
+
+:root[data-theme="dark"] .widget {
+  background: var(--blanco);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .widget-titulo { color: var(--texto); }
+
+:root[data-theme="dark"] .estado-listado-tabs {
+  background: var(--bg2);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .estado-tab.activo { color: var(--azul); }
+:root[data-theme="dark"] .estado-listado-tabs::before { background: var(--acento); }
+
+:root[data-theme="dark"] .resultados-count strong { color: var(--acento); }
+:root[data-theme="dark"] .ctrl-select {
+  background: var(--blanco);
+  color: var(--texto2);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .vista-btn.activo { background: var(--bg); color: var(--acento); }
+
+:root[data-theme="dark"] .badge-contrata {
+  background: rgba(234, 184, 88, 0.15);
+  color: var(--acento);
+}
+
+:root[data-theme="dark"] .info-title { color: var(--texto); }
+:root[data-theme="dark"] .info-section {
+  background: var(--blanco);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .paso-card {
+  background: var(--bg);
+  border-color: var(--borde);
+}
+
+:root[data-theme="dark"] .data-update-global { color: var(--texto2); }
+:root[data-theme="dark"] .data-update-global strong { color: var(--texto); }
+
+/* Navbar en dark: mantener oscuro pero ajustar colores de texto activos */
+:root[data-theme="dark"] header nav {
+  background: #050C1A;
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Theme toggle active state en dark */
+:root[data-theme="dark"] .theme-toggle button.is-active { color: var(--acento); }
+
+/* Transiciones suaves entre temas */
+body, .hero, .buscador-wrap, .oferta-card, .widget, .filtro-tag, .ribbon {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body, .hero, .buscador-wrap, .oferta-card, .widget, .filtro-tag, .ribbon {
+    transition: none;
+  }
+}
