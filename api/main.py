@@ -351,7 +351,8 @@ def ofertas_select_sql() -> str:
         {OFFER_STATUS_SQL} AS estado,
         COALESCE(o.fecha_scraped, o.detectada_en, o.actualizada_en, o.creada_en) AS fecha_scraped,
         COALESCE(o.fecha_actualizado, o.actualizada_en, o.creada_en) AS fecha_actualizado,
-        i.plataforma_empleo AS plataforma
+        i.plataforma_empleo AS plataforma,
+        i.url_empleo AS institucion_url_empleo
     """
 
 

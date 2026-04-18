@@ -1176,35 +1176,100 @@ function plazoInfo(oferta) {
   return { clase: 'status-active', texto: `${dias} días disponibles`, color: 'var(--verde)' };
 }
 
-// ── Logos institucionales (favicon DuckDuckGo con fallback emoji) ─────────
+// ── Logos institucionales (dominio oficial + proveedores de respaldo) ─────
 const PORTALES_EMPLEO = new Set([
   'empleospublicos.cl','trabajando.com','trabajando.cl','hiringroom.com',
   'buk.cl','chileatiende.cl','empleos.gob.cl','postulaciones.cl',
   'sistemadeconcursos.cl','mitrabajodigno.cl','ucampus.net',
 ]);
 
+const DOMINIOS_INSTITUCIONALES_REFERENCIA = [
+  ['ministerio de salud', 'minsal.cl'],
+  ['servicio de salud metropolitano', 'redsalud.gob.cl'],
+  ['subsecretaria de salud', 'minsal.cl'],
+  ['poder judicial', 'pjud.cl'],
+  ['fiscalia', 'fiscaliadechile.cl'],
+  ['superintendencia de pensiones', 'spensiones.cl'],
+  ['superintendencia de salud', 'supersalud.gob.cl'],
+  ['servicio de impuestos internos', 'sii.cl'],
+  ['tesoreria general de la republica', 'tesoreria.cl'],
+  ['direccion del trabajo', 'dt.gob.cl'],
+  ['junji', 'junji.cl'],
+  ['fundacion inte', 'integra.cl'],
+  ['junta nacional de jardines', 'junji.cl'],
+  ['carabineros de chile', 'carabineros.cl'],
+  ['policia de investigaciones', 'investigaciones.cl'],
+  ['gendarmeria de chile', 'gendarmeria.gob.cl'],
+  ['municipalidad de santiago', 'municipalidaddesantiago.cl'],
+  ['municipalidad de puente alto', 'mpuentealto.cl'],
+  ['municipalidad de maipu', 'maipu.cl'],
+  ['municipalidad de la florida', 'laflorida.cl'],
+  ['hospital clinico', 'redsalud.gob.cl'],
+];
+
 function imgFavFallback(img) {
+  const fallback = img.dataset.fallback || '🏢';
+  const alterno = img.dataset.fallbackSrc || '';
+  if (alterno && img.dataset.fallbackTried !== '1') {
+    img.dataset.fallbackTried = '1';
+    img.src = alterno;
+    return;
+  }
   const span = document.createElement('span');
   span.style.fontSize = '20px';
-  span.textContent = img.dataset.fallback || '🏢';
+  span.textContent = fallback;
   img.replaceWith(span);
+}
+
+function dominioDesdeUrl(url) {
+  if (!url) return '';
+  try {
+    return new URL(url).hostname.replace(/^www\./, '').toLowerCase();
+  } catch {
+    return '';
+  }
+}
+
+function dominioInstitucionalPorNombre(nombreInstitucion) {
+  const key = comunaNormalizada(nombreInstitucion || '');
+  if (!key) return '';
+  const hit = DOMINIOS_INSTITUCIONALES_REFERENCIA.find(([needle]) => key.includes(needle));
+  return hit ? hit[1] : '';
+}
+
+function resolverDominioInstitucional(oferta) {
+  const oficial = dominioDesdeUrl(oferta?.institucion_url_empleo || '');
+  if (oficial) return { domain: oficial, confiable: true, fuente: 'Dominio oficial declarado por la institución' };
+
+  const dominioOferta = dominioDesdeUrl(oferta?.url_oferta || '');
+  if (dominioOferta && ![...PORTALES_EMPLEO].some((p) => dominioOferta.endsWith(p))) {
+    return { domain: dominioOferta, confiable: true, fuente: 'Dominio directo de la oferta institucional' };
+  }
+
+  const porNombre = dominioInstitucionalPorNombre(oferta?.institucion || '');
+  if (porNombre) return { domain: porNombre, confiable: true, fuente: 'Dominio institucional sugerido por catálogo de referencia' };
+
+  if (dominioOferta) return { domain: dominioOferta, confiable: false, fuente: 'Portal externo de intermediación' };
+  return { domain: '', confiable: false, fuente: 'Sin dominio verificable' };
 }
 
 function getInstIcon(oferta) {
   const fallback = ICONOS_SECTOR[oferta.sector || ''] || '🏢';
-  const url = oferta.url_oferta || '';
-  if (!url) return `<span style="font-size:20px">${fallback}</span>`;
-  let domain = '';
-  try { domain = new URL(url).hostname.replace(/^www\./, '').toLowerCase(); } catch {
-    return `<span style="font-size:20px">${fallback}</span>`;
+  const resolved = resolverDominioInstitucional(oferta);
+  if (!resolved.domain) {
+    return {
+      html: `<span style="font-size:20px">${fallback}</span>`,
+      confiable: false,
+      fuente: resolved.fuente,
+    };
   }
-  if (!domain || [...PORTALES_EMPLEO].some(p => domain.endsWith(p))) {
-    return `<span style="font-size:20px">${fallback}</span>`;
-  }
-  return `<img src="https://icons.duckduckgo.com/ip3/${escAttr(domain)}.ico"
-    data-fallback="${fallback}"
-    style="width:28px;height:28px;object-fit:contain;border-radius:4px"
-    onerror="imgFavFallback(this)">`;
+  const primary = `https://logo.clearbit.com/${escAttr(resolved.domain)}`;
+  const secondary = `https://icons.duckduckgo.com/ip3/${escAttr(resolved.domain)}.ico`;
+  return {
+    html: `<img src="${primary}" data-fallback="${fallback}" data-fallback-src="${secondary}" alt="Logo de ${escAttr(oferta?.institucion || 'institución')}" loading="lazy" decoding="async" onerror="imgFavFallback(this)">`,
+    confiable: Boolean(resolved.confiable),
+    fuente: resolved.fuente,
+  };
 }
 
 // Evita mostrar la ciudad cuando coincide con el nombre de la institución
@@ -1285,6 +1350,7 @@ function renderCard(oferta) {
   const ciudad  = ciudadValida(oferta.ciudad, oferta.institucion);
   const jornada = jornadaValida(oferta.jornada);
   const frescura = frescuraTexto(oferta);
+  const instLogo = getInstIcon(oferta);
 
   const favs = JSON.parse(localStorage.getItem('fav_contrataoplanta') || '[]');
   const esFav = favs.some(f => f.id === oferta.id);
@@ -1306,7 +1372,7 @@ function renderCard(oferta) {
       title="${esFav ? 'Quitar de favoritos' : 'Guardar como favorito'}"
     >${esFav ? '♥' : '♡'}</button>
     <div class="oferta-header">
-      <div class="oferta-logo">${getInstIcon(oferta)}</div>
+      <div class="oferta-logo${instLogo.confiable ? ' oferta-logo--verificada' : ''}" title="${escAttr(instLogo.fuente)}">${instLogo.html}</div>
       <div class="oferta-meta">
         <div class="oferta-institucion">${escHtml(oferta.institucion) || 'Institución pública'}</div>
         <div class="oferta-cargo"><span class="oferta-cargo-link">${escHtml(cargoDisplay)}</span></div>

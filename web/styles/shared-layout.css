@@ -27,15 +27,48 @@ header nav {
   height: 56px;
 }
 
-/* Marca "contrata o planta .cl" — estandarizada en amarillo */
+/* Marca "contrata o planta .cl" — lockup con sello + wordmark */
 .logo {
-  font-family: var(--font-serif);
-  font-size: 18px;
-  color: var(--acento);
-  letter-spacing: -0.3px;
-  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   text-decoration: none;
-  font-weight: 500;
+  white-space: nowrap;
+}
+
+.logo-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: radial-gradient(circle at 30% 30%, #2F6BC4 0%, #0A2E6E 75%);
+  border: 1px solid rgba(232, 168, 32, 0.55);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .24);
+  display: grid;
+  place-items: center;
+  color: var(--acento);
+  font: 700 11px/1 var(--font-sans);
+  letter-spacing: .3px;
+}
+
+.logo-wordmark {
+  display: grid;
+  line-height: 1.02;
+  color: var(--acento);
+}
+
+.logo-name {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  letter-spacing: -0.25px;
+}
+
+.logo-tagline {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255,255,255,.68);
+  letter-spacing: .42px;
+  text-transform: uppercase;
 }
 
 .logo em {
@@ -253,4 +286,11 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
 
 @media (max-width: 480px) {
   .footer-inner { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .logo { gap: 8px; }
+  .logo-mark { width: 24px; height: 24px; border-radius: 8px; font-size: 10px; }
+  .logo-name { font-size: 16px; }
+  .logo-tagline { display: none; }
 }

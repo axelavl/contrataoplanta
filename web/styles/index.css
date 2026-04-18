@@ -77,10 +77,42 @@ nav {
   height: 56px;
 }
 .logo {
-  font-family: 'Lora', Georgia, serif;
-  font-size: 18px; color: var(--acento);
-  letter-spacing: -0.3px; white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   text-decoration: none;
+  white-space: nowrap;
+}
+.logo-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: radial-gradient(circle at 30% 30%, #2F6BC4 0%, #0A2E6E 75%);
+  border: 1px solid rgba(232, 168, 32, 0.55);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .24);
+  display: grid;
+  place-items: center;
+  color: var(--acento);
+  font: 700 11px/1 'Inter', sans-serif;
+  letter-spacing: .3px;
+}
+.logo-wordmark {
+  display: grid;
+  line-height: 1.02;
+  color: var(--acento);
+}
+.logo-name {
+  font-family: 'Lora', Georgia, serif;
+  font-size: 17px;
+  letter-spacing: -0.25px;
+}
+.logo-tagline {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255,255,255,.68);
+  letter-spacing: .42px;
+  text-transform: uppercase;
 }
 .logo em { color: var(--acento); font-style: italic; font-weight: 600; }
 .logo-domain-muted { color: var(--acento) !important; font-style: italic; font-weight: 600; }
@@ -378,6 +410,7 @@ nav {
   display: grid;
   gap: 10px;
 }
+.comunas-panel[hidden] { display: none !important; }
 .comunas-panel-header { display: flex; justify-content: space-between; align-items: center; }
 .comunas-panel-header h3 { font-size: 14px; color: var(--texto); margin: 0; font-family: 'Inter', sans-serif; }
 .comunas-close { border: 0; background: transparent; color: var(--texto3); cursor: pointer; font-size: 14px; }
@@ -705,8 +738,24 @@ nav {
   display: grid; place-items: center;
   font-size: 20px; flex-shrink: 0;
   overflow: hidden;
+  position: relative;
 }
-.oferta-logo img { width: 100%; height: 100%; object-fit: cover; }
+.oferta-logo img { width: 100%; height: 100%; object-fit: contain; padding: 5px; background: #fff; }
+.oferta-logo--verificada { border-color: rgba(22, 163, 74, 0.45); }
+.oferta-logo--verificada::after {
+  content: '✓';
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #16A34A;
+  color: #fff;
+  font: 700 9px/14px 'Inter', sans-serif;
+  text-align: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,.25);
+}
 .oferta-meta { flex: 1; min-width: 0; }
 .oferta-institucion {
   font-size: 12px; font-weight: 600;
@@ -1955,6 +2004,10 @@ footer {
   .oferta-renta { font-size: 13px; }
   .badge { font-size: 10.5px; padding: 2px 7px; }
   .ofertas-lista.cuadricula .oferta-cargo { font-size: 15px; }
+  .logo { gap: 8px; }
+  .logo-mark { width: 24px; height: 24px; border-radius: 8px; font-size: 10px; }
+  .logo-name { font-size: 16px; }
+  .logo-tagline { display: none; }
   .js-nav .nav-links { display: none; }
   .js-nav .nav-alerta { display: none; }
   /* Compactar el hero para que los filtros queden cerca del listado */
