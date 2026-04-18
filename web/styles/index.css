@@ -565,8 +565,12 @@ nav {
 .data-update-global{
   max-width:1200px;margin:6px auto 0;padding:0 24px 10px;
   font-size:13px;color:var(--texto3);
+  display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center;
 }
 .data-update-global strong{color:var(--texto2)}
+@media (max-width: 600px){
+  .data-update-global{padding:0 16px 12px; font-size:12px; justify-content: center;}
+}
 .info-wrap{max-width:1200px;margin:0 auto;padding:0 24px 28px;display:grid;gap:18px}
 .info-section{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--r-l);padding:24px;box-shadow:var(--sombra)}
 .info-title{font-family:'Lora',Georgia,serif;font-size:26px;color:var(--azul);margin-bottom:10px}
@@ -594,10 +598,11 @@ nav {
 @media (max-width: 480px){.estado-listado-tabs{display:grid;width:100%;max-width:none}.estado-tab{font-size:11.5px;padding:8px 10px}}
 .resultados-header {
   display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 12px; gap: 10px; flex-wrap: wrap;
+  margin-bottom: 14px; gap: 10px; flex-wrap: wrap;
 }
 .resultados-count {
-  font-size: 14px; color: var(--texto2); flex-shrink: 0;
+  font-size: 14px; color: var(--texto2);
+  min-width: 0;
 }
 .resultados-count strong { color: var(--texto); font-weight: 700; }
 .count-sub { color: var(--texto3); font-size: 12px; margin-left: 8px; }
@@ -771,14 +776,15 @@ nav {
   text-align: center;
   box-shadow: 0 1px 4px rgba(0,0,0,.25);
 }
-.oferta-meta { flex: 1; min-width: 0; }
+.oferta-meta { flex: 1 1 auto; min-width: 0; max-width: 100%; }
 .oferta-institucion {
-  font-size: 12px; font-weight: 600;
-  color: var(--cielo); margin-bottom: 4px;
-  text-transform: uppercase; letter-spacing: 0.3px;
+  font-size: 12px; font-weight: 700;
+  color: var(--azul); margin-bottom: 5px;
+  text-transform: uppercase; letter-spacing: 0.4px;
   line-height: 1.3;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   overflow: hidden;
+  word-break: break-word;
 }
 .oferta-cargo {
   font-family: 'Lora', Georgia, serif;
@@ -1033,7 +1039,19 @@ nav {
 }
 .widget-titulo {
   font-size: 12.5px; font-weight: 700;
-  color: var(--texto2); letter-spacing: -0.1px;
+  color: var(--azul); letter-spacing: 0.2px;
+  position: relative;
+  padding-left: 10px;
+  display: inline-flex; align-items: center;
+  line-height: 1.25;
+}
+.widget-titulo::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 2px; bottom: 2px;
+  width: 3px;
+  background: var(--acento);
+  border-radius: 2px;
 }
 .widget-ver-todo {
   font-size: 10.5px; color: var(--texto3);
@@ -1206,8 +1224,10 @@ nav {
 
 /* ═══ PAGINACIÓN ══════════════════════════════════════════════════════ */
 .paginacion {
-  display: flex; justify-content: center; gap: 6px;
+  display: flex; justify-content: center; align-items: center;
+  gap: 6px; flex-wrap: wrap;
   margin-top: 24px;
+  padding: 0 4px;
 }
 .pag-btn {
   width: 36px; height: 36px; border-radius: 8px;
@@ -1217,6 +1237,7 @@ nav {
   display: grid; place-items: center;
   font-family: 'Inter', sans-serif;
   transition: all .15s;
+  flex-shrink: 0;
 }
 .pag-btn:hover { border-color: var(--cielo); color: var(--cielo); }
 .pag-btn.activo { background: var(--azul); border-color: var(--azul); color: white; }
@@ -1232,6 +1253,11 @@ nav {
 }
 .pag-input::-webkit-inner-spin-button,
 .pag-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+@media (max-width: 600px) {
+  .paginacion { gap: 4px; margin-top: 18px; }
+  .pag-btn { width: 34px; height: 34px; font-size: 12.5px; }
+  .pag-input { width: 46px; height: 34px; font-size: 12.5px; }
+}
 
 .estado-vacio, .estado-error {
   background: var(--blanco);
@@ -1543,10 +1569,10 @@ footer {
 }
 .modal-rich-text ul,
 .modal-rich-text ol {
-  margin: 8px 0 14px 0;
+  margin: 10px 0 16px 0;
   padding-left: 0;
   list-style: none;
-  display: flex; flex-direction: column; gap: 6px;
+  display: flex; flex-direction: column; gap: 8px;
 }
 .modal-rich-text ul + p,
 .modal-rich-text ol + p { margin-top: 10px; }
@@ -1554,10 +1580,11 @@ footer {
 .modal-rich-text .rt-heading + ol { margin-top: 6px; }
 .modal-rich-text li {
   position: relative;
-  padding-left: 18px;
-  line-height: 1.65;
-  margin-bottom: 4px;
+  padding-left: 22px;
+  line-height: 1.7;
+  margin-bottom: 0;
 }
+.modal-rich-text li + li { margin-top: 2px; }
 .modal-rich-text ul > li::before {
   content: '→'; color: var(--cielo);
   position: absolute; left: 0; top: 0;
@@ -1584,9 +1611,12 @@ footer {
   transition: max-height .2s ease;
 }
 .modal-rich-text .rt-truncate[data-rt-collapsed="true"] .rt-truncate-inner {
-  max-height: 250px;
-  -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
-          mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+  /* Altura base generosa: queremos que sólo los contenidos MUY largos
+     (> ~2400 chars) muestren el corte y el botón "Ver más". Para textos
+     medianos el usuario ve todo sin extra click. */
+  max-height: 520px;
+  -webkit-mask-image: linear-gradient(to bottom, black 82%, transparent 100%);
+          mask-image: linear-gradient(to bottom, black 82%, transparent 100%);
 }
 .modal-rich-text .rt-toggle {
   display: inline-flex; align-items: center; justify-content: center;
@@ -1605,10 +1635,12 @@ footer {
 /* Legibilidad en móvil */
 @media (max-width: 600px) {
   .modal-rich-text { font-size: 14px; line-height: 1.78; }
-  .modal-rich-text .rt-heading { font-size: 14px; margin: 16px 0 6px 0; }
-  .modal-rich-text li { line-height: 1.6; padding-left: 20px; }
+  .modal-rich-text .rt-heading { font-size: 14px; margin: 18px 0 8px 0; }
+  .modal-rich-text li { line-height: 1.66; padding-left: 22px; }
+  .modal-rich-text ul,
+  .modal-rich-text ol { gap: 10px; margin: 10px 0 18px 0; }
   .modal-rich-text .rt-truncate[data-rt-collapsed="true"] .rt-truncate-inner {
-    max-height: 300px;
+    max-height: 540px;
   }
   .modal-rich-text .rt-toggle { width: 100%; }
 }
@@ -1955,6 +1987,23 @@ footer {
   .share-btn { width: 42px; height: 42px; }
   .share-btn svg { width: 18px; height: 18px; }
   .modal-share-group .share-btn--copy { width: 42px; min-width: 42px; height: 42px; }
+
+  /* Header del detalle: reducir tamaños y evitar overflow en pantallas
+     estrechas. La barra de acento del cargo queda alineada con la copy. */
+  .modal-header { padding: 16px 18px 14px; }
+  .modal-kicker { font-size: 10px; letter-spacing: 1.1px; }
+  .modal-institucion { font-size: 13px; margin-bottom: 8px; }
+  .modal-cargo { font-size: 19px; line-height: 1.22; padding-left: 10px; border-left-width: 3px; }
+
+  /* Resumen ejecutivo: una sola columna para que los labels no se corten. */
+  .modal-info-grid { grid-template-columns: 1fr; gap: 8px; }
+  .modal-info-item { padding: 10px 12px; }
+  .modal-info-val { font-size: 13.5px; }
+
+  /* Secciones del cuerpo un poco más compactas para aprovechar altura. */
+  .modal-body { padding: 16px 16px 14px; }
+  .modal-seccion { margin-bottom: 22px; }
+  .modal-seccion-titulo { font-size: 12.5px; letter-spacing: 1.2px; margin-bottom: 12px; }
 }
 
 /* Alerta de plazo en modal: aviso breve de urgencia (no duplica datos del resumen) */
