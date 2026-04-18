@@ -320,7 +320,14 @@ def ofertas_select_sql() -> str:
     SELECT
         o.id,
         o.institucion_id,
-        COALESCE(i.nombre, o.institucion_nombre, 'Sin institucion') AS institucion,
+        -- Prioridad: nombre tal como aparece en la oferta oficial (o.institucion_nombre)
+        -- sobre el match del catálogo (i.nombre). El match por institucion_id se
+        -- hace por heurística sobre nombres y puede asignar el portal madre o el
+        -- ministerio superior (ej. "Superintendencia de Salud") cuando la vacante
+        -- real pertenece a un hospital/servicio específico (ej. "Hospital Base
+        -- San José de Osorno"). El texto extraído por el scraper desde la oferta
+        -- es más fiel a lo que el usuario debe ver.
+        COALESCE(NULLIF(TRIM(o.institucion_nombre), ''), i.nombre, 'Sin institución') AS institucion,
         COALESCE(i.sigla, i.nombre_corto) AS sigla,
         COALESCE(o.cargo, 'Sin cargo') AS cargo,
         COALESCE(o.descripcion, '') AS descripcion,

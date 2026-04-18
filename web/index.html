@@ -120,7 +120,6 @@
             </div>
           </div>
           <input type="hidden" id="filtro-ciudad" value="">
-          <small class="campo-ayuda">Puedes elegir comunas de distintas regiones. Si eliges comunas, tienen prioridad territorial.</small>
         </div>
         <div class="campo">
           <label>Sector</label>
@@ -292,7 +291,7 @@
               </select>
             </div>
             <div>
-              <div class="alerta-label">Tipo de vínculo</div>
+              <div class="alerta-label">Condición contractual</div>
               <select id="alerta-tipo">
                 <option value="">Todos</option>
                 <option value="planta">Planta</option>
@@ -429,8 +428,9 @@
   <div class="modal">
     <div class="modal-header" style="position:relative">
       <button class="modal-close" onclick="cerrarModal(null,true)">✕</button>
-      <div style="font-size:10px;color:rgba(255,255,255,0.4);font-family:'Inter',sans-serif;font-weight:600;letter-spacing:1px;margin-bottom:6px" id="modal-kicker">BANCO ESTADO · EMPRESA DEL ESTADO</div>
-      <div style="font-family:'Lora',Georgia,serif;font-size:20px;color:white;line-height:1.2;margin-bottom:8px" id="modal-cargo">Analista de Riesgo Crediticio</div>
+      <div class="modal-kicker" id="modal-kicker">EMPRESA DEL ESTADO</div>
+      <div class="modal-institucion" id="modal-institucion">Banco Estado</div>
+      <h2 class="modal-cargo" id="modal-cargo">Analista de Riesgo Crediticio</h2>
       <div style="display:flex;gap:6px;flex-wrap:wrap" id="modal-badges">
         <span class="badge badge-contrata">Contrata</span>
         <span class="badge badge-region">🗺 Región Metropolitana · Providencia</span>
@@ -519,7 +519,7 @@
 
     <div class="bases-viewer-content bases-viewer-content--actions">
       <p class="bases-fallback-copy">
-        Las bases están publicadas en el sitio oficial del organismo. Al continuar, serás redirigido al documento o página oficial correspondiente.
+        Las bases están publicadas en el sitio oficial del organismo. Al continuar, será redirigido al documento o página oficial correspondiente.
       </p>
       <div class="bases-fallback-actions" role="group" aria-label="Acciones de bases oficiales">
         <a id="bases-action-open" class="btn-modal-primary" target="_blank" rel="noopener noreferrer">Abrir bases oficiales ↗</a>
@@ -1962,37 +1962,68 @@ lista.innerHTML = header + itemsHtml;
 }
 
 // ── Estadísticas del sidebar ───────────────────────────────────────────────
+// Estados posibles por bloque:
+//   1. cargando  → placeholder "—"
+//   2. sin datos → mensaje explícito "Sin datos disponibles"
+//   3. error     → mensaje explícito "No se pudieron cargar datos"
+//   4. con datos → valor real formateado
+function _marcarContadoresError() {
+  ['activas','nuevas','cierran','instituciones'].forEach(key => {
+    const el = document.querySelector(`[data-stat="${key}"]`);
+    if (el && (el.textContent || '').trim() === '—') el.textContent = '—';
+  });
+}
+function _renderVacio(elId, mensaje) {
+  const el = document.getElementById(elId);
+  if (el) el.innerHTML = `<div class="widget-vacio">${mensaje}</div>`;
+}
 async function cargarEstadisticas() {
   try {
     const resp = await fetchApi(`/api/estadisticas`);
-    if (!resp.ok) return;
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
 
-    // Contadores sidebar
-    document.querySelector('[data-stat="activas"]').textContent    = (data.activas_hoy || 0).toLocaleString('es-CL');
-    document.querySelector('[data-stat="nuevas"]').textContent     = (data.nuevas_48h  || 0).toLocaleString('es-CL');
-    document.querySelector('[data-stat="cierran"]').textContent    = (data.cierran_hoy || 0).toLocaleString('es-CL');
-    document.querySelector('[data-stat="instituciones"]').textContent = (data.instituciones_activas || 0).toLocaleString('es-CL');
+    // Contadores sidebar (0 es un valor válido, no placeholder).
+    const setStat = (key, val) => {
+      const el = document.querySelector(`[data-stat="${key}"]`);
+      if (el) el.textContent = Number(val || 0).toLocaleString('es-CL');
+    };
+    setStat('activas',       data.activas_hoy);
+    setStat('nuevas',        data.nuevas_48h);
+    setStat('cierran',       data.cierran_hoy);
+    setStat('instituciones', data.instituciones_activas);
 
     // Pills del hero
     const hsA = document.getElementById('hs-activas');
     const hsN = document.getElementById('hs-nuevas');
     const hsI = document.getElementById('hs-instituciones');
-    if (hsA) hsA.textContent = (data.activas_hoy || 0).toLocaleString('es-CL');
-    if (hsN) hsN.textContent = (data.nuevas_48h  || 0).toLocaleString('es-CL');
-    if (hsI) hsI.textContent = (data.instituciones_activas || 0).toLocaleString('es-CL');
+    if (hsA) hsA.textContent = Number(data.activas_hoy || 0).toLocaleString('es-CL');
+    if (hsN) hsN.textContent = Number(data.nuevas_48h  || 0).toLocaleString('es-CL');
+    if (hsI) hsI.textContent = Number(data.instituciones_activas || 0).toLocaleString('es-CL');
 
     // Sectores
-    renderSectores(data.por_sector || []);
+    const sec = Array.isArray(data.por_sector) ? data.por_sector : [];
+    if (sec.length) renderSectores(sec);
+    else _renderVacio('sectores-lista', 'Aún no hay distribución por sector disponible.');
 
     // Histórico mensual
-    renderHistorico(data.historico_mensual || []);
+    const hist = Array.isArray(data.historico_mensual) ? data.historico_mensual : [];
+    if (hist.length) renderHistorico(hist);
+    else _renderVacio('historico-lista', 'Histórico mensual no disponible todavía.');
 
     // Más activas
-    renderMasActivas(data.mas_activas || []);
+    const mas = Array.isArray(data.mas_activas) ? data.mas_activas : [];
+    if (mas.length) renderMasActivas(mas);
+    else _renderVacio('masactivas-lista', 'Sin datos de instituciones activas esta semana.');
 
   } catch (err) {
     console.warn('No se pudieron cargar estadísticas:', err);
+    _marcarContadoresError();
+    _renderVacio('sectores-lista',   'No se pudieron cargar los datos. Reintenta en unos minutos.');
+    _renderVacio('historico-lista',  'No se pudo cargar el histórico.');
+    _renderVacio('masactivas-lista', 'No se pudo cargar la lista de instituciones activas.');
+    const lu = document.getElementById('data-last-update');
+    if (lu && lu.textContent.includes('cargando')) lu.textContent = 'no disponible';
   }
 }
 
@@ -2233,6 +2264,8 @@ async function abrirModal(ofertaId) {
 
   // Reset de contenido mientras carga (orden: fechas → ubicación → contrato → jornada → renta)
   document.getElementById('modal-kicker').textContent = 'Cargando…';
+  const _instElReset = document.getElementById('modal-institucion');
+  if (_instElReset) { _instElReset.textContent = ''; _instElReset.hidden = true; }
   document.getElementById('modal-cargo').textContent = '';
   document.getElementById('modal-badges').innerHTML = '';
   document.getElementById('modal-fecha-publicacion').textContent = '—';
@@ -2273,8 +2306,18 @@ async function abrirModal(ofertaId) {
     const renta = formatRenta(o.renta_bruta_min, o.renta_bruta_max, o.grado_eus);
     const detalle = plazoDetalle(o);
 
-    document.getElementById('modal-kicker').textContent =
-      [o.institucion, sector].filter(Boolean).join(' · ').toUpperCase();
+    // Jerarquía visual del header:
+    //   - kicker: sector (etiqueta institucional secundaria, en mayúsculas)
+    //   - institución: entidad contratante destacada en línea propia
+    //   - cargo: título principal, con acento visual lateral (ver CSS)
+    const institucionTxt = (o.institucion || '').trim();
+    const sectorTxt      = (sector || '').trim();
+    document.getElementById('modal-kicker').textContent = sectorTxt.toUpperCase();
+    const instEl = document.getElementById('modal-institucion');
+    if (instEl) {
+      instEl.textContent = institucionTxt || '';
+      instEl.hidden = !institucionTxt;
+    }
     document.getElementById('modal-cargo').textContent = normalizarTituloOferta(o.cargo) || 'Sin título';
     document.getElementById('modal-badges').innerHTML = [
       `<span class="badge ${tipoCss}">${tipoLabel}</span>`,
@@ -2305,11 +2348,14 @@ async function abrirModal(ofertaId) {
       summaryNote.hidden = false;
     }
 
-    // Descripción / funciones — formato enriquecido
+    // Descripción / funciones — formato enriquecido.
+    // Se renderiza el contenido completo; el corte "Ver más" sólo aparece
+    // cuando el texto es muy extenso (umbral alto), para evitar que se
+    // muestre sólo el encabezado "Objetivo..." y se pierda información.
     const desc = o.descripcion || '';
     const descHtml = formatRichText(desc, {
       truncate: true,
-      truncateAt: 780,
+      truncateAt: 2400,
       suppressHeadings: ['descripción', 'descripción del cargo', 'funciones', 'funciones del cargo']
     });
     document.getElementById('modal-descripcion').innerHTML = descHtml ||
@@ -2319,7 +2365,7 @@ async function abrirModal(ofertaId) {
     const reqTexto = o.requisitos || '';
     const reqHtml  = formatRichText(reqTexto, {
       truncate: true,
-      truncateAt: 760,
+      truncateAt: 2200,
       suppressHeadings: ['requisitos', 'requisitos principales', 'requisitos del cargo']
     });
     document.getElementById('modal-requisitos').innerHTML = reqHtml ||
@@ -2369,6 +2415,8 @@ async function abrirModal(ofertaId) {
   } catch (err) {
     console.error('Error cargando detalle:', err);
     document.getElementById('modal-kicker').textContent = 'Error al cargar';
+    const _instElErr = document.getElementById('modal-institucion');
+    if (_instElErr) { _instElErr.textContent = ''; _instElErr.hidden = true; }
     document.getElementById('modal-cargo').textContent = 'No se pudo obtener el detalle de la oferta.';
   }
 }
@@ -3399,13 +3447,16 @@ window.formatFechaCL = function(iso) {
 
 // ── 5. "Última actualización" basada en estadisticas.ultima_actualizacion ──
 async function mostrarUltimaActualizacion() {
+  const absoluta = document.getElementById('data-last-update');
   try {
     const resp = await fetchApi(`/api/estadisticas`);
-    if (!resp.ok) return;
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
-    if (!data.ultima_actualizacion) return;
+    if (!data.ultima_actualizacion) {
+      if (absoluta) absoluta.textContent = 'no disponible';
+      return;
+    }
     const fecha = new Date(data.ultima_actualizacion);
-    const absoluta = document.getElementById('data-last-update');
     if (absoluta) {
       absoluta.textContent = fecha.toLocaleString('es-CL', { dateStyle: 'medium', timeStyle: 'short' });
     }
@@ -3417,7 +3468,9 @@ async function mostrarUltimaActualizacion() {
     else txt = `hace ${Math.floor(minutos / 1440)} d`;
     const label = document.getElementById('count-sub');
     if (label) label.textContent = `· última actualización ${txt}`;
-  } catch { /* ignorar */ }
+  } catch {
+    if (absoluta) absoluta.textContent = 'no disponible';
+  }
 }
 
 // ── 6. Back-to-top flotante (auditoría 3 UX) ──

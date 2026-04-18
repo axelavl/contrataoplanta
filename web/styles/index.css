@@ -17,34 +17,40 @@ body {
 .back-to-top-btn {
   position: fixed;
   right: 18px;
-  bottom: 18px;
-  width: 42px;
-  height: 42px;
+  bottom: 24px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  border: none;
-  background: #1F4E79;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(10, 46, 110, 0.88);
   color: #fff;
-  font-size: 20px;
+  font-size: 18px;
+  line-height: 1;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0,0,0,.16);
+  box-shadow: 0 6px 18px rgba(10,46,110,.28);
   opacity: 0;
   pointer-events: none;
   transform: translateY(8px);
-  transition: opacity .18s ease, transform .18s ease;
-  z-index: 150;
+  transition: opacity .18s ease, transform .18s ease, background .15s;
+  z-index: 90;            /* por debajo del navbar (100) y del modal (200+) */
+  backdrop-filter: blur(6px);
 }
+.back-to-top-btn:hover { background: rgba(21, 87, 192, 0.95); }
 .back-to-top-btn.is-visible {
-  opacity: 1;
+  opacity: 0.92;
   pointer-events: auto;
   transform: translateY(0);
 }
+/* Ocultar cuando hay un modal abierto para que no tape contenido crítico. */
+body.modal-open .back-to-top-btn,
+.modal-overlay.open ~ .back-to-top-btn { opacity: 0 !important; pointer-events: none !important; }
 @media (max-width: 600px) {
   .back-to-top-btn {
-    right: 14px;
-    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-    width: 38px;
-    height: 38px;
-    font-size: 18px;
+    right: 12px;
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
   }
 }
 .skip-link {
@@ -84,18 +90,18 @@ nav {
   white-space: nowrap;
 }
 .logo-mark {
-  width: 28px;
-  height: 28px;
-  border-radius: 9px;
-  background: radial-gradient(circle at 30% 30%, #2F6BC4 0%, #0A2E6E 75%);
-  border: 1px solid rgba(232, 168, 32, 0.55);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, .24);
-  display: grid;
-  place-items: center;
-  color: var(--acento);
-  font: 700 11px/1 'Inter', sans-serif;
-  letter-spacing: .3px;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .28);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  overflow: hidden;
+  background: transparent;
 }
+.logo-mark svg { width: 100%; height: 100%; display: block; }
 .logo-wordmark {
   display: grid;
   line-height: 1.02;
@@ -538,10 +544,19 @@ nav {
   border: 1px solid rgba(214, 211, 204, 0.85);
   border-radius: var(--r-l);
   box-shadow: var(--sombra);
-  padding: 14px;
+  padding: 18px 16px;
   margin-top: -30px;
   position: relative;
   z-index: 2;
+}
+/* Más separación entre filtros y el panel de resultados en móvil para que
+   los filtros no queden montados sobre las pestañas Vigentes / Cerradas. */
+@media (max-width: 600px) {
+  .resultados-shell {
+    margin-top: 16px;
+    padding: 14px 12px;
+    border-radius: 14px;
+  }
 }
 /* Previene que columnas de grid expandan el contenedor */
 .main > * { min-width: 0; }
@@ -567,7 +582,7 @@ nav {
 .meta-link:hover{text-decoration:underline}
 
 /* ═══ BARRA DE RESULTADOS Y CONTROLES ════════════════════════════════ */
-.estado-listado-tabs{display:inline-grid;grid-template-columns:1fr 1fr;position:relative;padding:4px;background:var(--bg2);border:1px solid var(--borde);border-radius:999px;margin-bottom:10px;max-width:420px;gap:0}
+.estado-listado-tabs{display:inline-grid;grid-template-columns:1fr 1fr;position:relative;padding:4px;background:var(--bg2);border:1px solid var(--borde);border-radius:999px;margin-bottom:14px;max-width:420px;gap:0}
 .estado-listado-tabs::before{content:"";position:absolute;top:4px;bottom:4px;left:4px;width:calc(50% - 4px);background:var(--azul);border-radius:999px;box-shadow:0 1px 3px rgba(0,0,0,.12);transition:transform .25s cubic-bezier(.4,0,.2,1);z-index:0}
 .estado-listado-tabs[data-estado="cerradas"]::before{transform:translateX(100%)}
 .estado-tab{position:relative;z-index:1;border:none;background:transparent;color:var(--texto2);padding:8px 14px;border-radius:999px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:color .2s ease;font-family:inherit}
@@ -1075,9 +1090,14 @@ nav {
 .alerta-label {
   font-size: 10px; font-weight: 700; color: var(--texto3);
   text-transform: uppercase; letter-spacing: .5px;
-  font-family: 'Inter', sans-serif; margin-bottom: -4px;
+  font-family: 'Inter', sans-serif;
+  /* Margen positivo: evita que el label quede detrás o montado sobre el
+     input/select cuando el contenedor se comprime en móvil. */
+  margin-bottom: 4px;
+  display: block;
 }
-.alerta-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.alerta-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; row-gap: 12px; align-items: start; }
+.alerta-row > div { display: flex; flex-direction: column; min-width: 0; }
 .btn-alerta {
   height: 40px; background: var(--azul);
   color: white; border: none; border-radius: 8px;
@@ -1384,6 +1404,53 @@ footer {
   position: relative;
   border-left: 4px solid var(--acento);
 }
+
+/* Header del detalle: kicker (sector) + institución + cargo.
+   El cargo replica la barra de acento de los títulos de sección para
+   reforzar la identidad y jerarquía del bloque superior. */
+.modal-kicker {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.62);
+  font-family: 'Inter', sans-serif;
+  margin-bottom: 6px;
+  min-height: 12px;
+}
+.modal-institucion {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--acento);
+  font-family: 'Inter', sans-serif;
+  margin-bottom: 10px;
+  letter-spacing: 0.1px;
+  line-height: 1.35;
+}
+.modal-institucion[hidden] { display: none; }
+.modal-cargo {
+  font-family: 'Lora', Georgia, serif;
+  font-size: 22px;
+  color: #fff;
+  line-height: 1.22;
+  margin: 0 0 10px 0;
+  padding-left: 12px;
+  border-left: 4px solid var(--acento);
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+
+/* Fallback para widgets de estadística cuando no hay datos o hay error. */
+.widget-vacio {
+  background: var(--bg);
+  border: 1px dashed var(--borde);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 12.5px;
+  color: var(--texto2);
+  line-height: 1.5;
+  text-align: center;
+}
 .modal-summary-note {
   margin-top: 10px;
   font-size: 12px;
@@ -1629,18 +1696,21 @@ footer {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding-top: 4px;
+  padding-top: 6px;
+  margin-top: 2px;
+  border-top: 1px dashed var(--borde);
 }
+/* Mantiene consistencia con los demás botones circulares de la fila. */
 .modal-share-group .share-btn--copy {
-  width: 42px;
-  min-width: 42px;
-  height: 42px;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
   border-radius: 50%;
   padding: 0;
 }
 .share-btn {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 36px; height: 36px; border-radius: 50%;
+  width: 40px; height: 40px; border-radius: 50%;
   border: 1.5px solid var(--borde); background: white;
   color: var(--texto); cursor: pointer; text-decoration: none;
   padding: 0; flex-shrink: 0;
@@ -2072,7 +2142,7 @@ footer {
   .badge { font-size: 10.5px; padding: 2px 7px; }
   .ofertas-lista.cuadricula .oferta-cargo { font-size: 15px; }
   .logo { gap: 8px; }
-  .logo-mark { width: 24px; height: 24px; border-radius: 8px; font-size: 10px; }
+  .logo-mark { width: 28px; height: 28px; border-radius: 9px; }
   .logo-name { font-size: 16px; }
   .logo-tagline { display: none; }
   .js-nav .nav-links { display: none; }
