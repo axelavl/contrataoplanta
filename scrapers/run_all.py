@@ -23,6 +23,8 @@ from datetime import datetime
 from typing import Any
 from urllib.parse import urlparse
 
+import psycopg2
+
 from scrapers.base import (
     BaseScraper,
     HttpClient,
@@ -163,28 +165,48 @@ async def _evaluate_sources(
                     historical_noise_ratio = 0.0
                 evaluation = await evaluator.evaluate(source, historical_noise_ratio=historical_noise_ratio)
                 fuente_id = _resolve_fuente_id(source, evaluation, fuentes_index)
-                try:
-                    with conexion() as conn:
-                        audit_store.save_source_evaluation(
-                            conn,
-                            source_id=fuente_id,
-                            institucion_id=source.get("id"),
-                            evaluation=evaluation,
-                        )
-                        if fuente_id is None and evaluation.decision == Decision.EXTRACT:
-                            audit_store.save_catalog_event(
-                                conn,
-                                institucion_id=source.get("id"),
-                                event_type="missing_runtime_source",
-                                detail="La fuente fue evaluada como extraible, pero no existe mapeo fuente_id en el runtime actual.",
-                                payload=evaluation.to_record(),
-                            )
-                        conn.commit()
-                except Exception:
-                    pass
                 return RuntimeSource(institucion=source, fuente_id=fuente_id, evaluation=evaluation)
 
         runtime_sources = await asyncio.gather(*[_evaluate_one(source) for source in sources])
+
+    # Persistir evaluaciones con conexión directa limpia (evita estado sucio del pool)
+    import os
+    saved = 0
+    errors = 0
+    try:
+        db_url = os.environ.get("DATABASE_URL") or (
+            f"postgresql://{os.environ['DB_USER']}:{os.environ['DB_PASSWORD']}"
+            f"@{os.environ['DB_HOST']}:{os.environ.get('DB_PORT', 5432)}/{os.environ['DB_NAME']}"
+        )
+        conn_direct = psycopg2.connect(db_url)
+        try:
+            for item in runtime_sources:
+                try:
+                    audit_store.save_source_evaluation(
+                        conn_direct,
+                        source_id=item.fuente_id,
+                        institucion_id=item.institucion.get("id"),
+                        evaluation=item.evaluation,
+                    )
+                    if item.fuente_id is None and item.evaluation.decision == Decision.EXTRACT:
+                        audit_store.save_catalog_event(
+                            conn_direct,
+                            institucion_id=item.institucion.get("id"),
+                            event_type="missing_runtime_source",
+                            detail="La fuente fue evaluada como extraible, pero no existe mapeo fuente_id en el runtime actual.",
+                            payload=item.evaluation.to_record(),
+                        )
+                    saved += 1
+                except Exception as e:
+                    errors += 1
+                    log.debug("Error guardando evaluación de %s: %s", item.institucion.get("nombre", "?"), e)
+            conn_direct.commit()
+        finally:
+            conn_direct.close()
+    except Exception as e:
+        log.warning("Error persistiendo evaluaciones al batch: %s", e)
+    log.info("Evaluaciones persistidas: %d OK, %d errores", saved, errors)
+
     return list(runtime_sources)
 
 

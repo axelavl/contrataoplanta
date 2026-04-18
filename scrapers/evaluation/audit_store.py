@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import json
+import logging
 from typing import Any
+
+log = logging.getLogger(__name__)
 
 from .models import EvaluationResult, QualityValidationResult
 
@@ -10,8 +13,9 @@ class AuditStore:
     """Persistencia defensiva de eventos del gatekeeper y de calidad."""
 
     def save_source_evaluation(self, conn, *, source_id: int | None, institucion_id: int | None, evaluation: EvaluationResult) -> None:
-        try:
-            with conn.cursor() as cur:
+        with conn.cursor() as cur:
+            cur.execute("SAVEPOINT sp_source_eval")
+            try:
                 cur.execute(
                     """
                     INSERT INTO source_evaluations (
@@ -58,8 +62,10 @@ class AuditStore:
                         evaluation.profile_name,
                     ),
                 )
-        except Exception:
-            pass
+                cur.execute("RELEASE SAVEPOINT sp_source_eval")
+            except Exception as e:
+                log.debug("save_source_evaluation fallo (institucion_id=%s): %s", institucion_id, e)
+                cur.execute("ROLLBACK TO SAVEPOINT sp_source_eval")
 
     def save_quality_event(
         self,
@@ -71,8 +77,9 @@ class AuditStore:
         url_oferta: str | None,
         validation: QualityValidationResult,
     ) -> None:
-        try:
-            with conn.cursor() as cur:
+        with conn.cursor() as cur:
+            cur.execute("SAVEPOINT sp_quality_event")
+            try:
                 cur.execute(
                     """
                     INSERT INTO offer_quality_events (
@@ -103,12 +110,14 @@ class AuditStore:
                         json.dumps(validation.signals_json, ensure_ascii=False),
                     ),
                 )
-        except Exception:
-            pass
+                cur.execute("RELEASE SAVEPOINT sp_quality_event")
+            except Exception:
+                cur.execute("ROLLBACK TO SAVEPOINT sp_quality_event")
 
     def save_catalog_event(self, conn, *, institucion_id: int | None, event_type: str, detail: str, payload: dict[str, Any] | None = None) -> None:
-        try:
-            with conn.cursor() as cur:
+        with conn.cursor() as cur:
+            cur.execute("SAVEPOINT sp_catalog_event")
+            try:
                 cur.execute(
                     """
                     INSERT INTO catalog_integrity_events (
@@ -125,8 +134,9 @@ class AuditStore:
                         json.dumps(payload or {}, ensure_ascii=False),
                     ),
                 )
-        except Exception:
-            pass
+                cur.execute("RELEASE SAVEPOINT sp_catalog_event")
+            except Exception:
+                cur.execute("ROLLBACK TO SAVEPOINT sp_catalog_event")
 
     def get_institution_noise_ratio(self, conn, institucion_id: int | None) -> float:
         if not institucion_id:
