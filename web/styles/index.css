@@ -1586,41 +1586,57 @@ footer {
   flex-shrink: 0; font-weight: 700; margin-top: 0;
 }
 .modal-actions {
-  display: flex; gap: 8px; flex-wrap: wrap;
-  padding: 10px 20px;
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 12px 20px;
   border-top: 1px solid var(--bg2);
   background: var(--blanco);
   position: sticky; bottom: 0;
   border-radius: 0 0 var(--r-l) var(--r-l);
 }
+.modal-actions-secondary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+}
 .btn-modal-primary {
-  flex: 1; height: 38px;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 100%; height: 44px;
   background: var(--azul); color: white;
   border: none; border-radius: var(--r);
-  font-size: 13px; font-weight: 700;
+  font-size: 14px; font-weight: 700;
   cursor: pointer; font-family: 'Inter', sans-serif;
+  text-decoration: none;
   transition: background .15s;
 }
 .btn-modal-primary:hover { background: var(--azul-m); }
 .btn-modal-sec {
-  height: 38px; padding: 0 14px;
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 6px;
+  width: 100%; height: 42px; padding: 0 12px;
   background: white; color: var(--texto);
   border: 1.5px solid var(--borde); border-radius: var(--r);
-  font-size: 12px; cursor: pointer;
+  font-size: 13px; font-weight: 600;
+  cursor: pointer;
   font-family: 'Inter', sans-serif;
+  text-decoration: none;
   transition: all .15s; white-space: nowrap;
 }
 .btn-modal-sec:hover { border-color: var(--cielo); color: var(--cielo); }
 .btn-modal-sec--activo { background: #FEF2F2; color: #DC2626; border-color: #FCA5A5; }
 .btn-modal-sec--activo:hover { background: #FEE2E2; color: #DC2626; border-color: #F87171; }
-.btn-modal-sec:is(a) { text-decoration: none; display: inline-flex; align-items: center; }
 .modal-share-group {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 6px;
-  margin-left: auto;
-  padding-left: 8px;
-  border-left: 1px solid var(--bg2);
+  justify-content: center;
+  gap: 10px;
+  padding-top: 4px;
+}
+.modal-share-group .share-btn--copy {
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  padding: 0;
 }
 .share-btn {
   display: inline-flex; align-items: center; justify-content: center;
@@ -1667,50 +1683,86 @@ footer {
 }
 .bases-viewer-header {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 14px 16px;
+  gap: 12px;
+  padding: 12px 16px;
   background: var(--azul);
   color: white;
 }
 .bases-viewer-kicker {
-  font-size: 11px;
-  opacity: .82;
+  font-size: 10px;
+  opacity: .75;
   text-transform: uppercase;
-  letter-spacing: .08em;
+  letter-spacing: .09em;
   margin-bottom: 2px;
 }
 .bases-viewer-header h3 {
-  font-size: 18px;
+  font-size: 16px;
+  font-weight: 700;
   font-family: 'Lora', Georgia, serif;
-  line-height: 1.2;
+  line-height: 1.25;
+  margin: 0;
 }
 .bases-viewer-close {
-  width: 34px; height: 34px;
+  width: 30px; height: 30px;
   border-radius: 999px;
   border: none;
   background: rgba(255,255,255,.17);
   color: white;
   cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  flex-shrink: 0;
 }
+.bases-viewer-close:hover { background: rgba(255,255,255,.28); }
 .bases-viewer-content {
-  background: linear-gradient(180deg, #F8FAFC, #EEF2F7);
+  background: var(--blanco);
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 20px;
+  gap: 14px;
+  padding: 18px 20px;
 }
 .bases-fallback-copy {
   color: var(--texto2);
-  font-size: 14px;
+  font-size: 13.5px;
   line-height: 1.5;
+  margin: 0;
+  text-align: center;
 }
 .bases-viewer-content--actions .bases-fallback-actions {
-  margin-top: 4px;
+  margin-top: 2px;
 }
 .bases-fallback-actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
 }
+.bases-fallback-actions .btn-modal-primary {
+  width: 100%;
+  height: 46px;
+  font-size: 14px;
+}
+.bases-link-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--texto2);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--borde);
+  text-underline-offset: 4px;
+  transition: color .15s;
+}
+.bases-link-copy:hover { color: var(--cielo); }
+.bases-link-copy.is-copied { color: var(--verde); text-decoration-color: var(--verde); }
 @media (max-width: 768px) {
   .bases-viewer-overlay { padding: 0; }
   .bases-viewer-panel {
@@ -1718,14 +1770,11 @@ footer {
     max-width: 100%;
     border-radius: 0;
   }
-  .bases-viewer-header { padding: 12px; }
-  .bases-viewer-header h3 { font-size: 16px; }
-  .bases-viewer-content { padding: 16px 14px; }
-  .bases-fallback-actions > * {
-    width: 100%;
-    justify-content: center;
-    min-height: 44px;
-  }
+  .bases-viewer-header { padding: 11px 14px; }
+  .bases-viewer-header h3 { font-size: 15px; }
+  .bases-viewer-content { padding: 16px 16px 20px; gap: 12px; }
+  .bases-fallback-copy { font-size: 13px; }
+  .bases-fallback-actions .btn-modal-primary { min-height: 46px; }
 }
 
 /* Popover QR */
@@ -1820,25 +1869,22 @@ footer {
 .ig-btn--sec.is-copied { background: var(--verde); color: white; border-color: var(--verde); }
 @media (max-width: 600px) {
   .modal-actions {
-    padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
-    gap: 6px;
+    padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+    gap: 8px;
   }
-  .btn-modal-primary {
-    flex: 1 0 calc(100% - 70px);
-    min-width: 0;
-  }
+  .btn-modal-primary { height: 46px; font-size: 14.5px; }
+  .btn-modal-sec { height: 44px; font-size: 13px; }
+  .modal-actions-secondary { gap: 8px; }
   .modal-share-group {
     width: 100%;
-    margin-left: 0;
-    padding-left: 0;
-    border-left: 0;
-    border-top: 1px solid var(--bg2);
+    justify-content: center;
+    gap: 14px;
     padding-top: 8px;
-    justify-content: flex-end;
+    border-top: 1px solid var(--bg2);
   }
-  .share-btn { width: 40px; height: 40px; }
+  .share-btn { width: 42px; height: 42px; }
   .share-btn svg { width: 18px; height: 18px; }
-  .share-btn--copy { min-width: 116px; }
+  .modal-share-group .share-btn--copy { width: 42px; min-width: 42px; height: 42px; }
 }
 
 /* Alerta de plazo en modal: aviso breve de urgencia (no duplica datos del resumen) */
