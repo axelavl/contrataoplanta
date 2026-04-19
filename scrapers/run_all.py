@@ -20,8 +20,17 @@ import sys
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
+
+# Permitir `python scrapers/run_all.py` ademas de `python -m scrapers.run_all`:
+# al invocar el script directamente, Python agrega la carpeta del script a
+# sys.path en lugar de la raiz del proyecto, por lo que `from scrapers.*`
+# falla con ModuleNotFoundError. Anteponemos la raiz para ambos casos.
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
 
 import psycopg2
 
