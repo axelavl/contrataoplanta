@@ -4,3 +4,4 @@ import os
 
 
 os.environ.setdefault("DB_PASSWORD", "test-password")
+os.environ.setdefault("ADMIN_PASSWORD", "test-admin-password")

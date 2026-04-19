@@ -1,0 +1,29 @@
+name: security-audit
+
+on:
+  push:
+    paths:
+      - 'requirements.txt'
+      - '.github/workflows/security-audit.yml'
+  pull_request:
+    paths:
+      - 'requirements.txt'
+      - '.github/workflows/security-audit.yml'
+  schedule:
+    # Lunes 09:00 UTC — auditoría semanal contra PyPI advisory DB.
+    - cron: '0 9 * * 1'
+
+jobs:
+  pip-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pip-audit
+        run: python -m pip install --upgrade pip pip-audit
+      - name: Run pip-audit
+        # --strict => falla con cualquier vulnerabilidad no resuelta.
+        # --ignore-vuln permite silenciar casos falsos positivos puntuales.
+        run: pip-audit --strict --requirement requirements.txt

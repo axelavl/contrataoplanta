@@ -66,16 +66,30 @@ from api.services.meilisearch_svc import (
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("api.contrataoplanta")
 
+def _requerido_env(nombre: str) -> str:
+    """Lee una variable de entorno obligatoria o aborta el arranque.
+
+    Sin fallback con credenciales hardcodeadas: si la variable falta en
+    Railway/entorno, el proceso debe fallar ruidoso al importar este módulo.
+    """
+    valor = os.getenv(nombre)
+    if not valor:
+        raise RuntimeError(
+            f"Variable de entorno {nombre!r} no definida. "
+            f"Configúrala en Railway/entorno (ver .env.example)."
+        )
+    return valor
+
+
 DB_CONFIG = {
     "host": os.getenv("DB_HOST", "localhost"),
     "port": os.getenv("DB_PORT", "5432"),
     "dbname": os.getenv("DB_NAME", "empleospublicos"),
     "user": os.getenv("DB_USER", "postgres"),
-    "password": os.getenv("DB_PASSWORD", "axel1234"),
+    "password": _requerido_env("DB_PASSWORD"),
 }
 
 DEFAULT_ALLOW_ORIGINS = [
-    "null",
     "http://localhost:3000",
     "http://localhost:5500",
     "http://127.0.0.1:5500",
@@ -116,7 +130,7 @@ SITE_URL = (
     os.getenv("SITE_URL", "https://estadoemplea.pages.dev")
     or "https://estadoemplea.pages.dev"
 ).rstrip("/")
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "estadoemplea2026")
+ADMIN_PASSWORD = _requerido_env("ADMIN_PASSWORD")
 # ADMIN_PATH: prefijo secreto de las rutas de administración.
 # Configura esta variable en Railway para ocultar el punto de entrada.
 # Ejemplo: ADMIN_PATH=f8a3d2e7  → rutas en /api/f8a3d2e7/stats, etc.
@@ -944,7 +958,10 @@ app.add_middleware(
     ),
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["*"],
+    # allow_headers explícito — evita la combinación peligrosa
+    # `allow_headers=["*"] + allow_credentials=True`, que expande la
+    # superficie de CSRF desde subdominios permitidos.
+    allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
 )
 
 
@@ -1659,9 +1676,14 @@ def api_autocompletar(
     return meili_autocompletar(q, limite=limite)
 
 
-@app.post("/api/meilisearch/reindexar")
-def api_reindexar_meili() -> dict[str, Any]:
-    """Re-indexa todas las ofertas activas en Meilisearch."""
+@app.post(f"/api/{ADMIN_PATH}/meilisearch/reindexar", tags=["admin"])
+def api_reindexar_meili(_user: str = Depends(_verify_admin)) -> dict[str, Any]:
+    """Re-indexa todas las ofertas activas en Meilisearch.
+
+    Movido bajo el prefijo admin: antes era público y permitía gatillar
+    una re-indexación de 10 000 ofertas sin autenticación (abuso de
+    recursos y cuota de Meilisearch).
+    """
     ofertas = execute_fetch_all(
         f"""
         {ofertas_select_sql()}
@@ -1685,12 +1707,18 @@ def api_reindexar_meili() -> dict[str, Any]:
 
 # ──────────────────── Alertas mejoradas con Resend ──────────────────────────
 
-@app.post("/api/alertas/enviar")
-def api_enviar_alertas_pendientes() -> dict[str, Any]:
+@app.post(f"/api/{ADMIN_PATH}/alertas/enviar", tags=["admin"])
+def api_enviar_alertas_pendientes(
+    _user: str = Depends(_verify_admin),
+) -> dict[str, Any]:
     """
     Procesa y envía alertas pendientes a los suscriptores.
     Busca ofertas nuevas (últimas 24h) que coincidan con los filtros
     de cada suscriptor y les envía un email via Resend.
+
+    Movido bajo el prefijo admin: antes era público y permitía gatillar
+    envío masivo de emails vía Resend sin autenticación (abuso de
+    cuota + spam a toda la lista de suscriptores).
     """
     suscripciones = execute_fetch_all(
         "SELECT * FROM alertas_suscripciones WHERE activa = TRUE"
