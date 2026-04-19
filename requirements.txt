@@ -7,7 +7,7 @@
 aiohttp==3.11.13
 beautifulsoup4==4.12.3
 lxml==5.1.0
-requests==2.32.3
+requests==2.33.1
 pdfplumber==0.11.4
 
 # ── Base de datos ───────────────────────────────────────────
@@ -18,7 +18,7 @@ fastapi==0.110.0
 uvicorn[standard]==0.27.1
 pydantic[email]==2.6.3
 slowapi==0.1.9
-PyJWT==2.8.0
+PyJWT==2.12.1
 
 # ── Configuración ───────────────────────────────────────────
 python-dotenv==1.0.1
@@ -27,7 +27,11 @@ python-dotenv==1.0.1
 python-dateutil==2.9.0
 
 # ── Emails transaccionales ──────────────────────────────────
-resend==0.8.0
+# resend 0.8.0 pineaba requests<2.32 y entraba en conflicto con el
+# upgrade a requests==2.32.3 (CVE-2024-35195). 2.4.0 mantiene la misma
+# API pública (`resend.Emails.send({...})`, `resend.api_key = ...`) y
+# sólo pide requests>=2.31.0 — compatible.
+resend==2.4.0
 
 # ── Búsqueda rápida (Meilisearch) ──────────────────────────
 meilisearch==0.31.6
