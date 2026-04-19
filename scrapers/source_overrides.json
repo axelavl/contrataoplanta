@@ -273,9 +273,9 @@
     },
     {
       "id": 154,
-      "status": "experimental",
+      "status": "active",
       "kind": "custom_buk",
-      "reason": "Coordinador Eléctrico Nacional — Buk RRHH, requiere JS. Experimental hasta verificar si responde sin JS",
+      "reason": "Coordinador Eléctrico Nacional — Buk RRHH. Renderizado server-side (Rails), no requiere JS",
       "notes": "https://coordinador.buk.cl/trabaja-con-nosotros"
     },
     {
@@ -615,6 +615,16 @@
       "kind": "generic",
       "reason": "GORE Magallanes — portal propio trabaja-en-el-gore, también publica en EP",
       "notes": "https://www.goremagallanes.cl/trabaja-en-el-gore/"
+    },
+
+    {"_comment": "=== Buk — municipios con portal propio ==="},
+
+    {
+      "id": 394,
+      "status": "active",
+      "kind": "custom_buk",
+      "reason": "Municipalidad de Lo Barnechea — portal en Buk, renderizado server-side",
+      "notes": "https://lobarnechea.buk.cl/trabaja-con-nosotros"
     }
   ]
 }
