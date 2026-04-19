@@ -10,3 +10,4 @@ Disallow: /privacidad.html
 Disallow: /descargo.html
 
 Sitemap: https://estadoemplea.pages.dev/sitemap.xml
+Sitemap: https://contrataoplanta-production.up.railway.app/sitemap.xml

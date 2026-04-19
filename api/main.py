@@ -12,10 +12,12 @@ import re
 import sys
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlencode
+
+import jwt  # PyJWT
 
 try:
     import psycopg2
@@ -131,9 +133,13 @@ SITE_URL = (
     or "https://estadoemplea.pages.dev"
 ).rstrip("/")
 ADMIN_PASSWORD = _requerido_env("ADMIN_PASSWORD")
+ADMIN_JWT_SECRET = _requerido_env("ADMIN_JWT_SECRET")
+ADMIN_JWT_TTL_SEG = int(os.getenv("ADMIN_JWT_TTL_SEG", "43200"))  # 12h default
+ADMIN_JWT_ALG = "HS256"
+ADMIN_JWT_USER = "ops"  # usuario lógico único por ahora
 # ADMIN_PATH: prefijo secreto de las rutas de administración.
 # Configura esta variable en Railway para ocultar el punto de entrada.
-# Ejemplo: ADMIN_PATH=f8a3d2e7  → rutas en /api/f8a3d2e7/stats, etc.
+# Con JWT activo es defense-in-depth, no la barrera principal.
 ADMIN_PATH = os.getenv("ADMIN_PATH", "_gestion_ops").strip("/")
 
 # ── Rate limiting en memoria (simple, por IP) ─────────────────
@@ -161,52 +167,106 @@ def _record_failure(ip: str) -> None:
     _auth_failures[ip].append(_time.monotonic())
 
 
-def _verify_admin(request: Request) -> str:
-    """Verifica Authorization + rate limiting para endpoints de administración.
+# ── JWT admin ─────────────────────────────────────────────────
+# Denylist de tokens revocados: mapa jti -> exp_ts unix. Se purga
+# perezosamente al verificar tokens; como el exp del JWT es también
+# validado por PyJWT, un jti vencido que no alcancemos a limpiar ya
+# no puede autenticar de todas formas.
+_revoked_jti: dict[str, float] = {}
 
-    Acepta esquemas ``Basic <b64>`` o ``Bearer <b64>`` con payload
-    ``ops:<password>`` codificado en base64. Usamos ``Bearer`` desde el
-    frontend para evitar que Firefox/Safari intercepten el 401 con su diálogo
-    nativo de autenticación (que aborta la promesa ``fetch()`` con
-    "Failed to fetch" antes de que el JS pueda leer el status). Aceptamos
-    ``Basic`` también por compatibilidad con clientes CLI (curl).
+
+def _client_ip(request: Request) -> str:
+    """IP real del cliente considerando X-Forwarded-For del proxy.
+
+    Tomamos el primer valor del header (cliente original). No es
+    infalsificable si el proxy no sanea, pero en Railway/Cloudflare
+    viene limpio.
     """
-    ip = (request.client.host if request.client else "unknown") or "unknown"
-    _check_rate_limit(ip)
+    xff = request.headers.get("x-forwarded-for", "")
+    if xff:
+        primera = xff.split(",")[0].strip()
+        if primera:
+            return primera
+    return (request.client.host if request.client else "unknown") or "unknown"
 
-    auth_header = request.headers.get("authorization")
-    if not auth_header:
-        # Sin credenciales: emitimos desafío con un scheme no estándar
-        # ("Token") para que el navegador no active su diálogo de Basic Auth.
+
+def _create_admin_token(user: str = ADMIN_JWT_USER) -> dict[str, Any]:
+    """Emite un JWT de admin. Devuelve metadatos + token."""
+    ahora = datetime.now(tz=timezone.utc)
+    exp_dt = ahora + _td(seconds=ADMIN_JWT_TTL_SEG)
+    jti = secrets.token_urlsafe(12)
+    payload = {
+        "sub": user,
+        "jti": jti,
+        "iat": int(ahora.timestamp()),
+        "exp": int(exp_dt.timestamp()),
+    }
+    token = jwt.encode(payload, ADMIN_JWT_SECRET, algorithm=ADMIN_JWT_ALG)
+    return {
+        "token": token,
+        "expires_at": payload["exp"],
+        "jti": jti,
+    }
+
+
+def _verify_admin_jwt(request: Request) -> str:
+    """Verifica un JWT de admin emitido por ``/auth/login``.
+
+    - Espera ``Authorization: Bearer <jwt>``.
+    - Valida firma, ``exp`` e ``iat`` con PyJWT.
+    - Rechaza si el ``jti`` está en el denylist (logout).
+    - No aplica rate limit aquí: el rate limit vive en el endpoint de login,
+      que es donde se presentan credenciales.
+    """
+    auth_header = request.headers.get("authorization", "")
+    scheme, _, raw = auth_header.partition(" ")
+    if scheme.lower() != "bearer" or not raw.strip():
         raise HTTPException(
             status_code=401,
             detail="Autenticación requerida",
-            headers={"WWW-Authenticate": 'Token realm="Gestion"'},
+            # Scheme no estándar para evitar el diálogo nativo del navegador.
+            headers={"WWW-Authenticate": 'Bearer realm="Gestion"'},
         )
-
-    scheme, _, token = auth_header.partition(" ")
-    credentials_ok = False
-    if scheme.lower() in ("basic", "bearer") and token:
-        try:
-            decoded = base64.b64decode(token.strip(), validate=True).decode("utf-8")
-        except (ValueError, UnicodeDecodeError):
-            decoded = ""
-        user, sep, password = decoded.partition(":")
-        if sep and user == "ops" and password:
-            credentials_ok = secrets.compare_digest(
-                password.encode("utf-8"),
-                ADMIN_PASSWORD.encode("utf-8"),
-            )
-
-    if not credentials_ok:
-        _record_failure(ip)
-        # El cliente ya envió credenciales; no incluimos WWW-Authenticate para
-        # evitar el re-desafío nativo del navegador.
-        raise HTTPException(
-            status_code=401,
-            detail="Credenciales incorrectas",
+    try:
+        payload = jwt.decode(
+            raw.strip(),
+            ADMIN_JWT_SECRET,
+            algorithms=[ADMIN_JWT_ALG],
+            options={"require": ["exp", "iat", "sub", "jti"]},
         )
-    return "ops"
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Sesión expirada") from None
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Token inválido") from None
+
+    jti = payload.get("jti") or ""
+    if jti in _revoked_jti:
+        raise HTTPException(status_code=401, detail="Sesión revocada")
+
+    user = str(payload.get("sub") or "")
+    if user != ADMIN_JWT_USER:
+        raise HTTPException(status_code=401, detail="Token inválido")
+    # Guardamos el jti en el request para que /logout pueda revocarlo sin
+    # re-decodificar.
+    request.state.admin_jti = jti
+    request.state.admin_exp = int(payload.get("exp") or 0)
+    return user
+
+
+def _revoke_jti(jti: str, exp_ts: int) -> None:
+    """Añade un jti al denylist y purga los ya vencidos."""
+    ahora = _time.time()
+    # Purga perezosa.
+    vencidos = [j for j, e in _revoked_jti.items() if e <= ahora]
+    for j in vencidos:
+        _revoked_jti.pop(j, None)
+    if exp_ts > ahora:
+        _revoked_jti[jti] = float(exp_ts)
+
+
+# Import local para evitar ensuciar el namespace global con un nombre
+# corto como `timedelta`.
+from datetime import timedelta as _td  # noqa: E402
 WEB_INDEX_PATH = _PROJECT_ROOT / "web" / "index.html"
 DEFAULT_OG_IMAGE = f"{SITE_URL}/og-default.jpg"
 STATUS_LEGACY_MAP = {
@@ -660,6 +720,42 @@ def _fold_institution_name(value: str | None) -> str:
     folded = re.sub(r"[^a-zA-Z0-9\s]", " ", folded.lower())
     folded = re.sub(r"\s+", " ", folded).strip()
     return folded
+
+
+def _slugify(value: str | None, max_len: int = 80) -> str:
+    """Genera un slug URL-safe a partir de texto libre.
+
+    Se usa para construir URLs de ofertas en el sitemap:
+    ``/oferta/{id}-{slug}``. El ``id`` mantiene la unicidad; el slug
+    solo añade valor semántico para SEO y para humanos que lean el URL.
+    """
+    if not value:
+        return ""
+    import unicodedata
+    folded = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode("ascii")
+    folded = re.sub(r"[^a-zA-Z0-9]+", "-", folded).strip("-").lower()
+    return folded[:max_len].rstrip("-")
+
+
+# URLs estáticas que siempre figuran en el sitemap. Las rutas dinámicas
+# (ofertas activas) se añaden desde la DB en el endpoint /sitemap.xml.
+_STATIC_SITEMAP_URLS: tuple[tuple[str, str, str], ...] = (
+    ("/", "1.0", "hourly"),
+    ("/faq.html", "0.5", "monthly"),
+    ("/guia-busqueda-empleo-publico.html", "0.7", "weekly"),
+    ("/guia-postulacion-empleos-publicos.html", "0.7", "weekly"),
+    ("/guia-preparacion-cv-sector-publico.html", "0.7", "weekly"),
+    ("/guia-seguimiento-postulacion-publica.html", "0.7", "weekly"),
+    ("/ruta-ingreso-empleo-publico.html", "0.7", "weekly"),
+    ("/glosario-laboral-publico.html", "0.6", "monthly"),
+    ("/formacion-sector-publico-chile.html", "0.6", "monthly"),
+    ("/regimenes-laborales-sector-publico-chile.html", "0.6", "monthly"),
+    ("/editorial.html", "0.4", "monthly"),
+    ("/estadisticas.html", "0.5", "weekly"),
+    ("/terminos.html", "0.3", "yearly"),
+    ("/privacidad.html", "0.3", "yearly"),
+    ("/descargo.html", "0.3", "yearly"),
+)
 
 
 def _extract_root_domain(url: str | None) -> str | None:
@@ -1677,7 +1773,7 @@ def api_autocompletar(
 
 
 @app.post(f"/api/{ADMIN_PATH}/meilisearch/reindexar", tags=["admin"])
-def api_reindexar_meili(_user: str = Depends(_verify_admin)) -> dict[str, Any]:
+def api_reindexar_meili(_user: str = Depends(_verify_admin_jwt)) -> dict[str, Any]:
     """Re-indexa todas las ofertas activas en Meilisearch.
 
     Movido bajo el prefijo admin: antes era público y permitía gatillar
@@ -1709,7 +1805,7 @@ def api_reindexar_meili(_user: str = Depends(_verify_admin)) -> dict[str, Any]:
 
 @app.post(f"/api/{ADMIN_PATH}/alertas/enviar", tags=["admin"])
 def api_enviar_alertas_pendientes(
-    _user: str = Depends(_verify_admin),
+    _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
     """
     Procesa y envía alertas pendientes a los suscriptores.
@@ -1841,6 +1937,71 @@ def health() -> dict[str, Any] | JSONResponse:
         )
 
 
+@app.get("/sitemap.xml", include_in_schema=False)
+def sitemap_xml() -> Response:
+    """Sitemap dinámico con URLs estáticas + una entrada por oferta activa.
+
+    Las URLs siempre apuntan a ``SITE_URL`` (frontend en Cloudflare Pages),
+    aunque el sitemap se sirva desde el backend en Railway. Google/Bing
+    aceptan sitemaps cross-host siempre que ambos dominios estén
+    verificados en Search Console.
+
+    Tope de 45 000 URLs (dentro del límite oficial de 50 000). Si algún
+    día hay más ofertas activas, se parte en un sitemap-index paginado.
+    """
+    try:
+        rows = execute_fetch_all(
+            f"""
+            SELECT
+                o.id,
+                o.cargo,
+                COALESCE(o.actualizada_en, o.fecha_scraped, o.detectada_en, o.creada_en) AS lastmod
+            FROM ofertas o
+            WHERE {ACTIVE_OFFER_SQL}
+            ORDER BY o.id DESC
+            LIMIT 45000
+            """
+        )
+    except Exception:
+        logger.exception("No se pudo leer ofertas para sitemap; devolviendo solo estáticas")
+        rows = []
+
+    hoy = date.today().isoformat()
+    partes: list[str] = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    ]
+    for path, priority, changefreq in _STATIC_SITEMAP_URLS:
+        partes.append(
+            f"  <url><loc>{html.escape(SITE_URL + path)}</loc>"
+            f"<lastmod>{hoy}</lastmod>"
+            f"<changefreq>{changefreq}</changefreq>"
+            f"<priority>{priority}</priority></url>"
+        )
+    for row in rows:
+        slug = _slugify(row.get("cargo"))
+        loc = f"{SITE_URL}/oferta/{row['id']}" + (f"-{slug}" if slug else "")
+        raw_lastmod = row.get("lastmod")
+        if raw_lastmod is None:
+            lastmod_str = hoy
+        elif hasattr(raw_lastmod, "date"):
+            lastmod_str = raw_lastmod.date().isoformat()
+        else:
+            lastmod_str = raw_lastmod.isoformat()
+        partes.append(
+            f"  <url><loc>{html.escape(loc)}</loc>"
+            f"<lastmod>{lastmod_str}</lastmod>"
+            f"<changefreq>daily</changefreq>"
+            f"<priority>0.7</priority></url>"
+        )
+    partes.append("</urlset>")
+    return Response(
+        content="\n".join(partes),
+        media_type="application/xml",
+        headers={"Cache-Control": "public, max-age=3600, stale-while-revalidate=86400"},
+    )
+
+
 @app.get("/")
 def web_root(request: Request, oferta: int | None = Query(None, ge=1)) -> Response:
     accept_types = [
@@ -1872,11 +2033,67 @@ def web_root(request: Request, oferta: int | None = Query(None, ge=1)) -> Respon
 
 
 # ════════════════════════════════════════════════════════════════════════════
-#  ADMIN API — protegida con HTTP Basic Auth (ADMIN_PASSWORD env var)
+#  ADMIN API — autenticación JWT (login contra ADMIN_PASSWORD, token HS256)
 # ════════════════════════════════════════════════════════════════════════════
 
+
+class _LoginPayload(BaseModel):
+    password: str
+
+
+@app.post(f"/api/{ADMIN_PATH}/auth/login", tags=["admin"])
+def admin_login(payload: _LoginPayload, request: Request) -> dict[str, Any]:
+    """Valida la contraseña de admin y emite un JWT firmado.
+
+    Rate limit por IP sobre intentos fallidos (5 en 10 min). Las sesiones
+    válidas no se ven afectadas por este límite — el resto de los
+    endpoints admin sólo valida el token, no vuelve a pedir credenciales.
+    """
+    ip = _client_ip(request)
+    _check_rate_limit(ip)
+
+    password = (payload.password or "").strip()
+    if not password or not secrets.compare_digest(
+        password.encode("utf-8"), ADMIN_PASSWORD.encode("utf-8")
+    ):
+        _record_failure(ip)
+        raise HTTPException(status_code=401, detail="Credenciales incorrectas")
+
+    emitido = _create_admin_token()
+    return {
+        "token": emitido["token"],
+        "expires_at": emitido["expires_at"],
+        "token_type": "Bearer",
+    }
+
+
+@app.post(f"/api/{ADMIN_PATH}/auth/logout", tags=["admin"])
+def admin_logout(
+    request: Request,
+    _user: str = Depends(_verify_admin_jwt),
+) -> dict[str, bool]:
+    """Revoca el token actual (añade su jti al denylist hasta su ``exp``)."""
+    jti = getattr(request.state, "admin_jti", "") or ""
+    exp_ts = int(getattr(request.state, "admin_exp", 0) or 0)
+    if jti and exp_ts:
+        _revoke_jti(jti, exp_ts)
+    return {"ok": True}
+
+
+@app.get(f"/api/{ADMIN_PATH}/auth/me", tags=["admin"])
+def admin_me(
+    request: Request,
+    _user: str = Depends(_verify_admin_jwt),
+) -> dict[str, Any]:
+    """Ping autenticado para validar que un token guardado sigue vivo."""
+    return {
+        "user": _user,
+        "expires_at": int(getattr(request.state, "admin_exp", 0) or 0),
+    }
+
+
 @app.get(f"/api/{ADMIN_PATH}/stats", tags=["admin"])
-def admin_stats(_user: str = Depends(_verify_admin)) -> dict[str, Any]:
+def admin_stats(_user: str = Depends(_verify_admin_jwt)) -> dict[str, Any]:
     """Métricas completas para el dashboard de administración."""
     totales = execute_fetch_one("""
         SELECT
@@ -1964,7 +2181,7 @@ def admin_ofertas(
     region: str | None = Query(None),
     q: str | None = Query(None),
     orden: str = Query("reciente", description="reciente|cierre|cargo"),
-    _user: str = Depends(_verify_admin),
+    _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
     """Lista paginada de ofertas con filtros para revisión."""
     conditions = []
@@ -2048,7 +2265,7 @@ def admin_ofertas(
 @app.post(f"/api/{ADMIN_PATH}/ofertas/{{oferta_id}}/toggle-activa", tags=["admin"])
 def admin_toggle_activa(
     oferta_id: int,
-    _user: str = Depends(_verify_admin),
+    _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
     """Activa o desactiva una oferta."""
     with get_cursor() as (conn, cur):
@@ -2069,7 +2286,7 @@ def admin_toggle_activa(
 def admin_editar_oferta(
     oferta_id: int,
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin),
+    _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
     """Edita campos básicos de una oferta (cargo, descripcion, fecha_cierre, activa)."""
     CAMPOS_PERMITIDOS = {"cargo", "descripcion", "fecha_cierre", "activa", "estado", "region", "tipo_contrato"}
@@ -2096,7 +2313,7 @@ def admin_editar_oferta(
 def admin_scraper_runs(
     limit: int = Query(20, ge=1, le=100),
     con_detalle: bool = Query(False, description="Incluir resumen por institución"),
-    _user: str = Depends(_verify_admin),
+    _user: str = Depends(_verify_admin_jwt),
 ) -> list[dict[str, Any]]:
     """Historial de corridas del scraper con detalle."""
     runs_cols = _table_columns("scraper_runs")
@@ -2151,7 +2368,7 @@ def admin_scraper_runs(
 @app.get(f"/api/{ADMIN_PATH}/scraper-runs/{{run_id}}", tags=["admin"])
 def admin_scraper_run_detalle(
     run_id: int,
-    _user: str = Depends(_verify_admin),
+    _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
     """Detalle completo de una corrida del scraper, incluyendo reporte por institución."""
     runs_cols = _table_columns("scraper_runs")
@@ -2191,7 +2408,7 @@ def admin_scraper_run_detalle(
 def admin_evaluaciones(
     decision: str | None = Query(None),
     limit: int = Query(200, ge=1, le=1000),
-    _user: str = Depends(_verify_admin),
+    _user: str = Depends(_verify_admin_jwt),
 ) -> list[dict[str, Any]]:
     """Última evaluación por institución (gatekeeper)."""
     where = "WHERE e.decision = %s" if decision else ""
@@ -2224,7 +2441,7 @@ def admin_evaluaciones(
 def admin_fuentes(
     con_ofertas: bool | None = Query(None),
     sector: str | None = Query(None),
-    _user: str = Depends(_verify_admin),
+    _user: str = Depends(_verify_admin_jwt),
 ) -> list[dict[str, Any]]:
     """Instituciones con su última evaluación y conteo de ofertas activas."""
     conditions = []
@@ -2274,7 +2491,7 @@ def admin_fuentes(
 
 @app.get(f"/api/{ADMIN_PATH}/scraper/catalog", tags=["admin"])
 def admin_scraper_catalog(
-    _user: str = Depends(_verify_admin),
+    _user: str = Depends(_verify_admin_jwt),
 ) -> list[dict[str, Any]]:
     """Lista instituciones del catálogo con su clasificación (source_status)."""
     try:
@@ -2316,7 +2533,7 @@ def admin_scraper_catalog(
 @app.post(f"/api/{ADMIN_PATH}/scraper/run", tags=["admin"])
 async def admin_scraper_run(
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin),
+    _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
     """
     Dispara un scraper en background.
@@ -2426,7 +2643,7 @@ def _set_site_config_db(clave: str, valor: str) -> None:
 
 @app.get(f"/api/{ADMIN_PATH}/config", tags=["admin"])
 def admin_get_config(
-    _user: str = Depends(_verify_admin),
+    _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
     """Lee la configuración editable del sitio."""
     db_conf = _get_site_config_db()
@@ -2445,7 +2662,7 @@ def admin_get_config(
 @app.put(f"/api/{ADMIN_PATH}/config", tags=["admin"])
 def admin_set_config(
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin),
+    _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
     """
     Actualiza configuración editable del sitio.
@@ -2478,7 +2695,7 @@ def admin_set_config(
 @app.post(f"/api/{ADMIN_PATH}/ofertas/bulk-desactivar", tags=["admin"])
 def admin_bulk_desactivar(
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin),
+    _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
     """
     Desactiva en bloque ofertas según criterios.
@@ -2521,7 +2738,7 @@ def admin_bulk_desactivar(
 @app.post(f"/api/{ADMIN_PATH}/urls/revalidar", tags=["admin"])
 async def admin_revalidar_urls(
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin),
+    _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
     """
     Dispara revalidación de URLs en background (llama a validate_offer_urls.py).
@@ -2557,7 +2774,7 @@ async def admin_revalidar_urls(
 @app.get(f"/api/{ADMIN_PATH}/fuentes/{{fuente_id}}", tags=["admin"])
 def admin_get_fuente(
     fuente_id: int,
-    _user: str = Depends(_verify_admin),
+    _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
     """Detalle de una institución con su última evaluación y últimas 10 ofertas."""
     inst = execute_fetch_one(
@@ -2585,7 +2802,7 @@ def admin_get_fuente(
 def admin_editar_fuente(
     fuente_id: int,
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin),
+    _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
     """
     Edita campos de una institución.
@@ -2614,7 +2831,7 @@ def admin_editar_fuente(
 @app.post(f"/api/{ADMIN_PATH}/fuentes", tags=["admin"])
 def admin_crear_fuente(
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin),
+    _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
     """
     Crea una nueva institución en el catálogo interno.
@@ -2652,7 +2869,7 @@ def admin_crear_fuente(
 @app.delete(f"/api/{ADMIN_PATH}/fuentes/{{fuente_id}}", tags=["admin"])
 def admin_desactivar_fuente(
     fuente_id: int,
-    _user: str = Depends(_verify_admin),
+    _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
     """
     Desactiva una fuente: marca todas sus ofertas activas como cerradas
@@ -2696,7 +2913,7 @@ def admin_desactivar_fuente(
 def admin_revision_queue(
     limit: int = Query(50, ge=1, le=200),
     tipo: str | None = Query(None),  # url_rota | sin_sector | calidad_baja | sin_fecha | texto_corto
-    _user: str = Depends(_verify_admin),
+    _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
     """
     Bandeja de ofertas que requieren revisión manual, clasificadas por tipo de problema.
@@ -2785,7 +3002,7 @@ def admin_revision_queue(
 def admin_marcar_revisada(
     oferta_id: int,
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin),
+    _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
     """Marca una oferta como revisada (needs_review=FALSE) y guarda una nota opcional."""
     nota = (payload.get("nota") or "").strip()
@@ -2807,7 +3024,7 @@ def admin_marcar_revisada(
 
 @app.get(f"/api/{ADMIN_PATH}/diagnostico", tags=["admin"])
 def admin_diagnostico(
-    _user: str = Depends(_verify_admin),
+    _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
     """
     Diagnóstico completo del estado de la plataforma.
@@ -2898,7 +3115,7 @@ def admin_diagnostico(
 def admin_suscripciones(
     activa: bool | None = Query(None),
     limit: int = Query(200, ge=1, le=1000),
-    _user: str = Depends(_verify_admin),
+    _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
     """Lista de suscriptores de alertas con estadísticas."""
     where = ""
@@ -2934,7 +3151,7 @@ def admin_suscripciones(
 @app.delete(f"/api/{ADMIN_PATH}/suscripciones/{{sub_id}}", tags=["admin"])
 def admin_eliminar_suscripcion(
     sub_id: int,
-    _user: str = Depends(_verify_admin),
+    _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
     """Elimina (o desactiva) una suscripción."""
     with get_cursor() as (conn, cur):
@@ -2951,7 +3168,7 @@ def admin_eliminar_suscripcion(
 @app.post(f"/api/{ADMIN_PATH}/alertas/enviar", tags=["admin"])
 def admin_enviar_alertas(
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin),
+    _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
     """
     Dispara el envío de alertas manualmente.
@@ -3047,7 +3264,7 @@ def admin_enviar_alertas(
 @app.post(f"/api/{ADMIN_PATH}/alertas/test-email", tags=["admin"])
 def admin_test_email(
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin),
+    _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
     """
     Envía un email de prueba con las últimas 3 ofertas activas.
@@ -3077,7 +3294,7 @@ def admin_test_email(
 
 @app.get(f"/api/{ADMIN_PATH}/suscripciones/export", tags=["admin"])
 def admin_export_suscripciones(
-    _user: str = Depends(_verify_admin),
+    _user: str = Depends(_verify_admin_jwt),
 ) -> Response:
     """Exporta suscripciones activas como CSV."""
     import csv, io
@@ -3102,7 +3319,7 @@ def admin_export_ofertas(
     activa: str | None = Query(None),
     sector: str | None = Query(None),
     q: str | None = Query(None),
-    _user: str = Depends(_verify_admin),
+    _user: str = Depends(_verify_admin_jwt),
 ) -> Response:
     """Exporta ofertas filtradas como CSV (máx. 5000 filas)."""
     import csv, io

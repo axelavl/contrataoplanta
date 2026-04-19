@@ -26,7 +26,33 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&display=swap" rel="stylesheet">
-<!-- Analytics deshabilitado: reactivar cuando haya subdominio propio de Umami. -->
+<!--
+  Analytics (Umami) — activable cuando haya subdominio propio.
+  Para activar: reemplazar los dos valores vacíos por el script URL y el
+  website_id de la instancia de Umami. El script se inyecta sólo si ambos
+  están presentes; si no, `window.track()` queda como no-op y el resto del
+  código no cambia de comportamiento.
+-->
+<script>
+  window.__UMAMI_URL = '';         // ej: 'https://umami.estadoemplea.cl/script.js'
+  window.__UMAMI_WEBSITE_ID = '';  // ej: '00000000-0000-0000-0000-000000000000'
+  (function () {
+    if (!window.__UMAMI_URL || !window.__UMAMI_WEBSITE_ID) return;
+    var s = document.createElement('script');
+    s.defer = true;
+    s.src = window.__UMAMI_URL;
+    s.setAttribute('data-website-id', window.__UMAMI_WEBSITE_ID);
+    document.head.appendChild(s);
+  })();
+  // Helper único de trackeo. No-op si Umami no cargó.
+  window.track = function (evento, props) {
+    try {
+      if (window.umami && typeof window.umami.track === 'function') {
+        window.umami.track(evento, props || {});
+      }
+    } catch (_) { /* silencio */ }
+  };
+</script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -89,20 +115,22 @@
     <div class="buscador-wrap">
       <div class="buscador-form">
         <div class="campo">
-          <label>Cargo o palabra clave</label>
+          <label for="input-cargo">Cargo o palabra clave</label>
           <input type="text" placeholder="Ej: psicólogo, contador, RRHH..." id="input-cargo">
         </div>
         <div class="campo">
-          <label>Región</label>
+          <label for="filtro-region">Región</label>
           <select id="filtro-region">
             <option value="">Todas las regiones</option>
             <!-- Se carga dinámicamente desde API DPA -->
           </select>
         </div>
         <div class="campo">
-          <label>Ciudad / Comuna</label>
+          <!-- El "label" apunta al botón trigger vía aria-labelledby porque
+               <label for="..."> sólo asocia con inputs/selects/textareas. -->
+          <label id="lbl-filtro-comunas">Ciudad / Comuna</label>
           <div class="comunas-selector" id="comunas-selector">
-            <button class="comunas-trigger" id="filtro-comunas-trigger" type="button" aria-expanded="false" aria-controls="comunas-panel">
+            <button class="comunas-trigger" id="filtro-comunas-trigger" type="button" aria-expanded="false" aria-controls="comunas-panel" aria-labelledby="lbl-filtro-comunas filtro-comunas-resumen">
               <span id="filtro-comunas-resumen">Seleccionar comunas</span>
               <span class="comunas-trigger-meta" id="filtro-comunas-meta"></span>
             </button>
@@ -125,7 +153,7 @@
           <input type="hidden" id="filtro-ciudad" value="">
         </div>
         <div class="campo">
-          <label>Sector</label>
+          <label for="filtro-sector">Sector</label>
           <select id="filtro-sector">
             <option value="">Todos los sectores</option>
             <option>Municipal</option>
@@ -142,7 +170,7 @@
       <!-- Segunda fila de filtros: institución + ciudad + renta mínima -->
       <div class="buscador-fila2">
         <div class="campo">
-          <label>Institución</label>
+          <label for="input-institucion">Institución</label>
           <div class="autocomplete-wrap">
             <input type="text" id="input-institucion" placeholder="Buscar institución pública..." autocomplete="off">
             <button class="autocomplete-clear" id="btn-clear-inst" style="display:none" title="Limpiar">✕</button>
@@ -150,7 +178,7 @@
           </div>
         </div>
         <div class="campo">
-          <label>Renta mínima</label>
+          <label for="filtro-renta-min">Renta mínima</label>
           <div class="renta-wrap" id="renta-wrap">
             <span class="renta-prefix">$</span>
             <input type="text" id="filtro-renta-min" inputmode="numeric"
@@ -274,22 +302,22 @@
       </div>
       <div class="widget-body">
         <div class="alerta-form">
-          <div class="alerta-label">Correo electrónico</div>
+          <label class="alerta-label" for="alerta-email">Correo electrónico</label>
           <input type="email" id="alerta-email" placeholder="tu@correo.cl" autocomplete="email">
 
-          <div class="alerta-label">Palabras clave</div>
+          <label class="alerta-label" for="alerta-keywords">Palabras clave</label>
           <input type="text" id="alerta-keywords" placeholder="Ej: psicólogo, RRHH, ingeniero...">
 
           <div class="alerta-row">
             <div>
-              <div class="alerta-label">Región</div>
+              <label class="alerta-label" for="alerta-region">Región</label>
               <select id="alerta-region">
                 <option value="">Todas</option>
                 <!-- Se carga dinámicamente desde API DPA -->
               </select>
             </div>
             <div>
-              <div class="alerta-label">Condición contractual</div>
+              <label class="alerta-label" for="alerta-tipo">Condición contractual</label>
               <select id="alerta-tipo">
                 <option value="">Todos</option>
                 <option value="planta">Planta</option>
@@ -304,7 +332,7 @@
 
           <div class="alerta-row">
             <div>
-              <div class="alerta-label">Sector</div>
+              <label class="alerta-label" for="alerta-sector">Sector</label>
               <select id="alerta-sector">
                 <option value="">Todos</option>
                 <option>Municipal</option>
@@ -318,7 +346,7 @@
               </select>
             </div>
             <div>
-              <div class="alerta-label">Frecuencia</div>
+              <label class="alerta-label" for="alerta-frecuencia">Frecuencia</label>
               <select id="alerta-frecuencia">
                 <option value="diaria">Diaria</option>
                 <option value="semanal">Semanal</option>
@@ -2371,6 +2399,7 @@ function _instalarSwipeCierre() {
 }
 
 async function abrirModal(ofertaId) {
+  window.track?.('offer-view', { id: ofertaId });
   const overlay = document.getElementById('modal');
   _modalLastFocus = document.activeElement;
   overlay.classList.add('open');
@@ -3090,6 +3119,19 @@ function buscar() {
   estado.renta_min = rawRenta ? rawRenta : null;
   estado.pagina    = 1;
   actualizarVisibilidadCompartirBusqueda();
+  // Trackeo de búsqueda: solo disparamos si hay algún filtro aplicado,
+  // no en cada keypress vacío. Con debounceBuscar() esto ya sale
+  // agregado (1 evento por intento real del usuario).
+  if (estado.q || estado.region || estado.sector || estado.renta_min
+      || (estado.comunas && estado.comunas.length)) {
+    window.track?.('search', {
+      q: estado.q || null,
+      region: estado.region || null,
+      sector: estado.sector || null,
+      comunas: (estado.comunas || []).length || null,
+      renta_min: estado.renta_min || null,
+    });
+  }
   cargarOfertas();
 }
 
@@ -3259,6 +3301,11 @@ function _guardarSectoresExplorados(obj) {
   try { localStorage.setItem(SECTORES_KEY, JSON.stringify(obj)); } catch { /* quota */ }
 }
 function registrarClicPostular(oferta) {
+  window.track?.('apply-click', {
+    id: oferta?.id,
+    sector: (oferta?.sector || '').trim() || null,
+    institucion: oferta?.institucion_nombre || null,
+  });
   const sector = (oferta?.sector || '').trim();
   if (!sector) return;
   const data = _cargarSectoresExplorados();
@@ -4011,7 +4058,24 @@ function inicializarSelectorComunas() {
     const wrap = document.getElementById('comunas-selector');
     if (wrap && !wrap.contains(e.target)) cerrarSelectorComunas();
   });
-  document.getElementById('filtro-region')?.addEventListener('change', debounceBuscar);
+  // Cascading región → comunas: al cambiar la región, limpiamos la
+  // selección de comunas (pueden no pertenecer a la nueva región) y
+  // refrescamos la UI antes de disparar la búsqueda. Sin esto el
+  // usuario puede terminar con comuna de RM + región Valparaíso
+  // filtrando y ver 0 resultados sin entender por qué.
+  document.getElementById('filtro-region')?.addEventListener('change', () => {
+    estado.comunas = [];
+    estado.ciudad = '';
+    const inputCiudad = document.getElementById('filtro-ciudad');
+    if (inputCiudad) inputCiudad.value = '';
+    _comunasDraft = [];
+    renderResumenComunas();
+    if (_comunasPanelAbierto) {
+      renderSeleccionComunas();
+      renderListaComunas();
+    }
+    debounceBuscar();
+  });
   renderResumenComunas();
 }
 

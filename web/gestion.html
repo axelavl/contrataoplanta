@@ -694,40 +694,51 @@ let _ofertasPagina = 1;
 let _editingId = null;
 
 // ── Auth ───────────────────────────────────────────────────────
-function buildAuthHeader(pass) {
-  // username fijo 'ops', la autenticación real es por contraseña.
-  // Usamos scheme 'Bearer' (no 'Basic') para que Firefox/Safari no
-  // intercepten el 401 con su diálogo nativo de Basic Auth — eso abortaba
-  // fetch() con "Failed to fetch" antes de que el JS pudiera leer el status.
-  // El backend decodifica el b64 igual que con Basic.
-  return 'Bearer ' + btoa(unescape(encodeURIComponent('ops:' + pass)));
+// Autenticación por JWT: el frontend pide `POST /auth/login` con la
+// contraseña, guarda el token (sessionStorage) y lo adjunta como
+// `Authorization: Bearer <jwt>` en cada request hasta que expire o el
+// usuario haga logout.
+function buildAuthHeaderFromToken(token) {
+  return 'Bearer ' + token;
+}
+
+function _saveSession(token, expiresAt) {
+  _creds = { header: buildAuthHeaderFromToken(token), token, expiresAt };
+  sessionStorage.setItem('_gc', JSON.stringify({
+    token, expiresAt, k: ADMIN_PATH,
+  }));
+}
+
+function _tokenSigueVivo(expiresAt) {
+  // expiresAt viene del backend en segundos UNIX.
+  return typeof expiresAt === 'number' && (expiresAt - 30) > (Date.now() / 1000);
 }
 
 async function doLogin() {
   const pass = document.getElementById('auth-pass').value;
   if (!pass) return;
-  const header = buildAuthHeader(pass);
   const btn = document.getElementById('auth-btn');
   btn.textContent = 'Verificando…'; btn.disabled = true;
   document.getElementById('auth-error').style.display = 'none';
   try {
-    const r = await fetch(`${API_BASE}/api/${ADMIN_PATH}/stats`, {
-      headers: { Authorization: header }
+    const r = await fetch(`${API_BASE}/api/${ADMIN_PATH}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pass }),
     });
-    if (r.status === 401 || r.status === 404) {
-      document.getElementById('auth-error').style.display = 'block';
-      btn.textContent = 'Entrar'; btn.disabled = false;
-      return;
-    }
     if (r.status === 429) {
       document.getElementById('auth-error').textContent = 'Demasiados intentos. Espera 10 minutos.';
       document.getElementById('auth-error').style.display = 'block';
       btn.textContent = 'Entrar'; btn.disabled = false;
       return;
     }
-    _creds = { header };
-    // Guardar en sessionStorage con el path para esta sesión de navegador
-    sessionStorage.setItem('_gc', JSON.stringify({ pass, k: ADMIN_PATH }));
+    if (!r.ok) {
+      document.getElementById('auth-error').style.display = 'block';
+      btn.textContent = 'Entrar'; btn.disabled = false;
+      return;
+    }
+    const body = await r.json();
+    _saveSession(body.token, body.expires_at);
     showApp();
   } catch(e) {
     document.getElementById('auth-error').textContent = 'Error de red: ' + e.message;
@@ -736,7 +747,16 @@ async function doLogin() {
   }
 }
 
-function logout() {
+async function logout() {
+  // Intento de revocación en el servidor; si falla, igual limpiamos local.
+  if (_creds && _creds.header) {
+    try {
+      await fetch(`${API_BASE}/api/${ADMIN_PATH}/auth/logout`, {
+        method: 'POST',
+        headers: { Authorization: _creds.header },
+      });
+    } catch (_) { /* best-effort */ }
+  }
   sessionStorage.removeItem('_gc');
   _creds = null;
   document.getElementById('app').style.display = 'none';
@@ -1632,14 +1652,26 @@ document.addEventListener('keydown', e => {
 document.getElementById('auth-btn').addEventListener('click', doLogin);
 
 // ── Auto-login ─────────────────────────────────────────────────
-(function() {
+// Restaura la sesión desde sessionStorage si el token sigue vigente
+// (con margen de 30s) y el ADMIN_PATH del URL coincide con el guardado.
+(async function() {
   const saved = sessionStorage.getItem('_gc');
   if (!saved) return;
   try {
-    const { pass, k } = JSON.parse(saved);
-    // Solo restaurar sesión si el path coincide con el actual
-    if (k !== ADMIN_PATH) { sessionStorage.removeItem('_gc'); return; }
-    _creds = { header: buildAuthHeader(pass) };
+    const { token, expiresAt, k } = JSON.parse(saved);
+    if (k !== ADMIN_PATH || !token || !_tokenSigueVivo(expiresAt)) {
+      sessionStorage.removeItem('_gc');
+      return;
+    }
+    _creds = { header: buildAuthHeaderFromToken(token), token, expiresAt };
+    // Validación rápida contra el servidor: si el token fue revocado o
+    // el secreto rotó, /auth/me devuelve 401 y limpiamos.
+    try {
+      const r = await fetch(`${API_BASE}/api/${ADMIN_PATH}/auth/me`, {
+        headers: { Authorization: _creds.header },
+      });
+      if (!r.ok) { sessionStorage.removeItem('_gc'); _creds = null; return; }
+    } catch (_) { /* sin red: intentamos usar el token igual */ }
     showApp();
   } catch(e) { sessionStorage.removeItem('_gc'); }
 })();
