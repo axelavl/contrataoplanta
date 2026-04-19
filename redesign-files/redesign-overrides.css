@@ -1,0 +1,1853 @@
+/* ══════════════════════════════════════════════════════════════════════
+   redesign-overrides.css — v3
+   Capa de overrides para aplicar el rediseño visual del home sobre los
+   estilos existentes de index.css. Se carga DESPUÉS de index.css para
+   que estas reglas ganen por orden de cascada.
+
+   No reescribe index.css para minimizar riesgo. Si hay que revertir,
+   basta quitar el <link> a este archivo en web/index.html.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ══ HERO · de navy oscuro a cream claro, Fraunces editorial ══════════ */
+.hero {
+  background: var(--bg);
+  padding: 56px 24px 24px;
+}
+.hero::before {
+  background: radial-gradient(
+      ellipse 80% 50% at 20% 20%,
+      rgba(37, 75, 160, 0.05),
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 50% 40% at 90% 30%,
+      rgba(200, 135, 36, 0.04),
+      transparent 60%
+    );
+}
+
+.hero-kicker {
+  color: var(--gold-dim);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  margin-bottom: 22px;
+}
+.hero-kicker::before { background: var(--gold-dim); }
+
+.hero-h1 {
+  font-family: 'Fraunces', Georgia, serif;
+  color: var(--navy-ink);
+  font-weight: 400;
+  font-size: clamp(38px, 5.2vw, 58px);
+  line-height: 1.04;
+  letter-spacing: -0.022em;
+  margin-bottom: 18px;
+}
+.hero-h1 em {
+  color: var(--gold);
+  font-style: italic;
+  font-variation-settings: 'opsz' 144;
+  font-weight: 400;
+}
+
+.hero-sub {
+  color: var(--text-80);
+  font-weight: 400;
+  font-size: 16.5px;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.hero-stats-bar { gap: 10px; }
+.hero-stat-pill {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-60);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+}
+.hero-stat-pill strong {
+  color: var(--navy);
+  font-weight: 700;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+
+/* ══ SEARCH · card blanca con mejor shadow y typography ═══════════════ */
+.buscador-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 22px 22px;
+}
+.buscador-form, .buscador-fila2 {
+  gap: 14px;
+}
+.campo label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-40);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.campo input, .campo select {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 11px 14px;
+  font-size: 14.5px;
+  font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.campo input:focus, .campo select:focus {
+  outline: none;
+  border-color: var(--navy);
+  box-shadow: 0 0 0 3px var(--navy-tint);
+}
+.campo input::placeholder { color: var(--text-40); }
+
+.btn-buscar {
+  background: var(--navy);
+  color: var(--blanco);
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 14.5px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  font-family: inherit;
+}
+.btn-buscar:hover { background: var(--navy-deep); transform: translateY(-1px); }
+
+/* ══ SHORTCUTS (atajos) · chips pill con navy active ══════════════════ */
+.filtros-rapidos { margin-top: 18px; }
+.filtros-titulo {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-40);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-right: 10px;
+}
+.filtro-tag {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.filtro-tag:hover {
+  border-color: var(--navy);
+  color: var(--navy);
+}
+.filtro-tag.activo {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: var(--gold-brilliant);
+  font-weight: 600;
+}
+
+/* ══ TABS Vigentes/Cerradas · conservador, mejor contraste ════════════ */
+.estado-listado-tabs {
+  background: var(--bg2);
+  border-color: var(--border);
+  padding: 5px;
+}
+.estado-listado-tabs::before {
+  background: var(--navy);
+}
+.estado-tab {
+  font-size: 12.5px;
+  color: var(--text-60);
+  padding: 8px 16px;
+}
+.estado-tab:hover { color: var(--text); }
+.estado-tab.activo { color: var(--gold-brilliant); }
+
+.estado-listado-copy {
+  font-size: 13px;
+  color: var(--text-60);
+  margin-bottom: 16px;
+}
+.estado-listado-copy strong { color: var(--text); }
+
+/* ══ RESULTADOS HEADER ════════════════════════════════════════════════ */
+.resultados-count {
+  font-size: 14.5px;
+  color: var(--text-60);
+}
+.resultados-count strong {
+  color: var(--navy);
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 500;
+  font-size: 20px;
+  letter-spacing: -0.01em;
+}
+.count-sub { color: var(--text-40); font-size: 12.5px; }
+
+.ctrl-select {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 13px;
+  color: var(--text-60);
+  background: var(--surface);
+}
+.ctrl-select:hover { border-color: var(--navy-60); color: var(--text); }
+.vista-btn.activo { background: var(--surface); color: var(--navy); }
+
+/* ══ CARDS DE OFERTAS · border-left semántico y tipo editorial ════════ */
+.oferta-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid transparent;
+  border-radius: 10px;
+  padding: 20px 22px;
+  transition: all 0.2s;
+}
+.oferta-card:hover {
+  background: var(--surface-hover);
+  border-color: var(--navy-60);
+  border-left-color: var(--gold);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+/* Estado urgente (cierra pronto) */
+.oferta-card.urgente,
+.oferta-card[data-urgente="true"] {
+  border-left-color: var(--terra);
+}
+/* Destacada por equipo */
+.oferta-card.destacada {
+  border-top: 2px solid var(--gold);
+  border-left: 1px solid var(--border);
+  padding-top: 22px;
+}
+.oferta-card.destacada::before {
+  background: var(--navy);
+  color: var(--gold-brilliant);
+  font-weight: 600;
+  font-size: 10.5px;
+  letter-spacing: 0.03em;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.oferta-institucion {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--navy);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.oferta-cargo {
+  font-family: 'Inter', sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--navy-ink);
+  line-height: 1.35;
+}
+.oferta-cargo-link { color: var(--navy-ink); }
+.oferta-cargo-link:hover { color: var(--navy); }
+
+/* Tags de tipo de contrato más refinadas */
+.badge {
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+}
+.badge-planta     { background: #E0E7FF; color: #3730A3; }
+.badge-contrata   { background: var(--navy-tint); color: var(--navy); }
+.badge-honorarios { background: #FCE7F3; color: #9D174D; }
+.badge-codigo     { background: #E0F2FE; color: #075985; }
+.badge-otro       { background: var(--bg-subtle); color: var(--text-60); }
+.badge-sin-dato   { color: var(--text-40); border-color: var(--border); }
+.badge-region     { background: transparent; border: 1px solid var(--border); color: var(--text-60); }
+
+/* ══ SIDEBAR WIDGETS · más blancos y con mejor typography ═════════════ */
+.widget {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: none;
+}
+.widget-titulo {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  color: var(--navy-ink);
+}
+.widget-titulo::before { display: none; }
+
+.alerta-form input, .alerta-form select {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 14px;
+  background: var(--bg);
+}
+.alerta-form input:focus, .alerta-form select:focus {
+  border-color: var(--gold);
+  outline: 2px solid var(--gold);
+  outline-offset: -1px;
+}
+.alerta-label {
+  font-size: 11px;
+  color: var(--text-40);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.btn-alerta {
+  background: var(--navy);
+  border-radius: 8px;
+  padding: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  transition: background 0.15s;
+}
+.btn-alerta:hover { background: var(--navy-deep); }
+
+/* ══ DATA UPDATE GLOBAL ════════════════════════════════════════════════ */
+.data-update-global {
+  font-size: 13px;
+  color: var(--text-60);
+}
+.data-update-global strong { color: var(--text); font-weight: 600; }
+
+/* ══ INFO SECTIONS (pasos) ═════════════════════════════════════════════ */
+.info-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 500;
+  color: var(--navy-ink);
+  font-size: 24px;
+  letter-spacing: -0.012em;
+}
+.paso-num { color: var(--gold-dim); }
+
+/* ══ AD SLOTS · si están vacíos, colapsa ═══════════════════════════════ */
+.ad-slot:empty { display: none; }
+.ad-slot-sidebar:empty { display: none; }
+.ad-slot-resultados:empty { display: none; }
+.ad-slot-inner { opacity: 0.3; }
+
+/* ══ RESPONSIVE · mantener spacing en mobile ══════════════════════════ */
+@media (max-width: 768px) {
+  .hero { padding: 36px 16px 18px; }
+  .hero-h1 { font-size: clamp(30px, 7vw, 40px); }
+  .buscador-wrap { padding: 16px; }
+  .oferta-card { padding: 16px 18px; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   THEME TOGGLE · pill switch en el header
+   ══════════════════════════════════════════════════════════════════════ */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  position: relative;
+  margin-left: 8px;
+}
+.theme-toggle button {
+  background: transparent;
+  border: none;
+  width: 28px; height: 28px;
+  border-radius: 999px;
+  display: grid; place-items: center;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.55);
+  transition: color 0.2s, background 0.2s;
+  padding: 0;
+  position: relative;
+  z-index: 1;
+}
+.theme-toggle button svg { width: 14px; height: 14px; stroke-width: 2; }
+.theme-toggle button:hover { color: rgba(255, 255, 255, 0.9); }
+.theme-toggle button.is-active {
+  color: var(--acento);
+  background: rgba(255, 255, 255, 0.1);
+}
+.theme-toggle button:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 1px;
+}
+
+/* En páginas interiores (shared-layout) el nav también es navy oscuro,
+   así que estos estilos aplican igual. No necesito variante light. */
+
+/* ══════════════════════════════════════════════════════════════════════
+   RIBBON · freshness bar sobre el header
+   ══════════════════════════════════════════════════════════════════════ */
+.ribbon {
+  background: #050C1A;
+  color: rgba(244, 241, 232, 0.75);
+  font-size: 12.5px;
+  letter-spacing: 0.01em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.ribbon-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 8px 24px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.ribbon-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  position: relative;
+}
+/* Separador visual entre items */
+.ribbon-item + .ribbon-item::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(244, 241, 232, 0.25);
+  margin-right: 14px;
+}
+.ribbon-item strong {
+  color: #F2C26A;
+  font-weight: 600;
+  margin: 0 2px;
+}
+.ribbon-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #6CB989;
+  box-shadow: 0 0 0 0 rgba(108, 185, 137, 0.5);
+  animation: ribbon-pulse 2s infinite;
+  display: inline-block;
+}
+@keyframes ribbon-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(108, 185, 137, 0.5); }
+  50% { box-shadow: 0 0 0 5px rgba(108, 185, 137, 0); }
+}
+@media (max-width: 600px) {
+  .ribbon-inner { gap: 14px; font-size: 12px; padding: 7px 14px; }
+  .ribbon-item--sm-hide { display: none; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   DARK MODE · activa cuando data-theme="dark" en <html>
+   Los tokens legacy ya se invierten en design-tokens.css. Acá refuerzo
+   donde el CSS existente hardcodea colores y no responde a tokens.
+   ══════════════════════════════════════════════════════════════════════ */
+:root[data-theme="dark"] body {
+  background: var(--bg);
+  color: var(--texto);
+}
+:root[data-theme="dark"] .hero {
+  background: var(--bg);
+}
+:root[data-theme="dark"] .hero-h1 { color: var(--texto); }
+:root[data-theme="dark"] .hero-sub { color: var(--texto2); }
+:root[data-theme="dark"] .hero-stat-pill {
+  background: var(--blanco);
+  border-color: var(--borde);
+  color: var(--texto2);
+}
+:root[data-theme="dark"] .hero-stat-pill strong { color: var(--acento); }
+
+:root[data-theme="dark"] .buscador-wrap {
+  background: var(--blanco);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .campo input,
+:root[data-theme="dark"] .campo select {
+  background: var(--bg);
+  color: var(--texto);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .campo label { color: var(--texto3); }
+
+:root[data-theme="dark"] .filtro-tag {
+  background: var(--blanco);
+  border-color: var(--borde);
+  color: var(--texto);
+}
+:root[data-theme="dark"] .filtro-tag.activo {
+  background: var(--acento);
+  color: var(--azul);
+  border-color: var(--acento);
+}
+
+:root[data-theme="dark"] .oferta-card {
+  background: var(--blanco);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .oferta-card:hover {
+  background: #1C345A;
+}
+:root[data-theme="dark"] .oferta-institucion { color: var(--acento); }
+:root[data-theme="dark"] .oferta-cargo,
+:root[data-theme="dark"] .oferta-cargo-link { color: var(--texto); }
+
+:root[data-theme="dark"] .widget {
+  background: var(--blanco);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .widget-titulo { color: var(--texto); }
+
+:root[data-theme="dark"] .estado-listado-tabs {
+  background: var(--bg2);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .estado-tab.activo { color: var(--azul); }
+:root[data-theme="dark"] .estado-listado-tabs::before { background: var(--acento); }
+
+:root[data-theme="dark"] .resultados-count strong { color: var(--acento); }
+:root[data-theme="dark"] .ctrl-select {
+  background: var(--blanco);
+  color: var(--texto2);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .vista-btn.activo { background: var(--bg); color: var(--acento); }
+
+:root[data-theme="dark"] .badge-contrata {
+  background: rgba(234, 184, 88, 0.15);
+  color: var(--acento);
+}
+
+:root[data-theme="dark"] .info-title { color: var(--texto); }
+:root[data-theme="dark"] .info-section {
+  background: var(--blanco);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .paso-card {
+  background: var(--bg);
+  border-color: var(--borde);
+}
+
+:root[data-theme="dark"] .data-update-global { color: var(--texto2); }
+:root[data-theme="dark"] .data-update-global strong { color: var(--texto); }
+
+/* Navbar en dark: mantener oscuro pero ajustar colores de texto activos */
+:root[data-theme="dark"] header nav {
+  background: #050C1A;
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Theme toggle active state en dark */
+:root[data-theme="dark"] .theme-toggle button.is-active { color: var(--acento); }
+
+/* Transiciones suaves entre temas */
+body, .hero, .buscador-wrap, .oferta-card, .widget, .filtro-tag, .ribbon {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body, .hero, .buscador-wrap, .oferta-card, .widget, .filtro-tag, .ribbon {
+    transition: none;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   MODAL DETALLE DE OFERTA · más compacto y con CTA sticky
+   ══════════════════════════════════════════════════════════════════════ */
+.modal-overlay {
+  padding: 16px;
+}
+.modal {
+  max-width: 720px;
+  max-height: 94vh;
+  display: flex;
+  flex-direction: column;
+}
+.modal-header {
+  padding: 16px 20px;
+  flex-shrink: 0;
+}
+.modal-body {
+  padding: 18px 22px 12px;
+  flex: 1 1 auto;
+  overflow-y: auto;
+}
+.modal-seccion { margin-bottom: 18px; }
+
+/* KPIs más compactos */
+.modal-body .kpis-grid,
+.modal-body .modal-kpis {
+  gap: 8px !important;
+}
+.modal-body .kpi,
+.modal-body .modal-kpi {
+  padding: 10px 14px !important;
+}
+
+/* CTA principal STICKY al final del modal, siempre visible */
+.modal-cta-footer,
+.modal-acciones-principales,
+.modal-acciones,
+.ig-modal-acciones {
+  position: sticky;
+  bottom: 0;
+  background: var(--blanco);
+  border-top: 1px solid var(--borde);
+  padding: 14px 22px 16px !important;
+  margin-top: 0 !important;
+  z-index: 5;
+  box-shadow: 0 -8px 16px rgba(10, 46, 110, 0.04);
+}
+:root[data-theme="dark"] .modal-cta-footer,
+:root[data-theme="dark"] .modal-acciones-principales,
+:root[data-theme="dark"] .modal-acciones,
+:root[data-theme="dark"] .ig-modal-acciones {
+  background: var(--blanco);
+  border-top-color: var(--borde);
+}
+
+/* Botón principal más compacto */
+.btn-modal-primary {
+  height: 46px !important;
+  font-size: 14.5px !important;
+  border-radius: 10px !important;
+}
+
+/* Alertas dentro del modal (Cierra pronto) más compactas */
+.modal-body .oferta-alerta,
+.modal-body .alerta-urgencia,
+.modal-body .deadline-banner {
+  padding: 10px 14px !important;
+  margin-bottom: 14px !important;
+}
+
+@media (max-width: 600px) {
+  .modal { max-height: 100vh; border-radius: 0; }
+  .modal-overlay { padding: 0; }
+  .modal-body { padding: 14px 16px 10px; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   AJUSTES POST-DEPLOY · legibilidad dark mode y layout
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* 1) Badges de tipo de contrato con mejor contraste en DARK */
+:root[data-theme="dark"] .badge-planta {
+  background: rgba(127, 169, 221, 0.16);
+  color: #A5B8DF;
+}
+:root[data-theme="dark"] .badge-contrata {
+  background: rgba(234, 184, 88, 0.18);
+  color: var(--acento);
+}
+:root[data-theme="dark"] .badge-honorarios {
+  background: rgba(236, 72, 153, 0.16);
+  color: #F5A3C7;
+}
+:root[data-theme="dark"] .badge-codigo {
+  background: rgba(14, 165, 233, 0.16);
+  color: #7DC8EC;
+}
+:root[data-theme="dark"] .badge-otro {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--texto2);
+}
+:root[data-theme="dark"] .badge-sin-dato {
+  background: transparent;
+  color: var(--texto3);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .badge-region {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--texto2);
+  border-color: var(--borde);
+}
+
+/* 2) Chips neutros (Región, Sector como tags) mucho más legibles en DARK */
+:root[data-theme="dark"] .tag.tag--neutral,
+:root[data-theme="dark"] .badge.badge--neutral {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--texto);
+}
+
+/* 3) "Publicada hace X" y tags de frescura */
+:root[data-theme="dark"] .oferta-frescura,
+:root[data-theme="dark"] .frescura-chip,
+:root[data-theme="dark"] .badge-frescura {
+  background: rgba(234, 184, 88, 0.15);
+  color: var(--acento);
+  border: none;
+}
+
+/* 4) Tags de "Nueva · hace X días" mejor contraste (verde) */
+:root[data-theme="dark"] .tag-nueva,
+:root[data-theme="dark"] .oferta-nueva {
+  background: rgba(143, 205, 165, 0.18);
+  color: var(--verde);
+}
+
+/* 5) Stats pills del hero — asegurar visibilidad en ambos modos */
+.hero-stat-pill strong {
+  color: var(--navy);
+}
+:root[data-theme="dark"] .hero-stat-pill {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: var(--texto2);
+}
+:root[data-theme="dark"] .hero-stat-pill strong {
+  color: var(--acento);
+}
+
+/* 6) Widget "Alertas de empleo" con borde y título destacado en dark */
+:root[data-theme="dark"] .widget {
+  background: var(--blanco);
+  border: 1px solid var(--borde);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+}
+:root[data-theme="dark"] .widget-titulo { color: var(--acento); }
+:root[data-theme="dark"] .alerta-form input,
+:root[data-theme="dark"] .alerta-form select {
+  background: var(--bg);
+  color: var(--texto);
+  border-color: var(--borde);
+}
+
+/* 7) "PUBLICIDAD" placeholder — ocultar con selectores más agresivos */
+.ad-slot-resultados,
+.ad-slot-sidebar,
+.ad-slot {
+  /* Si el slot no tiene hijos significativos (solo el span "PUBLICIDAD"), ocultarlo */
+}
+.ad-slot-resultados .ad-slot-inner:only-child,
+.ad-slot-sidebar .ad-slot-inner:only-child {
+  display: none;
+}
+.ad-slot-resultados:not(:has(iframe, img, a)),
+.ad-slot-sidebar:not(:has(iframe, img, a)),
+.ad-slot:not(:has(iframe, img, a)) {
+  display: none !important;
+}
+
+/* 8) Mejorar contraste global de texto muted en dark */
+:root[data-theme="dark"] .oferta-meta-linea,
+:root[data-theme="dark"] .oferta-region,
+:root[data-theme="dark"] .oferta-ciudad,
+:root[data-theme="dark"] .oferta-jornada {
+  color: var(--texto2);
+}
+
+/* 9) "Cierra mañana" / "Cierra en X días" — indicadores de urgencia */
+:root[data-theme="dark"] .oferta-deadline,
+:root[data-theme="dark"] .oferta-plazo {
+  color: var(--texto);
+}
+:root[data-theme="dark"] .oferta-deadline--urgente,
+:root[data-theme="dark"] .oferta-plazo--urgente {
+  color: #F5A98E;
+}
+
+/* 10) Renta y precios — mayor peso visual en dark */
+:root[data-theme="dark"] .oferta-renta,
+:root[data-theme="dark"] .oferta-monto {
+  color: var(--texto);
+  font-weight: 600;
+}
+
+/* 11) Pestañas "Vigentes/Cerradas" — el slider gold más notorio en dark */
+:root[data-theme="dark"] .estado-listado-tabs::before {
+  background: var(--acento);
+}
+:root[data-theme="dark"] .estado-tab.activo { color: var(--azul); }
+
+/* 12) Paginación — mejor contraste botones */
+:root[data-theme="dark"] .paginacion button,
+:root[data-theme="dark"] .paginacion a {
+  background: var(--blanco);
+  border-color: var(--borde);
+  color: var(--texto2);
+}
+:root[data-theme="dark"] .paginacion button:hover,
+:root[data-theme="dark"] .paginacion a:hover {
+  border-color: var(--acento);
+  color: var(--acento);
+}
+:root[data-theme="dark"] .paginacion button.activo,
+:root[data-theme="dark"] .paginacion a.activo {
+  background: var(--acento);
+  color: var(--azul);
+  border-color: var(--acento);
+}
+
+/* 13) "Última actualización de datos" en light/dark */
+.data-update-global { color: var(--texto2); }
+.data-update-global strong { color: var(--texto); font-weight: 600; }
+:root[data-theme="dark"] .data-update-global { color: var(--texto2); }
+:root[data-theme="dark"] .data-update-global strong { color: var(--acento); }
+
+/* 14) Fav icon heart en dark con mejor visibilidad */
+:root[data-theme="dark"] .btn-fav-card {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: var(--texto2);
+}
+:root[data-theme="dark"] .btn-fav-card:hover,
+:root[data-theme="dark"] .btn-fav-card.activo {
+  background: rgba(235, 138, 117, 0.15);
+  border-color: var(--rojo);
+  color: var(--rojo);
+}
+
+/* 15) Oferta-logo (avatar) — fondo apropiado en dark */
+:root[data-theme="dark"] .oferta-logo {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+:root[data-theme="dark"] .oferta-logo img { background: rgba(255, 255, 255, 0.9); }
+
+/* ══════════════════════════════════════════════════════════════════════
+   BUSCADOR COMPACTO · colapsa a cargo + región + buscar
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Grid del form con el botón Buscar al final de la primera fila */
+.buscador-form {
+  display: grid !important;
+  grid-template-columns: 2.2fr 1fr 1fr 1fr auto !important;
+  gap: 14px !important;
+  align-items: end !important;
+}
+
+.btn-buscar-compact {
+  align-self: end;
+  height: 42px !important;
+  padding: 0 22px !important;
+  white-space: nowrap;
+}
+
+/* Campo comunas: mismo look que inputs/selects */
+.comunas-trigger {
+  background: var(--bg) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text) !important;
+  border-radius: 8px !important;
+  padding: 11px 14px !important;
+  font-size: 14.5px !important;
+  font-family: inherit !important;
+  font-weight: 400 !important;
+  text-align: left !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+}
+.comunas-trigger:hover { border-color: var(--navy-60) !important; }
+.comunas-trigger[aria-expanded="true"] {
+  border-color: var(--navy) !important;
+  box-shadow: 0 0 0 3px var(--navy-tint) !important;
+}
+.comunas-trigger-meta {
+  color: var(--text-60);
+  font-size: 12.5px;
+  margin-left: auto;
+}
+/* En dark consistency */
+:root[data-theme="dark"] .comunas-trigger {
+  background: var(--bg) !important;
+  border-color: var(--borde) !important;
+  color: var(--texto) !important;
+}
+
+/* Toggle "+ Más filtros" */
+.filtros-toggle-wrap {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-start;
+}
+.btn-filtros-mas {
+  background: transparent;
+  border: none;
+  color: var(--navy);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.15s;
+}
+.btn-filtros-mas:hover { color: var(--navy-deep); }
+:root[data-theme="dark"] .btn-filtros-mas { color: var(--acento); }
+:root[data-theme="dark"] .btn-filtros-mas:hover { color: var(--gold-soft, #F5D289); }
+.btn-filtros-mas .icon {
+  display: inline-grid;
+  place-items: center;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--navy-tint);
+  color: var(--navy);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+}
+:root[data-theme="dark"] .btn-filtros-mas .icon {
+  background: rgba(234, 184, 88, 0.18);
+  color: var(--acento);
+}
+
+/* ESTADO COLAPSADO (default): solo Cargo + Región + Buscar */
+.buscador-wrap:not(.is-expanded) .buscador-form {
+  grid-template-columns: 2.2fr 1fr auto !important;
+}
+.buscador-wrap:not(.is-expanded) .buscador-form > .campo:nth-child(3),
+.buscador-wrap:not(.is-expanded) .buscador-form > .campo:nth-child(4),
+.buscador-wrap:not(.is-expanded) .buscador-fila2,
+.buscador-wrap:not(.is-expanded) .filtros-rapidos {
+  display: none !important;
+}
+
+/* ESTADO EXPANDIDO: ocultar el botón duplicado de fila1 */
+.buscador-wrap.is-expanded .btn-buscar-compact {
+  display: none !important;
+}
+.buscador-wrap.is-expanded .buscador-fila2 {
+  display: grid !important;
+  grid-template-columns: 2fr 1fr auto !important;
+  gap: 14px !important;
+  align-items: end !important;
+  margin-top: 14px;
+}
+.buscador-wrap.is-expanded .filtros-rapidos {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+/* Hacer el buscador un poco más compacto */
+.buscador-wrap {
+  padding: 18px 20px !important;
+}
+.campo label {
+  margin-bottom: 5px !important;
+}
+
+/* Mobile: siempre expandido en mobile o stacked */
+@media (max-width: 720px) {
+  .buscador-form {
+    grid-template-columns: 1fr !important;
+  }
+  .buscador-wrap:not(.is-expanded) .buscador-form {
+    grid-template-columns: 1fr !important;
+  }
+  .btn-buscar-compact { width: 100%; }
+  .buscador-wrap.is-expanded .buscador-fila2 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   HEADER STICKY · asegurar que queda siempre arriba
+   ══════════════════════════════════════════════════════════════════════ */
+header nav,
+header {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 100 !important;
+}
+/* Ribbon NO sticky — se va con el scroll */
+.ribbon { position: relative; z-index: 50; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   LIMPIEZA · remover "Última actualización de datos" al final
+   (ya la mostramos en el ribbon arriba)
+   ══════════════════════════════════════════════════════════════════════ */
+.data-update-global {
+  display: none !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   SIDEBAR · alineación y consistencia de widgets
+   ══════════════════════════════════════════════════════════════════════ */
+.widget {
+  border-radius: 12px !important;
+}
+.widget-titulo {
+  font-family: var(--font-serif) !important;
+  font-size: 16.5px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.012em !important;
+  color: var(--navy-ink) !important;
+  margin-bottom: 4px !important;
+}
+:root[data-theme="dark"] .widget-titulo { color: var(--acento) !important; }
+.widget-titulo::before { display: none !important; }
+
+/* Labels de formulario alerta más consistentes */
+.alerta-label {
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
+  color: var(--text-40) !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  margin-bottom: 4px !important;
+  line-height: 1.2 !important;
+  min-height: 24px;
+  display: block;
+}
+:root[data-theme="dark"] .alerta-label { color: var(--texto3) !important; }
+
+/* Grid de Región/Condición y Sector/Frecuencia con altura consistente */
+.alerta-row {
+  gap: 10px !important;
+  row-gap: 10px !important;
+}
+.alerta-row > div > label {
+  /* Reservar altura para que los labels largos no desalineen */
+  min-height: 32px;
+  align-items: flex-end;
+  display: flex;
+}
+.alerta-form input,
+.alerta-form select {
+  font-size: 13.5px !important;
+  padding: 9px 11px !important;
+  min-height: 40px;
+  line-height: 1.3;
+}
+
+/* Botón activar alerta consistente */
+.btn-alerta {
+  height: 42px !important;
+  font-size: 13.5px !important;
+  border-radius: 8px !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   RESULTADOS · consistencia de tipografía
+   ══════════════════════════════════════════════════════════════════════ */
+.resultados-count strong {
+  font-size: 18px !important;
+}
+.resultados-count .count-sub {
+  font-size: 12px !important;
+}
+.estado-listado-copy {
+  font-size: 13px !important;
+  line-height: 1.5;
+}
+
+/* Error state de ofertas más limpio */
+.ofertas-error,
+.listado-error,
+[data-listado-error] {
+  border-radius: 10px !important;
+  padding: 28px 20px !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   AJUSTES EN DARK para buscador
+   ══════════════════════════════════════════════════════════════════════ */
+:root[data-theme="dark"] .buscador-wrap {
+  background: var(--blanco);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .campo input,
+:root[data-theme="dark"] .campo select {
+  background: var(--bg) !important;
+  color: var(--texto) !important;
+  border-color: var(--borde) !important;
+}
+:root[data-theme="dark"] .campo input:focus,
+:root[data-theme="dark"] .campo select:focus {
+  border-color: var(--acento) !important;
+  box-shadow: 0 0 0 3px rgba(234, 184, 88, 0.2) !important;
+}
+:root[data-theme="dark"] .campo label {
+  color: var(--texto3) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   POLISH FINAL · UX improvements identificados en revisión
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* 1) Loading skeleton para pills cuando aún cargan stats */
+.hero-stat-pill strong:empty::before,
+.hero-stat-pill strong:is([data-loading="true"])::before {
+  content: '';
+  display: inline-block;
+  width: 32px;
+  height: 10px;
+  border-radius: 3px;
+  background: linear-gradient(90deg,
+    var(--border) 0%,
+    var(--bg-subtle) 50%,
+    var(--border) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s linear infinite;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* 2) Mostrar atajos SIEMPRE, incluso en modo colapsado */
+.buscador-wrap:not(.is-expanded) .filtros-rapidos {
+  display: block !important;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.buscador-wrap.is-expanded .filtros-rapidos {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+/* 3) Error state de ofertas más cuidado */
+[data-listado-error],
+.listado-error,
+.ofertas-error {
+  background: rgba(178, 59, 36, 0.04) !important;
+  border: 1px solid rgba(178, 59, 36, 0.22) !important;
+  border-radius: 12px !important;
+  padding: 32px 24px !important;
+  text-align: center;
+  color: var(--text-80);
+}
+:root[data-theme="dark"] [data-listado-error],
+:root[data-theme="dark"] .listado-error,
+:root[data-theme="dark"] .ofertas-error {
+  background: rgba(235, 138, 117, 0.06) !important;
+  border-color: rgba(235, 138, 117, 0.25) !important;
+  color: var(--texto) !important;
+}
+
+/* 4) Card hover con indicador de clickeable (flecha sutil) */
+.oferta-card {
+  position: relative;
+}
+.oferta-card::after {
+  content: '→';
+  position: absolute;
+  right: 18px;
+  bottom: 20px;
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: all 0.2s ease;
+  color: var(--navy);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1;
+  pointer-events: none;
+}
+.oferta-card:hover::after {
+  opacity: 0.6;
+  transform: translateX(0);
+}
+:root[data-theme="dark"] .oferta-card::after { color: var(--acento); }
+
+/* 5) Focus visible accesible en todos los controles interactivos */
+*:focus-visible {
+  outline: 2px solid var(--navy) !important;
+  outline-offset: 2px !important;
+  border-radius: 4px;
+}
+:root[data-theme="dark"] *:focus-visible {
+  outline-color: var(--acento) !important;
+}
+
+/* 6) Scrollbar personalizada en light y dark */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong, var(--borde));
+  background-clip: padding-box;
+}
+
+/* 7) Ribbon — stack en mobile para no cortar items */
+@media (max-width: 500px) {
+  .ribbon-inner {
+    gap: 10px;
+    padding: 7px 14px;
+  }
+  .ribbon-item {
+    font-size: 11.5px;
+  }
+  .ribbon-item + .ribbon-item::before {
+    margin-right: 8px;
+  }
+}
+
+/* 8) Sidebar: unificar separación entre widgets */
+.sidebar > .widget + .widget {
+  margin-top: 14px;
+}
+
+/* 9) Estados vacíos más amigables */
+.widget-vacio {
+  color: var(--text-40);
+  font-size: 13px;
+  padding: 14px 8px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* 10) Back-to-top button consistente con paleta */
+.back-to-top-btn {
+  background: var(--navy) !important;
+  color: #F4F1E8 !important;
+  border: none !important;
+  box-shadow: 0 8px 20px rgba(14, 32, 70, 0.2) !important;
+}
+.back-to-top-btn:hover {
+  background: var(--navy-deep) !important;
+}
+:root[data-theme="dark"] .back-to-top-btn {
+  background: var(--acento) !important;
+  color: var(--azul) !important;
+}
+
+/* 11) Selección de texto con el color de marca */
+::selection {
+  background: rgba(37, 75, 160, 0.22);
+  color: var(--navy-ink);
+}
+:root[data-theme="dark"] ::selection {
+  background: rgba(234, 184, 88, 0.25);
+  color: var(--texto);
+}
+
+/* 12) Smooth scroll global (con respeto a reduce motion) */
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+
+/* 13) Skip link más prominente cuando recibe foco */
+.skip-link {
+  background: var(--navy) !important;
+  color: #F4F1E8 !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  padding: 10px 16px !important;
+}
+.skip-link:focus {
+  outline: 2px solid var(--acento) !important;
+  outline-offset: 3px !important;
+}
+
+/* 14) Animación sutil de aparición de cards en listado */
+@media (prefers-reduced-motion: no-preference) {
+  .oferta-card {
+    animation: cardFadeIn 0.35s ease backwards;
+  }
+  @keyframes cardFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* 15) Tipografía: asegurar Fraunces en todos los títulos editoriales */
+.info-title,
+.widget-titulo,
+.page-hero h1,
+.page-titulo,
+.hero-h1 {
+  font-feature-settings: 'ss01', 'cv11';
+}
+
+/* 16) Hover en el logo del header para feedback */
+.logo:hover .logo-name,
+.logo:hover .logo-name em {
+  opacity: 0.85;
+  transition: opacity 0.15s;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   MEJORAS FINALES (feedback de screenshots)
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ══ 1) Ocultar stats pills del hero (redundantes con el ribbon) ═══════ */
+.hero-stats-bar {
+  display: none !important;
+}
+
+/* ══ 2) Ocultar "Renta no informada" (redundante) ═════════════════════ */
+.oferta-renta--muted,
+.oferta-renta:empty {
+  display: none !important;
+}
+
+/* ══ 3) Region badge con mejor contraste en light y dark ══════════════ */
+.badge.badge-region {
+  background: var(--navy-tint) !important;
+  color: var(--navy) !important;
+  border: none !important;
+  padding: 3px 10px !important;
+  font-weight: 500 !important;
+}
+:root[data-theme="dark"] .badge.badge-region {
+  background: rgba(127, 169, 221, 0.16) !important;
+  color: #A5B8DF !important;
+  border: none !important;
+}
+
+/* ══ 4) Plazo progresivo por días hasta cierre ═══════════════════════ */
+/* Crítico (0-2 días): rojo terra */
+.oferta-card.plazo-critico {
+  border-left-color: var(--rojo) !important;
+  border-left-width: 4px !important;
+}
+.oferta-card.plazo-critico .plazo-dot {
+  background: var(--rojo) !important;
+  box-shadow: 0 0 0 3px rgba(178, 59, 36, 0.15);
+}
+.oferta-card.plazo-critico .plazo-dot + span,
+.oferta-card.plazo-critico .plazo-dot ~ span {
+  color: var(--rojo) !important;
+  font-weight: 700 !important;
+}
+
+/* Warning (3-5 días): ámbar */
+.oferta-card.plazo-warning {
+  border-left-color: var(--naran) !important;
+}
+.oferta-card.plazo-warning .plazo-dot {
+  background: var(--naran) !important;
+}
+.oferta-card.plazo-warning .plazo-dot + span,
+.oferta-card.plazo-warning .plazo-dot ~ span {
+  color: var(--naran) !important;
+  font-weight: 600 !important;
+}
+
+/* Safe (6+): verde */
+.oferta-card.plazo-safe .plazo-dot {
+  background: var(--verde) !important;
+}
+.oferta-card.plazo-safe .plazo-dot + span,
+.oferta-card.plazo-safe .plazo-dot ~ span {
+  color: var(--verde) !important;
+}
+
+/* Cerrado: gris */
+.oferta-card.plazo-cerrado {
+  opacity: 0.75;
+}
+.oferta-card.plazo-cerrado .plazo-dot {
+  background: var(--texto3) !important;
+}
+.oferta-card.plazo-cerrado .plazo-dot + span,
+.oferta-card.plazo-cerrado .plazo-dot ~ span {
+  color: var(--texto3) !important;
+}
+
+/* ══ 5) Modal de detalle más compacto ═════════════════════════════════ */
+.modal {
+  max-height: 92vh !important;
+}
+.modal-body {
+  padding: 16px 20px 8px !important;
+}
+.modal-seccion {
+  margin-bottom: 14px !important;
+}
+/* KPIs en 2 columnas pero más compactos */
+.modal-body .kpis-grid,
+.modal-body .modal-kpis,
+.modal-body [class*="kpi-grid"] {
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 6px !important;
+}
+.modal-body .kpi,
+.modal-body .modal-kpi,
+.modal-body [class*="kpi-card"] {
+  padding: 8px 12px !important;
+  background: var(--bg2) !important;
+  border-radius: 8px !important;
+}
+.modal-body .kpi-label,
+.modal-body [class*="kpi-label"] {
+  font-size: 11px !important;
+  color: var(--text-40) !important;
+  margin-bottom: 2px !important;
+}
+.modal-body .kpi-value,
+.modal-body [class*="kpi-value"] {
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  color: var(--text) !important;
+}
+
+/* Alerta "Cierra pronto" en modal más compacta */
+.modal-plazo-alert {
+  padding: 10px 14px !important;
+  margin-bottom: 12px !important;
+}
+.modal-plazo-label {
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+}
+.modal-plazo-fecha {
+  font-size: 13px !important;
+}
+
+/* Header del modal más ajustado */
+.modal-header {
+  padding: 14px 20px !important;
+}
+.modal-titulo,
+.modal-header h2 {
+  font-size: 20px !important;
+  line-height: 1.25 !important;
+}
+
+/* ══ 6) Share modal (ig-modal) rediseñado con paleta del sitio ═══════ */
+.ig-modal {
+  background: rgba(10, 20, 38, 0.7) !important;
+  backdrop-filter: blur(6px);
+}
+.ig-modal-caja {
+  background: var(--blanco) !important;
+  border: 1px solid var(--borde) !important;
+  border-radius: 14px !important;
+  padding: 24px !important;
+  max-width: 520px !important;
+  box-shadow: 0 24px 80px rgba(10, 46, 110, 0.3);
+}
+.ig-modal-cerrar {
+  background: var(--bg2) !important;
+  color: var(--texto) !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  top: 16px !important;
+  right: 16px !important;
+  border: none !important;
+  font-size: 18px !important;
+  display: grid !important;
+  place-items: center !important;
+}
+.ig-modal-cerrar:hover {
+  background: var(--borde) !important;
+  color: var(--texto) !important;
+}
+.ig-modal-titulo {
+  font-family: var(--font-serif) !important;
+  font-size: 20px !important;
+  font-weight: 500 !important;
+  color: var(--navy-ink) !important;
+  letter-spacing: -0.015em !important;
+  margin-bottom: 16px !important;
+}
+:root[data-theme="dark"] .ig-modal-titulo { color: var(--texto) !important; }
+
+/* Preview de imagen */
+.share-preview {
+  border-radius: 10px !important;
+  overflow: hidden;
+  margin-bottom: 14px !important;
+  background: var(--bg2);
+  border: 1px solid var(--borde);
+}
+.share-preview-frame {
+  border-radius: 8px;
+}
+.share-preview-estado {
+  color: var(--text-60);
+  font-size: 13px;
+}
+
+/* Switch de formato más limpio */
+.share-preview-switch {
+  background: var(--bg2) !important;
+  border: 1px solid var(--borde) !important;
+  border-radius: 999px !important;
+  padding: 4px !important;
+  display: inline-flex !important;
+  gap: 2px !important;
+  margin: 12px auto !important;
+}
+.share-preview-switch-btn {
+  background: transparent !important;
+  border: none !important;
+  padding: 7px 14px !important;
+  border-radius: 999px !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  color: var(--texto2) !important;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.share-preview-switch-btn.is-active {
+  background: var(--navy) !important;
+  color: var(--gold-brilliant) !important;
+  font-weight: 600 !important;
+}
+:root[data-theme="dark"] .share-preview-switch-btn.is-active {
+  background: var(--acento) !important;
+  color: var(--azul) !important;
+}
+
+/* Meta info */
+.share-meta {
+  padding: 12px 0;
+  border-top: 1px solid var(--borde);
+}
+.share-meta-kicker {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: var(--navy) !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  margin-bottom: 4px !important;
+}
+:root[data-theme="dark"] .share-meta-kicker { color: var(--acento) !important; }
+.share-meta-titulo {
+  font-family: var(--font-sans) !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: var(--navy-ink) !important;
+  line-height: 1.35 !important;
+}
+:root[data-theme="dark"] .share-meta-titulo { color: var(--texto) !important; }
+
+/* Input de enlace */
+.share-link {
+  display: flex !important;
+  gap: 8px !important;
+  margin: 12px 0 16px !important;
+}
+.share-link-input {
+  flex: 1;
+  background: var(--bg2) !important;
+  border: 1px solid var(--borde) !important;
+  border-radius: 8px !important;
+  padding: 10px 14px !important;
+  font-size: 13px !important;
+  color: var(--texto) !important;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  min-width: 0;
+}
+.share-link-copy {
+  background: var(--navy) !important;
+  color: var(--blanco) !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 10px 16px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.share-link-copy:hover { background: var(--navy-deep) !important; }
+.share-link-copy.is-copied {
+  background: var(--verde) !important;
+}
+:root[data-theme="dark"] .share-link-copy {
+  background: var(--acento) !important;
+  color: var(--azul) !important;
+}
+
+/* Acciones finales: solo descargar (ocultamos WhatsApp duplicado) */
+.ig-modal-acciones {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  position: static !important;
+  box-shadow: none !important;
+}
+.ig-modal-acciones .ig-btn {
+  height: 44px !important;
+  border-radius: 10px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  text-decoration: none !important;
+  transition: all 0.15s;
+}
+.ig-modal-acciones .ig-btn--primary {
+  background: var(--navy) !important;
+  color: var(--blanco) !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.ig-modal-acciones .ig-btn--primary:hover {
+  background: var(--navy-deep) !important;
+  transform: translateY(-1px);
+}
+:root[data-theme="dark"] .ig-modal-acciones .ig-btn--primary {
+  background: var(--acento) !important;
+  color: var(--azul) !important;
+}
+/* Ocultar WhatsApp duplicado (ya existe en modal-share-group) */
+.ig-modal-acciones .ig-btn--wa {
+  display: none !important;
+}
+.ig-modal-nota {
+  font-size: 12.5px !important;
+  color: var(--text-60) !important;
+  line-height: 1.55 !important;
+  margin-top: 12px !important;
+  padding: 0 !important;
+}
+
+/* ══ 7) Mejoras misc. de consistencia ═════════════════════════════════ */
+
+/* Evitar que los spans de plazo se pisen en modo compact */
+.oferta-plazo,
+.plazo-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Fav icon heart con mejor afordance */
+.btn-fav-card {
+  transition: all 0.15s !important;
+}
+.btn-fav-card:hover {
+  transform: scale(1.08);
+}
+
+/* Oferta-logo container para sector icons */
+.oferta-logo {
+  overflow: hidden;
+  background: #F4F3EE;
+}
+.oferta-logo .sector-icon-fallback {
+  width: 100%;
+  height: 100%;
+}
+:root[data-theme="dark"] .oferta-logo {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   SHARE MEJORAS · email + IG copy-link + toast + orden
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Share group: alinear y distribuir bien los botones */
+.modal-share-group {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 10px !important;
+  padding: 14px 20px 16px !important;
+  border-top: 1px solid var(--borde) !important;
+  margin-top: 0 !important;
+  flex-wrap: wrap;
+}
+
+/* Todos los share-btn con mismo look circular */
+.modal-share-group .share-btn {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+  border: 1px solid var(--borde) !important;
+  background: var(--blanco) !important;
+  color: var(--texto2) !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  padding: 0 !important;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex: 0 0 auto;
+}
+.modal-share-group .share-btn svg {
+  width: 18px;
+  height: 18px;
+}
+.modal-share-group .share-btn:hover {
+  border-color: var(--navy);
+  color: var(--navy);
+  transform: translateY(-1px);
+}
+
+/* Colores por canal en hover para feedback */
+.modal-share-group .share-btn--wa:hover { border-color: #25D366; color: #25D366; }
+.modal-share-group .share-btn--li:hover { border-color: #0A66C2; color: #0A66C2; }
+.modal-share-group .share-btn--email:hover { border-color: #C88724; color: #C88724; }
+.modal-share-group .share-btn--ig:hover { border-color: #E1306C; color: #E1306C; }
+.modal-share-group .share-btn--copy:hover { border-color: var(--navy); color: var(--navy); }
+
+:root[data-theme="dark"] .modal-share-group {
+  border-top-color: var(--borde) !important;
+}
+:root[data-theme="dark"] .modal-share-group .share-btn {
+  background: var(--bg2) !important;
+  border-color: var(--borde) !important;
+  color: var(--texto2) !important;
+}
+
+/* Ocultar el modal generador de imagen (ig-modal) — ya no se usa */
+.ig-modal,
+#ig-modal {
+  display: none !important;
+}
+
+/* Toast para feedback de copiar */
+.share-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--navy);
+  color: var(--blanco);
+  padding: 12px 20px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 12px 32px rgba(14, 32, 70, 0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  z-index: 9999;
+  max-width: 90vw;
+  text-align: center;
+}
+.share-toast.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+:root[data-theme="dark"] .share-toast {
+  background: var(--acento);
+  color: var(--azul);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   MODAL DETALLE · más ancho para mostrar más contenido sin scroll
+   ══════════════════════════════════════════════════════════════════════ */
+.modal {
+  max-width: 820px !important;
+  max-height: 94vh !important;
+}
+
+/* Compactar header del modal con título más flexible */
+.modal-header {
+  padding: 14px 20px !important;
+}
+.modal-cargo {
+  font-size: clamp(18px, 2.2vw, 22px) !important;
+  line-height: 1.3 !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* Secciones del body con menos margen entre ellas */
+.modal-seccion {
+  margin-bottom: 14px !important;
+}
+
+/* Títulos de sección más compactos */
+.modal-seccion-titulo,
+.modal-seccion h3 {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  color: var(--navy) !important;
+  margin-bottom: 8px !important;
+  padding-bottom: 0 !important;
+}
+:root[data-theme="dark"] .modal-seccion-titulo,
+:root[data-theme="dark"] .modal-seccion h3 { color: var(--acento) !important; }
+
+/* Descripción/funciones/requisitos — más legibles en el modal */
+.modal-descripcion,
+.modal-body .prose {
+  font-size: 14.5px !important;
+  line-height: 1.65 !important;
+  color: var(--texto) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   TRUNCADO DE TITULOS · ellipsis visual en cards
+   ══════════════════════════════════════════════════════════════════════ */
+.oferta-cargo,
+.oferta-cargo-link {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   LOGOS · contenedor siempre con fondo claro (para SVG fallback)
+   ══════════════════════════════════════════════════════════════════════ */
+.oferta-logo {
+  background: var(--navy-tint, #E1E8F6) !important;
+  border: 1px solid var(--borde) !important;
+}
+.oferta-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 4px;
+  background: var(--blanco);
+  border-radius: 8px;
+}
+.oferta-logo .sector-icon-fallback {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  background: transparent !important;
+}
+.oferta-logo .sector-icon-fallback svg {
+  width: 62%;
+  height: 62%;
+}
+:root[data-theme="dark"] .oferta-logo {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+:root[data-theme="dark"] .oferta-logo img {
+  background: rgba(255, 255, 255, 0.95);
+}
+:root[data-theme="dark"] .oferta-logo .sector-icon-fallback svg {
+  stroke: var(--acento) !important;
+}

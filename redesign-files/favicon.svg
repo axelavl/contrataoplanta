@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="contrata o planta">
+  <title>contrata o planta — favicon</title>
+  <rect width="32" height="32" rx="6" fill="#254BA0"/>
+  <g transform="translate(16 16) skewX(-10) translate(-16 -16)">
+    <circle cx="15" cy="17" r="7" fill="none" stroke="#F2C26A" stroke-width="2.8"/>
+    <circle cx="22" cy="11" r="2.1" fill="#F2C26A"/>
+  </g>
+</svg>
