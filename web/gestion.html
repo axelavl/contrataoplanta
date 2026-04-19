@@ -706,11 +706,23 @@ async function doLogin() {
   const btn = document.getElementById('auth-btn');
   btn.textContent = 'Verificando…'; btn.disabled = true;
   document.getElementById('auth-error').style.display = 'none';
+  // Verificar primero que el API responde (health check sin auth)
+  try { await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(5000) }); }
+  catch(e) {
+    document.getElementById('auth-error').textContent =
+      `Sin conexión con el servidor (${API_BASE}). Verifica tu red o VPN.`;
+    document.getElementById('auth-error').style.display = 'block';
+    btn.textContent = 'Entrar'; btn.disabled = false;
+    return;
+  }
   try {
     const r = await fetch(`${API_BASE}/api/${ADMIN_PATH}/stats`, {
       headers: { Authorization: header }
     });
     if (r.status === 401 || r.status === 404) {
+      document.getElementById('auth-error').textContent =
+        r.status === 404 ? 'Panel no encontrado — revisa el parámetro ?k= en la URL'
+                         : 'Contraseña incorrecta';
       document.getElementById('auth-error').style.display = 'block';
       btn.textContent = 'Entrar'; btn.disabled = false;
       return;
@@ -726,7 +738,8 @@ async function doLogin() {
     sessionStorage.setItem('_gc', JSON.stringify({ pass, k: ADMIN_PATH }));
     showApp();
   } catch(e) {
-    document.getElementById('auth-error').textContent = 'Error de red: ' + e.message;
+    document.getElementById('auth-error').textContent =
+      `Error al autenticar: ${e.message} — prueba en modo incógnito o desactiva extensiones del navegador`;
     document.getElementById('auth-error').style.display = 'block';
     btn.textContent = 'Entrar'; btn.disabled = false;
   }
