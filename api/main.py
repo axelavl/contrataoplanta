@@ -299,6 +299,39 @@ def execute_fetch_one(sql: str, params: list[Any] | tuple[Any, ...] | None = Non
         return dict(row) if row else None
 
 
+_table_columns_cache: dict[str, set[str]] = {}
+
+
+def _table_columns(table: str) -> set[str]:
+    """Devuelve el set de columnas de una tabla (cacheado por proceso).
+
+    Se usa para construir queries resilientes cuando el schema de prod no
+    coincide exactamente con el del repo (renombres, columnas opcionales).
+    """
+    if table not in _table_columns_cache:
+        rows = execute_fetch_all(
+            "SELECT column_name FROM information_schema.columns "
+            "WHERE table_schema = current_schema() AND table_name = %s",
+            [table],
+        )
+        _table_columns_cache[table] = {r["column_name"] for r in rows}
+    return _table_columns_cache[table]
+
+
+def _coalesce_present(cols: set[str], candidates: tuple[str, ...], default: str | None = None) -> str:
+    """Genera una expresión SQL con las columnas candidatas presentes en ``cols``.
+
+    Si ninguna existe, retorna ``default`` (ej. ``"NULL"`` o ``"0"``).
+    """
+    present = [c for c in candidates if c in cols]
+    if not present:
+        return default if default is not None else "NULL"
+    if len(present) == 1 and default is None:
+        return present[0]
+    parts = present + ([default] if default is not None else [])
+    return f"COALESCE({', '.join(parts)})"
+
+
 def ensure_api_schema() -> None:
     statements = [
         """
@@ -398,8 +431,23 @@ def ensure_api_schema() -> None:
         "ALTER TABLE scraper_runs ADD COLUMN IF NOT EXISTS total_extract INTEGER DEFAULT 0",
         "ALTER TABLE scraper_runs ADD COLUMN IF NOT EXISTS total_skip INTEGER DEFAULT 0",
         "ALTER TABLE scraper_runs ADD COLUMN IF NOT EXISTS notas TEXT",
-        # Rellenar started_at desde ejecutado_en para filas antiguas
-        "UPDATE scraper_runs SET started_at = ejecutado_en WHERE started_at IS NULL AND ejecutado_en IS NOT NULL",
+        # Rellenar started_at desde ejecutado_en para filas antiguas (solo si
+        # la columna heredada aún existe — en prod puede haber sido eliminada
+        # tras el renombre).
+        """
+        DO $$
+        BEGIN
+            IF EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_schema = current_schema()
+                  AND table_name = 'scraper_runs'
+                  AND column_name = 'ejecutado_en'
+            ) THEN
+                EXECUTE 'UPDATE scraper_runs SET started_at = ejecutado_en '
+                     || 'WHERE started_at IS NULL AND ejecutado_en IS NOT NULL';
+            END IF;
+        END $$
+        """,
         "UPDATE scraper_runs SET status = 'completado' WHERE status IS NULL AND duracion_segundos IS NOT NULL",
         # Tabla de configuración editable del sitio
         """
@@ -1826,19 +1874,27 @@ def admin_stats(_user: str = Depends(_verify_admin)) -> dict[str, Any]:
         GROUP BY 1 ORDER BY 2 DESC LIMIT 10
     """)
 
-    scraper_runs = execute_fetch_all("""
+    # La tabla scraper_runs varió de schema: versiones antiguas tenían
+    # `ejecutado_en` / `total_encontradas`; las recientes los renombraron a
+    # `started_at` / `total_nuevas`. Postgres no permite referenciar columnas
+    # inexistentes ni dentro de COALESCE, así que construimos la query
+    # solo con las columnas presentes en el schema actual.
+    runs_cols = _table_columns("scraper_runs")
+    started_expr = _coalesce_present(runs_cols, ("started_at", "ejecutado_en"))
+    nuevas_expr = _coalesce_present(runs_cols, ("total_nuevas", "total_encontradas"), default="0")
+    scraper_runs = execute_fetch_all(f"""
         SELECT id,
-               COALESCE(started_at, ejecutado_en) AS started_at,
+               {started_expr} AS started_at,
                COALESCE(status, CASE WHEN duracion_segundos IS NOT NULL THEN 'completado' ELSE NULL END) AS status,
                COALESCE(total_instituciones, 0) AS total_instituciones,
                COALESCE(total_evaluadas, 0) AS total_evaluadas,
                COALESCE(total_extract, 0) AS total_extract,
-               COALESCE(total_nuevas, total_encontradas, 0) AS total_nuevas,
+               {nuevas_expr} AS total_nuevas,
                COALESCE(total_actualizadas, 0) AS total_actualizadas,
                COALESCE(total_errores, 0) AS total_errores,
                tasa_precision, duracion_segundos
         FROM scraper_runs
-        ORDER BY COALESCE(started_at, ejecutado_en) DESC NULLS LAST
+        ORDER BY {started_expr} DESC NULLS LAST
         LIMIT 10
     """)
 
@@ -2015,9 +2071,13 @@ def admin_scraper_runs(
     _user: str = Depends(_verify_admin),
 ) -> list[dict[str, Any]]:
     """Historial de corridas del scraper con detalle."""
-    rows = execute_fetch_all("""
+    runs_cols = _table_columns("scraper_runs")
+    started_expr = _coalesce_present(runs_cols, ("started_at", "ejecutado_en"))
+    nuevas_expr = _coalesce_present(runs_cols, ("total_nuevas", "total_encontradas"), default="0")
+    vencidas_expr = _coalesce_present(runs_cols, ("total_vencidas", "total_cerradas"), default="0")
+    rows = execute_fetch_all(f"""
         SELECT id,
-               COALESCE(started_at, ejecutado_en) AS started_at,
+               {started_expr} AS started_at,
                finished_at,
                COALESCE(status, CASE WHEN duracion_segundos IS NOT NULL THEN 'completado' ELSE NULL END) AS status,
                COALESCE(run_mode, 'batch') AS run_mode,
@@ -2025,14 +2085,14 @@ def admin_scraper_runs(
                COALESCE(total_evaluadas, 0) AS total_evaluadas,
                COALESCE(total_extract, 0) AS total_extract,
                COALESCE(total_skip, 0) AS total_skip,
-               COALESCE(total_nuevas, total_encontradas, 0) AS total_nuevas,
+               {nuevas_expr} AS total_nuevas,
                COALESCE(total_actualizadas, 0) AS total_actualizadas,
-               COALESCE(total_vencidas, total_cerradas, 0) AS total_vencidas,
+               {vencidas_expr} AS total_vencidas,
                COALESCE(total_descartadas, 0) AS total_descartadas,
                COALESCE(total_errores, 0) AS total_errores,
                tasa_precision, duracion_segundos, notas, detalle
         FROM scraper_runs
-        ORDER BY COALESCE(started_at, ejecutado_en) DESC NULLS LAST
+        ORDER BY {started_expr} DESC NULLS LAST
         LIMIT %s
     """, [limit])
 
@@ -2066,9 +2126,11 @@ def admin_scraper_run_detalle(
     _user: str = Depends(_verify_admin),
 ) -> dict[str, Any]:
     """Detalle completo de una corrida del scraper, incluyendo reporte por institución."""
-    row = execute_fetch_one("""
+    runs_cols = _table_columns("scraper_runs")
+    started_expr = _coalesce_present(runs_cols, ("started_at", "ejecutado_en"))
+    row = execute_fetch_one(f"""
         SELECT id,
-               COALESCE(started_at, ejecutado_en) AS started_at,
+               {started_expr} AS started_at,
                finished_at, status, run_mode,
                total_instituciones, total_evaluadas, total_extract, total_skip,
                total_nuevas, total_actualizadas, total_vencidas, total_descartadas,
