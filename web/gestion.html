@@ -695,8 +695,12 @@ let _editingId = null;
 
 // ── Auth ───────────────────────────────────────────────────────
 function buildAuthHeader(pass) {
-  // username fijo 'ops', la autenticación real es por contraseña
-  return 'Basic ' + btoa(unescape(encodeURIComponent('ops:' + pass)));
+  // username fijo 'ops', la autenticación real es por contraseña.
+  // Usamos scheme 'Bearer' (no 'Basic') para que Firefox/Safari no
+  // intercepten el 401 con su diálogo nativo de Basic Auth — eso abortaba
+  // fetch() con "Failed to fetch" antes de que el JS pudiera leer el status.
+  // El backend decodifica el b64 igual que con Basic.
+  return 'Bearer ' + btoa(unescape(encodeURIComponent('ops:' + pass)));
 }
 
 async function doLogin() {

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 import hashlib
 import html
 import json
@@ -29,7 +30,6 @@ import secrets
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, Response, RedirectResponse
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel
 
 # Para poder importar scrapers.source_status desde la API, agregamos la raíz del
@@ -122,8 +122,6 @@ ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "estadoemplea2026")
 # Ejemplo: ADMIN_PATH=f8a3d2e7  → rutas en /api/f8a3d2e7/stats, etc.
 ADMIN_PATH = os.getenv("ADMIN_PATH", "_gestion_ops").strip("/")
 
-_http_basic = HTTPBasic(auto_error=False)
-
 # ── Rate limiting en memoria (simple, por IP) ─────────────────
 import time as _time
 from collections import defaultdict as _defaultdict
@@ -149,31 +147,52 @@ def _record_failure(ip: str) -> None:
     _auth_failures[ip].append(_time.monotonic())
 
 
-def _verify_admin(
-    request: Request,
-    credentials: HTTPBasicCredentials | None = Depends(_http_basic),
-) -> str:
-    """Verifica HTTP Basic Auth + rate limiting para endpoints de administración."""
+def _verify_admin(request: Request) -> str:
+    """Verifica Authorization + rate limiting para endpoints de administración.
+
+    Acepta esquemas ``Basic <b64>`` o ``Bearer <b64>`` con payload
+    ``ops:<password>`` codificado en base64. Usamos ``Bearer`` desde el
+    frontend para evitar que Firefox/Safari intercepten el 401 con su diálogo
+    nativo de autenticación (que aborta la promesa ``fetch()`` con
+    "Failed to fetch" antes de que el JS pueda leer el status). Aceptamos
+    ``Basic`` también por compatibilidad con clientes CLI (curl).
+    """
     ip = (request.client.host if request.client else "unknown") or "unknown"
     _check_rate_limit(ip)
-    if credentials is None:
+
+    auth_header = request.headers.get("authorization")
+    if not auth_header:
+        # Sin credenciales: emitimos desafío con un scheme no estándar
+        # ("Token") para que el navegador no active su diálogo de Basic Auth.
         raise HTTPException(
             status_code=401,
             detail="Autenticación requerida",
-            headers={"WWW-Authenticate": 'Basic realm="Gestion"'},
+            headers={"WWW-Authenticate": 'Token realm="Gestion"'},
         )
-    pw_ok = secrets.compare_digest(
-        credentials.password.encode("utf-8"),
-        ADMIN_PASSWORD.encode("utf-8"),
-    )
-    if not pw_ok:
+
+    scheme, _, token = auth_header.partition(" ")
+    credentials_ok = False
+    if scheme.lower() in ("basic", "bearer") and token:
+        try:
+            decoded = base64.b64decode(token.strip(), validate=True).decode("utf-8")
+        except (ValueError, UnicodeDecodeError):
+            decoded = ""
+        user, sep, password = decoded.partition(":")
+        if sep and user == "ops" and password:
+            credentials_ok = secrets.compare_digest(
+                password.encode("utf-8"),
+                ADMIN_PASSWORD.encode("utf-8"),
+            )
+
+    if not credentials_ok:
         _record_failure(ip)
+        # El cliente ya envió credenciales; no incluimos WWW-Authenticate para
+        # evitar el re-desafío nativo del navegador.
         raise HTTPException(
             status_code=401,
             detail="Credenciales incorrectas",
-            headers={"WWW-Authenticate": 'Basic realm="Gestion"'},
         )
-    return credentials.username
+    return "ops"
 WEB_INDEX_PATH = _PROJECT_ROOT / "web" / "index.html"
 DEFAULT_OG_IMAGE = f"{SITE_URL}/og-default.jpg"
 STATUS_LEGACY_MAP = {
