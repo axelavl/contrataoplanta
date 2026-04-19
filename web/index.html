@@ -194,6 +194,7 @@
       </div>
       <div class="resultados-controles">
         <div class="resultados-acciones">
+          <button class="btn-copiar-busqueda btn-copiar-busqueda--sec btn-limpiar-filtros" id="btn-limpiar-filtros" type="button" onclick="limpiarTodosLosFiltros()" title="Quitar todos los filtros aplicados" hidden>✕ Limpiar filtros</button>
           <button class="btn-copiar-busqueda btn-copiar-busqueda--sec btn-compartir-busqueda" id="btn-compartir-busqueda" type="button" onclick="toggleCompartirBusqueda(this)" title="Compartir esta búsqueda en RRSS" aria-expanded="false" aria-controls="popover-compartir-busqueda" hidden>↗ Compartir búsqueda</button>
         </div>
         <div class="resultados-preferencias">
@@ -3484,11 +3485,71 @@ function hayEstadoCompartibleReal() {
 }
 
 function actualizarVisibilidadCompartirBusqueda() {
-  const btn = document.getElementById('btn-compartir-busqueda');
-  if (!btn) return;
-  const visible = hayEstadoCompartibleReal();
-  btn.hidden = !visible;
-  if (!visible) cerrarCompartirBusqueda();
+  const hayFiltros = hayEstadoCompartibleReal();
+  const btnCompartir = document.getElementById('btn-compartir-busqueda');
+  if (btnCompartir) {
+    btnCompartir.hidden = !hayFiltros;
+    if (!hayFiltros) cerrarCompartirBusqueda();
+  }
+  // El botón "Limpiar filtros" comparte visibilidad con compartir: sólo
+  // aparece cuando hay al menos un filtro activo que cambió el default.
+  const btnLimpiar = document.getElementById('btn-limpiar-filtros');
+  if (btnLimpiar) btnLimpiar.hidden = !hayFiltros;
+}
+
+// Restablece todos los filtros a su estado por defecto: input de cargo,
+// región, sector, comuna, renta, institución y chips rápidos. También
+// vuelve la pestaña a "vigentes". No toca orden ni vista (preferencias
+// del usuario, no filtros de contenido).
+function limpiarTodosLosFiltros() {
+  const setInputValue = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+  };
+  setInputValue('input-cargo', '');
+  setInputValue('filtro-region', '');
+  setInputValue('filtro-sector', '');
+  setInputValue('filtro-ciudad', '');
+  setInputValue('filtro-renta-min', '');
+  setInputValue('input-institucion', '');
+  document.getElementById('renta-wrap')?.classList.remove('tiene-valor');
+  const clearInst = document.getElementById('btn-clear-inst');
+  if (clearInst) clearInst.style.display = 'none';
+  const dropdown = document.getElementById('autocomplete-dropdown');
+  if (dropdown) dropdown.style.display = 'none';
+
+  document
+    .querySelectorAll('.filtros-tags-wrap .filtro-tag.activo')
+    .forEach((t) => t.classList.remove('activo'));
+
+  estado.q = '';
+  estado.region = '';
+  estado.sector = '';
+  estado.ciudad = '';
+  estado.comunas = [];
+  estado.renta_min = null;
+  estado.institucion_id = null;
+  estado.tipos = [...TIPOS_POR_DEFECTO];
+  estado.cierra_pronto = false;
+  estado.nuevas = false;
+  estado.sin_experiencia = false;
+  estado.pagina = 1;
+
+  // Volvemos a la pestaña "Vigentes" — si el usuario estaba en "Cerradas",
+  // limpiar filtros implica empezar de cero.
+  if (estado.vista_listado !== 'vigentes') {
+    estado.vista_listado = 'vigentes';
+    document.getElementById('estado-listado-tabs')?.setAttribute('data-estado', 'vigentes');
+    document.getElementById('tab-vigentes')?.classList.add('activo');
+    document.getElementById('tab-cerradas')?.classList.remove('activo');
+    document.getElementById('tab-vigentes')?.setAttribute('aria-selected', 'true');
+    document.getElementById('tab-cerradas')?.setAttribute('aria-selected', 'false');
+    const copy = document.getElementById('estado-listado-copy');
+    if (copy) copy.innerHTML = 'Mostrando concursos vigentes. Revisa los cerrados en la pestaña <strong>Cerradas</strong>.';
+  }
+
+  actualizarVisibilidadCompartirBusqueda();
+  cargarOfertas();
 }
 
 function _resumenFiltros() {

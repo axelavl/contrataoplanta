@@ -656,6 +656,29 @@ nav {
   border-color: #86EFAC; color: #166534; background: var(--verde-l);
 }
 .btn-compartir-busqueda { color: var(--azul); }
+/* "Limpiar filtros" — acción destructiva suave (borra el estado de
+   búsqueda). Tinte rojo sobrio para distinguirla de las otras acciones
+   pero sin competir visualmente con el botón primario "Buscar". */
+.btn-limpiar-filtros {
+  color: var(--rojo, #DC2626);
+  border-color: #FCA5A5;
+  background: #FEF2F2;
+}
+.btn-limpiar-filtros:hover {
+  border-color: var(--rojo, #DC2626);
+  color: #991B1B;
+  background: #FEE2E2;
+}
+:root[data-theme="dark"] .btn-limpiar-filtros {
+  color: #FCA5A5;
+  border-color: rgba(252, 165, 165, 0.35);
+  background: rgba(252, 165, 165, 0.08);
+}
+:root[data-theme="dark"] .btn-limpiar-filtros:hover {
+  color: #FECACA;
+  border-color: #FCA5A5;
+  background: rgba(252, 165, 165, 0.14);
+}
 .share-btn--copy-inline {
   width: 32px;
   height: 32px;
