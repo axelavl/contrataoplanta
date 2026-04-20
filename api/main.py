@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import asyncio
-import base64
 import hashlib
 import html
 import json
@@ -12,12 +10,10 @@ import re
 import sys
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
+from datetime import date
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlencode
-
-import jwt  # PyJWT
 
 try:
     import psycopg2
@@ -26,8 +22,6 @@ try:
 except ImportError:
     import pg8000.dbapi as _pg8000  # type: ignore[import]
     _PG_DRIVER = "pg8000"
-
-import secrets
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -67,21 +61,6 @@ from api.services.meilisearch_svc import (
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("api.contrataoplanta")
-
-def _requerido_env(nombre: str) -> str:
-    """Lee una variable de entorno obligatoria o aborta el arranque.
-
-    Sin fallback con credenciales hardcodeadas: si la variable falta en
-    Railway/entorno, el proceso debe fallar ruidoso al importar este módulo.
-    """
-    valor = os.getenv(nombre)
-    if not valor:
-        raise RuntimeError(
-            f"Variable de entorno {nombre!r} no definida. "
-            f"Configúrala en Railway/entorno (ver .env.example)."
-        )
-    return valor
-
 
 # DB config centralizada: `db/config.py` es la única fuente de verdad.
 # Lee `DATABASE_URL` (Railway) o los split `DB_HOST` / `DB_PORT` / ...
@@ -130,141 +109,26 @@ SITE_URL = (
     os.getenv("SITE_URL", "https://estadoemplea.pages.dev")
     or "https://estadoemplea.pages.dev"
 ).rstrip("/")
-ADMIN_PASSWORD = _requerido_env("ADMIN_PASSWORD")
-ADMIN_JWT_SECRET = _requerido_env("ADMIN_JWT_SECRET")
-ADMIN_JWT_TTL_SEG = int(os.getenv("ADMIN_JWT_TTL_SEG", "43200"))  # 12h default
-ADMIN_JWT_ALG = "HS256"
-ADMIN_JWT_USER = "ops"  # usuario lógico único por ahora
-# ADMIN_PATH: prefijo secreto de las rutas de administración.
-# Configura esta variable en Railway para ocultar el punto de entrada.
-# Con JWT activo es defense-in-depth, no la barrera principal.
-ADMIN_PATH = os.getenv("ADMIN_PATH", "_gestion_ops").strip("/")
-
-# ── Rate limiting en memoria (simple, por IP) ─────────────────
-import time as _time
-from collections import defaultdict as _defaultdict
-
-_auth_failures: dict[str, list[float]] = _defaultdict(list)
-_RATE_WINDOW_SEG = 600   # 10 minutos
-_RATE_MAX_INTENTOS = 5   # máx. intentos fallidos por ventana
-
-
-def _check_rate_limit(ip: str) -> None:
-    ahora = _time.monotonic()
-    corte = ahora - _RATE_WINDOW_SEG
-    _auth_failures[ip] = [t for t in _auth_failures[ip] if t > corte]
-    if len(_auth_failures[ip]) >= _RATE_MAX_INTENTOS:
-        raise HTTPException(
-            status_code=429,
-            detail="Demasiados intentos fallidos. Espere 10 minutos.",
-            headers={"Retry-After": str(_RATE_WINDOW_SEG)},
-        )
-
-
-def _record_failure(ip: str) -> None:
-    _auth_failures[ip].append(_time.monotonic())
-
-
-# ── JWT admin ─────────────────────────────────────────────────
-# Denylist de tokens revocados: mapa jti -> exp_ts unix. Se purga
-# perezosamente al verificar tokens; como el exp del JWT es también
-# validado por PyJWT, un jti vencido que no alcancemos a limpiar ya
-# no puede autenticar de todas formas.
-_revoked_jti: dict[str, float] = {}
-
-
-def _client_ip(request: Request) -> str:
-    """IP real del cliente considerando X-Forwarded-For del proxy.
-
-    Tomamos el primer valor del header (cliente original). No es
-    infalsificable si el proxy no sanea, pero en Railway/Cloudflare
-    viene limpio.
-    """
-    xff = request.headers.get("x-forwarded-for", "")
-    if xff:
-        primera = xff.split(",")[0].strip()
-        if primera:
-            return primera
-    return (request.client.host if request.client else "unknown") or "unknown"
-
-
-def _create_admin_token(user: str = ADMIN_JWT_USER) -> dict[str, Any]:
-    """Emite un JWT de admin. Devuelve metadatos + token."""
-    ahora = datetime.now(tz=timezone.utc)
-    exp_dt = ahora + _td(seconds=ADMIN_JWT_TTL_SEG)
-    jti = secrets.token_urlsafe(12)
-    payload = {
-        "sub": user,
-        "jti": jti,
-        "iat": int(ahora.timestamp()),
-        "exp": int(exp_dt.timestamp()),
-    }
-    token = jwt.encode(payload, ADMIN_JWT_SECRET, algorithm=ADMIN_JWT_ALG)
-    return {
-        "token": token,
-        "expires_at": payload["exp"],
-        "jti": jti,
-    }
-
-
-def _verify_admin_jwt(request: Request) -> str:
-    """Verifica un JWT de admin emitido por ``/auth/login``.
-
-    - Espera ``Authorization: Bearer <jwt>``.
-    - Valida firma, ``exp`` e ``iat`` con PyJWT.
-    - Rechaza si el ``jti`` está en el denylist (logout).
-    - No aplica rate limit aquí: el rate limit vive en el endpoint de login,
-      que es donde se presentan credenciales.
-    """
-    auth_header = request.headers.get("authorization", "")
-    scheme, _, raw = auth_header.partition(" ")
-    if scheme.lower() != "bearer" or not raw.strip():
-        raise HTTPException(
-            status_code=401,
-            detail="Autenticación requerida",
-            # Scheme no estándar para evitar el diálogo nativo del navegador.
-            headers={"WWW-Authenticate": 'Bearer realm="Gestion"'},
-        )
-    try:
-        payload = jwt.decode(
-            raw.strip(),
-            ADMIN_JWT_SECRET,
-            algorithms=[ADMIN_JWT_ALG],
-            options={"require": ["exp", "iat", "sub", "jti"]},
-        )
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Sesión expirada") from None
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Token inválido") from None
-
-    jti = payload.get("jti") or ""
-    if jti in _revoked_jti:
-        raise HTTPException(status_code=401, detail="Sesión revocada")
-
-    user = str(payload.get("sub") or "")
-    if user != ADMIN_JWT_USER:
-        raise HTTPException(status_code=401, detail="Token inválido")
-    # Guardamos el jti en el request para que /logout pueda revocarlo sin
-    # re-decodificar.
-    request.state.admin_jti = jti
-    request.state.admin_exp = int(payload.get("exp") or 0)
-    return user
-
-
-def _revoke_jti(jti: str, exp_ts: int) -> None:
-    """Añade un jti al denylist y purga los ya vencidos."""
-    ahora = _time.time()
-    # Purga perezosa.
-    vencidos = [j for j, e in _revoked_jti.items() if e <= ahora]
-    for j in vencidos:
-        _revoked_jti.pop(j, None)
-    if exp_ts > ahora:
-        _revoked_jti[jti] = float(exp_ts)
-
-
-# Import local para evitar ensuciar el namespace global con un nombre
-# corto como `timedelta`.
-from datetime import timedelta as _td  # noqa: E402
+# Constantes y helpers de auth + rate limit centralizados en
+# api/deps.py. Los re-exportamos como módulo-level bindings para que
+# los 30+ endpoints admin que siguen viviendo en este archivo puedan
+# usarlos via `Depends(_verify_admin_jwt)`, `_check_rate_limit(...)`,
+# etc., sin cambiar sus firmas (mientras se migran a routers propios
+# en PRs siguientes).
+from api.deps import (  # noqa: E402
+    ADMIN_JWT_ALG,
+    ADMIN_JWT_SECRET,
+    ADMIN_JWT_TTL_SEG,
+    ADMIN_JWT_USER,
+    ADMIN_PASSWORD,
+    ADMIN_PATH,
+    check_rate_limit as _check_rate_limit,
+    client_ip as _client_ip,
+    create_admin_token as _create_admin_token,
+    record_failure as _record_failure,
+    revoke_jti as _revoke_jti,
+    verify_admin_jwt as _verify_admin_jwt,
+)
 WEB_INDEX_PATH = _PROJECT_ROOT / "web" / "index.html"
 DEFAULT_OG_IMAGE = f"{SITE_URL}/og-default.jpg"
 STATUS_LEGACY_MAP = {
@@ -3014,63 +2878,13 @@ def web_root(request: Request, oferta: int | None = Query(None, ge=1)) -> Respon
 
 
 # ════════════════════════════════════════════════════════════════════════════
-#  ADMIN API — autenticación JWT (login contra ADMIN_PASSWORD, token HS256)
+#  ADMIN API — login/logout/me vive en `api/routers/auth.py`. El resto de
+#  endpoints admin sigue más abajo en este archivo (pendiente de extraerlos
+#  a un router propio en PRs siguientes).
 # ════════════════════════════════════════════════════════════════════════════
+from api.routers.auth import router as _auth_router  # noqa: E402
 
-
-class _LoginPayload(BaseModel):
-    password: str
-
-
-@app.post(f"/api/{ADMIN_PATH}/auth/login", tags=["admin"])
-def admin_login(payload: _LoginPayload, request: Request) -> dict[str, Any]:
-    """Valida la contraseña de admin y emite un JWT firmado.
-
-    Rate limit por IP sobre intentos fallidos (5 en 10 min). Las sesiones
-    válidas no se ven afectadas por este límite — el resto de los
-    endpoints admin sólo valida el token, no vuelve a pedir credenciales.
-    """
-    ip = _client_ip(request)
-    _check_rate_limit(ip)
-
-    password = (payload.password or "").strip()
-    if not password or not secrets.compare_digest(
-        password.encode("utf-8"), ADMIN_PASSWORD.encode("utf-8")
-    ):
-        _record_failure(ip)
-        raise HTTPException(status_code=401, detail="Credenciales incorrectas")
-
-    emitido = _create_admin_token()
-    return {
-        "token": emitido["token"],
-        "expires_at": emitido["expires_at"],
-        "token_type": "Bearer",
-    }
-
-
-@app.post(f"/api/{ADMIN_PATH}/auth/logout", tags=["admin"])
-def admin_logout(
-    request: Request,
-    _user: str = Depends(_verify_admin_jwt),
-) -> dict[str, bool]:
-    """Revoca el token actual (añade su jti al denylist hasta su ``exp``)."""
-    jti = getattr(request.state, "admin_jti", "") or ""
-    exp_ts = int(getattr(request.state, "admin_exp", 0) or 0)
-    if jti and exp_ts:
-        _revoke_jti(jti, exp_ts)
-    return {"ok": True}
-
-
-@app.get(f"/api/{ADMIN_PATH}/auth/me", tags=["admin"])
-def admin_me(
-    request: Request,
-    _user: str = Depends(_verify_admin_jwt),
-) -> dict[str, Any]:
-    """Ping autenticado para validar que un token guardado sigue vivo."""
-    return {
-        "user": _user,
-        "expires_at": int(getattr(request.state, "admin_exp", 0) or 0),
-    }
+app.include_router(_auth_router)
 
 
 @app.get(f"/api/{ADMIN_PATH}/stats", tags=["admin"])
