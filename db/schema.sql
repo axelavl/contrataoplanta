@@ -170,6 +170,68 @@ BEGIN
     END IF;
 END $$;
 
+-- Calidad de datos (ver db/migrations/005_data_quality_constraints.sql).
+-- Rentas: 300 000 a 20 000 000 CLP/mes (grados EUS van hasta ~4.8M;
+-- techo holgado para cargos excepcionales).
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_ofertas_renta_min_rango') THEN
+        ALTER TABLE ofertas ADD CONSTRAINT chk_ofertas_renta_min_rango
+            CHECK (renta_bruta_min IS NULL OR renta_bruta_min BETWEEN 300000 AND 20000000);
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_ofertas_renta_max_rango') THEN
+        ALTER TABLE ofertas ADD CONSTRAINT chk_ofertas_renta_max_rango
+            CHECK (renta_bruta_max IS NULL OR renta_bruta_max BETWEEN 300000 AND 20000000);
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_ofertas_renta_min_leq_max') THEN
+        ALTER TABLE ofertas ADD CONSTRAINT chk_ofertas_renta_min_leq_max
+            CHECK (
+                renta_bruta_min IS NULL OR renta_bruta_max IS NULL OR
+                renta_bruta_min <= renta_bruta_max
+            );
+    END IF;
+END $$;
+
+-- Fechas dentro de ventana razonable (2020 a +3 años).
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_ofertas_fecha_publicacion_rango') THEN
+        ALTER TABLE ofertas ADD CONSTRAINT chk_ofertas_fecha_publicacion_rango
+            CHECK (
+                fecha_publicacion IS NULL OR
+                fecha_publicacion BETWEEN DATE '2020-01-01' AND CURRENT_DATE + INTERVAL '1 year'
+            );
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_ofertas_fecha_cierre_rango') THEN
+        ALTER TABLE ofertas ADD CONSTRAINT chk_ofertas_fecha_cierre_rango
+            CHECK (
+                fecha_cierre IS NULL OR
+                fecha_cierre BETWEEN DATE '2020-01-01' AND CURRENT_DATE + INTERVAL '3 years'
+            );
+    END IF;
+END $$;
+
+-- Jornada razonable.
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_ofertas_horas_semanales_rango') THEN
+        ALTER TABLE ofertas ADD CONSTRAINT chk_ofertas_horas_semanales_rango
+            CHECK (horas_semanales IS NULL OR horas_semanales BETWEEN 1 AND 88);
+    END IF;
+END $$;
+
 -- ──────────────────────────────────────────────────────────
 --  ÍNDICES DE PERFORMANCE (post-audit 2.7)
 -- ──────────────────────────────────────────────────────────
