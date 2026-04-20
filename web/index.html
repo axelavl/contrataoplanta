@@ -226,14 +226,20 @@
           <button class="btn-copiar-busqueda btn-copiar-busqueda--sec btn-compartir-busqueda" id="btn-compartir-busqueda" type="button" onclick="toggleCompartirBusqueda(this)" title="Compartir esta búsqueda en RRSS" aria-expanded="false" aria-controls="popover-compartir-busqueda" hidden>↗ Compartir búsqueda</button>
         </div>
         <div class="resultados-preferencias">
-          <!-- Orden -->
-          <select class="ctrl-select" id="ctrl-orden" onchange="setOrdenSelect(this)" title="Ordenar por">
-            <option value="recientes">↓ Más recientes</option>
-            <option value="cierre">⏰ Cierra antes</option>
-            <option value="renta_desc">$ Mayor renta</option>
-            <option value="renta_asc">$ Menor renta</option>
-            <option value="az">A–Z cargo</option>
-          </select>
+          <!-- Orden: label prefijo + select nativo para que parezca un trigger. -->
+          <label class="sort-wrap" for="ctrl-orden">
+            <span class="sort-wrap-label">Ordenar por:</span>
+            <select class="ctrl-select ctrl-select--sort" id="ctrl-orden" onchange="setOrdenSelect(this)" title="Ordenar por">
+              <option value="recientes">↓ Más recientes</option>
+              <option value="cierre">⏰ Cierra antes</option>
+              <option value="renta_desc">$ Mayor renta</option>
+              <option value="renta_asc">$ Menor renta</option>
+              <option value="az">A–Z cargo</option>
+            </select>
+            <span class="sort-wrap-chevron" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </span>
+          </label>
           <!-- Por página -->
           <select class="ctrl-select" id="ctrl-por-pagina" onchange="setPorPagina(this)" title="Ofertas por página"></select>
           <div class="ctrl-sep"></div>
