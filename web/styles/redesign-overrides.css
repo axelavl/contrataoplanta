@@ -2779,3 +2779,36 @@ button:focus-visible,
 :root[data-theme="dark"] .sort-wrap:focus-within {
   outline-color: var(--acento, #E8A820);
 }
+
+/* ── 9. Theme toggle visible también en mobile ──────────────────
+   El toggle (luna / sol) vivía dentro de `.nav-links` — al ocultarse
+   el menú desktop en mobile, el toggle se iba con él. Ahora está
+   fuera de `.nav-links` (ver partials/header.html). Acá le damos
+   algo de respiración en mobile y un tamaño un poco menor para que
+   no compita con la hamburguesa.
+*/
+.nav-inner .theme-toggle {
+  margin-left: auto;
+}
+.nav-inner .hamburger {
+  margin-left: 6px;
+}
+@media (max-width: 600px) {
+  .theme-toggle {
+    padding: 2px;
+    gap: 1px;
+    margin-left: auto;
+  }
+  .theme-toggle button {
+    padding: 4px 6px;
+  }
+  .theme-toggle button svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+@media (max-width: 360px) {
+  /* En pantallas muy chicas, escondemos el texto del brand para
+     que el logo + theme-toggle + hamburguesa no se amontonen. */
+  .logo-tagline { display: none; }
+}
