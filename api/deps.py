@@ -26,6 +26,7 @@ import secrets
 import time as _time
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Any
 
 import jwt  # PyJWT
@@ -47,6 +48,30 @@ def _requerido_env(nombre: str) -> str:
             f"Configúrala en Railway/entorno (ver .env.example)."
         )
     return valor
+
+
+# ── Constantes compartidas (SEO/SSR y endpoints) ──────────────────
+
+#: Raíz del proyecto — útil para resolver paths relativos (index.html,
+#: catálogo JSON, etc.) desde cualquier módulo.
+_PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+#: URL canónica del frontend. Cloudflare Pages por default; los dominios
+#: de marca previos (contrataoplanta.cl / estadoemplea.cl /
+#: empleoestado.cl) ya no resuelven en DNS — si se filtran a un
+#: `og:image` o `og:url`, el crawler recibe NXDOMAIN y el unfurl no
+#: se renderiza.
+SITE_URL = (
+    os.getenv("SITE_URL", "https://estadoemplea.pages.dev")
+    or "https://estadoemplea.pages.dev"
+).rstrip("/")
+
+#: Path absoluto a `web/index.html` — el template que los endpoints
+#: SSR leen para inyectar meta tags, JSON-LD y el bloque de contenido.
+WEB_INDEX_PATH = _PROJECT_ROOT / "web" / "index.html"
+
+#: Imagen OG por defecto (cuando no hay oferta/landing específica).
+DEFAULT_OG_IMAGE = f"{SITE_URL}/og-default.jpg"
 
 
 # ── Constantes de admin ───────────────────────────────────────
