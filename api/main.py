@@ -406,6 +406,13 @@ def ensure_api_schema() -> None:
         "ALTER TABLE ofertas ADD COLUMN IF NOT EXISTS url_oferta_valida BOOLEAN",
         "ALTER TABLE ofertas ADD COLUMN IF NOT EXISTS url_bases_valida BOOLEAN",
         "ALTER TABLE ofertas ADD COLUMN IF NOT EXISTS url_valida_chequeada_en TIMESTAMP",
+        # Columnas de la pipeline nueva usadas por admin_ofertas/admin_diagnostico.
+        # En prod pueden faltar si la DB no pasó por las migraciones del pipeline.
+        "ALTER TABLE ofertas ADD COLUMN IF NOT EXISTS needs_review BOOLEAN DEFAULT FALSE",
+        "ALTER TABLE ofertas ADD COLUMN IF NOT EXISTS overall_quality_score NUMERIC",
+        "ALTER TABLE ofertas ADD COLUMN IF NOT EXISTS detectada_en TIMESTAMPTZ DEFAULT NOW()",
+        "ALTER TABLE ofertas ADD COLUMN IF NOT EXISTS actualizada_en TIMESTAMPTZ DEFAULT NOW()",
+        "ALTER TABLE ofertas ADD COLUMN IF NOT EXISTS creada_en TIMESTAMPTZ DEFAULT NOW()",
         "CREATE UNIQUE INDEX IF NOT EXISTS uq_ofertas_url_oferta ON ofertas (url_oferta)",
         """
         CREATE TABLE IF NOT EXISTS alertas_suscripciones (
