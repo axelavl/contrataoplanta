@@ -461,6 +461,49 @@
 
 <div class="data-update-global">Última actualización de datos: <strong id="data-last-update">cargando…</strong></div>
 
+<!-- ══ EXPLORA (links a landings SEO) ═══════════════════════════════
+     Enlaces permanentes a /empleos/region/{slug} y /empleos/sector/{slug}.
+     Crawleables para Google y útiles para descubrimiento de usuarios.
+     Hardcoded porque el set de regiones (16) y sectores (8) es estable
+     y no justifica fetch dinámico. Si cambia, actualizar también el
+     mapa `_LANDING_REGIONES` / `_LANDING_SECTORES` en api/main.py.
+-->
+<nav class="explora-landings" aria-label="Explorar empleos por región o sector">
+  <section class="explora-landings-seccion">
+    <h2>Empleos por región</h2>
+    <ul class="explora-landings-chips">
+      <li><a href="/empleos/region/arica-y-parinacota">Arica y Parinacota</a></li>
+      <li><a href="/empleos/region/tarapaca">Tarapacá</a></li>
+      <li><a href="/empleos/region/antofagasta">Antofagasta</a></li>
+      <li><a href="/empleos/region/atacama">Atacama</a></li>
+      <li><a href="/empleos/region/coquimbo">Coquimbo</a></li>
+      <li><a href="/empleos/region/valparaiso">Valparaíso</a></li>
+      <li><a href="/empleos/region/metropolitana">Metropolitana</a></li>
+      <li><a href="/empleos/region/ohiggins">O'Higgins</a></li>
+      <li><a href="/empleos/region/maule">Maule</a></li>
+      <li><a href="/empleos/region/nuble">Ñuble</a></li>
+      <li><a href="/empleos/region/biobio">Biobío</a></li>
+      <li><a href="/empleos/region/araucania">La Araucanía</a></li>
+      <li><a href="/empleos/region/los-rios">Los Ríos</a></li>
+      <li><a href="/empleos/region/los-lagos">Los Lagos</a></li>
+      <li><a href="/empleos/region/aysen">Aysén</a></li>
+      <li><a href="/empleos/region/magallanes">Magallanes</a></li>
+    </ul>
+  </section>
+  <section class="explora-landings-seccion">
+    <h2>Empleos por sector</h2>
+    <ul class="explora-landings-chips">
+      <li><a href="/empleos/sector/municipal">Municipal</a></li>
+      <li><a href="/empleos/sector/ejecutivo">Ejecutivo Central</a></li>
+      <li><a href="/empleos/sector/salud">Salud Pública</a></li>
+      <li><a href="/empleos/sector/educacion">Educación Superior</a></li>
+      <li><a href="/empleos/sector/gobierno-regional">Gobierno Regional</a></li>
+      <li><a href="/empleos/sector/judicial">Judicial</a></li>
+      <li><a href="/empleos/sector/ffaa-orden">FF.AA. y Orden</a></li>
+      <li><a href="/empleos/sector/empresa-estado">Empresa del Estado</a></li>
+    </ul>
+  </section>
+</nav>
 
 
 <!-- ══ FOOTER ══════════════════════════════════════════════════════ -->
