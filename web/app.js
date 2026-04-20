@@ -22,6 +22,140 @@
 // de nav-mobile.js, sin esperar DOMContentLoaded).
 // ═══════════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════════
+// Bootstrap SSR de /oferta/{id}-{slug}
+//
+// Cuando el backend sirve esa ruta, inyecta un
+//     <meta name="x-oferta-id" content="42">
+// en el <head>. Al cargar app.js, leemos ese meta y replicamos lo que
+// antes hacía el `<script>` inline de `_inject_offer_path_bootstrap`:
+// setear `window.__OFERTA_PATH_ID__` + empujar `?oferta=42` a la URL
+// para que el JS que abre el modal lo detecte via query string.
+// ═══════════════════════════════════════════════════════════════
+(function () {
+  var m = document.querySelector('meta[name="x-oferta-id"]');
+  if (!m) return;
+  var id = parseInt(m.getAttribute('content') || '', 10);
+  if (!id) return;
+  window.__OFERTA_PATH_ID__ = id;
+  try {
+    var u = new URL(window.location.href);
+    if (!u.searchParams.get('oferta')) {
+      u.searchParams.set('oferta', String(id));
+      history.replaceState(null, '', u.pathname + u.search + u.hash);
+    }
+  } catch (e) { /* IE antiguo, ignorar */ }
+})();
+
+// ═══════════════════════════════════════════════════════════════
+// Dispatcher de clicks con `data-action`
+//
+// Reemplaza los 31 `onclick="funcion()"` inline que había en HTML y
+// dentro de template strings de este mismo archivo. El CSP con
+// `script-src 'self'` (sin `'unsafe-inline'`) bloquea event handlers
+// inline — necesitamos rutearlos por JS.
+//
+// Cada botón tiene `data-action="slug"` y, si necesita argumentos,
+// atributos adicionales (`data-filtro`, `data-vista`, etc). El
+// `data-stop-propagation="true"` evita que el click suba a un
+// contenedor con delegate propio (p.ej. la card de oferta).
+//
+// Las funciones concretas (`buscar`, `toggleFiltro`, `abrirModal`,
+// etc.) están definidas más abajo en este mismo archivo; al tiempo
+// del primer click, ya existen en el scope global.
+// ═══════════════════════════════════════════════════════════════
+document.addEventListener('click', function (e) {
+  var el = e.target.closest('[data-action]');
+  if (!el) return;
+  if (el.getAttribute('data-stop-propagation') === 'true') {
+    e.stopPropagation();
+  }
+  var action = el.getAttribute('data-action');
+  switch (action) {
+    case 'buscar':
+      if (typeof buscar === 'function') buscar();
+      break;
+    case 'limpiar-renta':
+      if (typeof limpiarRenta === 'function') limpiarRenta();
+      break;
+    case 'toggle-filtro':
+      if (typeof toggleFiltro === 'function') {
+        toggleFiltro(el, el.getAttribute('data-filtro') || '');
+      }
+      break;
+    case 'set-vista-listado':
+      if (typeof setVistaListado === 'function') {
+        setVistaListado(el.getAttribute('data-listado') || '');
+      }
+      break;
+    case 'set-vista':
+      if (typeof setVista === 'function') {
+        setVista(el.getAttribute('data-vista') || '');
+      }
+      break;
+    case 'limpiar-filtros':
+      if (typeof limpiarTodosLosFiltros === 'function') limpiarTodosLosFiltros();
+      break;
+    case 'toggle-compartir':
+      if (typeof toggleCompartirBusqueda === 'function') toggleCompartirBusqueda(el);
+      break;
+    case 'cerrar-modal-overlay':
+      // Sólo cerrar si el click fue directamente en el overlay (no en el
+      // contenido del modal).
+      if (e.target === el && typeof cerrarModal === 'function') cerrarModal(e);
+      break;
+    case 'cerrar-modal':
+      if (typeof cerrarModal === 'function') cerrarModal(null, true);
+      break;
+    case 'cerrar-visor-bases':
+      if (typeof cerrarVisorBases === 'function') cerrarVisorBases();
+      break;
+    case 'cerrar-qr':
+      if (typeof cerrarQR === 'function') cerrarQR();
+      break;
+    case 'cerrar-ig':
+      if (typeof cerrarIG === 'function') cerrarIG();
+      break;
+    case 'abrir-visor-bases': {
+      var vbId = Number(el.getAttribute('data-oferta-id') || 0);
+      if (vbId && typeof abrirVisorBasesPorId === 'function') abrirVisorBasesPorId(vbId);
+      break;
+    }
+    case 'abrir-modal': {
+      var amId = Number(el.getAttribute('data-oferta-id') || 0);
+      if (amId && typeof abrirModal === 'function') abrirModal(amId);
+      break;
+    }
+    case 'toggle-fav':
+      if (typeof toggleFavCard === 'function') toggleFavCard(el);
+      break;
+    case 'set-orden-header':
+      if (typeof setOrdenDesdeHeader === 'function') {
+        setOrdenDesdeHeader(el.getAttribute('data-orden') || '');
+      }
+      break;
+    case 'ir-pagina': {
+      var page = Number(el.getAttribute('data-pagina') || 0);
+      if (page && typeof irPagina === 'function') irPagina(page);
+      break;
+    }
+    case 'abrir-input-pagina': {
+      var mid = Number(el.getAttribute('data-mid') || 0);
+      var max = Number(el.getAttribute('data-max') || 0);
+      if (typeof abrirInputPagina === 'function') abrirInputPagina(el, mid, max);
+      break;
+    }
+    case 'noop':
+      // Hace sólo stopPropagation (caso botón "bases no disponibles"
+      // dentro de card, que evita que se dispare el click de la card).
+      break;
+    default:
+      // Acción desconocida — ignorar silenciosamente; probablemente
+      // un data-action nuevo sin handler aún.
+      break;
+  }
+});
+
 // ── Base URL de la API: una sola URL, sin cadena de fallbacks ─────────────
 // Backend en Railway. Los dominios de marca (contrataoplanta.cl,
 // estadoemplea.cl, etc.) no existen en DNS — intentarlos sólo producía
@@ -553,9 +687,9 @@ function renderBtnBases(oferta) {
               : (flag === true)  ? true
               : esUrlValida(oferta.url_bases);
   if (!valida) {
-    return `<span class="btn-ver btn-ver-off" title="Enlace de bases no disponible" onclick="event.stopPropagation()">Bases no disponibles</span>`;
+    return `<span class="btn-ver btn-ver-off" title="Enlace de bases no disponible" data-action="noop" data-stop-propagation="true">Bases no disponibles</span>`;
   }
-  return `<button class="btn-ver" onclick="event.stopPropagation();abrirVisorBasesPorId(${Number(oferta.id) || 0})">Bases oficiales</button>`;
+  return `<button class="btn-ver" type="button" data-action="abrir-visor-bases" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}">Bases oficiales</button>`;
 }
 
 // ── ¿La oferta tiene una URL de postulación utilizable? ─────────────────
@@ -1020,7 +1154,7 @@ function renderCard(oferta) {
       data-region="${escAttr(oferta.region || '')}"
       data-cierre="${escAttr(oferta.fecha_cierre || '')}"
       data-url="${escAttr(oferta.url_oferta || '')}"
-      onclick="event.stopPropagation();toggleFavCard(this)"
+      data-action="toggle-fav" data-stop-propagation="true"
       title="${esFav ? 'Quitar de favoritos' : 'Guardar como favorito'}"
     >${esFav ? '♥' : '♡'}</button>
     <div class="oferta-header">
@@ -1052,7 +1186,7 @@ function renderCard(oferta) {
         ${oferta.fecha_cierre ? `<span style="color:var(--texto3);margin-left:4px">· ${formatFecha(oferta.fecha_cierre)}</span>` : ''}
       </div>
       <div class="oferta-acciones">
-        <button class="btn-detalle" onclick="event.stopPropagation();abrirModal(${Number(oferta.id) || 0})">Ver detalle</button>
+        <button class="btn-detalle" type="button" data-action="abrir-modal" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}">Ver detalle</button>
       </div>
     </div>
     ${jobPosting.markup}
@@ -1128,7 +1262,7 @@ function renderRowCompacta(oferta) {
       data-region="${escAttr(oferta.region || '')}"
       data-cierre="${escAttr(oferta.fecha_cierre || '')}"
       data-url="${escAttr(oferta.url_oferta || '')}"
-      onclick="event.stopPropagation();toggleFavCard(this)"
+      data-action="toggle-fav" data-stop-propagation="true"
       title="${esFav ? 'Quitar de favoritos' : 'Guardar como favorito'}"
     >${esFav ? '♥' : '♡'}</button>
     ${jobPosting.markup}
@@ -1157,7 +1291,7 @@ function renderHeaderCompacta() {
     const esActivo = estado.orden === c.orden || (c.toggle && estado.orden === c.toggle);
     const nextOrden = esActivo && c.toggle && estado.orden === c.orden ? c.toggle : c.orden;
     const arrow = !esActivo ? '↕' : (estado.orden === c.toggle ? '↑' : '↓');
-    return `<span class="col-sort${esActivo ? ' activo' : ''}" onclick="setOrdenDesdeHeader('${nextOrden}')">
+    return `<span class="col-sort${esActivo ? ' activo' : ''}" data-action="set-orden-header" data-orden="${nextOrden}" role="button" tabindex="0">
       ${c.label} <span class="sort-ico">${arrow}</span>
     </span>`;
   });
@@ -1332,27 +1466,27 @@ function renderPaginacion(total, paginas) {
   let html = '';
 
   // Botón anterior
-  html += `<button class="pag-btn" ${p <= 1 ? 'disabled' : ''} onclick="irPagina(${p-1})">‹</button>`;
+  html += `<button class="pag-btn" type="button" ${p <= 1 ? 'disabled' : ''} data-action="ir-pagina" data-pagina="${p-1}">‹</button>`;
 
   // Páginas (ventana de 5 alrededor de la actual)
   const desde = Math.max(1, p - 2);
   const hasta = Math.min(paginas, p + 2);
-  if (desde > 1) { html += `<button class="pag-btn" onclick="irPagina(1)">1</button>`; }
+  if (desde > 1) { html += `<button class="pag-btn" type="button" data-action="ir-pagina" data-pagina="1">1</button>`; }
   if (desde > 2) {
     const mid = Math.round((1 + desde) / 2);
-    html += `<button class="pag-btn pag-ellipsis" onclick="abrirInputPagina(this,${mid},${paginas})" title="Ir a página…">…</button>`;
+    html += `<button class="pag-btn pag-ellipsis" type="button" data-action="abrir-input-pagina" data-mid="${mid}" data-max="${paginas}" title="Ir a página…">…</button>`;
   }
   for (let i = desde; i <= hasta; i++) {
-    html += `<button class="pag-btn ${i === p ? 'activo' : ''}" onclick="irPagina(${i})">${i}</button>`;
+    html += `<button class="pag-btn ${i === p ? 'activo' : ''}" type="button" data-action="ir-pagina" data-pagina="${i}">${i}</button>`;
   }
   if (hasta < paginas - 1) {
     const mid = Math.round((hasta + paginas) / 2);
-    html += `<button class="pag-btn pag-ellipsis" onclick="abrirInputPagina(this,${mid},${paginas})" title="Ir a página…">…</button>`;
+    html += `<button class="pag-btn pag-ellipsis" type="button" data-action="abrir-input-pagina" data-mid="${mid}" data-max="${paginas}" title="Ir a página…">…</button>`;
   }
-  if (hasta < paginas) { html += `<button class="pag-btn" onclick="irPagina(${paginas})">${paginas}</button>`; }
+  if (hasta < paginas) { html += `<button class="pag-btn" type="button" data-action="ir-pagina" data-pagina="${paginas}">${paginas}</button>`; }
 
   // Botón siguiente
-  html += `<button class="pag-btn" ${p >= paginas ? 'disabled' : ''} onclick="irPagina(${p+1})">›</button>`;
+  html += `<button class="pag-btn" type="button" ${p >= paginas ? 'disabled' : ''} data-action="ir-pagina" data-pagina="${p+1}">›</button>`;
 
   cont.innerHTML = html;
 }
@@ -2782,6 +2916,10 @@ actualizarNavFavs();
 // Reemplaza los onclick="abrirModal(id)" inline (anti-patrón de la auditoría 3.2).
 document.getElementById('lista-ofertas')?.addEventListener('click', (e) => {
   if (e.target.closest('.btn-fav-card, .btn-fav-row')) return; // el favorito tiene su lógica
+  // Si el click vino de un botón con data-action propio (favoritos,
+  // "Ver detalle", "Bases oficiales", etc.), el dispatcher global ya
+  // lo maneja — no abrir el modal por encima.
+  if (e.target.closest('[data-action]')) return;
   const el = e.target.closest('[data-oferta-id]');
   if (!el) return;
   const id = parseInt(el.dataset.ofertaId, 10);

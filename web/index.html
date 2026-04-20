@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<script>(function(){try{var t=localStorage.getItem('theme');var p=window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.setAttribute('data-theme',t||(p?'dark':'light'));}catch(e){}})();</script>
+<!-- boot.js: theme + js-nav. SIN defer, debe ejecutarse antes del paint
+     para evitar flash de tema claro. Externalizado desde `<script>`
+     inline para poder declarar CSP `script-src 'self'`. -->
+<script src="boot.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<script>document.documentElement.classList.add('js-nav');</script>
 <title>Empleo público en Chile — contrata o planta .cl</title>
 <meta name="description" content="Encuentra empleos públicos en Chile, filtra por institución y revisa oportunidades del sector público en un solo buscador.">
 <link rel="canonical" href="https://estadoemplea.pages.dev/">
@@ -26,33 +28,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&display=swap" rel="stylesheet">
-<!--
-  Analytics (Umami) — activable cuando haya subdominio propio.
-  Para activar: reemplazar los dos valores vacíos por el script URL y el
-  website_id de la instancia de Umami. El script se inyecta sólo si ambos
-  están presentes; si no, `window.track()` queda como no-op y el resto del
-  código no cambia de comportamiento.
--->
-<script>
-  window.__UMAMI_URL = '';         // ej: 'https://umami.estadoemplea.cl/script.js'
-  window.__UMAMI_WEBSITE_ID = '';  // ej: '00000000-0000-0000-0000-000000000000'
-  (function () {
-    if (!window.__UMAMI_URL || !window.__UMAMI_WEBSITE_ID) return;
-    var s = document.createElement('script');
-    s.defer = true;
-    s.src = window.__UMAMI_URL;
-    s.setAttribute('data-website-id', window.__UMAMI_WEBSITE_ID);
-    document.head.appendChild(s);
-  })();
-  // Helper único de trackeo. No-op si Umami no cargó.
-  window.track = function (evento, props) {
-    try {
-      if (window.umami && typeof window.umami.track === 'function') {
-        window.umami.track(evento, props || {});
-      }
-    } catch (_) { /* silencio */ }
-  };
-</script>
+<!-- Analytics (Umami) — activable editando los dos meta tags con el
+     URL del script y el website_id de la instancia. Si quedan vacíos,
+     `window.track()` queda como no-op y el resto del código sigue
+     funcionando. Ver `web/analytics.js`. -->
+<meta name="umami-url" content="">
+<meta name="umami-website-id" content="">
+<script src="analytics.js"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -193,19 +175,19 @@
               placeholder="Ej: 800.000" autocomplete="off"
               oninput="formatearRentaInput(this)"
               onkeydown="if(event.key==='Enter'){buscar();this.blur()}">
-            <button class="btn-renta-x" onclick="limpiarRenta()" title="Limpiar renta">×</button>
+            <button class="btn-renta-x" type="button" data-action="limpiar-renta" title="Limpiar renta">×</button>
           </div>
         </div>
-        <button class="btn-buscar" onclick="buscar()">Buscar</button>
+        <button class="btn-buscar" type="button" data-action="buscar">Buscar</button>
       </div>
 
       <div class="filtros-rapidos">
         <div class="filtros-bloque filtros-bloque-secundario">
           <span class="filtros-titulo">Atajos</span>
           <div class="filtros-tags-wrap">
-            <button class="filtro-tag" onclick="toggleFiltro(this,'cierra-hoy')">⏰ Cierra pronto</button>
-            <button class="filtro-tag" onclick="toggleFiltro(this,'nuevos')">✨ Últimas 48 h</button>
-            <button class="filtro-tag" onclick="toggleFiltro(this,'sin-experiencia')">Sin experiencia</button>
+            <button class="filtro-tag" type="button" data-action="toggle-filtro" data-filtro="cierra-hoy">⏰ Cierra pronto</button>
+            <button class="filtro-tag" type="button" data-action="toggle-filtro" data-filtro="nuevos">✨ Últimas 48 h</button>
+            <button class="filtro-tag" type="button" data-action="toggle-filtro" data-filtro="sin-experiencia">Sin experiencia</button>
           </div>
         </div>
       </div>
@@ -219,8 +201,8 @@
   <!-- COLUMNA OFERTAS -->
   <div class="resultados-shell">
     <div class="estado-listado-tabs" id="estado-listado-tabs" role="tablist" aria-label="Vista por estado" data-estado="vigentes">
-      <button class="estado-tab activo" id="tab-vigentes" onclick="setVistaListado('vigentes')" role="tab" aria-selected="true">Vigentes</button>
-      <button class="estado-tab" id="tab-cerradas" onclick="setVistaListado('cerradas')" role="tab" aria-selected="false">Cerradas</button>
+      <button class="estado-tab activo" id="tab-vigentes" type="button" data-action="set-vista-listado" data-listado="vigentes" role="tab" aria-selected="true">Vigentes</button>
+      <button class="estado-tab" id="tab-cerradas" type="button" data-action="set-vista-listado" data-listado="cerradas" role="tab" aria-selected="false">Cerradas</button>
     </div>
     <p class="estado-listado-copy" id="estado-listado-copy">Mostrando concursos vigentes. Revisa los cerrados en la pestaña <strong>Cerradas</strong>.</p>
     <div class="resultados-header">
@@ -230,8 +212,8 @@
       </div>
       <div class="resultados-controles">
         <div class="resultados-acciones">
-          <button class="btn-copiar-busqueda btn-copiar-busqueda--sec btn-limpiar-filtros" id="btn-limpiar-filtros" type="button" onclick="limpiarTodosLosFiltros()" title="Quitar todos los filtros aplicados" hidden>✕ Limpiar filtros</button>
-          <button class="btn-copiar-busqueda btn-copiar-busqueda--sec btn-compartir-busqueda" id="btn-compartir-busqueda" type="button" onclick="toggleCompartirBusqueda(this)" title="Compartir esta búsqueda en RRSS" aria-expanded="false" aria-controls="popover-compartir-busqueda" hidden>↗ Compartir búsqueda</button>
+          <button class="btn-copiar-busqueda btn-copiar-busqueda--sec btn-limpiar-filtros" id="btn-limpiar-filtros" type="button" data-action="limpiar-filtros" title="Quitar todos los filtros aplicados" hidden>✕ Limpiar filtros</button>
+          <button class="btn-copiar-busqueda btn-copiar-busqueda--sec btn-compartir-busqueda" id="btn-compartir-busqueda" type="button" data-action="toggle-compartir" title="Compartir esta búsqueda en RRSS" aria-expanded="false" aria-controls="popover-compartir-busqueda" hidden>↗ Compartir búsqueda</button>
         </div>
         <div class="resultados-preferencias">
           <!-- Orden: label prefijo + select nativo para que parezca un trigger. -->
@@ -253,20 +235,20 @@
           <div class="ctrl-sep"></div>
           <!-- Vista -->
           <div class="vista-btns" role="group" aria-label="Formato de visualización">
-            <button class="vista-btn activo" id="vista-btn-cards" onclick="setVista('cards')" title="Tarjetas">
+            <button class="vista-btn activo" id="vista-btn-cards" data-action="set-vista" data-vista="cards" title="Tarjetas">
               <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 15 15">
                 <rect x="1" y="1" width="13" height="5.5" rx="1.5"/>
                 <rect x="1" y="8.5" width="13" height="5.5" rx="1.5"/>
               </svg>
             </button>
-            <button class="vista-btn" id="vista-btn-compacta" onclick="setVista('compacta')" title="Lista compacta">
+            <button class="vista-btn" id="vista-btn-compacta" data-action="set-vista" data-vista="compacta" title="Lista compacta">
               <svg width="15" height="15" fill="currentColor" viewBox="0 0 15 15">
                 <rect x="0" y="1.5" width="15" height="2" rx="1"/>
                 <rect x="0" y="6.5" width="15" height="2" rx="1"/>
                 <rect x="0" y="11.5" width="15" height="2" rx="1"/>
               </svg>
             </button>
-            <button class="vista-btn" id="vista-btn-grid" onclick="setVista('grid')" title="Cuadrícula">
+            <button class="vista-btn" id="vista-btn-grid" data-action="set-vista" data-vista="grid" title="Cuadrícula">
               <svg width="15" height="15" fill="currentColor" viewBox="0 0 15 15">
                 <rect x="0" y="0" width="6.5" height="6.5" rx="1.2"/>
                 <rect x="8.5" y="0" width="6.5" height="6.5" rx="1.2"/>
@@ -512,10 +494,10 @@
 <div id="site-footer"></div>
 
 <!-- ══ MODAL DETALLE OFERTA ════════════════════════════════════════ -->
-<div class="modal-overlay" id="modal" onclick="cerrarModal(event)">
+<div class="modal-overlay" id="modal" data-action="cerrar-modal-overlay">
   <div class="modal">
     <div class="modal-header" style="position:relative">
-      <button class="modal-close" onclick="cerrarModal(null,true)">✕</button>
+      <button class="modal-close" type="button" data-action="cerrar-modal">✕</button>
       <div class="modal-kicker" id="modal-kicker">EMPRESA DEL ESTADO</div>
       <div class="modal-institucion" id="modal-institucion">Banco Estado</div>
       <h2 class="modal-cargo" id="modal-cargo">Analista de Riesgo Crediticio</h2>
@@ -604,7 +586,7 @@
 <!-- ══ ACCIONES DE BASES OFICIALES ═════════════════════════════════ -->
 <div id="bases-viewer" class="bases-viewer-overlay" role="dialog" aria-modal="true" aria-labelledby="bases-viewer-title" hidden>
   <div class="bases-viewer-panel">
-    <button class="bases-viewer-close" type="button" aria-label="Cerrar" onclick="cerrarVisorBases()">✕</button>
+    <button class="bases-viewer-close" type="button" aria-label="Cerrar" data-action="cerrar-visor-bases">✕</button>
 
     <div class="bases-viewer-body">
       <div class="bases-viewer-icon" aria-hidden="true">
@@ -636,7 +618,7 @@
 <!-- ══ POPOVER QR ══════════════════════════════════════════════════ -->
 <div id="qr-popover" class="qr-popover" role="dialog" aria-modal="true" aria-labelledby="qr-titulo" hidden>
   <div class="qr-popover-caja">
-    <button class="qr-popover-cerrar" type="button" aria-label="Cerrar" onclick="cerrarQR()">×</button>
+    <button class="qr-popover-cerrar" type="button" aria-label="Cerrar" data-action="cerrar-qr">×</button>
     <div class="qr-popover-titulo" id="qr-titulo">Escanea para abrir en tu móvil</div>
     <div class="qr-popover-canvas" id="qr-canvas" aria-live="polite"></div>
     <div class="qr-popover-url" id="qr-url"></div>
@@ -653,7 +635,7 @@
      necesite preview + descarga + copiar enlace. ─────────────────────── -->
 <div id="ig-modal" class="ig-modal" role="dialog" aria-modal="true" aria-labelledby="ig-titulo" hidden>
   <div class="ig-modal-caja">
-    <button class="ig-modal-cerrar" type="button" aria-label="Cerrar" onclick="cerrarIG()">×</button>
+    <button class="ig-modal-cerrar" type="button" aria-label="Cerrar" data-action="cerrar-ig">×</button>
     <div class="ig-modal-titulo" id="ig-titulo">Compartir oferta</div>
 
     <!-- Preview de la imagen que se va a compartir (1080×1080 IG por
@@ -697,13 +679,13 @@
 
 <!-- ══ JAVASCRIPT ══════════════════════════════════════════════════ -->
 <script src="rich-text.js"></script>
-<!-- JS principal movido a web/app.js para habilitar cache
-     independiente del HTML y reducir web/index.html a lo estrictamente
-     necesario. SIN defer: replica el orden de ejecución que tenía el
-     <script> inline original (antes de nav-mobile.js, no después del
-     DOMContentLoaded). Paso previo a promover CSP de Report-Only a
-     enforce; eso requiere además mover los 2 scripts chicos del <head>
-     y reemplazar los onclick= inline por addEventListener. -->
+<!-- JS principal en archivo externo (antes era un `<script>` inline
+     de ~3 600 líneas). Cargado sync para replicar el timing del
+     original: ejecuta antes de nav-mobile.js y antes del
+     DOMContentLoaded. Con este archivo + boot.js + analytics.js, el
+     único JS inline que queda es el JSON-LD (type=application/ld+json,
+     que CSP no bloquea). Los onclick= del HTML se rutean via
+     `data-action` al dispatcher en app.js. -->
 <script src="app.js"></script>
 <script src="nav-mobile.js"></script>
 </body>

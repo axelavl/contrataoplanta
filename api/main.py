@@ -1012,20 +1012,22 @@ def _set_canonical(html_doc: str, href: str) -> str:
 
 
 def _inject_offer_path_bootstrap(html_doc: str, oferta_id: int | None) -> str:
+    """Inyecta un `<meta>` con el id de la oferta para el SSR de /oferta/{id}.
+
+    Antes esto inyectaba un ``<script>`` inline con
+    ``window.__OFERTA_PATH_ID__ = ...`` + ``history.replaceState(...)``,
+    pero CSP con ``script-src 'self'`` (sin ``'unsafe-inline'``) lo
+    bloquearía. Ahora se emite un tag que ``web/app.js`` lee al cargar
+    y se encarga de replicar el comportamiento (setear la global y
+    empujar ``?oferta=ID`` a la URL).
+    """
     if not oferta_id:
         return html_doc
-    marker = "window.__OFERTA_PATH_ID__"
+    marker = 'name="x-oferta-id"'
     if marker in html_doc:
         return html_doc
-    script = (
-        "<script>"
-        f"{marker}={oferta_id};"
-        "try{const u=new URL(window.location.href);"
-        "if(!u.searchParams.get('oferta')){u.searchParams.set('oferta',String(window.__OFERTA_PATH_ID__));"
-        "history.replaceState(null,'',u.pathname+u.search+u.hash);}}catch(e){}"
-        "</script>"
-    )
-    return html_doc.replace("</head>", f"{script}\n</head>", 1)
+    tag = f'<meta name="x-oferta-id" content="{int(oferta_id)}">'
+    return html_doc.replace("</head>", f"{tag}\n</head>", 1)
 
 
 def fetch_offer_for_meta(oferta_id: int) -> dict[str, Any] | None:
@@ -1622,7 +1624,7 @@ _SECURITY_HEADERS = {
     ),
     "Content-Security-Policy-Report-Only": (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+        "script-src 'self'; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "font-src 'self' https://fonts.gstatic.com data:; "
         "img-src 'self' data: https:; "
