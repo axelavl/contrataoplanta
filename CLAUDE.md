@@ -88,7 +88,7 @@ Plain-file scrapers in `scrapers/` (`banco_central.py`, `codelco.py`, `tvn.py`, 
 
 ## API surface
 
-`api/main.py` is intentionally monolithic (~1500 lines) — one `app = FastAPI(...)` plus route handlers, an in-file psycopg2 helper `get_cursor()`, and pydantic response models. `api/main_rebuilt.py` is a WIP rewrite; the production entry is `api.main:app`. `api/services/` hosts integrations (`regiones`, `leyes` — BCN law lookup, `mailcheck`, `email_alerts` — Resend, `meilisearch_svc`, `og_image`).
+`api/main.py` is intentionally monolithic (~3100 lines) — one `app = FastAPI(...)` plus route handlers, an in-file psycopg2 helper `get_cursor()`, and pydantic response models. The production entry is `api.main:app`. `api/services/` hosts integrations (`regiones`, `leyes` — BCN law lookup, `mailcheck`, `email_alerts` — Resend, `meilisearch_svc`, `og_image`).
 
 Health/smoke-test endpoints: `GET /health`, `GET /api/ofertas?pagina=1&por_pagina=50&orden=cierre`, `GET /api/estadisticas`, `GET /docs` (Swagger).
 

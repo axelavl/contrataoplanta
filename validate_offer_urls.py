@@ -5,8 +5,7 @@ Hace HEAD/GET a `url_oferta` y `url_bases` de las ofertas activas y guarda el
 resultado en columnas `url_oferta_valida`, `url_bases_valida` y
 `url_valida_chequeada_en` de la tabla `ofertas`.
 
-Reutiliza el patrón asíncrono de `verificar_urls.py`. Pensado para correr al
-final de `run_scrapers.py` o de forma manual.
+Pensado para correr al final de `run_scrapers.py` o de forma manual.
 
 Uso:
     python validate_offer_urls.py                  # valida todas las activas

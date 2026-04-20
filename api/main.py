@@ -965,6 +965,115 @@ def fetch_offer_for_meta(oferta_id: int) -> dict[str, Any] | None:
     return serialize_offer(row)
 
 
+def build_job_posting_jsonld(
+    oferta: dict[str, Any], canonical_url: str
+) -> str | None:
+    """Genera el payload JSON-LD ``JobPosting`` para una oferta.
+
+    Retorna ``None`` si faltan campos mínimos (cargo, institución, url_oferta
+    absoluta, fecha_cierre, al menos ciudad o región). Reglas en
+    ``web/JSONLD_VALIDACION.md``. El objetivo es que Google muestre el
+    resultado enriquecido de empleo (rich result) en la SERP.
+    """
+    cargo = (oferta.get("cargo") or "").strip()
+    institucion = (oferta.get("institucion") or "").strip()
+    url_oferta = (oferta.get("url_oferta") or "").strip()
+    fecha_cierre = oferta.get("fecha_cierre")
+    ciudad = (oferta.get("ciudad") or "").strip()
+    region = (oferta.get("region") or "").strip()
+
+    if not cargo or not institucion:
+        return None
+    if not url_oferta or not url_oferta.startswith(("http://", "https://")):
+        return None
+    if fecha_cierre is None:
+        return None
+    if not ciudad and not region:
+        return None
+
+    def _iso(value: Any) -> str | None:
+        if value is None:
+            return None
+        if hasattr(value, "isoformat"):
+            try:
+                return value.isoformat()[:10]
+            except Exception:
+                return None
+        return str(value)[:10] or None
+
+    valid_through = _iso(fecha_cierre)
+    if not valid_through:
+        return None
+    date_posted = _iso(oferta.get("fecha_publicacion")) or valid_through
+
+    address: dict[str, Any] = {"@type": "PostalAddress", "addressCountry": "CL"}
+    if region:
+        address["addressRegion"] = region
+    if ciudad:
+        address["addressLocality"] = ciudad
+
+    data: dict[str, Any] = {
+        "@context": "https://schema.org",
+        "@type": "JobPosting",
+        "title": cargo,
+        "description": (oferta.get("descripcion") or cargo).strip()[:4000],
+        "datePosted": date_posted,
+        "validThrough": valid_through,
+        "url": url_oferta,
+        "identifier": {
+            "@type": "PropertyValue",
+            "name": "estadoemplea",
+            "value": str(oferta.get("id") or ""),
+        },
+        "mainEntityOfPage": canonical_url,
+        "hiringOrganization": {
+            "@type": "Organization",
+            "name": institucion,
+        },
+        "jobLocation": {"@type": "Place", "address": address},
+        "directApply": False,
+    }
+
+    tipo = (oferta.get("tipo_contrato") or "").strip().upper()
+    if tipo:
+        # Mapeo conservador al vocabulario de schema.org — si no reconocemos
+        # el tipo, lo omitimos (en vez de inventar un valor inválido).
+        mapeo = {
+            "PLANTA": "FULL_TIME",
+            "CONTRATA": "FULL_TIME",
+            "CODIGO_TRABAJO": "FULL_TIME",
+            "CÓDIGO_TRABAJO": "FULL_TIME",
+            "HONORARIOS": "CONTRACTOR",
+            "REEMPLAZO": "TEMPORARY",
+        }
+        if tipo in mapeo:
+            data["employmentType"] = mapeo[tipo]
+
+    jornada = (oferta.get("jornada") or "").strip()
+    if jornada:
+        data["workHours"] = jornada
+
+    rmin = oferta.get("renta_bruta_min")
+    rmax = oferta.get("renta_bruta_max")
+    if isinstance(rmin, int) and rmin > 0:
+        value: dict[str, Any] = {
+            "@type": "QuantitativeValue",
+            "unitText": "MONTH",
+        }
+        if isinstance(rmax, int) and rmax > rmin:
+            value["minValue"] = rmin
+            value["maxValue"] = rmax
+        else:
+            value["value"] = rmin
+        data["baseSalary"] = {
+            "@type": "MonetaryAmount",
+            "currency": "CLP",
+            "value": value,
+        }
+
+    return json.dumps(data, ensure_ascii=False, separators=(",", ":"))
+
+
 def build_offer_meta(oferta: dict[str, Any] | None, canonical_url: str) -> dict[str, str]:
     if not oferta:
         return {
@@ -1009,7 +1118,12 @@ def build_offer_meta(oferta: dict[str, Any] | None, canonical_url: str) -> dict[
     }
 
 
-def render_index_with_meta(meta: dict[str, str], *, oferta_id_for_bootstrap: int | None = None) -> str:
+def render_index_with_meta(
+    meta: dict[str, str],
+    *,
+    oferta_id_for_bootstrap: int | None = None,
+    oferta: dict[str, Any] | None = None,
+) -> str:
     html_doc = WEB_INDEX_PATH.read_text(encoding="utf-8")
     html_doc = _set_title(html_doc, meta["title"])
     html_doc = _set_meta(html_doc, "description", meta["description"], attr="name")
@@ -1030,6 +1144,18 @@ def render_index_with_meta(meta: dict[str, str], *, oferta_id_for_bootstrap: int
     html_doc = _set_meta(html_doc, "twitter:image:alt", meta["title"], attr="name")
     html_doc = _set_canonical(html_doc, meta["canonical"])
     html_doc = _inject_offer_path_bootstrap(html_doc, oferta_id_for_bootstrap)
+    if oferta:
+        # JSON-LD JobPosting server-side: antes sólo se generaba con JS en
+        # el cliente, y Google no lo indexaba de forma fiable. Se inyecta
+        # como <script type="application/ld+json"> dentro de <head>.
+        jsonld = build_job_posting_jsonld(oferta, meta["canonical"])
+        if jsonld:
+            tag = (
+                '<script type="application/ld+json" data-jobposting="ssr">'
+                f"{jsonld}"
+                "</script>"
+            )
+            html_doc = html_doc.replace("</head>", f"{tag}\n</head>", 1)
     return html_doc
 
 
@@ -1059,6 +1185,49 @@ app.add_middleware(
     # superficie de CSRF desde subdominios permitidos.
     allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
 )
+
+
+# ── Security headers middleware ───────────────────────────────────────────
+# Añade los mismos headers que sirve Cloudflare Pages (`web/_headers`) en
+# todas las respuestas del backend: HTML SSR (`/`, `/oferta/{id}`,
+# `/sitemap.xml`) y JSON (`/api/...`). Defense-in-depth para navegadores
+# que lleguen directo a Railway sin pasar por Pages.
+#
+# CSP va en modo Report-Only por la misma razón que en `_headers`: el
+# frontend tiene JS/CSS inline.
+_SECURITY_HEADERS = {
+    "X-Frame-Options": "SAMEORIGIN",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+    "Permissions-Policy": (
+        "camera=(), microphone=(), geolocation=(), payment=(), "
+        "usb=(), interest-cohort=()"
+    ),
+    "Content-Security-Policy-Report-Only": (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com data:; "
+        "img-src 'self' data: https:; "
+        "connect-src 'self' https://estadoemplea.pages.dev; "
+        "frame-ancestors 'self'; "
+        "base-uri 'self'; "
+        "form-action 'self' https://estadoemplea.pages.dev; "
+        "object-src 'none'; "
+        "upgrade-insecure-requests"
+    ),
+}
+
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    for name, value in _SECURITY_HEADERS.items():
+        # setdefault para no sobrescribir si un endpoint ya los setea
+        # (ej: un iframe embebible podría querer X-Frame-Options distinto).
+        response.headers.setdefault(name, value)
+    return response
 
 
 @app.on_event("startup")
@@ -1900,12 +2069,47 @@ def web_index(oferta: int | None = Query(None, ge=1)) -> HTMLResponse:
     )
 
 
-@app.get("/oferta/{oferta_id}", response_class=HTMLResponse, include_in_schema=False)
-def web_offer(oferta_id: int) -> HTMLResponse:
+_OFFER_PATH_RE = re.compile(r"^(?P<id>\d+)(?:-(?P<slug>[a-z0-9-]*))?/?$")
+
+
+@app.get("/oferta/{path:path}", response_class=HTMLResponse, include_in_schema=False)
+def web_offer(path: str) -> Response:
+    """Sirve la SPA con meta tags + JSON-LD inyectados para una oferta.
+
+    URLs aceptadas:
+        /oferta/42                           → 301 a /oferta/42-slug-canonico
+        /oferta/42-slug-obsoleto             → 301 a /oferta/42-slug-canonico
+        /oferta/42-slug-canonico             → 200 con HTML pre-renderizado
+
+    El slug se deriva del ``cargo`` y es sólo cosmético para SEO y para
+    humanos que lean el URL. El ``id`` es la identidad real.
+    """
+    match = _OFFER_PATH_RE.match(path.strip())
+    if not match:
+        raise HTTPException(status_code=404, detail="Oferta no encontrada")
+    oferta_id = int(match.group("id"))
+    slug_actual = match.group("slug") or ""
+
     oferta_data = fetch_offer_for_meta(oferta_id)
-    canonical = f"{SITE_URL}/oferta/{oferta_id}"
+    if not oferta_data:
+        raise HTTPException(status_code=404, detail="Oferta no encontrada")
+
+    slug_canonico = _slugify(oferta_data.get("cargo") or "")
+    path_canonico = f"/oferta/{oferta_id}"
+    if slug_canonico:
+        path_canonico += f"-{slug_canonico}"
+
+    if slug_actual != slug_canonico:
+        # 301 permanente: el canónico para Google es la versión con slug.
+        return RedirectResponse(url=path_canonico, status_code=301)
+
+    canonical = f"{SITE_URL}{path_canonico}"
     meta = build_offer_meta(oferta_data, canonical_url=canonical)
-    html_doc = render_index_with_meta(meta, oferta_id_for_bootstrap=oferta_id)
+    html_doc = render_index_with_meta(
+        meta,
+        oferta_id_for_bootstrap=oferta_id,
+        oferta=oferta_data,
+    )
     return HTMLResponse(
         content=html_doc,
         status_code=200,
@@ -1915,6 +2119,9 @@ def web_offer(oferta_id: int) -> HTMLResponse:
 
 @app.get("/share/oferta/{oferta_id}", include_in_schema=False)
 def web_offer_share(oferta_id: int) -> RedirectResponse:
+    # Delegamos al canonical builder: primero va a /oferta/{id} (sin slug),
+    # que a su vez responde 301 al slug canónico. Así mantenemos una sola
+    # fuente de verdad.
     return RedirectResponse(url=f"/oferta/{oferta_id}", status_code=308)
 
 

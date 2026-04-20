@@ -1,0 +1,29 @@
+# Cloudflare Pages aplica estos headers a las respuestas que sirve desde
+# este directorio (frontend en estadoemplea.pages.dev). El backend
+# (Railway) añade los mismos headers vía middleware en `api/main.py`.
+#
+# CSP va en modo Report-Only por ahora: el frontend tiene mucho JS y CSS
+# inline (`<script>` dentro de `index.html`, `onclick="..."` en botones de
+# paginación) que requiere `'unsafe-inline'`. Promover a
+# `Content-Security-Policy` (enforce) cuando se saque el JS/CSS inline a
+# archivos externos.
+
+/*
+  X-Frame-Options: SAMEORIGIN
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self' https://contrataoplanta-production.up.railway.app; frame-ancestors 'self'; base-uri 'self'; form-action 'self' https://contrataoplanta-production.up.railway.app; object-src 'none'; upgrade-insecure-requests
+
+# Hash en nombres todavía no está implementado, así que los assets no
+# se cachean eternamente. Cuando se versionen (ej: index.abc123.css)
+# subir esto a `max-age=31536000, immutable`.
+/styles/*
+  Cache-Control: public, max-age=3600
+
+/*.js
+  Cache-Control: public, max-age=3600
+
+/logo/*
+  Cache-Control: public, max-age=604800
