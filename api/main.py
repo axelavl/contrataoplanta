@@ -2587,6 +2587,235 @@ def web_landing_sector(slug: str) -> Response:
     return _render_landing("sector", slug)
 
 
+# ── Landing por institución: /empleos/institucion/{id}-{slug} ─────────────
+# Mismo patrón que /oferta/{id}-{slug}: el id es canonical, el slug es
+# cosmético para SEO y legibilidad. Si el slug no matchea el canónico
+# derivado del nombre, responde 301. Si la institución no existe o no
+# tiene ofertas (activa en `instituciones` o id ausente), 404.
+
+_INSTITUCION_PATH_RE = re.compile(r"^(?P<id>\d+)(?:-(?P<slug>[a-z0-9-]*))?/?$")
+
+
+def fetch_institucion_para_landing(inst_id: int) -> dict[str, Any] | None:
+    """Datos de una institución para construir la landing."""
+    row = execute_fetch_one(
+        """
+        SELECT id, nombre,
+               COALESCE(NULLIF(TRIM(sigla), ''), '') AS sigla,
+               COALESCE(NULLIF(TRIM(sector), ''), '') AS sector,
+               COALESCE(NULLIF(TRIM(region), ''), '') AS region
+        FROM instituciones
+        WHERE id = %s
+        """,
+        [inst_id],
+    )
+    return row
+
+
+def fetch_institucion_ofertas(inst_id: int, limite: int = 30) -> list[dict[str, Any]]:
+    return execute_fetch_all(
+        f"""
+        SELECT
+            o.id, o.cargo,
+            COALESCE(NULLIF(o.institucion_nombre, ''), 'Institución pública') AS institucion,
+            o.ciudad, o.region,
+            o.fecha_cierre,
+            COALESCE(o.actualizada_en, o.fecha_scraped, o.detectada_en, o.creada_en) AS lastmod
+        FROM ofertas o
+        WHERE {ACTIVE_OFFER_SQL}
+          AND o.institucion_id = %s
+        ORDER BY o.fecha_cierre ASC NULLS LAST, o.id DESC
+        LIMIT %s
+        """,
+        [inst_id, limite],
+    )
+
+
+def fetch_institucion_total(inst_id: int) -> int:
+    row = execute_fetch_one(
+        f"""
+        SELECT COUNT(*) AS total
+        FROM ofertas o
+        WHERE {ACTIVE_OFFER_SQL}
+          AND o.institucion_id = %s
+        """,
+        [inst_id],
+    )
+    return int(row["total"]) if row else 0
+
+
+def build_institucion_meta(
+    inst: dict[str, Any], total: int, canonical_url: str
+) -> dict[str, str]:
+    nombre = inst.get("nombre") or "Institución pública"
+    title = f"Empleos públicos en {nombre} — estadoemplea"
+    if total > 0:
+        description = (
+            f"{total} oferta{'s' if total != 1 else ''} activa{'s' if total != 1 else ''} "
+            f"del sector público chileno en {nombre}. "
+            "Filtra por cargo, región y renta; postula directamente al sitio oficial."
+        )
+    else:
+        description = (
+            f"Empleos públicos en {nombre}. Suscríbete a alertas y recibe las "
+            "nuevas ofertas apenas se publiquen."
+        )
+    return {
+        "title": _truncate_text(title, 90),
+        "description": _truncate_text(description, 200),
+        "og_image": DEFAULT_OG_IMAGE,
+        "canonical": canonical_url,
+    }
+
+
+def build_institucion_ssr_html(
+    inst: dict[str, Any],
+    total: int,
+    ofertas: list[dict[str, Any]],
+) -> str:
+    nombre = inst.get("nombre") or "Institución pública"
+    sigla = inst.get("sigla") or ""
+    sector = inst.get("sector") or ""
+    region_inst = inst.get("region") or ""
+    partes: list[str] = [
+        '<article class="landing-ssr" data-landing-ssr="true" '
+        'data-tipo="institucion" aria-labelledby="ssr-landing-titulo">',
+        '  <header class="landing-ssr-header">',
+        '    <p class="landing-ssr-kicker">Empleos públicos · Institución</p>',
+        f'    <h1 id="ssr-landing-titulo">{html.escape(nombre)}'
+        + (f' <span class="landing-ssr-sigla">({html.escape(sigla)})</span>' if sigla else "")
+        + "</h1>",
+    ]
+    # Sub-resumen con contexto de la institución (sector + region si están)
+    sub_parts: list[str] = []
+    if sector:
+        sub_parts.append(f"Sector {html.escape(sector)}")
+    if region_inst:
+        sub_parts.append(f"Región {html.escape(region_inst)}")
+    if sub_parts:
+        partes.append(f'    <p class="landing-ssr-sub">{" · ".join(sub_parts)}</p>')
+    partes.append(
+        f'    <p class="landing-ssr-resumen"><strong>{total}</strong> '
+        f'oferta{"s" if total != 1 else ""} activa{"s" if total != 1 else ""} '
+        f'en {html.escape(nombre)}.</p>'
+    )
+    partes.append("  </header>")
+
+    if ofertas:
+        partes.append('  <section class="landing-ssr-lista">')
+        partes.append("    <h2>Ofertas vigentes</h2>")
+        partes.append("    <ol>")
+        for o in ofertas:
+            slug_cargo = _slugify(o.get("cargo") or "")
+            href = f"/oferta/{o['id']}" + (f"-{slug_cargo}" if slug_cargo else "")
+            cargo = html.escape((o.get("cargo") or "Oferta pública").strip())
+            ciudad = html.escape((o.get("ciudad") or "").strip())
+            region = html.escape((o.get("region") or "").strip())
+            loc = " · ".join(x for x in (region, ciudad) if x)
+            cierre = _format_fecha_larga(o.get("fecha_cierre")) or "Sin fecha de cierre"
+            partes.append(
+                f'      <li><a href="{href}"><strong>{cargo}</strong></a>'
+                + (f" — {loc}" if loc else "")
+                + f' · <span class="landing-ssr-cierre">{html.escape(cierre)}</span>'
+                + "</li>"
+            )
+        partes.append("    </ol>")
+        partes.append(
+            f'    <p class="landing-ssr-cta"><a href="/?institucion={inst["id"]}">'
+            "Ver todas las ofertas en el buscador →</a></p>"
+        )
+        partes.append("  </section>")
+    else:
+        partes.append('  <section class="landing-ssr-vacio">')
+        partes.append(
+            f"    <p>Hoy no hay ofertas activas en {html.escape(nombre)}. Suscríbete a "
+            "una alerta y recibe las nuevas ofertas por email apenas se publiquen.</p>"
+        )
+        partes.append('    <p><a href="/#alertas">Crear alerta gratuita</a></p>')
+        partes.append("  </section>")
+
+    # Cross-links al sector y región propios + "todas las instituciones"
+    partes.append('  <nav class="landing-ssr-cruce" aria-label="Relacionados">')
+    partes.append("    <h2>También te puede interesar</h2>")
+    partes.append("    <ul>")
+    # Región propia de la institución (si la conocemos)
+    if region_inst:
+        for reg in _LANDING_REGIONES:
+            if region_inst in reg["aliases"]:
+                partes.append(
+                    f'      <li><a href="/empleos/region/{reg["slug"]}">'
+                    f'Empleos en {html.escape(reg["nombre"])}</a></li>'
+                )
+                break
+    # Sector propio (si matchea alguno del mapa)
+    if sector:
+        for sec in _LANDING_SECTORES:
+            if sector in sec["aliases"]:
+                partes.append(
+                    f'      <li><a href="/empleos/sector/{sec["slug"]}">'
+                    f'Empleos en el sector {html.escape(sec["nombre"])}</a></li>'
+                )
+                break
+    partes.append('      <li><a href="/">Ver todas las ofertas</a></li>')
+    partes.append("    </ul>")
+    partes.append("  </nav>")
+    partes.append("</article>")
+    return "\n".join(partes)
+
+
+@app.get(
+    "/empleos/institucion/{path:path}",
+    response_class=HTMLResponse,
+    include_in_schema=False,
+)
+def web_landing_institucion(path: str) -> Response:
+    """Landing SEO por institución. URL canónica `/empleos/institucion/{id}-{slug}`.
+
+    `/empleos/institucion/42` (sin slug) → 301 al canónico.
+    `/empleos/institucion/42-slug-viejo` → 301 si el slug no matchea el
+    derivado del nombre.
+    """
+    match = _INSTITUCION_PATH_RE.match(path.strip())
+    if not match:
+        raise HTTPException(status_code=404, detail="Institución no encontrada")
+    inst_id = int(match.group("id"))
+    slug_actual = match.group("slug") or ""
+
+    inst = fetch_institucion_para_landing(inst_id)
+    if not inst:
+        raise HTTPException(status_code=404, detail="Institución no encontrada")
+
+    slug_canonico = _slugify(inst.get("nombre") or "")
+    path_canonico = f"/empleos/institucion/{inst_id}"
+    if slug_canonico:
+        path_canonico += f"-{slug_canonico}"
+    if slug_actual != slug_canonico:
+        return RedirectResponse(url=path_canonico, status_code=301)
+
+    try:
+        total = fetch_institucion_total(inst_id)
+        ofertas = fetch_institucion_ofertas(inst_id, limite=30) if total else []
+    except Exception:
+        logger.exception("Error armando landing institucion/%s", inst_id)
+        total, ofertas = 0, []
+
+    canonical = f"{SITE_URL}{path_canonico}"
+    meta = build_institucion_meta(inst, total, canonical)
+    landing_html = build_institucion_ssr_html(inst, total, ofertas)
+    landing_jsonld = build_landing_itemlist_jsonld(ofertas, canonical)
+
+    html_doc = render_index_with_meta(
+        meta,
+        landing_html=landing_html,
+        landing_jsonld=landing_jsonld,
+    )
+    return HTMLResponse(
+        content=html_doc,
+        status_code=200,
+        headers={"Cache-Control": "public, max-age=300, stale-while-revalidate=1800"},
+    )
+
+
 @app.get("/index.html", include_in_schema=False)
 def legacy_index_redirect(request: Request) -> RedirectResponse:
     query = f"?{urlencode(list(request.query_params.multi_items()))}" if request.query_params else ""
@@ -2661,6 +2890,35 @@ def sitemap_xml() -> Response:
             f"<lastmod>{hoy}</lastmod>"
             f"<changefreq>daily</changefreq>"
             f"<priority>0.8</priority></url>"
+        )
+    # Landings por institución: sólo las que tienen ≥1 oferta activa hoy.
+    # Evita indexar landings vacías que Google podría marcar como thin.
+    try:
+        inst_rows = execute_fetch_all(
+            f"""
+            SELECT i.id, i.nombre
+            FROM instituciones i
+            WHERE EXISTS (
+                SELECT 1 FROM ofertas o
+                WHERE o.institucion_id = i.id
+                  AND {ACTIVE_OFFER_SQL}
+            )
+            ORDER BY i.nombre
+            """
+        )
+    except Exception:
+        logger.exception("No se pudo leer instituciones para sitemap; saltando.")
+        inst_rows = []
+    for inst in inst_rows:
+        slug = _slugify(inst.get("nombre") or "")
+        loc = f"{SITE_URL}/empleos/institucion/{inst['id']}"
+        if slug:
+            loc += f"-{slug}"
+        partes.append(
+            f"  <url><loc>{html.escape(loc)}</loc>"
+            f"<lastmod>{hoy}</lastmod>"
+            f"<changefreq>daily</changefreq>"
+            f"<priority>0.6</priority></url>"
         )
     for row in rows:
         slug = _slugify(row.get("cargo"))

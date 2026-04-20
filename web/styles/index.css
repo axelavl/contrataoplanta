@@ -2674,3 +2674,63 @@ html.js-nav .oferta-ssr {
 html.js-nav .landing-ssr {
   display: none;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Bloque "Explora por región / sector" — links a landings SEO visibles
+   al pie del <main>. Siempre renderizado (no depende de JS), sirve a
+   la vez a crawlers y a usuarios.
+   =================================================================== */
+.explora-landings {
+  max-width: 1100px;
+  margin: 40px auto 12px;
+  padding: 28px 24px;
+  border-top: 1px solid var(--border, #e5e7eb);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 28px 40px;
+}
+.explora-landings-seccion h2 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 18px;
+  margin: 0 0 12px;
+  color: var(--text, #111);
+}
+.explora-landings-chips {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+}
+.explora-landings-chips a {
+  display: inline-block;
+  padding: 6px 12px;
+  font-size: 13.5px;
+  color: var(--text-secondary, #374151);
+  background: var(--surface-alt, #f3f4f6);
+  border-radius: 20px;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: background 120ms, border-color 120ms;
+}
+.explora-landings-chips a:hover,
+.explora-landings-chips a:focus-visible {
+  background: var(--surface, #fff);
+  border-color: var(--azul, #0A2E6E);
+  color: var(--azul, #0A2E6E);
+}
+
+/* Variantes específicas de la landing por institución. */
+.landing-ssr-sigla {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.65em;
+  color: var(--muted, #6b7280);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+.landing-ssr-sub {
+  margin: -6px 0 12px;
+  font-size: 14px;
+  color: var(--muted, #6b7280);
+}
