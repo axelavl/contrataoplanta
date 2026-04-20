@@ -758,6 +758,80 @@ _STATIC_SITEMAP_URLS: tuple[tuple[str, str, str], ...] = (
 )
 
 
+# ── Landings SEO: region + sector ─────────────────────────────────────────
+# Mapas estáticos para no depender de la API externa DPA en hot path.
+# Los slugs se usan en `/empleos/region/{slug}` y `/empleos/sector/{slug}`.
+# El `nombre_db` debe coincidir con lo que guardan los scrapers en la
+# columna `ofertas.region` / `ofertas.sector` — si alguno difiere,
+# agregar a `aliases` para que el query WHERE IN capture las variantes.
+
+_LANDING_REGIONES: tuple[dict[str, Any], ...] = (
+    {"slug": "arica-y-parinacota", "nombre": "Arica y Parinacota",
+     "aliases": ("Arica y Parinacota", "Arica")},
+    {"slug": "tarapaca", "nombre": "Tarapacá",
+     "aliases": ("Tarapacá", "Tarapaca")},
+    {"slug": "antofagasta", "nombre": "Antofagasta",
+     "aliases": ("Antofagasta",)},
+    {"slug": "atacama", "nombre": "Atacama",
+     "aliases": ("Atacama",)},
+    {"slug": "coquimbo", "nombre": "Coquimbo",
+     "aliases": ("Coquimbo",)},
+    {"slug": "valparaiso", "nombre": "Valparaíso",
+     "aliases": ("Valparaíso", "Valparaiso")},
+    {"slug": "metropolitana", "nombre": "Metropolitana de Santiago",
+     "aliases": ("Metropolitana de Santiago", "Metropolitana",
+                 "Región Metropolitana", "RM")},
+    {"slug": "ohiggins", "nombre": "O'Higgins",
+     "aliases": ("O'Higgins", "OHiggins", "Libertador General Bernardo O'Higgins")},
+    {"slug": "maule", "nombre": "Maule",
+     "aliases": ("Maule", "Del Maule")},
+    {"slug": "nuble", "nombre": "Ñuble",
+     "aliases": ("Ñuble", "Nuble")},
+    {"slug": "biobio", "nombre": "Biobío",
+     "aliases": ("Biobío", "Biobio", "Bío-Bío", "Bio-Bio")},
+    {"slug": "araucania", "nombre": "La Araucanía",
+     "aliases": ("La Araucanía", "Araucanía", "La Araucania", "Araucania")},
+    {"slug": "los-rios", "nombre": "Los Ríos",
+     "aliases": ("Los Ríos", "Los Rios")},
+    {"slug": "los-lagos", "nombre": "Los Lagos",
+     "aliases": ("Los Lagos",)},
+    {"slug": "aysen", "nombre": "Aysén",
+     "aliases": ("Aysén", "Aysen", "Aysén del General Carlos Ibáñez del Campo")},
+    {"slug": "magallanes", "nombre": "Magallanes",
+     "aliases": ("Magallanes", "Magallanes y de la Antártica Chilena")},
+)
+
+_LANDING_SECTORES: tuple[dict[str, Any], ...] = (
+    {"slug": "municipal", "nombre": "Municipal",
+     "aliases": ("Municipal", "Municipalidad")},
+    {"slug": "ejecutivo", "nombre": "Ejecutivo Central",
+     "aliases": ("Ejecutivo Central", "Ejecutivo")},
+    {"slug": "salud", "nombre": "Salud Pública",
+     "aliases": ("Salud Pública", "Salud", "Salud Publica")},
+    {"slug": "educacion", "nombre": "Educación Superior",
+     "aliases": ("Educación Superior", "Educación", "Educacion Superior", "Educacion")},
+    {"slug": "gobierno-regional", "nombre": "Gobierno Regional",
+     "aliases": ("Gobierno Regional",)},
+    {"slug": "judicial", "nombre": "Judicial",
+     "aliases": ("Judicial", "Poder Judicial")},
+    {"slug": "ffaa-orden", "nombre": "FF.AA. y Orden",
+     "aliases": ("FF.AA. y Orden", "FFAA", "FF.AA.", "Orden")},
+    {"slug": "empresa-estado", "nombre": "Empresa del Estado",
+     "aliases": ("Empresa del Estado", "Empresa Pública", "Empresa Publica")},
+)
+
+_REGION_BY_SLUG = {r["slug"]: r for r in _LANDING_REGIONES}
+_SECTOR_BY_SLUG = {s["slug"]: s for s in _LANDING_SECTORES}
+
+
+def _find_landing(tipo: str, slug: str) -> dict[str, Any] | None:
+    if tipo == "region":
+        return _REGION_BY_SLUG.get(slug)
+    if tipo == "sector":
+        return _SECTOR_BY_SLUG.get(slug)
+    return None
+
+
 def _extract_root_domain(url: str | None) -> str | None:
     if not url:
         return None
@@ -1186,6 +1260,195 @@ def build_offer_ssr_html(oferta: dict[str, Any]) -> str:
     return "\n".join(partes)
 
 
+# ── Landings SEO (region / sector) — SSR + meta + sitemap ─────────────────
+
+def fetch_landing_ofertas(
+    tipo: str, aliases: tuple[str, ...], limite: int = 30
+) -> list[dict[str, Any]]:
+    """Top N ofertas activas que matchean cualquiera de los aliases."""
+    if tipo not in {"region", "sector"}:
+        return []
+    columna = "region" if tipo == "region" else "sector"
+    rows = execute_fetch_all(
+        f"""
+        SELECT
+            o.id,
+            o.cargo,
+            COALESCE(NULLIF(o.institucion_nombre, ''), 'Institución pública') AS institucion,
+            o.ciudad,
+            o.region,
+            o.fecha_cierre,
+            COALESCE(o.actualizada_en, o.fecha_scraped, o.detectada_en, o.creada_en) AS lastmod
+        FROM ofertas o
+        WHERE {ACTIVE_OFFER_SQL}
+          AND o.{columna} IN %s
+        ORDER BY o.fecha_cierre ASC NULLS LAST, o.id DESC
+        LIMIT %s
+        """,
+        [tuple(aliases), limite],
+    )
+    return rows
+
+
+def fetch_landing_total(tipo: str, aliases: tuple[str, ...]) -> int:
+    if tipo not in {"region", "sector"}:
+        return 0
+    columna = "region" if tipo == "region" else "sector"
+    row = execute_fetch_one(
+        f"""
+        SELECT COUNT(*) AS total
+        FROM ofertas o
+        WHERE {ACTIVE_OFFER_SQL}
+          AND o.{columna} IN %s
+        """,
+        [tuple(aliases)],
+    )
+    return int(row["total"]) if row else 0
+
+
+def build_landing_meta(
+    tipo: str, nombre: str, total: int, canonical_url: str
+) -> dict[str, str]:
+    """Meta tags de la landing (title, description, og, twitter)."""
+    tipo_humano = {"region": "la región de", "sector": "el sector"}.get(tipo, "")
+    title = f"Empleos públicos en {nombre} — estadoemplea"
+    if total > 0:
+        description = (
+            f"{total} ofertas activas del sector público chileno en {tipo_humano} "
+            f"{nombre}. Filtra por institución, cargo y renta. Actualizado a diario."
+        )
+    else:
+        description = (
+            f"Empleos públicos en {tipo_humano} {nombre}. Suscríbete a alertas "
+            f"para recibir las nuevas ofertas apenas se publiquen."
+        )
+    return {
+        "title": _truncate_text(title, 90),
+        "description": _truncate_text(description, 200),
+        "og_image": DEFAULT_OG_IMAGE,
+        "canonical": canonical_url,
+    }
+
+
+def build_landing_ssr_html(
+    tipo: str,
+    nombre: str,
+    slug: str,
+    total: int,
+    ofertas: list[dict[str, Any]],
+) -> str:
+    """Bloque HTML visible con listado y enlaces cruzados."""
+    tipo_humano = {"region": "región", "sector": "sector"}.get(tipo, tipo)
+    partes: list[str] = [
+        '<article class="landing-ssr" data-landing-ssr="true" '
+        f'data-tipo="{html.escape(tipo)}" aria-labelledby="ssr-landing-titulo">',
+        '  <header class="landing-ssr-header">',
+        f'    <p class="landing-ssr-kicker">Empleos públicos · {html.escape(tipo_humano)}</p>',
+        f'    <h1 id="ssr-landing-titulo">Empleos públicos en {html.escape(nombre)}</h1>',
+        f'    <p class="landing-ssr-resumen">'
+        f'<strong>{total}</strong> oferta{"s" if total != 1 else ""} activa{"s" if total != 1 else ""} '
+        f'en {html.escape(tipo_humano)} {html.escape(nombre)}.</p>',
+        "  </header>",
+    ]
+
+    if ofertas:
+        partes.append('  <section class="landing-ssr-lista">')
+        partes.append("    <h2>Ofertas vigentes</h2>")
+        partes.append("    <ol>")
+        for o in ofertas:
+            slug_cargo = _slugify(o.get("cargo") or "")
+            href = f"/oferta/{o['id']}" + (f"-{slug_cargo}" if slug_cargo else "")
+            cargo = html.escape((o.get("cargo") or "Oferta pública").strip())
+            institucion = html.escape((o.get("institucion") or "").strip())
+            ciudad = html.escape((o.get("ciudad") or "").strip())
+            cierre = _format_fecha_larga(o.get("fecha_cierre")) or "Sin fecha de cierre"
+            loc_str = f" · {ciudad}" if ciudad else ""
+            partes.append(
+                f'      <li><a href="{href}"><strong>{cargo}</strong></a>'
+                f' — {institucion}{loc_str} · '
+                f'<span class="landing-ssr-cierre">{html.escape(cierre)}</span></li>'
+            )
+        partes.append("    </ol>")
+        # Buscador con filtro pre-aplicado
+        query_param = "region" if tipo == "region" else "sector"
+        query_value = ofertas[0].get(tipo if tipo == "region" else None) or nombre
+        # Preferir el nombre canónico (más URL-safe)
+        query_value = nombre
+        partes.append(
+            f'    <p class="landing-ssr-cta"><a href="/?{query_param}={html.escape(query_value)}">'
+            f'Ver todas las ofertas en el buscador →</a></p>'
+        )
+        partes.append("  </section>")
+    else:
+        partes.append('  <section class="landing-ssr-vacio">')
+        partes.append(
+            f"    <p>Hoy no hay ofertas activas en {html.escape(tipo_humano)} "
+            f"{html.escape(nombre)}. Suscríbete a una alerta y recibiremos las nuevas "
+            f"por email apenas se publiquen.</p>"
+        )
+        partes.append('    <p><a href="/#alertas">Crear alerta gratuita</a></p>')
+        partes.append("  </section>")
+
+    # Enlaces cruzados al otro eje (sector si estás en region, region si
+    # estás en sector) para dar descubrimiento interno y autoridad SEO.
+    partes.append('  <nav class="landing-ssr-cruce" aria-label="Otras landings">')
+    if tipo == "region":
+        partes.append("    <h2>Empleos por sector</h2>")
+        partes.append("    <ul>")
+        for s in _LANDING_SECTORES:
+            partes.append(
+                f'      <li><a href="/empleos/sector/{s["slug"]}">Sector {html.escape(s["nombre"])}</a></li>'
+            )
+        partes.append("    </ul>")
+    else:
+        partes.append("    <h2>Empleos por región</h2>")
+        partes.append("    <ul>")
+        for r in _LANDING_REGIONES:
+            partes.append(
+                f'      <li><a href="/empleos/region/{r["slug"]}">Región de {html.escape(r["nombre"])}</a></li>'
+            )
+        partes.append("    </ul>")
+    partes.append("  </nav>")
+    partes.append("</article>")
+    return "\n".join(partes)
+
+
+def build_landing_itemlist_jsonld(
+    ofertas: list[dict[str, Any]], canonical_url: str
+) -> str | None:
+    """JSON-LD ItemList que referencia las ofertas vigentes de la landing."""
+    if not ofertas:
+        return None
+    items: list[dict[str, Any]] = []
+    for idx, o in enumerate(ofertas, start=1):
+        slug_cargo = _slugify(o.get("cargo") or "")
+        href = f"{SITE_URL}/oferta/{o['id']}"
+        if slug_cargo:
+            href += f"-{slug_cargo}"
+        items.append({
+            "@type": "ListItem",
+            "position": idx,
+            "url": href,
+            "name": (o.get("cargo") or "").strip() or "Oferta pública",
+        })
+    data = {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        "url": canonical_url,
+        "numberOfItems": len(items),
+        "itemListElement": items,
+    }
+    payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
+    return (
+        payload
+        .replace("<", "\\u003c")
+        .replace(">", "\\u003e")
+        .replace("&", "\\u0026")
+        .replace("\u2028", "\\u2028")
+        .replace("\u2029", "\\u2029")
+    )
+
+
 def build_offer_meta(oferta: dict[str, Any] | None, canonical_url: str) -> dict[str, str]:
     if not oferta:
         return {
@@ -1235,6 +1498,8 @@ def render_index_with_meta(
     *,
     oferta_id_for_bootstrap: int | None = None,
     oferta: dict[str, Any] | None = None,
+    landing_html: str | None = None,
+    landing_jsonld: str | None = None,
 ) -> str:
     html_doc = WEB_INDEX_PATH.read_text(encoding="utf-8")
     html_doc = _set_title(html_doc, meta["title"])
@@ -1279,6 +1544,27 @@ def render_index_with_meta(
             html_doc = re.sub(
                 r'(<main[^>]*id="contenido-principal"[^>]*>)',
                 rf"\1\n{ssr_html}",
+                html_doc,
+                count=1,
+            )
+    # Landings SEO (region / sector): reusan el mismo slot del SSR de oferta.
+    # Son mutuamente excluyentes — una URL es /oferta/... o /empleos/... —
+    # así que no hay colisión.
+    if landing_html:
+        if landing_jsonld:
+            tag = (
+                '<script type="application/ld+json" data-itemlist="ssr">'
+                f"{landing_jsonld}"
+                "</script>"
+            )
+            html_doc = html_doc.replace("</head>", f"{tag}\n</head>", 1)
+        placeholder = "<!-- SSR_OFFER_SLOT_START --><!-- SSR_OFFER_SLOT_END -->"
+        if placeholder in html_doc:
+            html_doc = html_doc.replace(placeholder, landing_html, 1)
+        else:
+            html_doc = re.sub(
+                r'(<main[^>]*id="contenido-principal"[^>]*>)',
+                rf"\1\n{landing_html}",
                 html_doc,
                 count=1,
             )
@@ -2251,6 +2537,49 @@ def web_offer_share(oferta_id: int) -> RedirectResponse:
     return RedirectResponse(url=f"/oferta/{oferta_id}", status_code=308)
 
 
+def _render_landing(tipo: str, slug: str) -> Response:
+    """Endpoint compartido para /empleos/region/{slug} y /empleos/sector/{slug}."""
+    landing = _find_landing(tipo, slug)
+    if not landing:
+        raise HTTPException(status_code=404, detail=f"{tipo.capitalize()} no encontrada")
+
+    aliases = tuple(landing["aliases"])
+    try:
+        total = fetch_landing_total(tipo, aliases)
+        ofertas = fetch_landing_ofertas(tipo, aliases, limite=30) if total else []
+    except Exception:
+        logger.exception("Error armando landing %s/%s", tipo, slug)
+        total, ofertas = 0, []
+
+    canonical = f"{SITE_URL}/empleos/{tipo}/{slug}"
+    meta = build_landing_meta(tipo, landing["nombre"], total, canonical)
+    landing_html = build_landing_ssr_html(
+        tipo, landing["nombre"], slug, total, ofertas
+    )
+    landing_jsonld = build_landing_itemlist_jsonld(ofertas, canonical)
+
+    html_doc = render_index_with_meta(
+        meta,
+        landing_html=landing_html,
+        landing_jsonld=landing_jsonld,
+    )
+    return HTMLResponse(
+        content=html_doc,
+        status_code=200,
+        headers={"Cache-Control": "public, max-age=300, stale-while-revalidate=1800"},
+    )
+
+
+@app.get("/empleos/region/{slug}", response_class=HTMLResponse, include_in_schema=False)
+def web_landing_region(slug: str) -> Response:
+    return _render_landing("region", slug)
+
+
+@app.get("/empleos/sector/{slug}", response_class=HTMLResponse, include_in_schema=False)
+def web_landing_sector(slug: str) -> Response:
+    return _render_landing("sector", slug)
+
+
 @app.get("/index.html", include_in_schema=False)
 def legacy_index_redirect(request: Request) -> RedirectResponse:
     query = f"?{urlencode(list(request.query_params.multi_items()))}" if request.query_params else ""
@@ -2310,6 +2639,21 @@ def sitemap_xml() -> Response:
             f"<lastmod>{hoy}</lastmod>"
             f"<changefreq>{changefreq}</changefreq>"
             f"<priority>{priority}</priority></url>"
+        )
+    # Landings SEO (16 regiones + 8 sectores).
+    for reg in _LANDING_REGIONES:
+        partes.append(
+            f"  <url><loc>{html.escape(SITE_URL)}/empleos/region/{reg['slug']}</loc>"
+            f"<lastmod>{hoy}</lastmod>"
+            f"<changefreq>daily</changefreq>"
+            f"<priority>0.8</priority></url>"
+        )
+    for sec in _LANDING_SECTORES:
+        partes.append(
+            f"  <url><loc>{html.escape(SITE_URL)}/empleos/sector/{sec['slug']}</loc>"
+            f"<lastmod>{hoy}</lastmod>"
+            f"<changefreq>daily</changefreq>"
+            f"<priority>0.8</priority></url>"
         )
     for row in rows:
         slug = _slugify(row.get("cargo"))
