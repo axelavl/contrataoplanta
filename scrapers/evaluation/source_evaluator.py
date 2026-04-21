@@ -245,6 +245,8 @@ class SourceEvaluator:
                     "error_type": page.error_type,
                     "error_detail": page.error_detail,
                     "content_type": page.content_type,
+                    "extract_threshold_applied": selection.extract_threshold_applied,
+                    "manual_threshold_applied": selection.manual_threshold_applied,
                 },
                 evaluated_at=datetime.now(),
                 profile_name=profile.name,
@@ -324,6 +326,8 @@ class SourceEvaluator:
                 "pdf_links": pdf_links[:5],
                 **dates.to_json(),
                 "open_calls_status": open_calls_status.value,
+                "extract_threshold_applied": selection.extract_threshold_applied,
+                "manual_threshold_applied": selection.manual_threshold_applied,
             }
         )
 

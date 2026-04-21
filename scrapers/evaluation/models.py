@@ -159,6 +159,8 @@ class SourceProfile:
     signal_weight_overrides: dict[str, float] = field(default_factory=dict)
     retry_policy: RetryPolicy = RetryPolicy.MEDIUM
     extractor_hint: ExtractorKind = ExtractorKind.SCRAPER_GENERIC_FALLBACK
+    extract_threshold: float = 0.75
+    manual_threshold: float = 0.55
     notes: str = ""
 
 
