@@ -32,7 +32,11 @@ class ReasonCode(str, Enum):
     PUBLICATION_TOO_OLD = "publication_too_old"
     PLACEHOLDER_BASES_URL = "placeholder_bases_url"
     INVALID_INSTITUTION_REFERENCE = "invalid_institution_reference"
+    MISSING_PUBLISHABLE_URL = "missing_publishable_url"
+    MISSING_VALIDITY_SIGNAL = "missing_validity_signal"
+    CONTACT_CHANNEL_AMBIGUOUS = "contact_channel_ambiguous"
     SALARY_OUTLIER = "salary_outlier"
+    SALARY_UNIT_INCONSISTENT = "salary_unit_inconsistent"
     LISTING_PAGE_ONLY = "listing_page_only"
     STALE_ACTIVE_OFFER = "stale_active_offer"
     CATALOG_MISMATCH = "catalog_mismatch"
@@ -67,7 +71,11 @@ DEFAULT_REASON_DETAILS: dict[ReasonCode, str] = {
     ReasonCode.PUBLICATION_TOO_OLD: "La publicacion es antigua y no hay evidencia vigente suficiente.",
     ReasonCode.PLACEHOLDER_BASES_URL: "La URL de bases apunta a un placeholder no publicable.",
     ReasonCode.INVALID_INSTITUTION_REFERENCE: "La oferta referencia una institucion fuera del catalogo.",
+    ReasonCode.MISSING_PUBLISHABLE_URL: "Falta una URL postulable para publicar la oferta.",
+    ReasonCode.MISSING_VALIDITY_SIGNAL: "No hay fecha de cierre ni una senal explicita de vigencia.",
+    ReasonCode.CONTACT_CHANNEL_AMBIGUOUS: "No fue posible distinguir correo de postulacion y de contacto.",
     ReasonCode.SALARY_OUTLIER: "La renta parseada es inverosimil para el dominio objetivo.",
+    ReasonCode.SALARY_UNIT_INCONSISTENT: "La unidad de renta detectada no es consistente (mensual/anual).",
     ReasonCode.LISTING_PAGE_ONLY: "La entidad es solo una portada de listados y no una oferta.",
     ReasonCode.STALE_ACTIVE_OFFER: "La oferta seguia activa aunque su fecha de cierre ya paso.",
     ReasonCode.CATALOG_MISMATCH: "Los datos de la oferta no son consistentes con el catalogo operativo.",
