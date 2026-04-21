@@ -28,7 +28,7 @@ from .models import (
 )
 from .reason_codes import ReasonCode, reason_detail
 from .signals import build_signal_bundle
-from .source_profiles import match_source_profile
+from .source_profiles import classify_source_profile
 from .validity_rules import assess_validity
 
 
@@ -37,6 +37,7 @@ JS_MARKERS = ("enable javascript", "requires javascript", "__next", "window.__",
 WORDPRESS_MARKERS = ("wp-content", "wp-json", "wordpress", "wp-includes")
 NEWS_PATH_MARKERS = ("/noticias", "/news", "/prensa", "/blog", "/comunicados")
 ATS_HOST_MARKERS = ("trabajando.cl", "hiringroom", "buk.cl")
+RUNTIME_WORDPRESS_MARKERS = ("wp-content", "wp-includes", "wp-json", "wordpress")
 
 
 def _norm(value: str | None) -> str:
@@ -147,6 +148,30 @@ def _page_type_priority(page_type: PageType) -> int:
     return order.get(page_type, 0)
 
 
+def _runtime_hints(page: FetchedPage, soup: BeautifulSoup) -> tuple[str, ...]:
+    hints: set[str] = set()
+    blobs: list[str] = [page.final_url.lower()]
+    blobs.extend(f"{k}:{v}".lower() for k, v in (page.headers or {}).items())
+    for script in soup.find_all("script", src=True):
+        blobs.append(str(script.get("src") or "").lower())
+    for meta in soup.find_all("meta"):
+        blobs.append(str(meta.get("name") or "").lower())
+        blobs.append(str(meta.get("property") or "").lower())
+        blobs.append(str(meta.get("content") or "").lower())
+    for anchor in soup.find_all("a", href=True):
+        blobs.append(str(anchor.get("href") or "").lower())
+
+    if any(marker in blob for blob in blobs for marker in RUNTIME_WORDPRESS_MARKERS):
+        hints.add("cms_wordpress")
+    if any("trabajando.cl" in blob for blob in blobs):
+        hints.add("ats_trabajando")
+    if any("hiringroom" in blob for blob in blobs):
+        hints.add("ats_hiringroom")
+    if any("buk.cl" in blob for blob in blobs):
+        hints.add("ats_buk")
+    return tuple(sorted(hints))
+
+
 def _infer_page_type(*, page: FetchedPage, soup: BeautifulSoup, profile: SourceProfile) -> tuple[PageType, str | None]:
     final_url = page.final_url.lower()
     content_type = (page.content_type or "").lower()
@@ -205,8 +230,22 @@ class SourceEvaluator:
 
     async def evaluate(self, source: dict[str, Any], *, historical_noise_ratio: float = 0.0) -> EvaluationResult:
         source_url = str(source.get("url_empleo") or source.get("sitio_web") or "").strip()
-        profile = match_source_profile(source)
+        profile_match = classify_source_profile(source)
+        profile = profile_match.profile
         if not source_url:
+            signals_json = {
+                "profile": profile.name,
+                "profile_matched_by": profile_match.matched_by,
+                "runtime_hints": [],
+            }
+            if profile_match.source_requires_override:
+                signals_json.update(
+                    {
+                        "source_requires_override": True,
+                        "override_backlog_severity": profile_match.backlog_severity,
+                        "override_evidence": profile_match.evidence,
+                    }
+                )
             return EvaluationResult(
                 source_url="",
                 availability=Availability.EMPTY_RESPONSE,
@@ -228,7 +267,7 @@ class SourceEvaluator:
                 reason_detail="La fuente no trae url_empleo ni sitio_web.",
                 confidence=0.0,
                 retry_policy=profile.retry_policy,
-                signals_json={"profile": profile.name},
+                signals_json=signals_json,
                 evaluated_at=datetime.now(),
                 profile_name=profile.name,
             )
@@ -269,6 +308,23 @@ class SourceEvaluator:
             )
         )
         if availability != Availability.OK:
+            signals_json = {
+                "profile": profile.name,
+                "profile_matched_by": profile_match.matched_by,
+                "runtime_hints": [],
+                "error_type": first_page.error_type,
+                "error_detail": first_page.error_detail,
+                "content_type": first_page.content_type,
+                "pre_discovery_urls": [page.final_url for page in pages],
+            }
+            if profile_match.source_requires_override:
+                signals_json.update(
+                    {
+                        "source_requires_override": True,
+                        "override_backlog_severity": profile_match.backlog_severity,
+                        "override_evidence": profile_match.evidence,
+                    }
+                )
             selection = select_extractor(
                 profile,
                 availability=availability,
@@ -283,6 +339,12 @@ class SourceEvaluator:
                     reference_date=self.reference_date,
                 ).status,
                 confidence=0.0,
+            )
+            signals_json.update(
+                {
+                    "extract_threshold_applied": selection.extract_threshold_applied,
+                    "manual_threshold_applied": selection.manual_threshold_applied,
+                }
             )
             return EvaluationResult(
                 source_url=source_url,
@@ -305,15 +367,7 @@ class SourceEvaluator:
                 reason_detail=selection.reason_detail,
                 confidence=0.0,
                 retry_policy=profile.retry_policy,
-                signals_json={
-                    "profile": profile.name,
-                    "error_type": first_page.error_type,
-                    "error_detail": first_page.error_detail,
-                    "content_type": first_page.content_type,
-                    "pre_discovery_urls": [page.final_url for page in pages],
-                    "extract_threshold_applied": selection.extract_threshold_applied,
-                    "manual_threshold_applied": selection.manual_threshold_applied,
-                },
+                signals_json=signals_json,
                 evaluated_at=datetime.now(),
                 profile_name=profile.name,
             )
@@ -325,11 +379,15 @@ class SourceEvaluator:
         aggregated_pdf_links: list[str] = []
         aggregated_links: list[str] = []
         inferred_page_types: list[PageType] = []
+        aggregated_runtime_hints: list[str] = []
         has_jobposting_jsonld = False
         cms: str | None = None
 
         for page in ok_pages:
             page_soup = BeautifulSoup(page.body, "html.parser")
+            for hint in _runtime_hints(page, page_soup):
+                if hint not in aggregated_runtime_hints:
+                    aggregated_runtime_hints.append(hint)
             page_type, page_cms = _infer_page_type(page=page, soup=page_soup, profile=profile)
             inferred_page_types.append(page_type)
             if cms is None and page_cms:
@@ -359,6 +417,9 @@ class SourceEvaluator:
                 if title_text:
                     aggregated_titles.append(title_text)
 
+        runtime_hints = tuple(aggregated_runtime_hints)
+        profile_match = classify_source_profile(source, runtime_hints=runtime_hints)
+        profile = profile_match.profile
         representative_page_type = (
             sorted(inferred_page_types, key=_page_type_priority, reverse=True)[0]
             if inferred_page_types
@@ -439,6 +500,8 @@ class SourceEvaluator:
         signals_json.update(
             {
                 "profile": profile.name,
+                "profile_matched_by": profile_match.matched_by,
+                "runtime_hints": list(runtime_hints),
                 "page_title": title,
                 "pdf_links_count": len(aggregated_pdf_links),
                 "pdf_links": aggregated_pdf_links[:5],
@@ -470,6 +533,14 @@ class SourceEvaluator:
                 "manual_threshold_applied": selection.manual_threshold_applied,
             }
         )
+        if profile_match.source_requires_override:
+            signals_json.update(
+                {
+                    "source_requires_override": True,
+                    "override_backlog_severity": profile_match.backlog_severity,
+                    "override_evidence": profile_match.evidence,
+                }
+            )
 
         return EvaluationResult(
             source_url=source_url,
