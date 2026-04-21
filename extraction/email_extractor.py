@@ -40,6 +40,13 @@ _CONSULTAS_HINTS = (
     "informaciones en",
     "consultas sobre el proceso a",
 )
+_CONTACTO_HINTS = (
+    "contacto",
+    "escribir a",
+    "comunicarse con",
+    "correo de contacto",
+    "mesa de ayuda",
+)
 
 
 def _context(text: str, start: int, end: int, radius: int = 100) -> str:
@@ -51,18 +58,22 @@ def _context(text: str, start: int, end: int, radius: int = 100) -> str:
 def _classify_kind(context: str) -> tuple[str, ...]:
     c = context.lower()
     kinds: list[str] = []
-    if any(h in c for h in _POSTULACION_HINTS):
+    post_hits = sum(1 for h in _POSTULACION_HINTS if h in c)
+    contact_hits = sum(1 for h in _CONSULTAS_HINTS + _CONTACTO_HINTS if h in c)
+    if post_hits > 0:
         kinds.append("email_postulacion")
-    if any(h in c for h in _CONSULTAS_HINTS):
+        kinds.append("correo_postulacion")
+    if contact_hits > 0:
         kinds.append("email_consultas")
+        kinds.append("correo_contacto")
     if not kinds:
         if "postul" in c:
-            kinds.append("email_postulacion")
-        elif "consulta" in c or "informaci" in c:
-            kinds.append("email_consultas")
+            kinds.extend(["email_postulacion", "correo_postulacion"])
+        elif "consulta" in c or "informaci" in c or "contact" in c:
+            kinds.extend(["email_consultas", "correo_contacto"])
         else:
             kinds.append("email_indeterminado")
-    return tuple(kinds)
+    return tuple(dict.fromkeys(kinds))
 
 
 def extract_and_classify_emails(text: str) -> EmailExtraction:

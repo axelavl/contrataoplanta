@@ -75,6 +75,8 @@ class EmailExtractorTests(unittest.TestCase):
         email = next(item for item in result.classified if item.email == "seleccion@muni.cl")
         self.assertIn("email_postulacion", email.kinds)
         self.assertIn("email_consultas", email.kinds)
+        self.assertIn("correo_postulacion", email.kinds)
+        self.assertIn("correo_contacto", email.kinds)
 
 
 class RuleEnginePrecisionTests(unittest.TestCase):

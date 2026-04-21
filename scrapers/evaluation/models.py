@@ -86,8 +86,9 @@ class ExtractorKind(str, Enum):
 
 class QualityDecision(str, Enum):
     PUBLISH = "publish"
+    REVIEW = "review"
     REJECT = "reject"
-    MANUAL_REVIEW = "manual_review"
+    MANUAL_REVIEW = "review"
 
 
 @dataclass(slots=True)

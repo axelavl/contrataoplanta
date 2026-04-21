@@ -1332,11 +1332,13 @@ class BaseScraper(abc.ABC):
             "institucion_nombre": raw.institucion_nombre,
             "cargo": raw.cargo,
             "descripcion": raw.descripcion,
+            "url_oferta": raw.url,
             "fecha_publicacion": raw.fecha_publicacion,
             "fecha_cierre": raw.fecha_cierre,
             "url_bases": raw.url_bases,
             "renta_bruta_min": renta_min,
             "renta_bruta_max": renta_max,
+            "renta_texto": raw.renta_texto,
             "estado": "activo",
             "activa": True,
         }

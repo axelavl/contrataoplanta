@@ -147,7 +147,7 @@ class AuditStore:
                     """
                     SELECT
                         COALESCE(
-                            SUM(CASE WHEN decision IN ('reject', 'manual_review') THEN 1 ELSE 0 END)::float
+                            SUM(CASE WHEN decision IN ('reject', 'review', 'manual_review') THEN 1 ELSE 0 END)::float
                             / NULLIF(COUNT(*), 0),
                             0
                         )

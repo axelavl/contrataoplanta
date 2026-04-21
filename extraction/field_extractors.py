@@ -48,8 +48,12 @@ def extract_structured_fields(raw_page: RawPage) -> ExtractionBundle:
     contract_type, workday, modality = extract_contract_info(full_text)
 
     emails = [item.email for item in email_info.classified]
-    email_postulacion = [item.email for item in email_info.classified if "email_postulacion" in item.kinds]
-    email_consultas = [item.email for item in email_info.classified if "email_consultas" in item.kinds]
+    email_postulacion = [
+        item.email for item in email_info.classified if {"email_postulacion", "correo_postulacion"} & set(item.kinds)
+    ]
+    email_consultas = [
+        item.email for item in email_info.classified if {"email_consultas", "correo_contacto"} & set(item.kinds)
+    ]
     email_indeterminado = [item.email for item in email_info.classified if "email_indeterminado" in item.kinds]
     email_contexts = [f"{item.email}::{', '.join(item.kinds)}::{item.context[:180]}" for item in email_info.classified]
 
