@@ -7,6 +7,10 @@ Este documento define **una sola fuente de verdad** para saber:
 3. Cuál es la fecha comprometida de retiro.
 4. Cómo migrar cada scraper legacy al runtime nuevo basado en gatekeeper + pipeline.
 
+> Enforcement técnico:
+> - `scrapers/run_all.py` registra en logs este inventario al iniciar cada corrida.
+> - `tests/test_runtime_inventory_contract.py` falla si aparece deriva entre runtime productivo y legacy deprecados.
+
 ## Producción (activo)
 
 El runtime productivo corre exclusivamente los módulos de plataforma declarados en `PRODUCTION_RUNTIME_MODULES`.
