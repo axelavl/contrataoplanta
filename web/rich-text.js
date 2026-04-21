@@ -922,6 +922,149 @@
   }
 
   // ─────────────────────────────────────────────────────────────
+  // 7.c Parsing semántico para ficha (funciones, requisitos, etc.)
+  // ─────────────────────────────────────────────────────────────
+  var REQUIREMENT_PATTERNS = {
+    obligatorios: /\b(excluyente|obligatori[oa]s?|requisito[s]?\s+m[ií]nimo|debe\s+contar|indispensable)\b/i,
+    deseables: /\b(deseable|valorad[oa]|idealmente|se\s+valorar[aá])\b/i,
+    experiencia: /\b(experienc|a[nñ]os?\s+de\s+experiencia|trayectoria)\b/i,
+    formacion: /\b(t[ií]tulo|profesi[oó]n|grado\s+acad[eé]mico|formaci[oó]n|universitari|t[eé]cnico\s+nivel)\b/i,
+    especialidades: /\b(especialidad|especializaci[oó]n|licencia|certificad|acreditaci[oó]n|registro\s+(sis|superintendencia|nacional)|diplomado|curso)\b/i,
+    competencias: /\b(competenci|habilidad|liderazgo|trabajo\s+en\s+equipo|comunicaci[oó]n|proactividad|conocimientos?)\b/i,
+    documentos: /\b(documentos?|antecedentes?|curriculum|cv|c[eé]dula|fotocopia|declaraci[oó]n|certificado\s+de\s+t[ií]tulo|certificado\s+de\s+antecedentes)\b/i
+  };
+  var CONDITIONS_RE = /\b(renta|remuneraci[oó]n|jornada|contrata|planta|honorarios|horario|turno|vacante|lugar\s+de\s+desempe[nñ]o|duraci[oó]n)\b/i;
+  var POSTULATION_RE = /\b(postulaci[oó]n|postular|portal|enviar|adjuntar|plazo|cronograma|etapa|comisi[oó]n|entrevista)\b/i;
+  var OBJECTIVE_HEADER_RE = /\b(objetivo\s+del\s+cargo|misi[oó]n\s+del\s+cargo)\b/i;
+  var BROKEN_FUNCTION_RE = /\b(funciones?\s+de\s+la\s+especialidad\s+tales\s+como|tales\s+como|para)\s*$/i;
+
+  function splitSemanticSentences(text) {
+    if (!text) return [];
+    var t = normalizeText(text);
+    t = t.replace(/\n+/g, '. ');
+    t = t.replace(/\s*[•·●◦▪▫■□]\s*/g, '. ');
+    t = t.replace(/\s*[;]\s*/g, '. ');
+    return t.split(/(?<=[.!?])\s+/).map(trim).filter(function (s) { return s.length >= 18; });
+  }
+
+  function normalizeCompareKey(value) {
+    return foldText(value).replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  function dedupeSentenceList(items, maxItems) {
+    var out = [];
+    var seen = new Set();
+    for (var i = 0; i < items.length; i++) {
+      var raw = trim(items[i]);
+      if (!raw) continue;
+      var cleaned = raw.replace(/\s+/g, ' ').replace(/[;,\s]+$/, '');
+      var key = normalizeCompareKey(cleaned)
+        .replace(/\b(de|la|el|los|las|para|con|en|y|o|del)\b/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (!key || key.length < 12 || seen.has(key)) continue;
+      seen.add(key);
+      out.push(cleaned.charAt(0).toUpperCase() + cleaned.slice(1));
+      if (maxItems && out.length >= maxItems) break;
+    }
+    return out;
+  }
+
+  function looksLikeFunctionSentence(sentence) {
+    if (!sentence) return false;
+    if (REQUIREMENT_PATTERNS.obligatorios.test(sentence) ||
+        REQUIREMENT_PATTERNS.experiencia.test(sentence) ||
+        REQUIREMENT_PATTERNS.formacion.test(sentence)) return false;
+    var head = sentence.split(/\s+/).slice(0, 4).join(' ');
+    var verbMatch = head.match(new RegExp('^(' + ACTION_VERBS_PATTERN + ')\\b', 'i'));
+    if (!verbMatch) return false;
+    if (BROKEN_FUNCTION_RE.test(sentence)) return false;
+    var words = sentence.split(/\s+/).length;
+    if (words < 5) return false;
+    if (!/[a-záéíóúñ]{3,}\s+[a-záéíóúñ]{3,}/i.test(sentence)) return false;
+    return true;
+  }
+
+  function extractObjective(text) {
+    if (!text) return '';
+    var lines = String(text).split('\n').map(trim).filter(Boolean);
+    for (var i = 0; i < lines.length; i++) {
+      if (OBJECTIVE_HEADER_RE.test(lines[i])) {
+        var next = trim(lines[i + 1] || '');
+        if (next && next.length >= 18) return next.replace(/\.$/, '') + '.';
+      }
+    }
+    return '';
+  }
+
+  function buildSemanticSections(payload) {
+    payload = payload || {};
+    var descripcion = String(payload.descripcion || '');
+    var requisitos = String(payload.requisitos || '');
+    var reqSentences = splitSemanticSentences(requisitos);
+    var descSentences = splitSemanticSentences(descripcion);
+    var all = reqSentences.concat(descSentences);
+
+    var out = {
+      objetivo: extractObjective(descripcion + '\n' + requisitos),
+      funciones: [],
+      condiciones: [],
+      postulacion: [],
+      requisitos: {
+        obligatorios: [],
+        deseables: [],
+        experiencia: [],
+        formacion: [],
+        especialidades: [],
+        competencias: [],
+        documentos: []
+      }
+    };
+
+    for (var i = 0; i < all.length; i++) {
+      var s = all[i];
+      if (looksLikeFunctionSentence(s)) out.funciones.push(s);
+      if (CONDITIONS_RE.test(s)) out.condiciones.push(s);
+      if (POSTULATION_RE.test(s)) out.postulacion.push(s);
+
+      if (REQUIREMENT_PATTERNS.documentos.test(s)) out.requisitos.documentos.push(s);
+      else if (REQUIREMENT_PATTERNS.experiencia.test(s)) out.requisitos.experiencia.push(s);
+      else if (REQUIREMENT_PATTERNS.formacion.test(s)) out.requisitos.formacion.push(s);
+      else if (REQUIREMENT_PATTERNS.especialidades.test(s)) out.requisitos.especialidades.push(s);
+      else if (REQUIREMENT_PATTERNS.competencias.test(s)) out.requisitos.competencias.push(s);
+      else if (REQUIREMENT_PATTERNS.deseables.test(s)) out.requisitos.deseables.push(s);
+      else if (REQUIREMENT_PATTERNS.obligatorios.test(s)) out.requisitos.obligatorios.push(s);
+    }
+
+    out.funciones = dedupeSentenceList(out.funciones, 10).filter(function (s) { return !BROKEN_FUNCTION_RE.test(s); });
+    out.condiciones = dedupeSentenceList(out.condiciones, 8);
+    out.postulacion = dedupeSentenceList(out.postulacion, 5);
+    out.requisitos.obligatorios = dedupeSentenceList(out.requisitos.obligatorios, 8);
+    out.requisitos.deseables = dedupeSentenceList(out.requisitos.deseables, 8);
+    out.requisitos.experiencia = dedupeSentenceList(out.requisitos.experiencia, 8);
+    out.requisitos.formacion = dedupeSentenceList(out.requisitos.formacion, 8);
+    out.requisitos.especialidades = dedupeSentenceList(out.requisitos.especialidades, 8);
+    out.requisitos.competencias = dedupeSentenceList(out.requisitos.competencias, 8);
+    out.requisitos.documentos = dedupeSentenceList(out.requisitos.documentos, 8);
+
+    // Fallback conservador: si no hay obligatorios pero sí requisitos generales,
+    // usar frases de requisitos no clasificadas desde el texto de requisitos.
+    if (!out.requisitos.obligatorios.length) {
+      var residualReqs = reqSentences.filter(function (s) {
+        return !REQUIREMENT_PATTERNS.deseables.test(s) &&
+               !REQUIREMENT_PATTERNS.experiencia.test(s) &&
+               !REQUIREMENT_PATTERNS.formacion.test(s) &&
+               !REQUIREMENT_PATTERNS.especialidades.test(s) &&
+               !REQUIREMENT_PATTERNS.competencias.test(s) &&
+               !REQUIREMENT_PATTERNS.documentos.test(s);
+      });
+      out.requisitos.obligatorios = dedupeSentenceList(residualReqs, 6);
+    }
+
+    return out;
+  }
+
+  // ─────────────────────────────────────────────────────────────
   // 8. API pública
   // ─────────────────────────────────────────────────────────────
   function format(rawText, options) {
@@ -968,7 +1111,8 @@
     // Helpers de parsing expuestos para pruebas/reúso.
     splitByActionVerbs: splitByActionVerbs,
     splitTitleCaseRunOn: splitTitleCaseRunOn,
-    splitFlexibleParagraph: splitFlexibleParagraph
+    splitFlexibleParagraph: splitFlexibleParagraph,
+    buildSemanticSections: buildSemanticSections
   };
 
   // Compatibilidad con llamadas existentes: truncado por defecto activado.

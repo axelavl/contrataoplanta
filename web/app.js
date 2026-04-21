@@ -1841,6 +1841,61 @@ function _setSummaryField(itemId, value, opts = {}) {
   return useful;
 }
 
+function _renderListInto(listId, values, opts = {}) {
+  const { max = 6, emptyText = '' } = opts;
+  const el = document.getElementById(listId);
+  if (!el) return 0;
+  const items = Array.isArray(values) ? values.filter(Boolean).slice(0, max) : [];
+  if (!items.length) {
+    el.innerHTML = emptyText ? `<li class="modal-list-empty">${escHtml(emptyText)}</li>` : '';
+    return 0;
+  }
+  el.innerHTML = items.map((item) => `<li>${escHtml(String(item))}</li>`).join('');
+  return items.length;
+}
+
+function _toggleSection(sectionId, visible) {
+  const el = document.getElementById(sectionId);
+  if (el) el.hidden = !visible;
+}
+
+function _buildDecisionPoints(oferta, estadoPlazo) {
+  const points = [];
+  const cargo = normalizarTituloOferta(oferta?.cargo || '').trim();
+  const inst = _aplicarAcronimosForzados((oferta?.institucion || '').trim());
+  const renta = formatRenta(oferta?.renta_bruta_min, oferta?.renta_bruta_max, oferta?.grado_eus);
+  const region = nombreRegionCompleto(oferta?.region);
+  const ciudad = ciudadValida(oferta?.ciudad, oferta?.institucion);
+  const ubicacion = [region, ciudad].filter(Boolean).join(' · ');
+  if (cargo) points.push(`Cargo: ${cargo}`);
+  if (inst) points.push(`Institución: ${inst}`);
+  if (estadoPlazo?.label) points.push(`Estado: ${estadoPlazo.label}`);
+  if (renta && !_isWeakSummaryValue(renta)) points.push(`Renta: ${renta}`);
+  if (ubicacion) points.push(`Ubicación: ${ubicacion}`);
+  if (oferta?.fecha_cierre) points.push(`Cierre: ${formatFecha(oferta.fecha_cierre)}`);
+  return points.slice(0, 6);
+}
+
+function _collectDataWarnings(oferta) {
+  const warnings = [];
+  const inst = String(oferta?.institucion || '').trim();
+  const cargo = String(oferta?.cargo || '').trim();
+  const descripcion = String(oferta?.descripcion || '').toLowerCase();
+  if (!inst || inst.length < 4 || /instituci[oó]n p[úu]blica|municipalidad/i.test(inst)) {
+    warnings.push('Institución detectada automáticamente; revisa las bases oficiales antes de postular.');
+  }
+  if (cargo && descripcion && inst && !descripcion.includes(inst.toLowerCase().slice(0, 8))) {
+    warnings.push('El contenido no menciona claramente la institución; valida la fuente oficial.');
+  }
+  if (!oferta?.region && !oferta?.ciudad) {
+    warnings.push('La ubicación no fue informada con claridad en el aviso original.');
+  }
+  if (!oferta?.fecha_cierre) {
+    warnings.push('No hay fecha de cierre explícita; confirma vigencia en el portal oficial.');
+  }
+  return warnings;
+}
+
 function _focusablesModal() {
   const modal = document.querySelector('#modal .modal');
   if (!modal) return [];
@@ -1952,8 +2007,29 @@ async function abrirModal(ofertaId) {
   const summaryNote = document.getElementById('modal-summary-note');
   summaryNote.hidden = true;
   summaryNote.textContent = '';
+  document.getElementById('modal-key-points').innerHTML = '';
   document.getElementById('modal-descripcion').innerHTML = '';
   document.getElementById('modal-requisitos').innerHTML = '';
+  _renderListInto('modal-req-obligatorios', []);
+  _renderListInto('modal-req-deseables', []);
+  _renderListInto('modal-req-experiencia', []);
+  _renderListInto('modal-req-formacion', []);
+  _renderListInto('modal-req-especialidades', []);
+  _renderListInto('modal-req-competencias', []);
+  _renderListInto('modal-req-documentos', []);
+  _renderListInto('modal-funciones-list', []);
+  _renderListInto('modal-condiciones-list', []);
+  _renderListInto('modal-postulacion-list', []);
+  _toggleSection('modal-objetivo-wrap', false);
+  _toggleSection('modal-postulacion-wrap', false);
+  _toggleSection('modal-data-warning', false);
+  _toggleSection('sec-req-obligatorios', false);
+  _toggleSection('sec-req-deseables', false);
+  _toggleSection('sec-req-experiencia', false);
+  _toggleSection('sec-req-formacion', false);
+  _toggleSection('sec-req-especialidades', false);
+  _toggleSection('sec-req-competencias', false);
+  _toggleSection('sec-req-documentos', false);
   document.getElementById('modal-btn-postular').onclick = null;
   document.getElementById('modal-btn-bases').style.display = 'none';
   const alertBox = document.getElementById('modal-plazo-alert');
@@ -2021,10 +2097,13 @@ async function abrirModal(ofertaId) {
       summaryNote.hidden = false;
     }
 
-    // Descripción / funciones — formato enriquecido.
-    // Umbral bajo para que ambas secciones (Requisitos + Descripción)
-    // quepan en el primer viewport con un "Ver más" si hace falta. Los
-    // textos cortos (<= umbral) se muestran completos sin truncar.
+    const decisionPoints = _buildDecisionPoints(o, detalle);
+    _renderListInto('modal-key-points', decisionPoints, {
+      max: 6,
+      emptyText: 'Revisa las bases oficiales para confirmar los datos clave.'
+    });
+
+    // Texto completo expandible (sin mezclar con secciones semánticas)
     const desc = o.descripcion || '';
     const descHtml = formatRichText(desc, {
       truncate: true,
@@ -2044,6 +2123,51 @@ async function abrirModal(ofertaId) {
     document.getElementById('modal-requisitos').innerHTML = reqHtml ||
       '<p>Consulta las bases del concurso para conocer los requisitos completos.</p>';
 
+    // Parser semántico para separar funciones / requisitos / condiciones.
+    const semantic = window.richText?.buildSemanticSections
+      ? window.richText.buildSemanticSections({ descripcion: desc, requisitos: reqTexto })
+      : null;
+
+    if (semantic) {
+      _renderListInto('modal-funciones-list', semantic.funciones, {
+        max: 8,
+        emptyText: 'No fue posible extraer funciones claras desde el texto original.'
+      });
+      _renderListInto('modal-condiciones-list', semantic.condiciones, {
+        max: 8,
+        emptyText: 'Revisa bases para jornada, modalidad y condiciones contractuales.'
+      });
+      _renderListInto('modal-req-obligatorios', semantic.requisitos.obligatorios, { max: 6 });
+      _renderListInto('modal-req-deseables', semantic.requisitos.deseables, { max: 6 });
+      _renderListInto('modal-req-experiencia', semantic.requisitos.experiencia, { max: 6 });
+      _renderListInto('modal-req-formacion', semantic.requisitos.formacion, { max: 6 });
+      _renderListInto('modal-req-especialidades', semantic.requisitos.especialidades, { max: 6 });
+      _renderListInto('modal-req-competencias', semantic.requisitos.competencias, { max: 6 });
+      _renderListInto('modal-req-documentos', semantic.requisitos.documentos, { max: 6 });
+      _toggleSection('sec-req-obligatorios', semantic.requisitos.obligatorios.length > 0);
+      _toggleSection('sec-req-deseables', semantic.requisitos.deseables.length > 0);
+      _toggleSection('sec-req-experiencia', semantic.requisitos.experiencia.length > 0);
+      _toggleSection('sec-req-formacion', semantic.requisitos.formacion.length > 0);
+      _toggleSection('sec-req-especialidades', semantic.requisitos.especialidades.length > 0);
+      _toggleSection('sec-req-competencias', semantic.requisitos.competencias.length > 0);
+      _toggleSection('sec-req-documentos', semantic.requisitos.documentos.length > 0);
+      _toggleSection('modal-objetivo-wrap', !!semantic.objetivo);
+      if (semantic.objetivo) {
+        document.getElementById('modal-objetivo').textContent = semantic.objetivo;
+      }
+      _toggleSection('modal-postulacion-wrap', semantic.postulacion.length > 0);
+      _renderListInto('modal-postulacion-list', semantic.postulacion, { max: 5 });
+    } else {
+      _toggleSection('sec-req-obligatorios', true);
+      _renderListInto('modal-req-obligatorios', ['Revisa el texto completo del aviso para validar requisitos.'], { max: 1 });
+    }
+
+    const warnings = _collectDataWarnings(o);
+    if (warnings.length) {
+      _toggleSection('modal-data-warning', true);
+      document.getElementById('modal-data-warning-text').textContent = warnings[0];
+    }
+
     // Botón postular — gateado primero por flag backend, luego por validación cliente.
     const btnPostular = document.getElementById('modal-btn-postular');
     const ofertaOk = ofertaPostulable(o);
@@ -2053,7 +2177,7 @@ async function abrirModal(ofertaId) {
     const urlPostular = ofertaOk ? o.url_oferta : (basesOk ? o.url_bases : null);
     if (urlPostular) {
       btnPostular.disabled = false;
-      btnPostular.textContent = 'Ir a postular →';
+      btnPostular.textContent = 'Ir al portal de postulación →';
       btnPostular.onclick = () => {
         registrarClicPostular(o);
         window.open(urlPostular, '_blank', 'noopener,noreferrer');
@@ -2068,7 +2192,7 @@ async function abrirModal(ofertaId) {
     const btnBases = document.getElementById('modal-btn-bases');
     if (o.url_bases && o.url_bases !== o.url_oferta && basesOk) {
       btnBases.style.display = 'inline-flex';
-      btnBases.textContent = '📄 Bases oficiales';
+      btnBases.textContent = '📄 Ver bases del concurso';
       btnBases.onclick = () => abrirVisorBases(o);
     } else {
       btnBases.style.display = 'none';
@@ -3774,4 +3898,3 @@ cargarEstadisticas();
 cargarResumenFuentes();
 mostrarUltimaActualizacion();
 setInterval(mostrarUltimaActualizacion, 5 * 60 * 1000); // refrescar cada 5 min
-

@@ -3637,3 +3637,16 @@ button:focus-visible,
     opacity: 0.9 !important;
   }
 }
+
+:root[data-theme="dark"] .modal-subsection,
+:root[data-theme="dark"] .modal-key-points li,
+:root[data-theme="dark"] .modal-fulltext-details {
+  background: rgba(18, 26, 43, 0.7);
+  border-color: rgba(148, 163, 184, 0.26);
+}
+
+:root[data-theme="dark"] .modal-data-warning-text {
+  background: rgba(146, 64, 14, 0.2);
+  border-color: rgba(245, 158, 11, 0.55);
+  color: #FDE68A;
+}
