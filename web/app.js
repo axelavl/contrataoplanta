@@ -1999,6 +1999,11 @@ async function abrirModal(ofertaId) {
   summaryNote.textContent = '';
   document.getElementById('modal-descripcion').innerHTML = '';
   document.getElementById('modal-requisitos').innerHTML = '';
+  // Reset de la visibilidad del bloque "Texto completo del aviso"
+  // — se recalcula tras fetch en base a si hay descripción/requisitos.
+  const _fullTextReset = document.getElementById('modal-descripcion');
+  const _fullTextSeccionReset = _fullTextReset ? _fullTextReset.closest('.modal-seccion') : null;
+  if (_fullTextSeccionReset) _fullTextSeccionReset.hidden = false;
   _renderListInto('modal-req-obligatorios', []);
   _renderListInto('modal-req-deseables', []);
   _renderListInto('modal-req-experiencia', []);
@@ -2106,29 +2111,23 @@ async function abrirModal(ofertaId) {
       suppressHeadings: ['requisitos', 'requisitos principales', 'requisitos del cargo']
     });
 
-    // Oculta la sección completa (título incluido) cuando no hay contenido real.
-    // Si ambas vienen vacías, deja sólo la descripción con un mensaje breve
-    // que invita a revisar las bases, sin duplicar el fallback.
+    // `modal-descripcion` y `modal-requisitos` viven dentro del mismo
+    // <details class="modal-fulltext-details"> en una única `.modal-seccion`.
+    // Si ni descripción ni requisitos traen contenido renderizable, se
+    // oculta el bloque entero "Texto completo del aviso". No se inyecta
+    // fallback acá — las secciones semánticas (funciones/requisitos/...)
+    // o el `NOTE_DATOS_PARCIALES` ya cubren el caso de ofertas pobres.
     const reqEl  = document.getElementById('modal-requisitos');
     const descEl = document.getElementById('modal-descripcion');
-    const reqSeccion  = reqEl  ? reqEl.closest('.modal-seccion')  : null;
-    const descSeccion = descEl ? descEl.closest('.modal-seccion') : null;
-    if (reqHtml) {
-      reqEl.innerHTML = reqHtml;
-      if (reqSeccion) reqSeccion.hidden = false;
-    } else if (reqSeccion) {
-      reqSeccion.hidden = true;
-      reqEl.innerHTML = '';
-    }
-    if (descHtml) {
-      descEl.innerHTML = descHtml;
-      if (descSeccion) descSeccion.hidden = false;
-    } else if (!reqHtml) {
-      descEl.innerHTML = '<p class="modal-empty-fallback">Revisa las bases del concurso para conocer requisitos, funciones y condiciones completas.</p>';
-      if (descSeccion) descSeccion.hidden = false;
-    } else if (descSeccion) {
-      descSeccion.hidden = true;
-      descEl.innerHTML = '';
+    const fullTextSeccion = descEl ? descEl.closest('.modal-seccion') : null;
+    if (!reqHtml && !descHtml) {
+      if (fullTextSeccion) fullTextSeccion.hidden = true;
+      descEl && (descEl.innerHTML = '');
+      reqEl && (reqEl.innerHTML = '');
+    } else {
+      if (fullTextSeccion) fullTextSeccion.hidden = false;
+      descEl && (descEl.innerHTML = descHtml || '');
+      reqEl && (reqEl.innerHTML = reqHtml || '');
     }
 
     // Parser semántico para separar funciones / requisitos / condiciones.

@@ -2266,40 +2266,51 @@ footer {
 .modal-descripcion p { margin: 0 0 8px 0; }
 .modal-descripcion p:last-child { margin-bottom: 0; }
 
-.modal-subgrid {
-  display: grid;
-  gap: 10px;
+/* ═══ ESTRUCTURA FLAT DE SUBSECCIONES ═══════════════════════════════
+   Principio: jerarquía visual máxima de 3 niveles (modal → sección →
+   contenido). Las subcategorías de Requisitos ya no son cajas
+   anidadas con borde propio — pasan a ser `h5 + ul` sueltos dentro
+   de `.modal-subsection-group` (flex column), separados sólo por
+   margin-top. Igual para Funciones/Condiciones/Postulación, que
+   ahora cuelgan un `ul.modal-list` directo de la sección sin
+   envoltorio redundante.
+
+   `.modal-subsection` fue eliminado del DOM; no se mantiene como
+   alias porque introducía un 4º nivel visual injustificado.
+─────────────────────────────────────────────────────────────── */
+.modal-subsection-group {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 2px;
 }
-.modal-subsection {
-  border: 1px solid var(--borde);
-  border-radius: 12px;
-  padding: 10px 12px;
-  background: var(--bg2);
+.modal-subgroup {
+  /* Sin fondo, sin borde: es agrupador semántico, no caja. */
+  display: block;
 }
-.modal-subsection h4 {
-  margin: 0 0 8px;
+.modal-subgroup > h5 {
+  margin: 0 0 4px;
   font-size: 12px;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  color: var(--texto3);
+  font-weight: 600;
+  color: var(--texto2);
+  letter-spacing: 0;
+  text-transform: none;
 }
-.modal-subsection ul {
+.modal-list {
   margin: 0;
-  padding: 0;
-  list-style: none;
-  display: grid;
-  gap: 7px;
+  padding: 0 0 0 18px;
+  list-style: disc;
+  color: var(--acento);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
-.modal-subsection li {
+.modal-list li {
   margin: 0;
   font-size: 14px;
-  line-height: 1.45;
-  color: var(--texto2);
-}
-.modal-subsection li::before {
-  content: '•';
-  color: var(--acento);
-  margin-right: 8px;
+  line-height: 1.55;
+  color: var(--texto);
+  padding-left: 4px;
 }
 .modal-objetivo {
   margin: 0;
@@ -2329,8 +2340,8 @@ footer {
   line-height: 1.45;
 }
 @media (max-width: 640px) {
-  .modal-subsection { padding: 10px; }
-  .modal-subsection li { font-size: 13.5px; line-height: 1.42; }
+  .modal-list li { font-size: 13.5px; line-height: 1.42; }
+  .modal-subsection-group { gap: 12px; }
 }
 
 /* Sección uniforme para alinear requisitos / funciones / descripción */

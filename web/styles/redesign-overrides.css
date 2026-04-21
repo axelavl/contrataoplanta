@@ -3638,10 +3638,23 @@ button:focus-visible,
   }
 }
 
-:root[data-theme="dark"] .modal-subsection,
+/* El bloque "Texto completo del aviso" conserva su caja (es el único
+   contenedor de texto bruto expandible). Las subsecciones de
+   Requisitos/Funciones/Condiciones/Postulación pasaron a `h5 + ul`
+   sin caja (ver `.modal-subsection-group` en index.css) y no
+   necesitan override de dark mode. */
 :root[data-theme="dark"] .modal-fulltext-details {
   background: rgba(18, 26, 43, 0.7);
   border-color: rgba(148, 163, 184, 0.26);
+}
+:root[data-theme="dark"] .modal-subgroup > h5 {
+  color: rgba(255, 255, 255, 0.72);
+}
+:root[data-theme="dark"] .modal-list {
+  color: var(--acento);
+}
+:root[data-theme="dark"] .modal-list li {
+  color: rgba(255, 255, 255, 0.88);
 }
 
 :root[data-theme="dark"] .modal-data-warning-text {
