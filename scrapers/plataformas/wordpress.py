@@ -172,55 +172,78 @@ class WordPressScraper(BaseScraper):
         return None
 
     def _fetch_via_rest_api(self) -> list[dict[str, Any]]:
-        # Solo posts de los últimos 6 meses (empleos activos no son más viejos que eso)
-        cutoff = (datetime.now(timezone.utc) - timedelta(days=180)).strftime("%Y-%m-%dT%H:%M:%S")
-        # Itera todas las páginas de la API REST de WordPress (máx 10 páginas por seguridad)
-        ofertas: list[dict[str, Any]] = []
-        pagina = 1
-        while pagina <= 10:
-            url = f"{self.base_url}/wp-json/wp/v2/posts?per_page=20&page={pagina}&after={cutoff}"
-            try:
-                payload = self.request_json(url)
-            except Exception as exc:
-                if pagina == 1:
-                    self.logger.info(
-                        "evento=wordpress_rest_skip scraper=%s url=%s error=%s",
-                        self.nombre,
-                        url,
-                        exc,
+        # Barrido progresivo: 180 días -> 365 días -> sin "after" (fallback final).
+        # Esto evita desistir por sitios con desfases de fecha o TZ en WP REST.
+        ventanas_dias: list[int | None] = [180, 365, None]
+        for dias in ventanas_dias:
+            ofertas: list[dict[str, Any]] = []
+            pagina = 1
+            while pagina <= 10:
+                query = f"per_page=20&page={pagina}"
+                if dias is not None:
+                    cutoff = (datetime.now(timezone.utc) - timedelta(days=dias)).strftime(
+                        "%Y-%m-%dT%H:%M:%S"
                     )
-                break
+                    query = f"{query}&after={cutoff}"
+                url = f"{self.base_url}/wp-json/wp/v2/posts?{query}"
+                try:
+                    payload = self.request_json(url)
+                except Exception as exc:
+                    if pagina == 1:
+                        self.logger.info(
+                            "evento=wordpress_rest_skip scraper=%s url=%s error=%s",
+                            self.nombre,
+                            url,
+                            exc,
+                        )
+                    break
 
-            if not isinstance(payload, list) or not payload:
-                break
+                if not isinstance(payload, list) or not payload:
+                    break
 
-            for post in payload:
-                title_html = ((post.get("title") or {}).get("rendered")) or ""
-                content_html = ((post.get("content") or {}).get("rendered")) or ""
-                title_text = self._html_to_text(title_html)
-                content_text = self._html_to_text(content_html)
-                if not self._parece_oferta(title_text, content_text):
-                    continue
-                ofertas.append(
-                    {
-                        "title": title_text,
-                        "content_text": content_text,
-                        "date": post.get("date"),
-                        "fecha_cierre": None,
-                        "url": clean_text(post.get("link")),
-                        "pdf_links": self._extract_pdf_links_from_html(
-                            content_html,
-                            clean_text(post.get("link")),
-                        ),
-                    }
-                )
+                for post in payload:
+                    title_html = ((post.get("title") or {}).get("rendered")) or ""
+                    content_html = ((post.get("content") or {}).get("rendered")) or ""
+                    title_text = self._html_to_text(title_html)
+                    content_text = self._html_to_text(content_html)
+                    if not self._parece_oferta(title_text, content_text):
+                        continue
+                    ofertas.append(
+                        {
+                            "title": title_text,
+                            "content_text": content_text,
+                            "date": post.get("date"),
+                            "fecha_cierre": None,
+                            "url": clean_text(post.get("link")),
+                            "pdf_links": self._extract_pdf_links_from_html(
+                                content_html,
+                                clean_text(post.get("link")),
+                            ),
+                        }
+                    )
 
-            # Si la página vino con menos de 20 resultados, no hay más páginas
-            if len(payload) < 20:
-                break
-            pagina += 1
+                # Si la página vino con menos de 20 resultados, no hay más páginas
+                if len(payload) < 20:
+                    break
+                pagina += 1
 
-        return self._deduplicate(ofertas)
+            ofertas_deduplicadas = self._deduplicate(ofertas)
+            if ofertas_deduplicadas:
+                if dias is not None and dias > 180:
+                    self.logger.info(
+                        "evento=wordpress_rest_fallback_window scraper=%s dias=%s total=%s",
+                        self.nombre,
+                        dias,
+                        len(ofertas_deduplicadas),
+                    )
+                if dias is None:
+                    self.logger.info(
+                        "evento=wordpress_rest_fallback_no_after scraper=%s total=%s",
+                        self.nombre,
+                        len(ofertas_deduplicadas),
+                    )
+                return ofertas_deduplicadas
+        return []
 
     def _fetch_via_feed_json(self) -> list[dict[str, Any]]:
         url = f"{self.base_url}/category/concursos-publicos/feed/json"
