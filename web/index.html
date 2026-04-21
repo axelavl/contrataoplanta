@@ -518,7 +518,7 @@
       </div>
 
       <div class="modal-seccion">
-        <div class="modal-seccion-titulo">Resumen ejecutivo</div>
+        <div class="modal-seccion-titulo">Resumen para decidir</div>
         <div class="modal-info-grid" id="modal-info-grid">
           <div class="modal-info-item" id="summary-item-publicacion">
             <div class="modal-info-label">🕒 Publicada</div>
@@ -545,21 +545,79 @@
             <div class="modal-info-val" id="modal-renta">—</div>
           </div>
         </div>
+        <ul class="modal-key-points" id="modal-key-points"></ul>
         <div class="modal-summary-note" id="modal-summary-note" hidden></div>
       </div>
       <div class="modal-seccion">
-        <div class="modal-seccion-titulo">Requisitos principales</div>
-        <div class="modal-rich-text" id="modal-requisitos"></div>
+        <div class="modal-seccion-titulo">Requisitos para postular</div>
+        <div class="modal-subgrid">
+          <div class="modal-subsection" id="sec-req-obligatorios">
+            <h4>Obligatorios</h4>
+            <ul id="modal-req-obligatorios"></ul>
+          </div>
+          <div class="modal-subsection" id="sec-req-deseables">
+            <h4>Deseables</h4>
+            <ul id="modal-req-deseables"></ul>
+          </div>
+          <div class="modal-subsection" id="sec-req-experiencia">
+            <h4>Experiencia</h4>
+            <ul id="modal-req-experiencia"></ul>
+          </div>
+          <div class="modal-subsection" id="sec-req-formacion">
+            <h4>Formación</h4>
+            <ul id="modal-req-formacion"></ul>
+          </div>
+          <div class="modal-subsection" id="sec-req-especialidades">
+            <h4>Especialidades y certificaciones</h4>
+            <ul id="modal-req-especialidades"></ul>
+          </div>
+          <div class="modal-subsection" id="sec-req-competencias">
+            <h4>Competencias y habilidades</h4>
+            <ul id="modal-req-competencias"></ul>
+          </div>
+          <div class="modal-subsection" id="sec-req-documentos">
+            <h4>Documentos exigidos</h4>
+            <ul id="modal-req-documentos"></ul>
+          </div>
+        </div>
       </div>
       <div class="modal-seccion">
-        <div class="modal-seccion-titulo">Descripción</div>
-        <div class="modal-rich-text" id="modal-descripcion"></div>
+        <div class="modal-seccion-titulo">Funciones principales</div>
+        <div class="modal-subsection">
+          <ul id="modal-funciones-list"></ul>
+        </div>
+      </div>
+      <div class="modal-seccion" id="modal-objetivo-wrap" hidden>
+        <div class="modal-seccion-titulo">Objetivo del cargo</div>
+        <p class="modal-objetivo" id="modal-objetivo"></p>
+      </div>
+      <div class="modal-seccion">
+        <div class="modal-seccion-titulo">Condiciones del cargo</div>
+        <div class="modal-subsection">
+          <ul id="modal-condiciones-list"></ul>
+        </div>
+      </div>
+      <div class="modal-seccion" id="modal-postulacion-wrap" hidden>
+        <div class="modal-seccion-titulo">Cómo postular</div>
+        <div class="modal-subsection">
+          <ul id="modal-postulacion-list"></ul>
+        </div>
+      </div>
+      <div class="modal-seccion">
+        <details class="modal-fulltext-details">
+          <summary>Texto completo del aviso</summary>
+          <div class="modal-rich-text" id="modal-descripcion"></div>
+          <div class="modal-rich-text" id="modal-requisitos"></div>
+        </details>
+      </div>
+      <div class="modal-seccion" id="modal-data-warning" hidden>
+        <div class="modal-data-warning-text" id="modal-data-warning-text"></div>
       </div>
     </div>
     <div class="modal-actions">
-      <button class="btn-modal-primary" id="modal-btn-postular">Ir a postular →</button>
+      <button class="btn-modal-primary" id="modal-btn-postular">Ir al portal de postulación →</button>
       <div class="modal-actions-secondary">
-        <button class="btn-modal-sec" id="modal-btn-bases" style="display:none">📄 Bases oficiales</button>
+        <button class="btn-modal-sec" id="modal-btn-bases" style="display:none">📄 Ver bases del concurso</button>
         <button class="btn-modal-sec" id="modal-btn-favorito">♡ Guardar</button>
       </div>
       <div class="modal-share-group" aria-label="Acciones de compartir oferta">

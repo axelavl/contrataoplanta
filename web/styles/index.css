@@ -2266,6 +2266,91 @@ footer {
 .modal-descripcion p { margin: 0 0 8px 0; }
 .modal-descripcion p:last-child { margin-bottom: 0; }
 
+.modal-key-points {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.modal-key-points li {
+  margin: 0;
+  padding: 9px 11px;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--texto2);
+  background: var(--bg2);
+}
+.modal-subgrid {
+  display: grid;
+  gap: 10px;
+}
+.modal-subsection {
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--bg2);
+}
+.modal-subsection h4 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--texto3);
+}
+.modal-subsection ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 7px;
+}
+.modal-subsection li,
+.modal-list-empty {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--texto2);
+}
+.modal-subsection li::before {
+  content: '•';
+  color: var(--acento);
+  margin-right: 8px;
+}
+.modal-objetivo {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--texto2);
+}
+.modal-fulltext-details {
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  background: var(--bg2);
+  padding: 8px 12px 12px;
+}
+.modal-fulltext-details > summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--texto);
+  margin: 4px 0 10px;
+}
+.modal-data-warning-text {
+  border: 1px dashed #F59E0B;
+  background: #FFF7E6;
+  color: #92400E;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+@media (max-width: 640px) {
+  .modal-subsection { padding: 10px; }
+  .modal-subsection li { font-size: 13.5px; line-height: 1.42; }
+  .modal-key-points li { padding: 9px 10px; }
+}
+
 /* Sección uniforme para alinear requisitos / funciones / descripción */
 .modal-seccion .modal-rich-text,
 .modal-seccion > .requisitos-lista,
