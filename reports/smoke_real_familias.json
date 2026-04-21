@@ -1,0 +1,66 @@
+{
+  "generated_at_utc": "2026-04-21T18:23:32Z",
+  "max_offers_per_family": 20,
+  "results": [
+    {
+      "family": "WordPress",
+      "institucion_id": 387,
+      "institucion_nombre": "Municipalidad de Independencia",
+      "url_empleo": "https://www.independencia.cl/trabaja-con-nosotros/",
+      "offers_total": 0,
+      "offers_with_min_fields": 0,
+      "offers_valid_now": 0,
+      "offers_needs_review": 0,
+      "offers_discarded_by_intake": 0,
+      "intake_reason_counts": {},
+      "evaluation_reason_code": "empty_response",
+      "evaluation_validity_status": "unknown_validity",
+      "evaluation_decision": "source_status_only",
+      "evaluation_profile": "wordpress",
+      "sample_urls": [],
+      "notes": [
+        "wordpress_fetch_error=ClientConnectorError: Cannot connect to host www.independencia.cl:443 ssl:default [Network is unreachable]"
+      ]
+    },
+    {
+      "family": "ATS HiringRoom",
+      "institucion_id": 392,
+      "institucion_nombre": "Municipalidad de La Reina",
+      "url_empleo": "https://mlareina.hiringroomcampus.com/",
+      "offers_total": 0,
+      "offers_with_min_fields": 0,
+      "offers_valid_now": 0,
+      "offers_needs_review": 0,
+      "offers_discarded_by_intake": 0,
+      "intake_reason_counts": {},
+      "evaluation_reason_code": "empty_response",
+      "evaluation_validity_status": "unknown_validity",
+      "evaluation_decision": "source_status_only",
+      "evaluation_profile": "ats_hiringroom",
+      "sample_urls": [],
+      "notes": []
+    },
+    {
+      "family": "Playwright",
+      "institucion_id": 145,
+      "institucion_nombre": "Banco Central de Chile",
+      "url_empleo": "https://empleos.bcentral.cl",
+      "offers_total": 0,
+      "offers_with_min_fields": 0,
+      "offers_valid_now": 0,
+      "offers_needs_review": 0,
+      "offers_discarded_by_intake": 0,
+      "intake_reason_counts": {},
+      "evaluation_reason_code": "empty_response",
+      "evaluation_validity_status": "unknown_validity",
+      "evaluation_decision": "source_status_only",
+      "evaluation_profile": "playwright_js",
+      "sample_urls": [],
+      "notes": [
+        "playwright_status=fallback_generic",
+        "playwright_reason=js_render_failed",
+        "playwright_error=Playwright no disponible en entorno"
+      ]
+    }
+  ]
+}
