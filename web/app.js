@@ -315,7 +315,7 @@ function syncSelectPorPagina(opts = {}) {
     : (cfg.opciones.includes(Number(guardadoPorVista)) ? Number(guardadoPorVista) : fallback);
 
   sel.innerHTML = cfg.opciones
-    .map((n) => `<option value="${n}">${n} / pág.</option>`)
+    .map((n) => `<option value="${n}">${n} por página</option>`)
     .join('');
   sel.value = String(siguiente);
   if (siguiente !== anterior) estado.por_pagina = siguiente;
@@ -2074,14 +2074,14 @@ async function abrirModal(ofertaId) {
     const urlPostular = ofertaOk ? o.url_oferta : (basesOk ? o.url_bases : null);
     if (urlPostular) {
       btnPostular.disabled = false;
-      btnPostular.textContent = 'Ir a postular →';
+      btnPostular.textContent = 'Postular →';
       btnPostular.onclick = () => {
         registrarClicPostular(o);
         window.open(urlPostular, '_blank', 'noopener,noreferrer');
       };
     } else {
       btnPostular.disabled = true;
-      btnPostular.textContent = 'Enlace no disponible';
+      btnPostular.textContent = 'Postulación no disponible';
       btnPostular.onclick = null;
     }
 
