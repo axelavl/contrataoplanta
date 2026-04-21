@@ -160,6 +160,27 @@ class RuntimeSource:
     evaluation: Any
 
 
+@dataclass(slots=True)
+class CooldownDecision:
+    source: dict[str, Any]
+    reevaluate: bool
+    reason: str
+
+
+@dataclass(slots=True)
+class RuntimeScraperAssignment:
+    institucion_id: int | None
+    scraper: BaseScraper
+
+
+@dataclass(slots=True)
+class LastEvaluationState:
+    retry_policy: str | None
+    evaluated_at: datetime | None
+    consecutive_zero_extractions: int
+    zero_cooldown_bypass_used: bool
+
+
 def _host(url: str | None) -> str:
     if not url:
         return ""
@@ -238,14 +259,13 @@ def _build_discovery_catalog(
     return items[:limit] if limit else items
 
 
-def _load_last_evaluations() -> dict[int, tuple[str | None, datetime | None]]:
-    """Carga la última retry_policy y evaluated_at por institucion_id desde source_evaluations.
+def _load_last_evaluations() -> dict[int, LastEvaluationState]:
+    """Carga el último estado incremental por institucion_id desde source_evaluations.
 
     Returns:
-        Dict ``{institucion_id: (retry_policy_str, evaluated_at)}``.
-        Las claves son ``int``; el valor puede tener ``None`` en cualquier campo.
+        Dict ``{institucion_id: LastEvaluationState}``.
     """
-    result: dict[int, tuple[str | None, datetime | None]] = {}
+    result: dict[int, LastEvaluationState] = {}
     try:
         with conexion() as conn:
             with conn.cursor() as cur:
@@ -254,14 +274,21 @@ def _load_last_evaluations() -> dict[int, tuple[str | None, datetime | None]]:
                     SELECT DISTINCT ON (institucion_id)
                         institucion_id,
                         retry_policy,
-                        evaluated_at
+                        evaluated_at,
+                        COALESCE((signals_json->>'consecutive_zero_extractions')::int, 0) AS consecutive_zero_extractions,
+                        COALESCE((signals_json->>'zero_cooldown_bypass_used')::boolean, FALSE) AS zero_cooldown_bypass_used
                     FROM source_evaluations
                     WHERE institucion_id IS NOT NULL
                     ORDER BY institucion_id, evaluated_at DESC
                     """
                 )
-                for inst_id, retry_policy, evaluated_at in cur.fetchall():
-                    result[inst_id] = (retry_policy, evaluated_at)
+                for inst_id, retry_policy, evaluated_at, zero_count, bypass_used in cur.fetchall():
+                    result[inst_id] = LastEvaluationState(
+                        retry_policy=retry_policy,
+                        evaluated_at=evaluated_at,
+                        consecutive_zero_extractions=int(zero_count or 0),
+                        zero_cooldown_bypass_used=bool(bypass_used),
+                    )
     except Exception as exc:
         log.warning("No se pudo cargar source_evaluations para cooldown: %s", exc)
     return result
@@ -269,34 +296,47 @@ def _load_last_evaluations() -> dict[int, tuple[str | None, datetime | None]]:
 
 def _partition_by_cooldown(
     sources: list[dict[str, Any]],
-    last_evaluations: dict[int, tuple[str | None, datetime | None]],
+    last_evaluations: dict[int, LastEvaluationState],
     *,
     now: datetime | None = None,
-) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+) -> tuple[list[dict[str, Any]], list[CooldownDecision]]:
     """Separa fuentes en (due, in_cooldown).
 
     ``due`` son las que deben evaluarse ahora.
     ``in_cooldown`` son las que aún no han cumplido su cooldown desde la
     última evaluación y se saltan en esta corrida.
     """
+    COOLDOWN_BYPASS_ZERO_THRESHOLD = 3
     due: list[dict[str, Any]] = []
-    in_cooldown: list[dict[str, Any]] = []
+    decisions: list[CooldownDecision] = []
     _now = now or datetime.now(tz=timezone.utc)
     for source in sources:
         inst_id = source.get("id")
         if inst_id is None:
             due.append(source)
+            decisions.append(CooldownDecision(source=source, reevaluate=True, reason="sin_institucion_id"))
             continue
         entry = last_evaluations.get(int(inst_id))
         if entry is None:
             due.append(source)
+            decisions.append(CooldownDecision(source=source, reevaluate=True, reason="sin_historial"))
             continue
-        retry_policy, last_evaluated_at = entry
-        if should_evaluate_now(retry_policy=retry_policy, last_evaluated_at=last_evaluated_at, now=_now):
+        if should_evaluate_now(retry_policy=entry.retry_policy, last_evaluated_at=entry.evaluated_at, now=_now):
             due.append(source)
+            decisions.append(CooldownDecision(source=source, reevaluate=True, reason="cooldown_vencido"))
         else:
-            in_cooldown.append(source)
-    return due, in_cooldown
+            if entry.consecutive_zero_extractions > COOLDOWN_BYPASS_ZERO_THRESHOLD and not entry.zero_cooldown_bypass_used:
+                due.append(source)
+                decisions.append(CooldownDecision(source=source, reevaluate=True, reason="cooldown_bypass_one_time_zero_threshold"))
+            elif (entry.retry_policy or "").lower() in {"critical", "high"}:
+                due.append(source)
+                decisions.append(CooldownDecision(source=source, reevaluate=True, reason="cooldown_light_recheck_high_priority"))
+            elif entry.consecutive_zero_extractions > 0:
+                due.append(source)
+                decisions.append(CooldownDecision(source=source, reevaluate=True, reason="cooldown_light_recheck_zero_streak"))
+            else:
+                decisions.append(CooldownDecision(source=source, reevaluate=False, reason="cooldown"))
+    return due, decisions
 
 
 async def _evaluate_sources(
@@ -374,49 +414,11 @@ async def _evaluate_sources(
 
         runtime_sources = await asyncio.gather(*[_evaluate_one_safe(source) for source in sources])
 
-    # Persistir evaluaciones con conexión directa limpia (evita estado sucio del pool)
-    import os
-    saved = 0
-    errors = 0
-    try:
-        db_url = os.environ.get("DATABASE_URL") or (
-            f"postgresql://{os.environ['DB_USER']}:{os.environ['DB_PASSWORD']}"
-            f"@{os.environ['DB_HOST']}:{os.environ.get('DB_PORT', 5432)}/{os.environ['DB_NAME']}"
-        )
-        conn_direct = psycopg2.connect(db_url)
-        try:
-            for item in runtime_sources:
-                try:
-                    audit_store.save_source_evaluation(
-                        conn_direct,
-                        source_id=item.fuente_id,
-                        institucion_id=item.institucion.get("id"),
-                        evaluation=item.evaluation,
-                    )
-                    if item.fuente_id is None and item.evaluation.decision == Decision.EXTRACT:
-                        audit_store.save_catalog_event(
-                            conn_direct,
-                            institucion_id=item.institucion.get("id"),
-                            event_type="missing_runtime_source",
-                            detail="La fuente fue evaluada como extraible, pero no existe mapeo fuente_id en el runtime actual.",
-                            payload=item.evaluation.to_record(),
-                        )
-                    saved += 1
-                except Exception as e:
-                    errors += 1
-                    log.debug("Error guardando evaluación de %s: %s", item.institucion.get("nombre", "?"), e)
-            conn_direct.commit()
-        finally:
-            conn_direct.close()
-    except Exception as e:
-        log.warning("Error persistiendo evaluaciones al batch: %s", e)
-    log.info("Evaluaciones persistidas: %d OK, %d errores", saved, errors)
-
     return list(runtime_sources)
 
 
-def _build_scrapers(runtime_sources: list[RuntimeSource]) -> list[BaseScraper]:
-    scrapers: list[BaseScraper] = []
+def _build_scrapers(runtime_sources: list[RuntimeSource]) -> list[RuntimeScraperAssignment]:
+    assignments: list[RuntimeScraperAssignment] = []
     empleos_publicos_agregado = False
 
     for item in runtime_sources:
@@ -444,59 +446,60 @@ def _build_scrapers(runtime_sources: list[RuntimeSource]) -> list[BaseScraper]:
                 str(item.institucion.get("url_empleo") or "").strip()
                 or str(item.institucion.get("sitio_web") or "").strip()
             )
-            scrapers.append(
-                WordPressScraper(
-                    fuente_id=item.fuente_id,
-                    nombre_fuente=str(item.institucion.get("nombre") or item.institucion.get("sigla") or f"wp-{item.institucion.get('id')}"),
-                    url_base=url_base,
-                    sector=item.institucion.get("sector"),
-                    region=item.institucion.get("region"),
-                )
-            )
+            assignments.append(RuntimeScraperAssignment(
+                    institucion_id=item.institucion.get("id"),
+                    scraper=WordPressScraper(
+                        fuente_id=item.fuente_id,
+                        nombre_fuente=str(item.institucion.get("nombre") or item.institucion.get("sigla") or f"wp-{item.institucion.get('id')}"),
+                        url_base=url_base,
+                        sector=item.institucion.get("sector"),
+                        region=item.institucion.get("region"),
+                    ),
+                ))
             continue
 
         if evaluation.recommended_extractor == ExtractorKind.SCRAPER_EXTERNAL_ATS:
             profile_name = item.evaluation.profile_name or ""
             if profile_name == "ats_trabajando":
-                scrapers.append(TrabajandoCLScraper(fuente_id=item.fuente_id, institucion=item.institucion))
+                assignments.append(RuntimeScraperAssignment(institucion_id=item.institucion.get("id"), scraper=TrabajandoCLScraper(fuente_id=item.fuente_id, institucion=item.institucion)))
             elif profile_name == "ats_hiringroom":
-                scrapers.append(HiringRoomScraper(fuente_id=item.fuente_id, institucion=item.institucion))
+                assignments.append(RuntimeScraperAssignment(institucion_id=item.institucion.get("id"), scraper=HiringRoomScraper(fuente_id=item.fuente_id, institucion=item.institucion)))
             elif profile_name == "ats_buk":
-                scrapers.append(BukScraper(fuente_id=item.fuente_id, institucion=item.institucion))
+                assignments.append(RuntimeScraperAssignment(institucion_id=item.institucion.get("id"), scraper=BukScraper(fuente_id=item.fuente_id, institucion=item.institucion)))
             else:
-                scrapers.append(GenericSiteScraper(fuente_id=item.fuente_id, institucion=item.institucion))
+                assignments.append(RuntimeScraperAssignment(institucion_id=item.institucion.get("id"), scraper=GenericSiteScraper(fuente_id=item.fuente_id, institucion=item.institucion)))
             continue
 
         if evaluation.recommended_extractor == ExtractorKind.SCRAPER_PDF_JOBS:
             inst_id = item.institucion.get("id")
             if inst_id == 161:
-                scrapers.append(CarabinerosScraper(fuente_id=item.fuente_id, institucion=item.institucion))
+                assignments.append(RuntimeScraperAssignment(institucion_id=item.institucion.get("id"), scraper=CarabinerosScraper(fuente_id=item.fuente_id, institucion=item.institucion)))
             elif inst_id == 162:
-                scrapers.append(PdiScraper(fuente_id=item.fuente_id, institucion=item.institucion))
+                assignments.append(RuntimeScraperAssignment(institucion_id=item.institucion.get("id"), scraper=PdiScraper(fuente_id=item.fuente_id, institucion=item.institucion)))
             else:
-                scrapers.append(GenericSiteScraper(fuente_id=item.fuente_id, institucion=item.institucion))
+                assignments.append(RuntimeScraperAssignment(institucion_id=item.institucion.get("id"), scraper=GenericSiteScraper(fuente_id=item.fuente_id, institucion=item.institucion)))
             continue
 
         if evaluation.recommended_extractor == ExtractorKind.SCRAPER_CUSTOM_DETAIL:
             profile_name = item.evaluation.profile_name or ""
             if profile_name == "ffaa_waf" or item.institucion.get("id") in {157, 158}:
-                scrapers.append(FfaaScraper(fuente_id=item.fuente_id, institucion=item.institucion))
+                assignments.append(RuntimeScraperAssignment(institucion_id=item.institucion.get("id"), scraper=FfaaScraper(fuente_id=item.fuente_id, institucion=item.institucion)))
             elif item.institucion.get("id") == 161:
-                scrapers.append(CarabinerosScraper(fuente_id=item.fuente_id, institucion=item.institucion))
+                assignments.append(RuntimeScraperAssignment(institucion_id=item.institucion.get("id"), scraper=CarabinerosScraper(fuente_id=item.fuente_id, institucion=item.institucion)))
             elif item.institucion.get("id") == 162:
-                scrapers.append(PdiScraper(fuente_id=item.fuente_id, institucion=item.institucion))
+                assignments.append(RuntimeScraperAssignment(institucion_id=item.institucion.get("id"), scraper=PdiScraper(fuente_id=item.fuente_id, institucion=item.institucion)))
             else:
-                scrapers.append(GenericSiteScraper(fuente_id=item.fuente_id, institucion=item.institucion))
+                assignments.append(RuntimeScraperAssignment(institucion_id=item.institucion.get("id"), scraper=GenericSiteScraper(fuente_id=item.fuente_id, institucion=item.institucion)))
             continue
 
         if evaluation.recommended_extractor == ExtractorKind.SCRAPER_PLAYWRIGHT:
-            scrapers.append(PlaywrightScraper(fuente_id=item.fuente_id, institucion=item.institucion))
+            assignments.append(RuntimeScraperAssignment(institucion_id=item.institucion.get("id"), scraper=PlaywrightScraper(fuente_id=item.fuente_id, institucion=item.institucion)))
             continue
 
         if evaluation.recommended_extractor == ExtractorKind.SCRAPER_GENERIC_FALLBACK:
-            scrapers.append(GenericSiteScraper(fuente_id=item.fuente_id, institucion=item.institucion))
+            assignments.append(RuntimeScraperAssignment(institucion_id=item.institucion.get("id"), scraper=GenericSiteScraper(fuente_id=item.fuente_id, institucion=item.institucion)))
             continue
-    return scrapers
+    return assignments
 
 
 async def _run_scraper(scraper: BaseScraper, sem: asyncio.Semaphore) -> PrecisionReport:
@@ -511,11 +514,109 @@ async def _run_scraper(scraper: BaseScraper, sem: asyncio.Semaphore) -> Precisio
             return report
 
 
-async def _run_scrapers(scrapers: list[BaseScraper]) -> list[PrecisionReport]:
-    if not scrapers:
+async def _run_scrapers(assignments: list[RuntimeScraperAssignment]) -> list[tuple[int | None, PrecisionReport]]:
+    if not assignments:
         return []
     sem = asyncio.Semaphore(MAX_SCRAPERS_CONCURRENT)
-    return list(await asyncio.gather(*[_run_scraper(scraper, sem) for scraper in scrapers]))
+    tasks = [_run_scraper(item.scraper, sem) for item in assignments]
+    reports = await asyncio.gather(*tasks)
+    return [(item.institucion_id, report) for item, report in zip(assignments, reports)]
+
+
+def _compute_consecutive_zero_extractions(
+    *,
+    runtime_sources: list[RuntimeSource],
+    report_rows: list[tuple[int | None, PrecisionReport]],
+    previous_states: dict[int, LastEvaluationState],
+) -> dict[int, int]:
+    report_by_inst: dict[int, PrecisionReport] = {
+        int(inst_id): report
+        for inst_id, report in report_rows
+        if inst_id is not None
+    }
+    updated: dict[int, int] = {}
+    for item in runtime_sources:
+        inst_id = item.institucion.get("id")
+        if inst_id is None:
+            continue
+        inst_id = int(inst_id)
+        prev = previous_states.get(inst_id)
+        prev_count = prev.consecutive_zero_extractions if prev else 0
+        if item.evaluation.decision != Decision.EXTRACT:
+            updated[inst_id] = prev_count
+            continue
+        report = report_by_inst.get(inst_id)
+        if report is None:
+            updated[inst_id] = prev_count
+            continue
+        updated[inst_id] = prev_count + 1 if report.total_encontradas == 0 else 0
+    return updated
+
+
+def _persist_source_evaluations(
+    *,
+    runtime_sources: list[RuntimeSource],
+    audit_store: AuditStore,
+    consecutive_zero_by_inst: dict[int, int],
+    cooldown_reason_by_inst: dict[int, str],
+    previous_states: dict[int, LastEvaluationState],
+) -> None:
+    import os
+    saved = 0
+    errors = 0
+    try:
+        db_url = os.environ.get("DATABASE_URL") or (
+            f"postgresql://{os.environ['DB_USER']}:{os.environ['DB_PASSWORD']}"
+            f"@{os.environ['DB_HOST']}:{os.environ.get('DB_PORT', 5432)}/{os.environ['DB_NAME']}"
+        )
+        conn_direct = psycopg2.connect(db_url)
+        try:
+            for item in runtime_sources:
+                try:
+                    inst_id_raw = item.institucion.get("id")
+                    inst_id = int(inst_id_raw) if inst_id_raw is not None else None
+                    prev_state = previous_states.get(inst_id) if inst_id is not None else None
+                    zero_count = consecutive_zero_by_inst.get(
+                        inst_id,
+                        prev_state.consecutive_zero_extractions if prev_state else 0,
+                    ) if inst_id is not None else 0
+                    bypass_used = prev_state.zero_cooldown_bypass_used if prev_state else False
+                    if cooldown_reason_by_inst.get(inst_id) == "cooldown_bypass_one_time_zero_threshold":
+                        bypass_used = True
+                    if zero_count == 0:
+                        bypass_used = False
+                    item.evaluation.signals_json = {
+                        **(item.evaluation.signals_json or {}),
+                        "consecutive_zero_extractions": zero_count,
+                        "zero_cooldown_bypass_used": bypass_used,
+                    }
+                    if cooldown_reason_by_inst.get(inst_id):
+                        item.evaluation.signals_json["incremental_cooldown_reason"] = cooldown_reason_by_inst[inst_id]
+
+                    audit_store.save_source_evaluation(
+                        conn_direct,
+                        source_id=item.fuente_id,
+                        institucion_id=inst_id,
+                        evaluation=item.evaluation,
+                    )
+                    if item.fuente_id is None and item.evaluation.decision == Decision.EXTRACT:
+                        audit_store.save_catalog_event(
+                            conn_direct,
+                            institucion_id=inst_id,
+                            event_type="missing_runtime_source",
+                            detail="La fuente fue evaluada como extraible, pero no existe mapeo fuente_id en el runtime actual.",
+                            payload=item.evaluation.to_record(),
+                        )
+                    saved += 1
+                except Exception as e:
+                    errors += 1
+                    log.debug("Error guardando evaluación de %s: %s", item.institucion.get("nombre", "?"), e)
+            conn_direct.commit()
+        finally:
+            conn_direct.close()
+    except Exception as e:
+        log.warning("Error persistiendo evaluaciones al batch: %s", e)
+    log.info("Evaluaciones persistidas: %d OK, %d errores", saved, errors)
 
 
 def persistir_corrida(
@@ -652,12 +753,22 @@ async def main(argv: list[str] | None = None) -> int:
         log.info("--ids activo: filtrando a %d instituciones: %s", len(catalog_sources), sorted(target_ids))
 
     # ── Filtrado por cooldown de retry_policy ──────────────────────────────
+    cooldown_reason_by_inst: dict[int, str] = {}
     if args.force_evaluate:
         log.info("--force-evaluate activo: se evaluarán las %d fuentes sin respetar cooldown.", len(catalog_sources))
         sources_to_evaluate = catalog_sources
+        for src in sources_to_evaluate:
+            if src.get("id") is not None:
+                cooldown_reason_by_inst[int(src["id"])] = "force_evaluate"
     else:
         last_evaluations = _load_last_evaluations()
-        sources_to_evaluate, in_cooldown = _partition_by_cooldown(catalog_sources, last_evaluations)
+        sources_to_evaluate, cooldown_decisions = _partition_by_cooldown(catalog_sources, last_evaluations)
+        in_cooldown = [d.source for d in cooldown_decisions if not d.reevaluate]
+        reevaluated_in_cooldown = [d for d in cooldown_decisions if d.reevaluate and d.reason.startswith("cooldown_") and d.reason != "cooldown_vencido"]
+        for d in cooldown_decisions:
+            inst_id = d.source.get("id")
+            if inst_id is not None and d.reevaluate:
+                cooldown_reason_by_inst[int(inst_id)] = d.reason
         if in_cooldown:
             log.info(
                 "Retry-policy cooldown: %d fuentes en cooldown (se saltan), %d fuentes a evaluar ahora.",
@@ -668,11 +779,20 @@ async def main(argv: list[str] | None = None) -> int:
             cooldown_by_policy: dict[str, int] = {}
             for src in in_cooldown:
                 inst_id = src.get("id")
-                policy = (last_evaluations.get(int(inst_id), (None, None))[0] or "unknown") if inst_id else "unknown"
+                policy = last_evaluations.get(int(inst_id)).retry_policy if inst_id and last_evaluations.get(int(inst_id)) else "unknown"
                 cooldown_by_policy[policy] = cooldown_by_policy.get(policy, 0) + 1
             log.info("Distribución cooldown por retry_policy: %s", cooldown_by_policy)
+            for src in in_cooldown:
+                log.info("Fuente omitida por cooldown: id=%s nombre=%s", src.get("id"), src.get("nombre", "?"))
         else:
             log.info("Todas las %d fuentes están listas para evaluación.", len(sources_to_evaluate))
+        if reevaluated_in_cooldown:
+            summary: dict[str, int] = {}
+            for decision in reevaluated_in_cooldown:
+                summary[decision.reason] = summary.get(decision.reason, 0) + 1
+            log.info("Reevaluaciones incrementales en cooldown: %s", summary)
+    if args.force_evaluate:
+        last_evaluations = _load_last_evaluations()
 
     if not sources_to_evaluate:
         log.info("No hay fuentes a evaluar en esta corrida (todas en cooldown). Finalizando.")
@@ -681,13 +801,37 @@ async def main(argv: list[str] | None = None) -> int:
         return 0
 
     runtime_sources = await _evaluate_sources(sources_to_evaluate, audit_store=audit_store, fuentes_index=fuentes_index)
+    for item in runtime_sources:
+        if item.evaluation.decision != Decision.EXTRACT:
+            log.info(
+                "Fuente omitida por evaluador: id=%s nombre=%s decision=%s reason=%s",
+                item.institucion.get("id"),
+                item.institucion.get("nombre", "?"),
+                item.evaluation.decision.value,
+                item.evaluation.reason_code.value if item.evaluation.reason_code else "none",
+            )
     _print_evaluation_summary(runtime_sources)
 
     reports: list[PrecisionReport] = []
+    report_rows: list[tuple[int | None, PrecisionReport]] = []
     if not args.evaluate_only:
-        scrapers = _build_scrapers(runtime_sources)
-        log.info("Scrapers ejecutables en este runtime: %s", len(scrapers))
-        reports = await _run_scrapers(scrapers)
+        assignments = _build_scrapers(runtime_sources)
+        log.info("Scrapers ejecutables en este runtime: %s", len(assignments))
+        report_rows = await _run_scrapers(assignments)
+        reports = [report for _, report in report_rows]
+
+    consecutive_zero_by_inst = _compute_consecutive_zero_extractions(
+        runtime_sources=runtime_sources,
+        report_rows=report_rows,
+        previous_states=last_evaluations,
+    )
+    _persist_source_evaluations(
+        runtime_sources=runtime_sources,
+        audit_store=audit_store,
+        consecutive_zero_by_inst=consecutive_zero_by_inst,
+        cooldown_reason_by_inst=cooldown_reason_by_inst,
+        previous_states=last_evaluations,
+    )
 
     vencidas_cerradas = 0
     try:
