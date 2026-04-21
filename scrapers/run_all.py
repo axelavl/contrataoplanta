@@ -50,7 +50,11 @@ from scrapers.base import (
 )
 from scrapers.frequency_policy import should_evaluate_now
 from scrapers.empleos_publicos import EmpleosPublicosScraper
-from scrapers.runtime_inventory import build_runtime_scraper
+from scrapers.runtime_inventory import (
+    build_runtime_scraper,
+    iter_legacy_rows,
+    iter_runtime_rows,
+)
 from scrapers.evaluation.audit_store import AuditStore
 from scrapers.evaluation.catalog_loader import CatalogLoader
 from scrapers.evaluation.models import (
@@ -721,6 +725,27 @@ def _print_evaluation_summary(runtime_sources: list[RuntimeSource]) -> None:
     log.info("Resumen de gatekeeper: %s", by_decision)
 
 
+def _log_runtime_inventory() -> None:
+    runtime_rows = iter_runtime_rows()
+    legacy_rows = iter_legacy_rows()
+    log.info(
+        "Runtime productivo explícito (%d módulos activos): %s",
+        len(runtime_rows),
+        [
+            f"{row['extractor']}:{row['profile_name']}->{row['class_name']}"
+            for row in runtime_rows
+        ],
+    )
+    log.info(
+        "Legacy deprecados (%d módulos): %s",
+        len(legacy_rows),
+        [
+            f"{row['module']}({row['status']}, retiro={row['retirement_date']})"
+            for row in legacy_rows
+        ],
+    )
+
+
 async def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run all scraping pipeline with gatekeeper.")
     parser.add_argument("--catalog-json", help="Ruta alternativa al catalogo JSON.")
@@ -755,6 +780,7 @@ async def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     log.info("Inicio run_all gatekeeper %s modo=%s", datetime.now().isoformat(timespec="seconds"), args.mode)
+    _log_runtime_inventory()
     t0 = time.monotonic()
     db_enabled = True
     try:

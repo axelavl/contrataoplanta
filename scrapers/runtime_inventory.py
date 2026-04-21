@@ -17,6 +17,8 @@ from scrapers.plataformas.wordpress import WordPressScraper
 
 
 LEGACY_RETIREMENT_DATE = date(2026, 9, 30)
+LEGACY_STATUS_DEPRECATED = "deprecated"
+RUNTIME_STATUS_ACTIVE = "active"
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,14 +27,14 @@ class RuntimeModule:
     profile_name: str
     module: str
     class_name: str
-    status: str = "active"
+    status: str = RUNTIME_STATUS_ACTIVE
 
 
 @dataclass(frozen=True, slots=True)
 class LegacyModule:
     module: str
     replacement: str
-    status: str = "deprecated"
+    status: str = LEGACY_STATUS_DEPRECATED
     retirement_date: date = LEGACY_RETIREMENT_DATE
 
 
@@ -66,6 +68,44 @@ LEGACY_MODULES: tuple[LegacyModule, ...] = (
     LegacyModule("scrapers/trabajando.py", "scrapers.plataformas.trabajando_cl.TrabajandoCLScraper"),
     LegacyModule("scrapers/tvn.py", "scrapers.plataformas.generic_site.GenericSiteScraper"),
 )
+
+LEGACY_MODULE_PATHS: frozenset[str] = frozenset(module.module for module in LEGACY_MODULES)
+
+
+def iter_runtime_rows() -> tuple[dict[str, str], ...]:
+    """Retorna el inventario runtime en un formato serializable/loggable."""
+    rows: list[dict[str, str]] = []
+    for module in PRODUCTION_RUNTIME_MODULES:
+        rows.append(
+            {
+                "extractor": module.extractor.value,
+                "profile_name": module.profile_name,
+                "module": module.module,
+                "class_name": module.class_name,
+                "status": module.status,
+            }
+        )
+    return tuple(rows)
+
+
+def iter_legacy_rows() -> tuple[dict[str, str], ...]:
+    """Retorna legacy deprecados con fecha de retiro explícita."""
+    rows: list[dict[str, str]] = []
+    for module in LEGACY_MODULES:
+        rows.append(
+            {
+                "module": module.module,
+                "replacement": module.replacement,
+                "status": module.status,
+                "retirement_date": module.retirement_date.isoformat(),
+            }
+        )
+    return tuple(rows)
+
+
+def is_legacy_module(module_path: str) -> bool:
+    """Indica si un módulo pertenece al set deprecado del runtime."""
+    return module_path in LEGACY_MODULE_PATHS
 
 
 def build_runtime_scraper(item: Any) -> Any | None:
