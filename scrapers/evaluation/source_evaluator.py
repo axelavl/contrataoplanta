@@ -337,6 +337,8 @@ class SourceEvaluator:
             selection.reason_detail = reason_detail(ReasonCode.MANUAL_REVIEW_REQUIRED)
 
         signals_json = signal_bundle.to_json()
+        extract_threshold_applied = getattr(selection, "extract_threshold_applied", None)
+        manual_threshold_applied = getattr(selection, "manual_threshold_applied", None)
         signals_json.update(
             {
                 "profile": profile.name,
@@ -346,6 +348,8 @@ class SourceEvaluator:
                 **dates.to_json(),
                 "open_calls_status": open_calls_status.value,
                 "age_expiry_evidence": validity.age_expiry_evidence,
+                "extract_threshold_applied": extract_threshold_applied,
+                "manual_threshold_applied": manual_threshold_applied,
             }
         )
 
