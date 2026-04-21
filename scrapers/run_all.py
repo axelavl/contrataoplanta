@@ -18,6 +18,7 @@ import asyncio
 import json
 import sys
 import time
+from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -533,8 +534,24 @@ def persistir_corrida(
         for report in reports
     )
     total_errores = sum(report.errores for report in reports)
+    reason_codes_counter: Counter[str] = Counter()
+    for report in reports:
+        reason_codes_counter.update(report.descartes_por_reason_code)
+    distribucion_descartes_reason_code = dict(
+        sorted(reason_codes_counter.items(), key=lambda item: (-item[1], item[0]))
+    )
+    top_reason_codes_por_fuente = {
+        report.institucion: [
+            {"reason_code": reason_code, "count": count}
+            for reason_code, count in report.top_reason_codes()
+        ]
+        for report in reports
+        if report.descartes_por_reason_code
+    }
     detail = {
         "reports": {report.institucion: report.to_dict() for report in reports},
+        "distribucion_descartes_reason_code": distribucion_descartes_reason_code,
+        "top_reason_codes_por_fuente": top_reason_codes_por_fuente,
         "evaluations": {
             "total": len(evaluations),
             "extract": sum(1 for item in evaluations if item.evaluation.decision == Decision.EXTRACT),
@@ -699,6 +716,13 @@ async def main(argv: list[str] | None = None) -> int:
     duration_seconds = time.monotonic() - t0
     if reports:
         print("\n" + generar_reporte(reports))
+        top_reason_codes_por_fuente = {
+            report.institucion: report.top_reason_codes()
+            for report in reports
+            if report.descartes_por_reason_code
+        }
+        if top_reason_codes_por_fuente:
+            log.info("Top reason_code de descarte por fuente: %s", top_reason_codes_por_fuente)
     persistir_corrida(
         evaluations=runtime_sources,
         reports=reports,

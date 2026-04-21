@@ -864,6 +864,7 @@ class PrecisionReport:
     guardadas: int = 0
     ya_existian: int = 0
     errores: int = 0
+    descartes_por_reason_code: dict[str, int] = field(default_factory=dict)
 
     @property
     def tasa_precision(self) -> float:
@@ -878,6 +879,19 @@ class PrecisionReport:
             f"precisión: {self.tasa_precision:5.1f}%"
         )
 
+    def registrar_descarte_reason_code(self, reason_code: str | None) -> None:
+        reason = (reason_code or "desconocido").strip() or "desconocido"
+        self.descartes_por_reason_code[reason] = self.descartes_por_reason_code.get(reason, 0) + 1
+
+    def top_reason_codes(self, limite: int = 3) -> list[tuple[str, int]]:
+        if limite <= 0:
+            return []
+        items = sorted(
+            self.descartes_por_reason_code.items(),
+            key=lambda item: (-item[1], item[0]),
+        )
+        return items[:limite]
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "institucion": self.institucion,
@@ -890,6 +904,16 @@ class PrecisionReport:
             "ya_existian": self.ya_existian,
             "errores": self.errores,
             "tasa_precision": round(self.tasa_precision, 2),
+            "descartes_por_reason_code": dict(
+                sorted(
+                    self.descartes_por_reason_code.items(),
+                    key=lambda item: (-item[1], item[0]),
+                )
+            ),
+            "top_reason_codes": [
+                {"reason_code": reason_code, "count": count}
+                for reason_code, count in self.top_reason_codes()
+            ],
         }
 
 
@@ -1429,6 +1453,7 @@ class BaseScraper(abc.ABC):
         motivo: str,
         keyword: str,
     ) -> None:
+        self.report.registrar_descarte_reason_code(motivo)
         motivo_legacy = motivo
         if motivo_legacy not in {
             "keyword_negativa",
