@@ -105,9 +105,13 @@ def _generic_max_candidate_urls(evaluation: Any) -> int:
     profile_name = (evaluation.profile_name or "").strip().lower()
     if profile_name:
         profile = _SOURCE_PROFILES_BY_NAME.get(profile_name)
-        if profile and profile.max_candidate_urls:
+        if profile and profile.max_candidate_urls is not None:
             return profile.max_candidate_urls
-    retry_policy = str(getattr(evaluation, "retry_policy", "") or "").strip().lower()
+    retry_policy_obj = getattr(evaluation, "retry_policy", None)
+    if isinstance(retry_policy_obj, RetryPolicy):
+        retry_policy = retry_policy_obj.value
+    else:
+        retry_policy = str(retry_policy_obj or "").strip().lower()
     try:
         tier = FrequencyTier(retry_policy)
     except ValueError:
