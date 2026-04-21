@@ -27,7 +27,7 @@ from .models import (
 )
 from .reason_codes import ReasonCode, reason_detail
 from .signals import build_signal_bundle
-from .source_profiles import match_source_profile
+from .source_profiles import classify_source_profile
 from .validity_rules import assess_validity
 
 
@@ -36,6 +36,7 @@ JS_MARKERS = ("enable javascript", "requires javascript", "__next", "window.__",
 WORDPRESS_MARKERS = ("wp-content", "wp-json", "wordpress", "wp-includes")
 NEWS_PATH_MARKERS = ("/noticias", "/news", "/prensa", "/blog", "/comunicados")
 ATS_HOST_MARKERS = ("trabajando.cl", "hiringroom", "buk.cl")
+RUNTIME_WORDPRESS_MARKERS = ("wp-content", "wp-includes", "wp-json", "wordpress")
 
 
 def _norm(value: str | None) -> str:
@@ -96,6 +97,29 @@ def _extract_pdf_links(soup: BeautifulSoup, source_url: str) -> list[str]:
     return links
 
 
+def _runtime_hints(page: FetchedPage, soup: BeautifulSoup) -> tuple[str, ...]:
+    hints: set[str] = set()
+    blobs: list[str] = [page.final_url.lower()]
+    for script in soup.find_all("script", src=True):
+        blobs.append(str(script.get("src") or "").lower())
+    for meta in soup.find_all("meta"):
+        blobs.append(str(meta.get("name") or "").lower())
+        blobs.append(str(meta.get("property") or "").lower())
+        blobs.append(str(meta.get("content") or "").lower())
+    for anchor in soup.find_all("a", href=True):
+        blobs.append(str(anchor.get("href") or "").lower())
+
+    if any(marker in blob for blob in blobs for marker in RUNTIME_WORDPRESS_MARKERS):
+        hints.add("cms_wordpress")
+    if any("trabajando.cl" in blob for blob in blobs):
+        hints.add("ats_trabajando")
+    if any("hiringroom" in blob for blob in blobs):
+        hints.add("ats_hiringroom")
+    if any("buk.cl" in blob or "/buk/" in blob for blob in blobs):
+        hints.add("ats_buk")
+    return tuple(sorted(hints))
+
+
 def _infer_page_type(*, page: FetchedPage, soup: BeautifulSoup, profile: SourceProfile) -> tuple[PageType, str | None]:
     final_url = page.final_url.lower()
     content_type = (page.content_type or "").lower()
@@ -154,7 +178,8 @@ class SourceEvaluator:
 
     async def evaluate(self, source: dict[str, Any], *, historical_noise_ratio: float = 0.0) -> EvaluationResult:
         source_url = str(source.get("url_empleo") or source.get("sitio_web") or "").strip()
-        profile = match_source_profile(source)
+        profile_match = classify_source_profile(source)
+        profile = profile_match.profile
         if not source_url:
             return EvaluationResult(
                 source_url="",
@@ -251,6 +276,9 @@ class SourceEvaluator:
             )
 
         soup = BeautifulSoup(page.body, "html.parser")
+        runtime_hints = _runtime_hints(page, soup)
+        profile_match = classify_source_profile(source, runtime_hints=runtime_hints)
+        profile = profile_match.profile
         page_type, cms = _infer_page_type(page=page, soup=soup, profile=profile)
         body_text = soup.get_text(" ", strip=True)
         title = soup.title.get_text(" ", strip=True) if soup.title else None
@@ -319,6 +347,8 @@ class SourceEvaluator:
         signals_json.update(
             {
                 "profile": profile.name,
+                "profile_matched_by": profile_match.matched_by,
+                "runtime_hints": list(runtime_hints),
                 "page_title": title,
                 "pdf_links_count": len(pdf_links),
                 "pdf_links": pdf_links[:5],
@@ -326,6 +356,14 @@ class SourceEvaluator:
                 "open_calls_status": open_calls_status.value,
             }
         )
+        if profile_match.source_requires_override:
+            signals_json.update(
+                {
+                    "source_requires_override": True,
+                    "override_backlog_severity": profile_match.backlog_severity,
+                    "override_evidence": profile_match.evidence,
+                }
+            )
 
         return EvaluationResult(
             source_url=source_url,

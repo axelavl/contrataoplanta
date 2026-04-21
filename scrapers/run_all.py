@@ -401,6 +401,16 @@ async def _evaluate_sources(
                             detail="La fuente fue evaluada como extraible, pero no existe mapeo fuente_id en el runtime actual.",
                             payload=item.evaluation.to_record(),
                         )
+                    if item.evaluation.signals_json.get("source_requires_override"):
+                        severity = item.evaluation.signals_json.get("override_backlog_severity") or "medium"
+                        detail = f"La fuente requiere override para clasificarse en runtime (severity={severity})."
+                        audit_store.save_catalog_event(
+                            conn_direct,
+                            institucion_id=item.institucion.get("id"),
+                            event_type="source_requires_override",
+                            detail=detail,
+                            payload=item.evaluation.to_record(),
+                        )
                     saved += 1
                 except Exception as e:
                     errors += 1

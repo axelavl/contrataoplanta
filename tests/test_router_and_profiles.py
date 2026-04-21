@@ -9,7 +9,7 @@ from scrapers.evaluation.models import (
     PageType,
     ValidityStatus,
 )
-from scrapers.evaluation.source_profiles import match_source_profile
+from scrapers.evaluation.source_profiles import classify_source_profile, match_source_profile
 
 
 def test_ats_profiles_route_trabajando_hiringroom_buk():
@@ -58,3 +58,24 @@ def test_external_ats_selection_is_extractable():
     )
     assert selection.recommended_extractor == ExtractorKind.SCRAPER_EXTERNAL_ATS
     assert selection.decision == Decision.EXTRACT
+
+
+def test_runtime_hints_match_ats_before_override():
+    match = classify_source_profile(
+        {"url_empleo": "https://example.gob.cl/empleos", "plataforma_empleo": "portal custom"},
+        runtime_hints=("ats_hiringroom",),
+    )
+    assert match.profile.name == "ats_hiringroom"
+    assert match.matched_by == "runtime"
+    assert match.source_requires_override is False
+
+
+def test_override_only_after_auto_detection_fails_and_reports_severity():
+    match = classify_source_profile(
+        {"url_empleo": "https://example.gob.cl/empleos", "plataforma_empleo": "Trabajando.cl"},
+        runtime_hints=(),
+    )
+    assert match.profile.name == "ats_trabajando"
+    assert match.matched_by == "override"
+    assert match.source_requires_override is True
+    assert match.backlog_severity == "high"
