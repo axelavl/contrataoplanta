@@ -8,6 +8,7 @@ from urllib.parse import urljoin, urlparse
 
 from bs4 import BeautifulSoup
 
+from classification.policy import classify_offer_candidate
 from scrapers.base import (
     BaseScraper,
     OfertaRaw,
@@ -19,44 +20,6 @@ from scrapers.base import (
     parse_renta,
 )
 
-
-GENERIC_JOB_KEYWORDS = (
-    "concurso",
-    "convocatoria",
-    "vacante",
-    "llamado",
-    "cargo",
-    "postulacion",
-    "postulación",
-    "honorario",
-    "contrata",
-    "planta",
-    "bases",
-    "seleccion",
-    "selección",
-    "trabaja con nosotros",
-    "trabaje con nosotros",
-    "empleo",
-    "oportunidad laboral",
-    "requisitos",
-    "funciones",
-    "recepcion de antecedentes",
-    "recepción de antecedentes",
-)
-
-GENERIC_NEGATIVE_KEYWORDS = (
-    "subsidio",
-    "beca",
-    "taller",
-    "noticia",
-    "feria",
-    "licitacion",
-    "licitación",
-    "tramite",
-    "trámite",
-    "cuenta publica",
-    "cuenta pública",
-)
 
 DEFAULT_PATH_CANDIDATES: tuple[str, ...] = (
     "/concursos-publicos",
@@ -358,11 +321,13 @@ class GenericSiteScraper(BaseScraper):
         hay_texto = clean_text(f"{title} {content}")
         if len(hay_texto) < 8:
             return False
-        key = normalize_key(hay_texto)
-        if any(normalize_key(keyword) in key for keyword in GENERIC_NEGATIVE_KEYWORDS):
-            if not any(normalize_key(keyword) in key for keyword in GENERIC_JOB_KEYWORDS + self.extra_keywords):
-                return False
-        return any(normalize_key(keyword) in key for keyword in GENERIC_JOB_KEYWORDS + self.extra_keywords)
+        evaluation = classify_offer_candidate(
+            title=title,
+            content_text=content,
+            url=self.url_empleo or self.sitio_web,
+            extra_positive_keywords=self.extra_keywords,
+        )
+        return evaluation.likely_offer
 
     def _extract_pdf_links_from_node(self, node: Any, source_url: str) -> list[str]:
         links: list[str] = []
