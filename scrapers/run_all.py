@@ -119,6 +119,14 @@ def _generic_max_candidate_urls(evaluation: Any) -> int:
     return profile_for_tier(tier).max_candidate_urls
 
 
+def _generic_scraper_for(item: RuntimeSource, evaluation: Any) -> GenericSiteScraper:
+    return GenericSiteScraper(
+        fuente_id=item.fuente_id,
+        institucion=item.institucion,
+        max_candidate_urls=_generic_max_candidate_urls(evaluation),
+    )
+
+
 def _bypass_evaluation(source: dict[str, Any]) -> EvaluationResult | None:
     """
     Si source_overrides.json declara un kind personalizado conocido, devuelve un
@@ -485,13 +493,7 @@ def _build_scrapers(runtime_sources: list[RuntimeSource]) -> list[BaseScraper]:
             elif profile_name == "ats_buk":
                 scrapers.append(BukScraper(fuente_id=item.fuente_id, institucion=item.institucion))
             else:
-                scrapers.append(
-                    GenericSiteScraper(
-                        fuente_id=item.fuente_id,
-                        institucion=item.institucion,
-                        max_candidate_urls=_generic_max_candidate_urls(evaluation),
-                    )
-                )
+                scrapers.append(_generic_scraper_for(item, evaluation))
             continue
 
         if evaluation.recommended_extractor == ExtractorKind.SCRAPER_PDF_JOBS:
@@ -501,13 +503,7 @@ def _build_scrapers(runtime_sources: list[RuntimeSource]) -> list[BaseScraper]:
             elif inst_id == 162:
                 scrapers.append(PdiScraper(fuente_id=item.fuente_id, institucion=item.institucion))
             else:
-                scrapers.append(
-                    GenericSiteScraper(
-                        fuente_id=item.fuente_id,
-                        institucion=item.institucion,
-                        max_candidate_urls=_generic_max_candidate_urls(evaluation),
-                    )
-                )
+                scrapers.append(_generic_scraper_for(item, evaluation))
             continue
 
         if evaluation.recommended_extractor == ExtractorKind.SCRAPER_CUSTOM_DETAIL:
@@ -519,13 +515,7 @@ def _build_scrapers(runtime_sources: list[RuntimeSource]) -> list[BaseScraper]:
             elif item.institucion.get("id") == 162:
                 scrapers.append(PdiScraper(fuente_id=item.fuente_id, institucion=item.institucion))
             else:
-                scrapers.append(
-                    GenericSiteScraper(
-                        fuente_id=item.fuente_id,
-                        institucion=item.institucion,
-                        max_candidate_urls=_generic_max_candidate_urls(evaluation),
-                    )
-                )
+                scrapers.append(_generic_scraper_for(item, evaluation))
             continue
 
         if evaluation.recommended_extractor == ExtractorKind.SCRAPER_PLAYWRIGHT:
@@ -533,13 +523,7 @@ def _build_scrapers(runtime_sources: list[RuntimeSource]) -> list[BaseScraper]:
             continue
 
         if evaluation.recommended_extractor == ExtractorKind.SCRAPER_GENERIC_FALLBACK:
-            scrapers.append(
-                GenericSiteScraper(
-                    fuente_id=item.fuente_id,
-                    institucion=item.institucion,
-                    max_candidate_urls=_generic_max_candidate_urls(evaluation),
-                )
-            )
+            scrapers.append(_generic_scraper_for(item, evaluation))
             continue
     return scrapers
 
