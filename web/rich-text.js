@@ -962,20 +962,200 @@
 
   // ─────────────────────────────────────────────────────────────
   // 7.c Parsing semántico para ficha (funciones, requisitos, etc.)
+  //
+  // Estrategia: clasificación en CASCADA (first-match-wins). Cada
+  // sentencia se evalúa contra una lista ordenada de reglas; la
+  // primera que matchea se queda con el ítem y el resto no lo ve.
+  // Cada regla retorna un score (0-1) — si es < 0.4, el ítem va al
+  // pool residual y NO se inyecta como obligatorio por defecto.
+  //
+  // Patrones secundarios (`CONDITIONS_RE`, `POSTULATION_RE`) se
+  // consultan antes que requisitos porque son más acotados y evitan
+  // falsos positivos (ej: "realizar jornada..." no es requisito).
   // ─────────────────────────────────────────────────────────────
-  var REQUIREMENT_PATTERNS = {
-    obligatorios: /\b(excluyente|obligatori[oa]s?|requisito[s]?\s+m[ií]nimo|debe\s+contar|indispensable)\b/i,
-    deseables: /\b(deseable|valorad[oa]|idealmente|se\s+valorar[aá])\b/i,
-    experiencia: /\b(experienc|a[nñ]os?\s+de\s+experiencia|trayectoria)\b/i,
-    formacion: /\b(t[ií]tulo|profesi[oó]n|grado\s+acad[eé]mico|formaci[oó]n|universitari|t[eé]cnico\s+nivel)\b/i,
-    especialidades: /\b(especialidad|especializaci[oó]n|licencia|certificad|acreditaci[oó]n|registro\s+(sis|superintendencia|nacional)|diplomado|curso)\b/i,
-    competencias: /\b(competenci|habilidad|liderazgo|trabajo\s+en\s+equipo|comunicaci[oó]n|proactividad|conocimientos?)\b/i,
-    documentos: /\b(documentos?|antecedentes?|curriculum|cv|c[eé]dula|fotocopia|declaraci[oó]n|certificado\s+de\s+t[ií]tulo|certificado\s+de\s+antecedentes)\b/i
-  };
-  var CONDITIONS_RE = /\b(renta|remuneraci[oó]n|jornada|contrata|planta|honorarios|horario|turno|vacante|lugar\s+de\s+desempe[nñ]o|duraci[oó]n)\b/i;
+  var CONDITIONS_RE = /\b(renta|remuneraci[oó]n|jornada|honorarios|horario|turno|vacante|lugar\s+de\s+desempe[nñ]o|duraci[oó]n|modalidad\s+(presencial|remot|h[ií]brid))\b/i;
   var POSTULATION_RE = /\b(postulaci[oó]n|postular|portal|enviar|adjuntar|plazo|cronograma|etapa|comisi[oó]n|entrevista)\b/i;
   var OBJECTIVE_HEADER_RE = /\b(objetivo\s+del\s+cargo|misi[oó]n\s+del\s+cargo)\b/i;
   var BROKEN_FUNCTION_RE = /\b(funciones?\s+de\s+la\s+especialidad\s+tales\s+como|tales\s+como|para)\s*$/i;
+
+  // Prefijos redundantes que aparecen como cola de encabezado embebido
+  // dentro de un bullet ya clasificado. Al aplicar `stripRedundantPrefix`
+  // con el bloque correcto, se retira "Formación educacional:" del bullet
+  // cuando ese bullet ya vive bajo el bloque "Formación".
+  var BLOCK_PREFIXES = {
+    obligatorios: [
+      /^requisitos?(\s+obligatorios?|\s+m[ií]nimos?|\s+excluyentes?|\s+del\s+cargo|\s+generales?|\s+legales?)?\s*[:\-–—]\s*/i,
+    ],
+    deseables: [
+      /^requisitos?\s+deseables?\s*[:\-–—]\s*/i,
+      /^(se\s+valorar[aá]|idealmente|preferentemente|deseables?)\s*[:\-–—]\s*/i,
+    ],
+    formacion: [
+      /^formaci[oó]n(\s+educacional|\s+acad[eé]mica|\s+profesional)?\s*[:\-–—]\s*/i,
+      /^nivel\s+educacional\s*[:\-–—]\s*/i,
+      /^estudios?\s*[:\-–—]\s*/i,
+      /^t[ií]tulo\s+(profesional|t[eé]cnico|acad[eé]mico|requerido|exigido)\s*[:\-–—]\s*/i,
+    ],
+    experiencia: [
+      /^experiencia(\s+laboral|\s+profesional|\s+previa|\s+requerida|\s+deseable|\s+espec[ií]fica)?\s*[:\-–—]\s*/i,
+      /^trayectoria\s*[:\-–—]\s*/i,
+    ],
+    especialidades: [
+      /^(especializaci[oó]n|especialidad)(\s+y\s+capacitaci[oó]n)?\s*[:\-–—]\s*/i,
+      /^capacitaci[oó]n\s*[:\-–—]\s*/i,
+      /^cursos?\s*[:\-–—]\s*/i,
+      /^licencias?(\s+requeridas?|\s+exigidas?)?\s*[:\-–—]\s*/i,
+      /^certificaciones?\s*[:\-–—]\s*/i,
+      /^acreditaciones?\s*[:\-–—]\s*/i,
+    ],
+    competencias: [
+      /^competencias?(\s+(requeridas?|conductuales|t[eé]cnicas?|espec[ií]ficas?))?\s*[:\-–—]\s*/i,
+      /^habilidades?(\s+(blandas?|t[eé]cnicas?|interpersonales?))?\s*[:\-–—]\s*/i,
+      /^conocimientos?(\s+(requeridos?|claves?|espec[ií]ficos?|t[eé]cnicos?))?\s*[:\-–—]\s*/i,
+    ],
+    documentos: [
+      /^documentos?(\s+(requeridos?|exigidos?|a\s+presentar|a\s+adjuntar))?\s*[:\-–—]\s*/i,
+      /^documentaci[oó]n\s+(requerida|exigida|solicitada)\s*[:\-–—]\s*/i,
+      /^antecedentes?(\s+(requeridos?|exigidos?|a\s+presentar))?\s*[:\-–—]\s*/i,
+    ],
+    condiciones: [
+      /^condiciones?(\s+(del\s+cargo|del\s+contrato|operativas?|laborales?|contractuales?))?\s*[:\-–—]\s*/i,
+    ],
+    funciones: [
+      /^funciones?(\s+(principales|espec[ií]ficas?|del\s+cargo|generales))?\s*[:\-–—]\s*/i,
+      /^tareas?(\s+principales|\s+del\s+cargo)?\s*[:\-–—]\s*/i,
+      /^responsabilidades?\s*[:\-–—]\s*/i,
+    ],
+  };
+
+  function stripRedundantPrefix(text, blockName) {
+    var patterns = BLOCK_PREFIXES[blockName] || [];
+    if (!patterns.length) return text;
+    var cleaned = String(text || '');
+    // Hasta 2 niveles: cubre el caso "Formación educacional: Estudios: Ing. Civil"
+    for (var level = 0; level < 2; level++) {
+      var changed = false;
+      for (var i = 0; i < patterns.length; i++) {
+        if (patterns[i].test(cleaned)) {
+          cleaned = cleaned.replace(patterns[i], '').trim();
+          changed = true;
+          break;
+        }
+      }
+      if (!changed) break;
+    }
+    // Capitalizar primera letra tras el strip para consistencia visual.
+    if (cleaned && /^[a-záéíóúñ]/.test(cleaned)) {
+      cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+    }
+    return cleaned;
+  }
+
+  // Reglas de clasificación en CASCADA. El orden importa: la primera
+  // regla que matchea se queda con el ítem. Los tests están pensados
+  // como un embudo de lo más específico (docs que exigen verbo
+  // documental) a lo más permisivo (obligatorios con adjetivo). Cada
+  // regla incluye un score de confianza.
+  //
+  // Principios:
+  // - Documentos exige verbo de acción documental (presentar/adjuntar/
+  //   remitir/acompañar) para evitar capturar "Certificado en X" como
+  //   documento cuando es en realidad una certificación académica.
+  // - Licencias/cert va DESPUÉS de documentos y pide sustantivo
+  //   educacional (licencia|curso|acreditación|...) sin verbo documental.
+  // - Experiencia exige cuantificación ("2 años", "mínimo 3 años") O
+  //   un sustantivo fuerte (trayectoria, experiencia previa/laboral/en).
+  // - Formación pide nivel educacional formal (título, licenciatura,
+  //   ingeniero, bachiller) sin verbo documental.
+  // - Competencias sólo acepta "conocimientos" si el ítem explícitamente
+  //   acota el dominio ("conocimientos de/en X"), no la palabra suelta.
+  // - Obligatorios/deseables aplican SOLO con adjetivos calificadores.
+  // Orden de la cascada (primer match gana):
+  //   1. Documentos — más específico (verbo documental + sustantivo).
+  //   2. Deseables  — qualifier que acá decidimos tratar como bucket
+  //                    propio antes que dominios (experiencia, etc.)
+  //                    porque el usuario espera ver "deseables" como
+  //                    sección separada en el render.
+  //   3. Experiencia — cuantificación de años o trayectoria.
+  //   4. Formación  — niveles educacionales formales.
+  //   5. Especialidades/licencias — cursos, licencias, diplomados, etc.
+  //   6. Competencias — liderazgo, habilidades técnicas acotadas.
+  //   7. Obligatorios — sólo con adjetivo explícito. Es el último para
+  //                    no absorber sentencias que caerían mejor en
+  //                    una categoría de dominio.
+  // Si nada matchea con confianza ≥ 0.4, cae a residual.
+  var CLASSIFICATION_RULES = [
+    {
+      name: 'documentos',
+      confidence: 0.85,
+      test: function (t) {
+        return /\b(presentar|adjuntar|acompa[nñ]ar|remitir|aportar)\b/i.test(t)
+            && /\b(certificad[oa]\s+(de\s+antecedentes|de\s+t[ií]tulo|de\s+nacimiento|m[eé]dico)|fotocopia|curriculum|cv\b|c[eé]dula|declaraci[oó]n\s+jurada|antecedentes\s+(personales|penales|acad[eé]micos)|expediente)\b/i.test(t);
+      },
+    },
+    {
+      name: 'deseables',
+      confidence: 0.75,
+      test: function (t) {
+        return /\b(deseable|preferentemente|idealmente|valorable|se\s+valorar[aá]|ser[aá]\s+un\s+plus)\b/i.test(t);
+      },
+    },
+    {
+      name: 'experiencia',
+      confidence: 0.8,
+      test: function (t) {
+        // Acepta tanto "N años de experiencia" como "Experiencia de N años",
+        // "Experiencia previa/laboral/profesional/en X/demostrable/acreditada"
+        // y "trayectoria". "Mínimo N años" también cae acá.
+        return /\b(\d+\s+a[nñ]os?\s+de\s+experiencia|experiencia\s+de\s+\d+\s+a[nñ]os?|experiencia\s+m[ií]nima\s+de\s+\d+\s+a[nñ]os?|m[ií]nimo\s+\d+\s+a[nñ]os?|experiencia\s+(previa|laboral|profesional|en\s+\w+|demostrable|comprobable|acreditada)|trayectoria)\b/i.test(t);
+      },
+    },
+    {
+      name: 'formacion',
+      confidence: 0.8,
+      test: function (t) {
+        if (/\b(presentar|adjuntar|remitir)\b/i.test(t)) return false;
+        return /\b(licencia\s+de\s+ense[nñ]anza\s+media|ense[nñ]anza\s+media\s+(completa|rendida)|t[ií]tulo\s+(profesional|t[eé]cnico|universitario|acad[eé]mico|de\s+\w+)|grado\s+acad[eé]mico|ingenier[oa]|abogad[oa]|licenciatura|bachiller\s+en|magister|m[aá]ster|doctorado|egresad[oa]\s+de)\b/i.test(t);
+      },
+    },
+    {
+      name: 'especialidades',
+      confidence: 0.8,
+      test: function (t) {
+        if (/\b(presentar|adjuntar|remitir|aportar)\b/i.test(t)) return false;
+        return /\b(licencia\s+(de\s+conducir|clase\s+[a-z]|tipo\s+[a-z])|acreditaci[oó]n|curso\s+(de|en|para)|especializaci[oó]n\s+(en|de)|certificaci[oó]n\s+(en|de)|diplomado\s+(en|de)|registro\s+(sis|superintendencia|nacional|de\s+prestador)|colegiatura)\b/i.test(t);
+      },
+    },
+    {
+      name: 'competencias',
+      confidence: 0.75,
+      test: function (t) {
+        return /\b(liderazgo|trabajo\s+en\s+equipo|comunicaci[oó]n\s+efectiva|proactividad|capacidad\s+(de|para)\s+\w+|habilidad\s+(de|para)\s+\w+|manejo\s+de\s+(office|excel|word|sistemas?|herramientas?|\w+)|dominio\s+de\s+\w+|conocimientos?\s+(de|en)\s+\w+)\b/i.test(t);
+      },
+    },
+    {
+      name: 'obligatorios',
+      confidence: 0.7,
+      test: function (t) {
+        return /\b(obligatori[oa]s?|excluyente|indispensable|requerid[oa]s?|requisito\s+m[ií]nimo|debe\s+contar|debe\s+poseer|debe\s+acreditar)\b/i.test(t);
+      },
+    },
+  ];
+
+  // Clasifica una oración individual. Devuelve `null` si la confianza
+  // no supera el umbral; en ese caso el ítem cae al pool residual.
+  // Umbral bajo (0.4) porque preferimos mostrar poco que ensuciar un
+  // bloque con contenido ambiguo — la sección residual se conserva
+  // y baja al bloque "Texto completo del aviso".
+  function classifyRequirementItem(text) {
+    for (var i = 0; i < CLASSIFICATION_RULES.length; i++) {
+      var rule = CLASSIFICATION_RULES[i];
+      if (rule.test(text)) {
+        return { category: rule.name, confidence: rule.confidence };
+      }
+    }
+    return null;
+  }
 
   function splitSemanticSentences(text) {
     if (!text) return [];
@@ -1009,11 +1189,13 @@
     return out;
   }
 
+  // Señales fuertes de que una oración es un requisito (no una función).
+  // Usado como veto al inicio de `looksLikeFunctionSentence`.
+  var REQ_SIGNAL_RE = /\b(obligatori|excluyente|indispensable|requerid[oa]s?|debe\s+(contar|poseer|acreditar)|a[nñ]os?\s+de\s+experiencia|experiencia\s+(de|en|previa|laboral|profesional)|trayectoria|t[ií]tulo\s+(profesional|t[eé]cnico)|grado\s+acad[eé]mico|licencia\s+de\s+ense[nñ]anza)\b/i;
+
   function looksLikeFunctionSentence(sentence) {
     if (!sentence) return false;
-    if (REQUIREMENT_PATTERNS.obligatorios.test(sentence) ||
-        REQUIREMENT_PATTERNS.experiencia.test(sentence) ||
-        REQUIREMENT_PATTERNS.formacion.test(sentence)) return false;
+    if (REQ_SIGNAL_RE.test(sentence)) return false;
     var head = sentence.split(/\s+/).slice(0, 4).join(' ');
     var verbMatch = head.match(new RegExp('^(' + ACTION_VERBS_PATTERN + ')\\b', 'i'));
     if (!verbMatch) return false;
@@ -1049,6 +1231,7 @@
       funciones: [],
       condiciones: [],
       postulacion: [],
+      residual: [],
       requisitos: {
         obligatorios: [],
         deseables: [],
@@ -1056,49 +1239,74 @@
         formacion: [],
         especialidades: [],
         competencias: [],
-        documentos: []
-      }
+        documentos: [],
+      },
     };
 
+    // Cascada por sentencia. Cada sentencia cae en UNA sola categoría.
+    // El orden prioriza clasificación de requisitos sobre postulacion
+    // para evitar que "presentar certificado al postular" caiga en
+    // postulacion en vez de en documentos.
+    //
+    //   1. Funciones — verbo de acción al inicio + ≥5 palabras + no
+    //      matchea señales de requisitos (REQ_SIGNAL_RE).
+    //   2. Requisitos.* — cascade de reglas en CLASSIFICATION_RULES.
+    //      Si matchea con confianza ≥ 0.4, gana y aplicamos
+    //      stripRedundantPrefix al bullet.
+    //   3. Postulación — URL/portal/plazo/etapa (sentencias que hablan
+    //      de cómo/cuándo postular, no de qué documentos presentar).
+    //   4. Condiciones — keyword contextual (renta/jornada/horario/
+    //      modalidad) sin verbo de acción líder.
+    //   5. Residual — se expone para el bloque "Texto completo del
+    //      aviso"; NO se inyecta en obligatorios como fallback.
     for (var i = 0; i < all.length; i++) {
       var s = all[i];
-      if (looksLikeFunctionSentence(s)) out.funciones.push(s);
-      if (CONDITIONS_RE.test(s)) out.condiciones.push(s);
-      if (POSTULATION_RE.test(s)) out.postulacion.push(s);
+      if (!s) continue;
 
-      if (REQUIREMENT_PATTERNS.documentos.test(s)) out.requisitos.documentos.push(s);
-      else if (REQUIREMENT_PATTERNS.experiencia.test(s)) out.requisitos.experiencia.push(s);
-      else if (REQUIREMENT_PATTERNS.formacion.test(s)) out.requisitos.formacion.push(s);
-      else if (REQUIREMENT_PATTERNS.especialidades.test(s)) out.requisitos.especialidades.push(s);
-      else if (REQUIREMENT_PATTERNS.competencias.test(s)) out.requisitos.competencias.push(s);
-      else if (REQUIREMENT_PATTERNS.deseables.test(s)) out.requisitos.deseables.push(s);
-      else if (REQUIREMENT_PATTERNS.obligatorios.test(s)) out.requisitos.obligatorios.push(s);
+      if (looksLikeFunctionSentence(s)) {
+        out.funciones.push(s);
+        continue;
+      }
+
+      var classification = classifyRequirementItem(s);
+      if (classification) {
+        var cleaned = stripRedundantPrefix(s, classification.category);
+        // Si tras el prefix strip el ítem queda muy corto, es ruido
+        // (probablemente era sólo un header embebido). Va a residual.
+        if (cleaned.length < 10) {
+          out.residual.push(s);
+        } else {
+          out.requisitos[classification.category].push(cleaned);
+        }
+        continue;
+      }
+
+      if (POSTULATION_RE.test(s)) {
+        out.postulacion.push(s);
+        continue;
+      }
+
+      if (CONDITIONS_RE.test(s)) {
+        out.condiciones.push(s);
+        continue;
+      }
+
+      out.residual.push(s);
     }
 
-    out.funciones = dedupeSentenceList(out.funciones, 10).filter(function (s) { return !BROKEN_FUNCTION_RE.test(s); });
-    out.condiciones = dedupeSentenceList(out.condiciones, 8);
+    out.funciones = dedupeSentenceList(out.funciones, 10)
+      .filter(function (t) { return !BROKEN_FUNCTION_RE.test(t); });
+    out.condiciones = dedupeSentenceList(out.condiciones, 8)
+      .map(function (t) { return stripRedundantPrefix(t, 'condiciones'); });
     out.postulacion = dedupeSentenceList(out.postulacion, 5);
-    out.requisitos.obligatorios = dedupeSentenceList(out.requisitos.obligatorios, 8);
-    out.requisitos.deseables = dedupeSentenceList(out.requisitos.deseables, 8);
-    out.requisitos.experiencia = dedupeSentenceList(out.requisitos.experiencia, 8);
-    out.requisitos.formacion = dedupeSentenceList(out.requisitos.formacion, 8);
-    out.requisitos.especialidades = dedupeSentenceList(out.requisitos.especialidades, 8);
-    out.requisitos.competencias = dedupeSentenceList(out.requisitos.competencias, 8);
-    out.requisitos.documentos = dedupeSentenceList(out.requisitos.documentos, 8);
-
-    // Fallback conservador: si no hay obligatorios pero sí requisitos generales,
-    // usar frases de requisitos no clasificadas desde el texto de requisitos.
-    if (!out.requisitos.obligatorios.length) {
-      var residualReqs = reqSentences.filter(function (s) {
-        return !REQUIREMENT_PATTERNS.deseables.test(s) &&
-               !REQUIREMENT_PATTERNS.experiencia.test(s) &&
-               !REQUIREMENT_PATTERNS.formacion.test(s) &&
-               !REQUIREMENT_PATTERNS.especialidades.test(s) &&
-               !REQUIREMENT_PATTERNS.competencias.test(s) &&
-               !REQUIREMENT_PATTERNS.documentos.test(s);
-      });
-      out.requisitos.obligatorios = dedupeSentenceList(residualReqs, 6);
-    }
+    out.requisitos.obligatorios = dedupeSentenceList(out.requisitos.obligatorios, 6);
+    out.requisitos.deseables = dedupeSentenceList(out.requisitos.deseables, 6);
+    out.requisitos.experiencia = dedupeSentenceList(out.requisitos.experiencia, 6);
+    out.requisitos.formacion = dedupeSentenceList(out.requisitos.formacion, 6);
+    out.requisitos.especialidades = dedupeSentenceList(out.requisitos.especialidades, 6);
+    out.requisitos.competencias = dedupeSentenceList(out.requisitos.competencias, 6);
+    out.requisitos.documentos = dedupeSentenceList(out.requisitos.documentos, 6);
+    out.residual = dedupeSentenceList(out.residual, 20);
 
     return out;
   }
@@ -1151,7 +1359,9 @@
     splitByActionVerbs: splitByActionVerbs,
     splitTitleCaseRunOn: splitTitleCaseRunOn,
     splitFlexibleParagraph: splitFlexibleParagraph,
-    buildSemanticSections: buildSemanticSections
+    buildSemanticSections: buildSemanticSections,
+    classifyRequirementItem: classifyRequirementItem,
+    stripRedundantPrefix: stripRedundantPrefix
   };
 
   // Compatibilidad con llamadas existentes: truncado por defecto activado.
