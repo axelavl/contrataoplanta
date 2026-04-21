@@ -18,8 +18,10 @@ import asyncio
 import json
 import sys
 import time
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -54,6 +56,7 @@ from scrapers.evaluation.models import (
     JobRelevance, OpenCallsStatus, PageType,
     RetryPolicy, ValidityStatus, EvaluationResult,
 )
+from scrapers.evaluation.reason_codes import ReasonCode, reason_detail
 from scrapers.evaluation.source_evaluator import SourceEvaluator
 from scrapers.source_status import ScraperKind, classify_source
 from scrapers.plataformas.buk import BukScraper
@@ -96,6 +99,53 @@ _POLICIA_PROFILES = {
     161: (ExtractorKind.SCRAPER_PDF_JOBS, "carabineros_pdf_first"),
     162: (ExtractorKind.SCRAPER_PDF_JOBS, "pdi_pdf_first"),
 }
+
+
+@lru_cache(maxsize=1)
+def _playwright_runtime_available() -> tuple[bool, str | None]:
+    """Verifica si Playwright puede lanzar Chromium realmente en este runtime."""
+    try:
+        from playwright.sync_api import sync_playwright
+    except Exception as exc:
+        return False, f"Playwright import failed: {exc.__class__.__name__}: {exc}"
+
+    try:
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(headless=True)
+            browser.close()
+        return True, None
+    except Exception as exc:
+        return False, f"Playwright launch failed: {exc.__class__.__name__}: {exc}"
+
+
+def _enforce_playwright_capability(runtime_sources: list[RuntimeSource]) -> None:
+    available, error_detail = _playwright_runtime_available()
+    if available:
+        return
+
+    for item in runtime_sources:
+        evaluation = item.evaluation
+        if evaluation.recommended_extractor != ExtractorKind.SCRAPER_PLAYWRIGHT:
+            continue
+        evaluation.decision = Decision.SOURCE_STATUS_ONLY
+        evaluation.recommended_extractor = None
+        evaluation.reason_code = ReasonCode.PLAYWRIGHT_RUNTIME_UNAVAILABLE
+        evaluation.reason_detail = reason_detail(
+            ReasonCode.PLAYWRIGHT_RUNTIME_UNAVAILABLE,
+            fallback="Playwright runtime no disponible para rendering JS.",
+        )
+        evaluation.retry_policy = RetryPolicy.HIGH
+        with suppress(AttributeError):
+            signals = dict(getattr(evaluation, "signals_json", None) or {})
+            if error_detail:
+                signals["playwright_runtime_error"] = error_detail[:400]
+            signals["playwright_runtime_available"] = False
+            evaluation.signals_json = signals
+        log.warning(
+            "Fuente %s (id=%s) requiere SCRAPER_PLAYWRIGHT, pero runtime no disponible. Se marca SOURCE_STATUS_ONLY.",
+            item.institucion.get("nombre", "?"),
+            item.institucion.get("id"),
+        )
 
 
 def _bypass_evaluation(source: dict[str, Any]) -> EvaluationResult | None:
@@ -681,6 +731,7 @@ async def main(argv: list[str] | None = None) -> int:
         return 0
 
     runtime_sources = await _evaluate_sources(sources_to_evaluate, audit_store=audit_store, fuentes_index=fuentes_index)
+    _enforce_playwright_capability(runtime_sources)
     _print_evaluation_summary(runtime_sources)
 
     reports: list[PrecisionReport] = []
