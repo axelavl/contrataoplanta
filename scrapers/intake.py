@@ -327,6 +327,9 @@ def assess_vigencia(
     fecha_publicacion: Any,
     fecha_cierre: Any,
     today: date | None = None,
+    *,
+    motivo_cierre_vencido: str = "fecha_cierre_vencida",
+    motivo_publicacion_180_sin_cierre: str = "publicacion_excede_180_dias_sin_cierre",
 ) -> tuple[bool, str | None, bool]:
     """Devuelve (descartar, motivo, needs_review) según vigencia del aviso.
 
@@ -340,7 +343,7 @@ def assess_vigencia(
     publi = _coerce_date(fecha_publicacion)
 
     if cierre and cierre < today:
-        return True, "fecha_cierre_vencida", False
+        return True, motivo_cierre_vencido, False
 
     if cierre and cierre >= today:
         # Hay cierre futuro válido → confiamos en él incluso si la
@@ -352,7 +355,7 @@ def assess_vigencia(
         if edad > ANTIGUEDAD_DESCARTE_DIAS:
             return True, "publicacion_excede_365_dias", False
         if edad > ANTIGUEDAD_REVISION_DIAS:
-            return True, "publicacion_excede_180_dias_sin_cierre", False
+            return True, motivo_publicacion_180_sin_cierre, False
         if edad > ANTIGUEDAD_OK_DIAS:
             return False, None, True
 
@@ -434,10 +437,25 @@ def intake_validate_offer(
         decision.add_review("texto_contiene_indicadores_no_laborales")
 
     # 5. Vigencia / antigüedad
+    plataforma = _norm(offer.get("plataforma_empleo") or offer.get("plataforma") or "")
+    url_norm = _norm(url)
+    is_wordpress_offer = (
+        "wordpress" in plataforma
+        or "/wp-content/" in url_norm
+        or "/wp-json/" in url_norm
+    )
+    motivo_cierre = "wordpress_expired_deadline" if is_wordpress_offer else "fecha_cierre_vencida"
+    motivo_180 = (
+        "wordpress_old_without_deadline"
+        if is_wordpress_offer
+        else "publicacion_excede_180_dias_sin_cierre"
+    )
     descartar, motivo_v, review_v = assess_vigencia(
         offer.get("fecha_publicacion"),
         offer.get("fecha_cierre"),
         today=today,
+        motivo_cierre_vencido=motivo_cierre,
+        motivo_publicacion_180_sin_cierre=motivo_180,
     )
     if descartar:
         return decision.reject(motivo_v or "vigencia_invalida")

@@ -1846,6 +1846,7 @@ class LegacyBaseScraper(abc.ABC):
             "fecha_cierre": fecha_cierre,
             "url_oferta": clean_text(normalized.get("url_oferta") or normalized.get("url_original")),
             "url_bases": clean_text(normalized.get("url_bases")) or None,
+            "plataforma_empleo": clean_text(normalized.get("plataforma_empleo")) or None,
             "estado": estado,
         }
 
