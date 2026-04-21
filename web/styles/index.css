@@ -2447,28 +2447,58 @@ footer {
   .footer-inner { grid-template-columns: 1fr; gap: 24px; }
   .footer-bottom { flex-direction: column; gap: 4px; text-align: center; }
   .stat-grid { grid-template-columns: 1fr 1fr; }
+  /* ═══ CONTROLES DE LISTADO EN MÓVIL ═════════════════════════════════
+     Desktop apila los controles en una sola fila horizontal. En móvil
+     eso genera 4-5 elementos compitiendo por un ancho chico y fuentes
+     que bajan a 11px. Se reestructura en dos filas claras:
+       · Fila 1: acciones (Limpiar / Compartir) — full-width si visibles
+       · Fila 2a: Ordenar por (prioridad: 100% del ancho disponible)
+       · Fila 2b: Por página + vista (secundarios, comparten línea)
+  ─────────────────────────────────────────────────────────────────── */
   .resultados-controles {
     width: 100%;
     grid-template-columns: 1fr;
     justify-content: stretch;
-    gap: 6px;
+    gap: 8px;
   }
-  .resultados-acciones,
-  .resultados-preferencias {
+  .resultados-acciones {
     justify-content: stretch;
     width: 100%;
+    gap: 8px;
   }
-  .resultados-acciones .btn-copiar-busqueda,
-  .resultados-preferencias .ctrl-select,
-  .resultados-preferencias .vista-btns {
+  .resultados-acciones .btn-copiar-busqueda {
     flex: 1;
     min-width: 0;
   }
-  .resultados-preferencias .ctrl-sep,
-  .resultados-acciones .ctrl-sep {
-    display: none;
+  .resultados-preferencias {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    width: 100%;
+    gap: 6px 8px;
   }
-  .ctrl-select { font-size: 11px; padding: 0 22px 0 8px; }
+  /* Ordenar por: toma su propia línea, full width */
+  .resultados-preferencias .sort-wrap {
+    width: 100%;
+    grid-column: 1 / -1;
+  }
+  /* Por página + vista: comparten línea con peso equilibrado */
+  .resultados-preferencias > .ctrl-select:not(.ctrl-select--sort) {
+    grid-column: 1;
+    grid-row: 2;
+    width: 100%;
+    font-size: 13px;
+    padding: 0 28px 0 12px;
+  }
+  .resultados-preferencias .vista-btns {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+  }
+  .resultados-preferencias .ctrl-sep,
+  .resultados-acciones .ctrl-sep { display: none; }
+  .sort-wrap-label { font-size: 12.5px; }
+  .ctrl-select--sort { font-size: 13.5px; font-weight: 600; }
+  .ctrl-select { font-size: 13px; }
   /* Sidebar: hide heavy widgets on mobile */
   .sidebar .widget:has(.hist-bar-wrap) { display: none; }
   .sidebar .widget:has(#masactivas-lista) { display: none; }
