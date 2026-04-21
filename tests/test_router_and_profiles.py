@@ -58,3 +58,63 @@ def test_external_ats_selection_is_extractable():
     )
     assert selection.recommended_extractor == ExtractorKind.SCRAPER_EXTERNAL_ATS
     assert selection.decision == Decision.EXTRACT
+
+
+def test_ats_profile_uses_permissive_threshold_for_layout_noise():
+    profile = match_source_profile({"url_empleo": "https://empresa.hiringroom.com/jobs", "plataforma_empleo": "HiringRoom"})
+    selection = select_extractor(
+        profile,
+        availability=Availability.OK,
+        page_type=PageType.ATS_EXTERNAL,
+        job_relevance=JobRelevance.UNCERTAIN,
+        validity_status=ValidityStatus.UNKNOWN_VALIDITY,
+        confidence=0.68,
+    )
+    assert selection.decision == Decision.EXTRACT
+    assert selection.extract_threshold_applied == 0.65
+    assert selection.manual_threshold_applied == 0.45
+
+
+def test_empleos_publicos_not_over_filtered_by_noise():
+    profile = match_source_profile({"url_empleo": "https://www.empleospublicos.cl/"})
+    selection = select_extractor(
+        profile,
+        availability=Availability.OK,
+        page_type=PageType.GENERAL_PAGE,
+        job_relevance=JobRelevance.UNCERTAIN,
+        validity_status=ValidityStatus.UNKNOWN_VALIDITY,
+        confidence=0.5,
+    )
+    assert selection.recommended_extractor == ExtractorKind.SCRAPER_EMPLEOS_PUBLICOS
+    assert selection.decision == Decision.EXTRACT
+
+
+def test_wordpress_profile_uses_stricter_thresholds():
+    profile = match_source_profile({"url_empleo": "https://muni-ejemplo.cl/trabaja-con-nosotros", "plataforma_empleo": "WordPress"})
+    selection = select_extractor(
+        profile,
+        availability=Availability.OK,
+        page_type=PageType.WORDPRESS_POST,
+        job_relevance=JobRelevance.JOB_LIKE,
+        validity_status=ValidityStatus.UNKNOWN_VALIDITY,
+        confidence=0.75,
+    )
+    assert selection.decision == Decision.MANUAL_REVIEW
+    assert selection.extract_threshold_applied == 0.8
+    assert selection.manual_threshold_applied == 0.6
+
+
+def test_generic_profile_keeps_global_default_thresholds():
+    profile = match_source_profile({"url_empleo": "https://www.servicio-no-clasificado.gob.cl/empleos"})
+    selection = select_extractor(
+        profile,
+        availability=Availability.OK,
+        page_type=PageType.GENERAL_PAGE,
+        job_relevance=JobRelevance.UNCERTAIN,
+        validity_status=ValidityStatus.UNKNOWN_VALIDITY,
+        confidence=0.58,
+    )
+    assert profile.name == "generic_site"
+    assert selection.decision == Decision.MANUAL_REVIEW
+    assert selection.extract_threshold_applied == 0.75
+    assert selection.manual_threshold_applied == 0.55

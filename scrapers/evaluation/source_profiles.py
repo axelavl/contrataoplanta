@@ -14,6 +14,8 @@ PROFILES: tuple[SourceProfile, ...] = (
         page_type_priors={PageType.LISTING_PAGE: 0.8, PageType.DETAIL_PAGE: 0.9},
         retry_policy=RetryPolicy.CRITICAL,
         extractor_hint=ExtractorKind.SCRAPER_EMPLEOS_PUBLICOS,
+        extract_threshold=0.65,
+        manual_threshold=0.45,
         notes="Fuente centralizada y confiable del Servicio Civil.",
     ),
     SourceProfile(
@@ -73,6 +75,8 @@ PROFILES: tuple[SourceProfile, ...] = (
         page_type_priors={PageType.ATS_EXTERNAL: 0.95},
         retry_policy=RetryPolicy.HIGH,
         extractor_hint=ExtractorKind.SCRAPER_EXTERNAL_ATS,
+        extract_threshold=0.65,
+        manual_threshold=0.45,
         notes="Portal ATS conocido: Trabajando.cl.",
     ),
     SourceProfile(
@@ -82,6 +86,8 @@ PROFILES: tuple[SourceProfile, ...] = (
         page_type_priors={PageType.ATS_EXTERNAL: 0.95},
         retry_policy=RetryPolicy.HIGH,
         extractor_hint=ExtractorKind.SCRAPER_EXTERNAL_ATS,
+        extract_threshold=0.65,
+        manual_threshold=0.45,
         notes="Portal ATS conocido: HiringRoom.",
     ),
     SourceProfile(
@@ -91,6 +97,8 @@ PROFILES: tuple[SourceProfile, ...] = (
         page_type_priors={PageType.ATS_EXTERNAL: 0.95},
         retry_policy=RetryPolicy.HIGH,
         extractor_hint=ExtractorKind.SCRAPER_EXTERNAL_ATS,
+        extract_threshold=0.65,
+        manual_threshold=0.45,
         notes="Portal ATS conocido: Buk.",
     ),
     SourceProfile(
@@ -108,6 +116,8 @@ PROFILES: tuple[SourceProfile, ...] = (
         page_type_priors={PageType.WORDPRESS_POST: 0.9, PageType.WORDPRESS_LISTING: 0.85},
         retry_policy=RetryPolicy.LOW,
         extractor_hint=ExtractorKind.SCRAPER_WORDPRESS_JOBS,
+        extract_threshold=0.8,
+        manual_threshold=0.6,
         notes="WordPress municipal o institucional con REST API y fallback HTML.",
     ),
     SourceProfile(
