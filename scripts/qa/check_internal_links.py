@@ -2,11 +2,33 @@
 from pathlib import Path
 import re
 import sys
-from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parents[2]
 WEB = ROOT / 'web'
 HTMLS = list(WEB.glob('*.html'))
+
+# Rutas servidas dinámicamente por FastAPI (SSR) — no existen como
+# archivos y no las podemos validar con el filesystem. Ver
+# `api/routers/web.py` para el catálogo canónico de endpoints.
+#
+# Si agregas una ruta SSR nueva al backend y quieres enlazarla desde el
+# HTML estático, agrégala a esta lista de prefijos.
+SSR_PREFIXES = (
+    '/oferta/',
+    '/share/oferta/',
+    '/empleos/region/',
+    '/empleos/sector/',
+    '/empleos/institucion/',
+    '/api/',
+    '/health',
+    '/sitemap.xml',
+    '/robots.txt',
+)
+
+
+def is_ssr_route(path: str) -> bool:
+    return any(path == p.rstrip('/') or path.startswith(p) for p in SSR_PREFIXES)
+
 
 errors = []
 for html in HTMLS:
@@ -16,6 +38,8 @@ for html in HTMLS:
             continue
         path = href.split('#', 1)[0].split('?', 1)[0]
         if not path:
+            continue
+        if path.startswith('/') and is_ssr_route(path):
             continue
         if path.startswith('/'):
             candidate = (ROOT / path.lstrip('/')).resolve()
