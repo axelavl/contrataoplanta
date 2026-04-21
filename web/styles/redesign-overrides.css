@@ -2876,3 +2876,248 @@ button:focus-visible,
   border-left: none;
   border-right: none;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   UX MOBILE POLISH (abril 2026) — listado + detalle.
+
+   Dos objetivos:
+   1. LISTADO: el cargo es el foco. Institución baja, menos chips, renta
+      con más peso, footer sin border que sume ruido.
+   2. DETALLE: el primer pantallazo entrega cargo + ubicación + renta +
+      cierre sin scroll. Header compacto, resumen denso, secciones
+      largas con jerarquía más clara.
+
+   Todo dentro de `@media (max-width: 600px)` — desktop intacto.
+   ══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  /* ── LISTADO · Tarjeta de oferta ──────────────────────────────── */
+
+  .oferta-card {
+    padding: 14px 14px 12px;
+    border-radius: 12px;
+  }
+
+  /* Logo más chico — libera ancho para el texto del cargo. */
+  .oferta-header {
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .oferta-logo {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+  }
+
+  /* Institución: pasa de "shouty" (uppercase + bold + azul) a subline
+     discreta. El lector ya tiene al cargo como ancla principal. */
+  .oferta-institucion {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: var(--texto3, #6b7280) !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    margin-bottom: 3px !important;
+    -webkit-line-clamp: 1 !important;
+    line-clamp: 1 !important;
+  }
+  :root[data-theme="dark"] .oferta-institucion {
+    color: rgba(255, 255, 255, 0.58) !important;
+  }
+
+  /* Cargo: promovido. Más peso, mejor ritmo tipográfico. */
+  .oferta-cargo {
+    font-size: 17px !important;
+    font-weight: 600 !important;
+    line-height: 1.22 !important;
+    margin-bottom: 8px !important;
+    color: var(--navy-ink, var(--azul)) !important;
+  }
+  .oferta-cargo-link {
+    text-decoration: none;   /* quita el subrayado en mobile — el cargo ya es visualmente distinto */
+  }
+
+  /* Badges: ocultamos sector (redundante con región + tipo en mobile).
+     Dejamos tipo (Contrata/Planta/…) y región — dos chips máximo. */
+  .oferta-tipo-wrap {
+    gap: 5px;
+    margin-bottom: 2px;
+  }
+  .oferta-tipo-wrap .badge-sector { display: none; }
+  .oferta-tipo-wrap .badge {
+    font-size: 10.5px;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  /* Línea de metadata: renta como ancla → más peso, más tamaño.
+     El resto (ciudad, jornada, frescura) queda en secundario. */
+  .oferta-detalles {
+    gap: 6px 12px;
+    margin-bottom: 8px;
+    font-size: 11.5px;
+    align-items: center;
+  }
+  .oferta-renta {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    color: var(--texto, var(--azul)) !important;
+    margin-right: 4px;
+    letter-spacing: -0.01em;
+  }
+  .oferta-renta--muted {
+    font-size: 11.5px !important;
+    font-weight: 500 !important;
+  }
+  .oferta-detalle {
+    color: var(--texto2, #374151);
+    gap: 4px;
+  }
+  .oferta-detalle svg { opacity: 0.45; }
+  .oferta-frescura {
+    font-size: 10.5px;
+    padding: 2px 7px;
+  }
+
+  /* Footer: sin border-top (reduce ruido visual), inline en 1 fila
+     cuando entre — plazo a la izquierda, botón como ancla derecha. */
+  .oferta-footer {
+    border-top: none !important;
+    padding-top: 6px !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 10px !important;
+  }
+  .oferta-plazo {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 12.5px;
+  }
+  .oferta-acciones {
+    width: auto !important;
+    flex: 0 0 auto;
+  }
+  .btn-detalle {
+    flex: 0 0 auto !important;
+    padding: 8px 18px !important;
+    font-size: 13px !important;
+    min-height: 38px;
+  }
+
+  /* Favorito: tappeable pero sin dominar la esquina. */
+  .btn-fav-card {
+    top: 10px !important;
+    right: 10px !important;
+    width: 34px;
+    height: 34px;
+  }
+
+  /* ── DETALLE · Modal ──────────────────────────────────────────── */
+
+  /* Header: kicker + institución en UNA línea separados por middot.
+     Antes eran 2 renglones apilados → bajamos ~12px de alto. */
+  .modal-header {
+    padding: 14px 18px 12px !important;
+  }
+  .modal-kicker {
+    display: inline;
+    font-size: 10px !important;
+    opacity: 0.85;
+  }
+  .modal-institucion {
+    display: inline !important;
+    font-size: 12.5px !important;
+    margin-bottom: 8px !important;
+    font-weight: 600;
+  }
+  /* Si el kicker existe y la institución también, muestra un separador
+     punto entre ellos. Sin cambios en el markup. */
+  .modal-kicker:not(:empty) + .modal-institucion[hidden="false"]::before,
+  .modal-kicker:not(:empty) + .modal-institucion:not([hidden])::before {
+    content: '  ·  ';
+    color: rgba(255, 255, 255, 0.38);
+    font-weight: 400;
+  }
+  .modal-cargo {
+    font-size: 20px !important;
+    line-height: 1.2 !important;
+    margin: 6px 0 8px 0 !important;
+    padding-left: 0 !important;
+    border-left: none !important;
+  }
+  .modal-header #modal-badges { gap: 5px !important; }
+  .modal-header .badge {
+    font-size: 10.5px !important;
+    padding: 2px 7px !important;
+  }
+
+  /* Alerta de plazo: muy compacta — ya no domina el primer viewport. */
+  .modal-plazo-alert {
+    padding: 8px 12px !important;
+    margin-bottom: 12px !important;
+    gap: 10px !important;
+  }
+  .modal-plazo-icon {
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 12px !important;
+  }
+  .modal-plazo-label { font-size: 12.5px !important; }
+  .modal-plazo-fecha { font-size: 11px !important; }
+
+  /* Resumen ejecutivo: siempre 2 columnas. Items pequeños pero legibles.
+     Renta y cierre se destacan con weight extra via modifier. */
+  .modal-info-grid[data-count]:not([data-count="1"]) {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px !important;
+  }
+  .modal-info-item {
+    padding: 8px 10px !important;
+  }
+  .modal-info-label {
+    font-size: 9.5px !important;
+    letter-spacing: 0.3px !important;
+  }
+  .modal-info-val {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+  }
+  /* Destaca renta y fecha de cierre — los 2 datos más accionables. */
+  #summary-item-renta .modal-info-val,
+  #summary-item-cierre .modal-info-val {
+    color: var(--azul, var(--navy));
+    font-weight: 700 !important;
+  }
+  :root[data-theme="dark"] #summary-item-renta .modal-info-val,
+  :root[data-theme="dark"] #summary-item-cierre .modal-info-val {
+    color: var(--acento) !important;
+  }
+
+  /* Body del modal: más denso, secciones más juntas. */
+  .modal-body { padding: 14px 16px 12px !important; }
+  .modal-seccion { margin-bottom: 16px !important; }
+  .modal-seccion-titulo {
+    font-size: 11px !important;
+    margin-bottom: 8px !important;
+    padding-left: 10px !important;
+    border-left-width: 3px !important;
+  }
+
+  /* Rich-text: line-height ajustada para lectura móvil cómoda. */
+  .modal-rich-text {
+    font-size: 13.5px !important;
+    line-height: 1.62 !important;
+  }
+  .modal-rich-text li { padding-left: 20px !important; }
+
+  /* Actions: botón primario alto y ancla. Share group más pequeño. */
+  .modal-actions {
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+    gap: 8px !important;
+  }
+  .modal-share-group {
+    gap: 10px !important;
+    padding-top: 6px !important;
+  }
+  .share-btn { width: 38px !important; height: 38px !important; }
+  .share-btn svg { width: 16px !important; height: 16px !important; }
+}
