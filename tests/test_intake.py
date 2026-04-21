@@ -239,6 +239,16 @@ class IntakeValidateOfferTests(unittest.TestCase):
         self.assertTrue(d.discard)
         self.assertEqual(d.motivo_descarte, "fecha_cierre_vencida")
 
+    def test_wordpress_cierre_pasado_descarta_con_motivo_especifico(self):
+        d = intake_validate_offer(
+            self._offer(
+                fecha_cierre=date.today() - timedelta(days=2),
+                plataforma_empleo="wordpress",
+            )
+        )
+        self.assertTrue(d.discard)
+        self.assertEqual(d.motivo_descarte, "wordpress_expired_deadline")
+
     def test_renta_inverosimil_se_limpia_y_marca_review(self):
         offer = self._offer(
             renta_bruta_min=20_000_000,
@@ -271,6 +281,17 @@ class IntakeValidateOfferTests(unittest.TestCase):
             )
         )
         self.assertTrue(d.discard)
+
+    def test_wordpress_publicacion_muy_antigua_sin_cierre_motivo_especifico(self):
+        d = intake_validate_offer(
+            self._offer(
+                fecha_publicacion=date.today()
+                - timedelta(days=ANTIGUEDAD_REVISION_DIAS + 10),
+                plataforma_empleo="wordpress",
+            )
+        )
+        self.assertTrue(d.discard)
+        self.assertEqual(d.motivo_descarte, "wordpress_old_without_deadline")
 
     def test_oferta_con_palabra_noticia_pero_cargo_real_marca_review(self):
         # Caso real: el blob tiene "noticia" pero el cargo es claramente

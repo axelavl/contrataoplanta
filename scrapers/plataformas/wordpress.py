@@ -4,10 +4,10 @@ import argparse
 import json
 import re
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
-from urllib.parse import urljoin, urlparse
+from urllib.parse import unquote, urljoin, urlparse
 
 from bs4 import BeautifulSoup
 
@@ -71,17 +71,32 @@ class WordPressScraper(BaseScraper):
         pdf_links = raw.get("pdf_links") or []
 
         fecha_publicacion = parse_date(raw.get("date"))
-        # Descartar posts más viejos de 6 meses (no pueden ser empleos activos)
-        if fecha_publicacion:
-            cutoff = (datetime.now(timezone.utc) - timedelta(days=180)).date()
-            if fecha_publicacion < cutoff:
-                return None
-        fecha_cierre = parse_date(raw.get("fecha_cierre")) or self._extraer_fecha_cierre(
-            content_text
-        )
-        # Descartar ofertas con fecha de cierre ya vencida
-        if fecha_cierre and fecha_cierre < datetime.now(timezone.utc).date():
-            return None
+        today = datetime.now(timezone.utc).date()
+        cutoff = today - timedelta(days=180)
+
+        # Siempre intentar extraer fecha_cierre desde contenido y detalle antes de descartar.
+        fecha_cierre = parse_date(raw.get("fecha_cierre")) or self._extraer_fecha_cierre(content_text)
+
+        detail_text = ""
+        detail_pdfs: list[str] = []
+        if url_oferta:
+            detail_text, detail_pdfs = self._extraer_contexto_detalle(url_oferta)
+            if detail_pdfs:
+                pdf_links = self._deduplicate_urls([*pdf_links, *detail_pdfs])
+            if not fecha_cierre:
+                fecha_cierre = self._extraer_fecha_cierre(detail_text)
+            if not fecha_cierre:
+                fecha_cierre = self._extraer_fecha_cierre_desde_adjuntos(pdf_links)
+
+        # Descartar ofertas con fecha de cierre ya vencida (motivo explícito)
+        if fecha_cierre and fecha_cierre < today:
+            return self._descartar_oferta(raw, url_oferta, "wordpress_expired_deadline")
+
+        # Publicación > 180 días: sólo aceptar si hay evidencia de plazo vigente.
+        if fecha_publicacion and fecha_publicacion < cutoff and not (
+            fecha_cierre and fecha_cierre >= today
+        ):
+            return self._descartar_oferta(raw, url_oferta, "wordpress_old_without_deadline")
 
         renta_min, renta_max, grado_eus = parse_renta(content_text)
         descripcion, requisitos = self._separar_descripcion_requisitos(content_text)
@@ -104,9 +119,57 @@ class WordPressScraper(BaseScraper):
             "fecha_cierre": fecha_cierre,
             "url_oferta": url_oferta,
             "url_bases": pdf_links[0] if pdf_links else url_oferta,
+            "plataforma_empleo": "wordpress",
             "estado": "activo",
         }
         return self.normalize_offer(oferta)
+
+    def _descartar_oferta(
+        self,
+        raw: dict[str, Any],
+        url_oferta: str,
+        motivo: str,
+    ) -> None:
+        raw["motivo_descarte"] = motivo
+        self.logger.info(
+            "evento=wordpress_descarte scraper=%s url=%s motivo=%s",
+            self.nombre,
+            url_oferta,
+            motivo,
+        )
+        return None
+
+    def _extraer_contexto_detalle(self, url_oferta: str) -> tuple[str, list[str]]:
+        try:
+            html_detalle = self.request_text(url_oferta)
+        except Exception as exc:
+            self.logger.info(
+                "evento=wordpress_detalle_skip scraper=%s url=%s error=%s",
+                self.nombre,
+                url_oferta,
+                exc,
+            )
+            return "", []
+
+        texto_detalle = self._html_to_text(html_detalle)
+        pdfs_detalle = self._extract_pdf_links_from_html(html_detalle, url_oferta)
+        return texto_detalle, pdfs_detalle
+
+    def _extraer_fecha_cierre_desde_adjuntos(self, pdf_links: list[str]) -> date | None:
+        for link in pdf_links:
+            parsed = urlparse(link)
+            candidates = [
+                clean_text(unquote(parsed.path)).replace("_", " "),
+                clean_text(unquote(parsed.query)).replace("_", " "),
+                clean_text(unquote(link)).replace("_", " "),
+            ]
+            for text in candidates:
+                if not text:
+                    continue
+                fecha = self._extraer_fecha_cierre(text) or parse_date(text)
+                if fecha:
+                    return fecha
+        return None
 
     def _fetch_via_rest_api(self) -> list[dict[str, Any]]:
         # Solo posts de los últimos 6 meses (empleos activos no son más viejos que eso)
