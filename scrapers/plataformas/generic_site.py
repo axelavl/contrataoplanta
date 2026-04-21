@@ -383,6 +383,16 @@ class GenericSiteScraper(BaseScraper):
         reason = f"policy_reject score={evaluation.score:.2f} reasons={list(evaluation.reason_codes)}"
         return False, reason
 
+    def _looks_like_offer(self, title: str, content: str) -> bool:
+        """
+        Wrapper de compatibilidad para scrapers que aún esperan retorno booleano.
+
+        Mantiene contrato previo y delega en `_score_offer_candidate`, descartando
+        la razón de rechazo.
+        """
+        is_offer, _ = self._score_offer_candidate(title, content)
+        return is_offer
+
     def _extract_pdf_links_from_node(self, node: Any, source_url: str) -> list[str]:
         links: list[str] = []
         for anchor in node.select("a[href]"):
