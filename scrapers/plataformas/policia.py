@@ -240,17 +240,25 @@ class PoliciaScraper(GenericSiteScraper):
 
     # ──────────────── Override: parsing más tolerante ────────────────
 
-    def _looks_like_offer(self, title: str, content: str) -> bool:
+    def _score_offer_candidate(
+        self,
+        title: str,
+        content: str,
+        *,
+        url: str | None = None,
+    ) -> tuple[bool, str | None]:
         """Extiende la detección con keywords propios del ámbito policial."""
+        is_offer, reason = super()._score_offer_candidate(title, content, url=url)
+        if is_offer:
+            return True, None
+
         hay_texto = clean_text(f"{title} {content}")
-        if len(hay_texto) < 8:
-            return False
         key = normalize_key(hay_texto)
-        # Primero probar con keywords genéricos.
         if any(normalize_key(kw) in key for kw in KEYWORDS_OFERTA):
-            return True
-        # Luego con keywords policiales.
-        return any(normalize_key(kw) in key for kw in _POLICIA_KEYWORDS)
+            return True, None
+        if any(normalize_key(kw) in key for kw in _POLICIA_KEYWORDS):
+            return True, "policia_keyword_match"
+        return False, reason
 
     def _parse_html_listing(self, html: str, source_url: str) -> list[dict[str, Any]]:
         """Extiende el parsing con detección de secciones de transparencia."""
