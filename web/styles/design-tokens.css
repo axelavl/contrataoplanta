@@ -83,6 +83,20 @@
   --shadow: var(--sombra);
   --shadow-strong: 0 24px 48px rgba(14, 32, 70, 0.14);
 
+  /* ── Tokens semánticos de superficie (cross-layout) ─────────────── */
+  --background: var(--bg);
+  --surface-base: var(--surface);
+  --surface-elevated: #FFFFFF;
+  --border-subtle: var(--border-soft);
+  --text-primary: var(--text);
+  --text-secondary: var(--text-60);
+  --text-muted-2: var(--text-muted);
+  --accent: var(--navy);
+  --success: var(--sage);
+  --warning: var(--amber);
+  --danger: var(--terra);
+  --overlay: rgba(8, 16, 32, 0.46);
+
   /* Logo — facilita overrides por tema */
   --logo-bg: var(--navy);
   --logo-fg: var(--gold-brilliant);
@@ -149,6 +163,20 @@
 
   --shadow-sm: 0 1px 0 rgba(255,255,255,0.03) inset;
   --shadow: 0 1px 0 rgba(255,255,255,0.03) inset, 0 10px 24px rgba(0,0,0,0.35);
+
+  /* ── Tokens semánticos de dark mode ─────────────────────────────── */
+  --background: #081223;
+  --surface-base: #12233F;
+  --surface-elevated: #193156;
+  --border-subtle: #27436D;
+  --text-primary: #F3F0E6;
+  --text-secondary: #C2CADE;
+  --text-muted-2: #9FA8BE;
+  --accent: #EAB858;
+  --success: #8FCDA5;
+  --warning: #F0BC67;
+  --danger: #EB8A75;
+  --overlay: rgba(4, 10, 20, 0.68);
 
   --logo-bg: var(--surface);
   --logo-fg: var(--gold);

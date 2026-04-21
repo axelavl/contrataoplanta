@@ -13,6 +13,180 @@
   background: var(--bg);
   padding: 56px 24px 24px;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   DARK MODE SYSTEM POLISH — menú/listado/detalle integrado (móvil)
+   Abril 2026: reducción de densidad + jerarquía visual consistente.
+   ══════════════════════════════════════════════════════════════════════ */
+:root[data-theme="dark"] {
+  --bg: var(--background);
+  --blanco: var(--surface-base);
+  --bg2: #0E1D37;
+  --borde: var(--border-subtle);
+  --texto: var(--text-primary);
+  --texto2: var(--text-secondary);
+  --texto3: var(--text-muted-2);
+}
+
+:root[data-theme="dark"] .resultados-shell,
+:root[data-theme="dark"] .oferta-card,
+:root[data-theme="dark"] .modal,
+:root[data-theme="dark"] .bases-viewer-panel {
+  border-color: var(--border-subtle) !important;
+}
+
+:root[data-theme="dark"] .resultados-shell {
+  background: var(--surface-base);
+  box-shadow: 0 14px 32px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.03);
+}
+
+/* Controles y chips de listado: menos “blancos” y más coherentes con dark. */
+:root[data-theme="dark"] .ctrl-select,
+:root[data-theme="dark"] .btn-copiar-busqueda,
+:root[data-theme="dark"] .vista-btns,
+:root[data-theme="dark"] .filtro-tag,
+:root[data-theme="dark"] .pag-btn,
+:root[data-theme="dark"] .campo input,
+:root[data-theme="dark"] .campo select,
+:root[data-theme="dark"] .comunas-trigger {
+  background: #0F213E !important;
+  color: var(--text-secondary) !important;
+  border-color: var(--border-subtle) !important;
+}
+:root[data-theme="dark"] .vista-btn.activo,
+:root[data-theme="dark"] .pag-btn.activo {
+  background: var(--accent) !important;
+  color: #1B2640 !important;
+  border-color: var(--accent) !important;
+}
+
+/* Cards: menos contorno, mejor jerarquía de cargo/institución/metadata. */
+:root[data-theme="dark"] .ofertas-lista { gap: 12px; }
+:root[data-theme="dark"] .oferta-card {
+  background: linear-gradient(180deg, #132746 0%, #10203A 100%) !important;
+  border-width: 1px !important;
+  border-color: rgba(107, 136, 180, 0.35) !important;
+  padding: 15px 14px 13px !important;
+}
+:root[data-theme="dark"] .oferta-card:hover {
+  background: linear-gradient(180deg, #183056 0%, #122542 100%) !important;
+  border-color: rgba(156, 182, 220, 0.52) !important;
+  transform: translateY(-1px);
+}
+:root[data-theme="dark"] .oferta-institucion {
+  color: #C9D4E9 !important;
+  font-weight: 600 !important;
+  font-size: 11.5px !important;
+}
+:root[data-theme="dark"] .oferta-cargo,
+:root[data-theme="dark"] .oferta-cargo-link {
+  color: #F3F0E6 !important;
+  font-size: 17px !important;
+  line-height: 1.28 !important;
+}
+:root[data-theme="dark"] .oferta-detalles {
+  color: #A9B4CB !important;
+  font-size: 12px !important;
+  gap: 10px !important;
+  margin-bottom: 9px !important;
+}
+:root[data-theme="dark"] .oferta-renta {
+  color: #F6D38D !important;
+  font-size: 14px !important;
+}
+:root[data-theme="dark"] .oferta-footer {
+  border-top-color: rgba(255,255,255,0.07) !important;
+  padding-top: 9px !important;
+}
+:root[data-theme="dark"] .btn-detalle,
+:root[data-theme="dark"] .btn-ver {
+  min-height: 36px !important;
+  border-radius: 8px !important;
+}
+
+/* Detalle: compactación y separación de capas sin “cajas iguales”. */
+:root[data-theme="dark"] .modal {
+  background: linear-gradient(180deg, #12243F 0%, #101F38 100%) !important;
+  box-shadow: 0 24px 54px rgba(0,0,0,.52), inset 0 1px 0 rgba(255,255,255,.04);
+}
+:root[data-theme="dark"] .modal-header {
+  padding: 14px 16px 12px !important;
+  border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+}
+:root[data-theme="dark"] .modal-body { padding: 14px 16px 10px !important; }
+:root[data-theme="dark"] .modal-seccion {
+  margin-bottom: 15px !important;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 10px;
+  padding: 11px 11px 10px;
+}
+:root[data-theme="dark"] .modal-seccion-titulo { color: #F1C977 !important; }
+:root[data-theme="dark"] .modal-info-item {
+  background: #0F213C !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+}
+:root[data-theme="dark"] .modal-info-label { color: #93A4C2 !important; }
+:root[data-theme="dark"] .modal-info-val { color: #EEF2FA !important; }
+
+:root[data-theme="dark"] .btn-modal-primary {
+  background: linear-gradient(180deg, #EFC676 0%, #E3B45A 100%) !important;
+  color: #1D2A45 !important;
+  border: none !important;
+}
+:root[data-theme="dark"] .btn-modal-primary:hover { filter: brightness(1.03); }
+:root[data-theme="dark"] .btn-modal-sec {
+  background: #102442 !important;
+  color: #CFD9EE !important;
+  border-color: rgba(255,255,255,0.18) !important;
+}
+:root[data-theme="dark"] .btn-modal-sec:hover {
+  border-color: #F1C977 !important;
+  color: #F1C977 !important;
+}
+:root[data-theme="dark"] .bases-viewer-panel {
+  background: #112440 !important;
+  color: var(--text-primary) !important;
+}
+
+@media (max-width: 600px) {
+  :root[data-theme="dark"] .estado-listado-copy {
+    color: #9BA8C2 !important;
+    font-size: 11px !important;
+  }
+  :root[data-theme="dark"] .resultados-header {
+    margin-bottom: 10px !important;
+    gap: 10px !important;
+  }
+  :root[data-theme="dark"] .btn-copiar-busqueda {
+    font-size: 11px !important;
+    min-height: 33px !important;
+  }
+  :root[data-theme="dark"] .modal-close {
+    width: 32px !important;
+    height: 32px !important;
+    background: rgba(255,255,255,0.08) !important;
+    border: 1px solid rgba(255,255,255,0.16) !important;
+  }
+  :root[data-theme="dark"] .modal-rich-text {
+    font-size: 13.5px !important;
+    line-height: 1.66 !important;
+    color: #D7DEEC !important;
+  }
+  :root[data-theme="dark"] .modal-rich-text .rt-toggle {
+    color: #F1C977 !important;
+    border-bottom-color: rgba(241,201,119,0.7) !important;
+  }
+  :root[data-theme="dark"] .modal-actions {
+    border-top-color: rgba(255,255,255,0.08) !important;
+    background: rgba(16, 30, 54, 0.96) !important;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+  :root[data-theme="dark"] .back-to-top-btn {
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
 .hero::before {
   background: radial-gradient(
       ellipse 80% 50% at 20% 20%,
