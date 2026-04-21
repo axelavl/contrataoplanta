@@ -172,10 +172,11 @@ class WordPressScraper(BaseScraper):
         return None
 
     def _fetch_via_rest_api(self) -> list[dict[str, Any]]:
-        # Consulta inicial acotada (180 días). Si no retorna vacantes, ejecutar
-        # barrido ampliado sin "after" y luego con 365 días para cubrir sitios
-        # con fechas desfasadas en WP REST. La vigencia real se valida después
-        # en parse_oferta (fecha_cierre y reglas de antigüedad).
+        # Consulta inicial acotada (180 días). Si retorna cero vacantes, ejecutar
+        # un segundo barrido ampliado sin "after" y, si tampoco retorna vacantes
+        # (o falla), un tercer barrido con ventana de 365 días para cubrir sitios
+        # con fechas desfasadas en WP REST. La vigencia real se valida después en
+        # parse_oferta (fecha_cierre y reglas de antigüedad).
         ventanas_dias: list[int | None] = [180]
         modo_ampliado = False
         while ventanas_dias:
