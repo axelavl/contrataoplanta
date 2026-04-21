@@ -102,11 +102,20 @@ _SOURCE_PROFILES_BY_NAME = {profile.name: profile for profile in PROFILES}
 
 
 def _generic_max_candidate_urls(evaluation: Any) -> int:
+    def _normalize_limit(value: Any) -> int | None:
+        try:
+            parsed = int(value)
+        except (TypeError, ValueError):
+            return None
+        return max(1, parsed)
+
     profile_name = (evaluation.profile_name or "").strip().lower()
     if profile_name:
         profile = _SOURCE_PROFILES_BY_NAME.get(profile_name)
         if profile and profile.max_candidate_urls is not None:
-            return profile.max_candidate_urls
+            normalized = _normalize_limit(profile.max_candidate_urls)
+            if normalized is not None:
+                return normalized
     retry_policy_obj = getattr(evaluation, "retry_policy", None)
     if isinstance(retry_policy_obj, RetryPolicy):
         retry_policy = retry_policy_obj.value
@@ -116,7 +125,8 @@ def _generic_max_candidate_urls(evaluation: Any) -> int:
         tier = FrequencyTier(retry_policy)
     except ValueError:
         tier = FrequencyTier.MEDIUM
-    return profile_for_tier(tier).max_candidate_urls
+    normalized = _normalize_limit(profile_for_tier(tier).max_candidate_urls)
+    return normalized if normalized is not None else 4
 
 
 def _generic_scraper_for(item: RuntimeSource, evaluation: Any) -> GenericSiteScraper:
