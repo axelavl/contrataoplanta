@@ -160,3 +160,53 @@ class AuditStore:
                 return float(row[0] or 0.0)
         except Exception:
             return 0.0
+
+    def get_generic_site_last_success_path(self, conn, institucion_id: int | None) -> str | None:
+        if not institucion_id:
+            return None
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT last_success_url
+                    FROM generic_site_path_audit
+                    WHERE institucion_id = %s
+                    """,
+                    (institucion_id,),
+                )
+                row = cur.fetchone()
+                return str(row[0]) if row and row[0] else None
+        except Exception:
+            return None
+
+    def save_generic_site_success_path(
+        self,
+        conn,
+        *,
+        institucion_id: int | None,
+        fuente_id: int | None,
+        source_url: str,
+    ) -> None:
+        if not institucion_id or not source_url:
+            return
+        with conn.cursor() as cur:
+            cur.execute("SAVEPOINT sp_generic_site_path")
+            try:
+                cur.execute(
+                    """
+                    INSERT INTO generic_site_path_audit (
+                        institucion_id,
+                        fuente_id,
+                        last_success_url,
+                        updated_at
+                    ) VALUES (%s, %s, %s, NOW())
+                    ON CONFLICT (institucion_id) DO UPDATE SET
+                        fuente_id = EXCLUDED.fuente_id,
+                        last_success_url = EXCLUDED.last_success_url,
+                        updated_at = NOW()
+                    """,
+                    (institucion_id, fuente_id, source_url),
+                )
+                cur.execute("RELEASE SAVEPOINT sp_generic_site_path")
+            except Exception:
+                cur.execute("ROLLBACK TO SAVEPOINT sp_generic_site_path")

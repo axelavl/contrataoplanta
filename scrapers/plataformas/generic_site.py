@@ -17,7 +17,9 @@ from scrapers.base import (
     normalize_tipo_contrato,
     parse_date,
     parse_renta,
+    conexion,
 )
+from scrapers.evaluation.audit_store import AuditStore
 
 
 GENERIC_JOB_KEYWORDS = (
@@ -94,6 +96,7 @@ class GenericSiteScraper(BaseScraper):
         trusted_host_only: bool = True,
     ) -> None:
         self.institucion = institucion
+        self.institucion_id = institucion.get("id")
         self.url_empleo = clean_text(institucion.get("url_empleo") or institucion.get("url_portal_empleos"))
         self.sitio_web = clean_text(institucion.get("sitio_web"))
         self.candidate_paths = candidate_paths or DEFAULT_PATH_CANDIDATES
@@ -118,20 +121,28 @@ class GenericSiteScraper(BaseScraper):
         if self.http is None:
             raise RuntimeError("GenericSiteScraper requiere un HttpClient activo.")
 
+        preferred_url = self._load_preferred_success_url()
         candidates: list[RawCandidate] = []
         seen_urls: set[str] = set()
+        successful_source_url: str | None = None
 
-        for source_url in self._candidate_urls():
-            html = await self.http.get(source_url)
-            if not isinstance(html, str) or not html.strip():
-                continue
-            page_candidates = self._extract_candidates_from_listing(html, source_url)
-            for candidate in page_candidates:
-                key = candidate.url or candidate.title
-                if not key or key in seen_urls:
+        short_limit = max(1, min(2, self.max_candidate_urls))
+        for max_urls in (short_limit, self.max_candidate_urls):
+            if candidates:
+                break
+            for source_url in self._candidate_urls(max_urls=max_urls, preferred_url=preferred_url):
+                html = await self.http.get(source_url)
+                if not isinstance(html, str) or not html.strip():
                     continue
-                seen_urls.add(key)
-                candidates.append(candidate)
+                page_candidates = self._extract_candidates_from_listing(html, source_url)
+                if page_candidates and successful_source_url is None:
+                    successful_source_url = source_url
+                for candidate in page_candidates:
+                    key = candidate.url or candidate.title
+                    if not key or key in seen_urls:
+                        continue
+                    seen_urls.add(key)
+                    candidates.append(candidate)
 
         enriched = await self._enrich_candidates(candidates)
         offers: list[OfertaRaw] = []
@@ -144,9 +155,19 @@ class GenericSiteScraper(BaseScraper):
                 continue
             seen_offer_urls.add(oferta.url)
             offers.append(oferta)
+        if successful_source_url:
+            self._save_successful_source_url(successful_source_url)
         return offers
 
-    def _candidate_urls(self) -> list[str]:
+    def _candidate_urls(self, *, max_urls: int, preferred_url: str | None = None) -> list[str]:
+        urls: list[str] = []
+        if preferred_url:
+            urls.append(preferred_url)
+        urls.extend(self._seed_urls())
+        urls.extend(self._candidate_path_urls())
+        return self._deduplicate_urls(urls)[:max_urls]
+
+    def _seed_urls(self) -> list[str]:
         urls: list[str] = []
         empleo = self.url_empleo
         sitio = self.sitio_web
@@ -154,19 +175,37 @@ class GenericSiteScraper(BaseScraper):
         if empleo:
             urls.append(empleo)
 
-        base = self._base_url(sitio) if sitio else None
-        empleo_is_specific = bool(empleo and base and empleo.rstrip("/") != base.rstrip("/"))
-
-        if sitio and sitio not in urls and not empleo_is_specific:
+        if sitio and sitio not in urls:
             urls.append(sitio)
+        return urls
 
-        if base and not empleo_is_specific:
+    def _candidate_path_urls(self) -> list[str]:
+        bases = [self._base_url(url) for url in (self.sitio_web, self.url_empleo) if url]
+        urls: list[str] = []
+        for base in self._deduplicate_urls(bases):
             for suffix in self.candidate_paths:
-                candidate = f"{base}{suffix}"
-                if candidate not in urls:
-                    urls.append(candidate)
+                urls.append(f"{base}{suffix}")
+        return self._deduplicate_urls(urls)
 
-        return urls[: self.max_candidate_urls]
+    def _load_preferred_success_url(self) -> str | None:
+        try:
+            with conexion() as conn:
+                return AuditStore().get_generic_site_last_success_path(conn, self.institucion_id)
+        except Exception:
+            return None
+
+    def _save_successful_source_url(self, source_url: str) -> None:
+        try:
+            with conexion() as conn:
+                AuditStore().save_generic_site_success_path(
+                    conn,
+                    institucion_id=self.institucion_id,
+                    fuente_id=self.fuente_id,
+                    source_url=source_url,
+                )
+                conn.commit()
+        except Exception:
+            return
 
     def _extract_candidates_from_listing(self, html: str, source_url: str) -> list[RawCandidate]:
         soup = BeautifulSoup(html, "html.parser")

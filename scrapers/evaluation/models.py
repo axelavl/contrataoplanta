@@ -151,6 +151,7 @@ class SourceProfile:
     platform_markers: tuple[str, ...] = ()
     institution_ids: tuple[int, ...] = ()
     candidate_urls: tuple[str, ...] = ()
+    max_candidate_urls: int | None = None
     warmup_required: bool = False
     supports_pdf_enrichment: bool = False
     supports_playwright: bool = False

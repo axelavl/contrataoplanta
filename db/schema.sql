@@ -380,6 +380,19 @@ CREATE INDEX IF NOT EXISTS idx_catalog_integrity_events_inst ON catalog_integrit
 CREATE INDEX IF NOT EXISTS idx_catalog_integrity_events_type ON catalog_integrity_events(event_type, created_at DESC);
 
 -- ──────────────────────────────────────────────────────────
+--  TABLA: generic_site_path_audit - ultima ruta efectiva
+-- ──────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS generic_site_path_audit (
+    institucion_id      INTEGER PRIMARY KEY REFERENCES instituciones(id),
+    fuente_id           INTEGER REFERENCES fuentes(id),
+    last_success_url    TEXT NOT NULL,
+    updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_generic_site_path_audit_fuente ON generic_site_path_audit(fuente_id);
+CREATE INDEX IF NOT EXISTS idx_generic_site_path_audit_updated ON generic_site_path_audit(updated_at DESC);
+
+-- ──────────────────────────────────────────────────────────
 --  TABLA: logs_scraping — se mantiene por compatibilidad
 -- ──────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS logs_scraping (

@@ -114,6 +114,7 @@ PROFILES: tuple[SourceProfile, ...] = (
         name="generic_site",
         page_type_priors={PageType.GENERAL_PAGE: 0.5, PageType.LISTING_PAGE: 0.5},
         retry_policy=RetryPolicy.MEDIUM,
+        max_candidate_urls=4,
         extractor_hint=ExtractorKind.SCRAPER_GENERIC_FALLBACK,
         notes="Fallback defensivo para sitios propios y estructuras no clasificadas.",
     ),
