@@ -66,9 +66,11 @@ class PdfFirstScraper(GenericSiteScraper):
             parent = anchor.find_parent(["li", "p", "div", "tr", "article", "section"])
             context = clean_text(parent.get_text(" ", strip=True)) if parent else title
             url = urljoin(source_url, href)
-            if not self._looks_like_offer(title, context):
+            is_offer, _ = self._score_offer_candidate(title, context, url=url)
+            if not is_offer:
                 filename_title = self._title_from_pdf_url(url)
-                if not self._looks_like_offer(filename_title, context):
+                is_offer_filename, _ = self._score_offer_candidate(filename_title, context, url=url)
+                if not is_offer_filename:
                     continue
                 title = filename_title
             candidates.append(
@@ -110,7 +112,8 @@ class PdfFirstScraper(GenericSiteScraper):
     def _candidate_to_oferta(self, candidate: RawCandidate) -> OfertaRaw | None:
         title = clean_text(candidate.title or (candidate.pdf_links[0] if candidate.pdf_links else ""))
         content_text = clean_text(candidate.content_text)
-        if not self._looks_like_offer(title, content_text):
+        is_offer, _ = self._score_offer_candidate(title, content_text, url=candidate.url)
+        if not is_offer:
             return None
         fecha_publicacion = parse_date(candidate.date_value)
         fecha_cierre = parse_date(candidate.closing_value) or self._extract_closing_hint(content_text)

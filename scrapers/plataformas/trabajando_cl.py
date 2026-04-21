@@ -220,10 +220,11 @@ class TrabajandoCLScraper(GenericSiteScraper):
             title = clean_text(title_el.get_text(" ", strip=True))
             link = card.select_one("a[href]")
             href = clean_text(link.get("href") if link else "")
-            if not title or not self._looks_like_offer(title, ""):
-                continue
             from urllib.parse import urljoin
             url = urljoin(base_url, href) if href else base_url
+            is_offer, _ = self._score_offer_candidate(title, "", url=url)
+            if not title or not is_offer:
+                continue
             offers.append(
                 OfertaRaw(
                     url=url,

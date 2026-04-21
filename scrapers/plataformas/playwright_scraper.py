@@ -163,7 +163,8 @@ class PlaywrightScraper(GenericSiteScraper):
         for selector in self.CARD_SELECTORS:
             for node in soup.select(selector):
                 text = clean_text(node.get_text(" ", strip=True))
-                if not text or not self._looks_like_offer("", text):
+                is_offer, _ = self._score_offer_candidate("", text, url=source_url)
+                if not text or not is_offer:
                     continue
                 anchor = node.select_one("a[href]")
                 href = clean_text(anchor.get("href") if anchor else "")
@@ -184,7 +185,8 @@ class PlaywrightScraper(GenericSiteScraper):
     def _candidate_to_oferta_playwright(self, candidate: RawCandidate) -> OfertaRaw | None:
         title = clean_text(candidate.title)
         content_text = clean_text(candidate.content_text)
-        if not self._looks_like_offer(title, content_text):
+        is_offer, _ = self._score_offer_candidate(title, content_text, url=candidate.url)
+        if not is_offer:
             return None
 
         fecha_publicacion = parse_date(candidate.date_value)

@@ -111,7 +111,8 @@ class HiringRoomScraper(GenericSiteScraper):
                         if clean_text(part)
                     )
                 )
-                if not self._looks_like_offer(title, description):
+                is_offer, _ = self._score_offer_candidate(title, description, url=detail_url)
+                if not is_offer:
                     continue
                 results.append(
                     self._build_raw_candidate(
@@ -173,7 +174,8 @@ class HiringRoomScraper(GenericSiteScraper):
                         if clean_text(part)
                     )
                 )
-                if not self._looks_like_offer(title, description):
+                is_offer, _ = self._score_offer_candidate(title, description, url=detail_url)
+                if not is_offer:
                     continue
                 results.append(
                     self._build_raw_candidate(
