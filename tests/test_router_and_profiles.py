@@ -131,13 +131,13 @@ def test_generic_profile_relaxes_thresholds_when_historical_precision_is_high():
         job_relevance=JobRelevance.UNCERTAIN,
         validity_status=ValidityStatus.UNKNOWN_VALIDITY,
         confidence=0.75,
-        source_quality_metrics={"sample_size": 30, "publish_ratio": 0.9, "flagged_ratio": 0.1},
+        source_quality_metrics={"sample_size": 30, "historical_precision": 0.9, "historical_recall": 0.82},
     )
     assert selection.decision == Decision.EXTRACT
     assert selection.extract_threshold_applied == 0.73
     assert selection.manual_threshold_applied == 0.53
     assert selection.threshold_validation["historical_validation_applied"] is True
-    assert selection.threshold_validation["historical_quality_band"] == "high_precision"
+    assert selection.threshold_validation["historical_quality_band"] == "high_precision_recall"
 
 
 def test_pdf_first_profile_uses_explicit_thresholds_with_history():
@@ -149,12 +149,29 @@ def test_pdf_first_profile_uses_explicit_thresholds_with_history():
         job_relevance=JobRelevance.JOB_LIKE,
         validity_status=ValidityStatus.OPEN_CONFIRMED,
         confidence=0.67,
-        source_quality_metrics={"sample_size": 40, "publish_ratio": 0.4, "flagged_ratio": 0.6},
+        source_quality_metrics={"sample_size": 40, "historical_precision": 0.4, "historical_recall": 0.45},
     )
     assert selection.decision == Decision.MANUAL_REVIEW
     assert selection.extract_threshold_applied == 0.75
     assert selection.manual_threshold_applied == 0.55
-    assert selection.threshold_validation["historical_quality_band"] == "high_noise"
+    assert selection.threshold_validation["historical_quality_band"] == "low_precision_or_recall"
+
+
+def test_external_ats_family_uses_precision_recall_thresholds():
+    profile = match_source_profile({"url_empleo": "https://empresa.hiringroom.com/jobs", "plataforma_empleo": "HiringRoom"})
+    selection = select_extractor(
+        profile,
+        availability=Availability.OK,
+        page_type=PageType.ATS_EXTERNAL,
+        job_relevance=JobRelevance.UNCERTAIN,
+        validity_status=ValidityStatus.UNKNOWN_VALIDITY,
+        confidence=0.63,
+        source_quality_metrics={"sample_size": 20, "historical_precision": 0.88, "historical_recall": 0.8},
+    )
+    assert selection.decision == Decision.EXTRACT
+    assert selection.extract_threshold_applied == 0.62
+    assert selection.manual_threshold_applied == 0.42
+    assert selection.threshold_validation["threshold_family"] == "external_ats"
 
 
 def test_waf_profile_has_explicit_thresholds():

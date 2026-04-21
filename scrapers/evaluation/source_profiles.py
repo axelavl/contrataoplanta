@@ -9,6 +9,7 @@ from .models import ExtractorKind, PageType, RetryPolicy, SourceProfile
 PROFILES: tuple[SourceProfile, ...] = (
     SourceProfile(
         name="empleos_publicos",
+        threshold_family="trusted_portal",
         domains=("empleospublicos.cl",),
         platform_markers=("empleospublicos",),
         trusted_job_source=True,
@@ -21,6 +22,7 @@ PROFILES: tuple[SourceProfile, ...] = (
     ),
     SourceProfile(
         name="carabineros_pdf_first",
+        threshold_family="pdf_first_waf",
         domains=("postulaciones.carabineros.cl", "carabineros.cl"),
         institution_ids=(161,),
         candidate_urls=(
@@ -38,6 +40,7 @@ PROFILES: tuple[SourceProfile, ...] = (
     ),
     SourceProfile(
         name="pdi_pdf_first",
+        threshold_family="pdf_first_waf",
         domains=("pdichile.cl", "postulaciones.investigaciones.cl"),
         institution_ids=(162,),
         candidate_urls=(
@@ -55,6 +58,7 @@ PROFILES: tuple[SourceProfile, ...] = (
     ),
     SourceProfile(
         name="policia_waf",
+        threshold_family="waf_protected",
         domains=("postulaciones.carabineros.cl", "postulaciones.investigaciones.cl"),
         warmup_required=True,
         supports_pdf_enrichment=True,
@@ -67,6 +71,7 @@ PROFILES: tuple[SourceProfile, ...] = (
     ),
     SourceProfile(
         name="ffaa_waf",
+        threshold_family="waf_protected",
         domains=("ingreso.ejercito.cl", "admisionarmada.cl", "ejercito.cl", "armada.cl"),
         institution_ids=(157, 158),
         warmup_required=True,
@@ -79,6 +84,7 @@ PROFILES: tuple[SourceProfile, ...] = (
     ),
     SourceProfile(
         name="ats_trabajando",
+        threshold_family="external_ats",
         domains=("trabajando.cl",),
         platform_markers=("trabajando.cl", "trabajando cl"),
         page_type_priors={PageType.ATS_EXTERNAL: 0.95},
@@ -90,6 +96,7 @@ PROFILES: tuple[SourceProfile, ...] = (
     ),
     SourceProfile(
         name="ats_hiringroom",
+        threshold_family="external_ats",
         domains=("hiringroom.com", "hiringroomcampus.com"),
         platform_markers=("hiringroom",),
         page_type_priors={PageType.ATS_EXTERNAL: 0.95},
@@ -101,6 +108,7 @@ PROFILES: tuple[SourceProfile, ...] = (
     ),
     SourceProfile(
         name="ats_buk",
+        threshold_family="external_ats",
         domains=("buk.cl",),
         platform_markers=("buk",),
         page_type_priors={PageType.ATS_EXTERNAL: 0.95},
@@ -112,6 +120,7 @@ PROFILES: tuple[SourceProfile, ...] = (
     ),
     SourceProfile(
         name="playwright_js",
+        threshold_family="js_intensive",
         institution_ids=(145, 275, 280),
         domains=("bcentral.cl", "codelco.com", "tvn.cl"),
         supports_playwright=True,
@@ -121,6 +130,7 @@ PROFILES: tuple[SourceProfile, ...] = (
     ),
     SourceProfile(
         name="wordpress",
+        threshold_family="wordpress",
         platform_markers=("wordpress", "wp-json", "wp-content"),
         page_type_priors={PageType.WORDPRESS_POST: 0.9, PageType.WORDPRESS_LISTING: 0.85},
         retry_policy=RetryPolicy.LOW,
@@ -131,6 +141,7 @@ PROFILES: tuple[SourceProfile, ...] = (
     ),
     SourceProfile(
         name="generic_site",
+        threshold_family="generic",
         page_type_priors={PageType.GENERAL_PAGE: 0.5, PageType.LISTING_PAGE: 0.5},
         retry_policy=RetryPolicy.MEDIUM,
         max_candidate_urls=4,

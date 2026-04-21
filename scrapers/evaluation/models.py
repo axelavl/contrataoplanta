@@ -148,6 +148,7 @@ class SignalBundle:
 @dataclass(slots=True)
 class SourceProfile:
     name: str
+    threshold_family: str = "generic"
     domains: tuple[str, ...] = ()
     platform_markers: tuple[str, ...] = ()
     institution_ids: tuple[int, ...] = ()
