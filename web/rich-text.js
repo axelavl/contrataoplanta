@@ -632,6 +632,43 @@
     return out;
   }
 
+  // Remueve headings que no tienen contenido real después (antes del próximo
+  // heading o fin de bloques). Evita que un origen mal parseado produzca
+  // subtítulos sin cuerpo como "Funciones principales:" seguido por otro
+  // subtítulo o nada. Se preserva el heading si hay al menos un bloque de
+  // tipo list o paragraph entre él y el próximo heading.
+  function dropEmptyHeadings(blocks) {
+    if (!blocks || !blocks.length) return blocks;
+    var out = [];
+    for (var i = 0; i < blocks.length; i++) {
+      var b = blocks[i];
+      if (b.type !== 'heading') {
+        out.push(b);
+        continue;
+      }
+      var hasContent = false;
+      for (var j = i + 1; j < blocks.length; j++) {
+        if (blocks[j].type === 'heading') break;
+        if (blocks[j].type === 'list' || blocks[j].type === 'paragraph') {
+          hasContent = true;
+          break;
+        }
+      }
+      if (hasContent) out.push(b);
+    }
+    return out;
+  }
+
+  // ¿El resultado final tiene contenido real (algún list/paragraph)?
+  // Si sólo quedaron headings (o nada), el caller debe usar su fallback.
+  function hasRenderableContent(blocks) {
+    if (!blocks || !blocks.length) return false;
+    for (var i = 0; i < blocks.length; i++) {
+      if (blocks[i].type === 'list' || blocks[i].type === 'paragraph') return true;
+    }
+    return false;
+  }
+
   // ─────────────────────────────────────────────────────────────
   // 6. Escape + negrita para "Rótulo:" inline
   // ─────────────────────────────────────────────────────────────
@@ -660,6 +697,8 @@
   function renderStructuredContent(blocks, options) {
     options = options || {};
     blocks = dedupeHeadings(blocks, options);
+    blocks = dropEmptyHeadings(blocks);
+    if (!hasRenderableContent(blocks)) return '';
     var out = [];
     for (var i = 0; i < blocks.length; i++) {
       var b = blocks[i];

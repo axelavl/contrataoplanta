@@ -2532,58 +2532,136 @@ footer {
   .footer-inner { grid-template-columns: 1fr; gap: 24px; }
   .footer-bottom { flex-direction: column; gap: 4px; text-align: center; }
   .stat-grid { grid-template-columns: 1fr 1fr; }
+  /* ═══ CONTROLES DE LISTADO EN MÓVIL ═════════════════════════════════
+     Desktop apila los controles en una sola fila horizontal. En móvil
+     eso genera 4-5 elementos compitiendo por un ancho chico y fuentes
+     que bajan a 11px. Se reestructura en dos filas claras:
+       · Fila 1: acciones (Limpiar / Compartir) — full-width si visibles
+       · Fila 2a: Ordenar por (prioridad: 100% del ancho disponible)
+       · Fila 2b: Por página + vista (secundarios, comparten línea)
+  ─────────────────────────────────────────────────────────────────── */
   .resultados-controles {
     width: 100%;
     grid-template-columns: 1fr;
     justify-content: stretch;
-    gap: 6px;
+    gap: 8px;
   }
-  .resultados-acciones,
-  .resultados-preferencias {
+  .resultados-acciones {
     justify-content: stretch;
     width: 100%;
+    gap: 8px;
   }
-  .resultados-acciones .btn-copiar-busqueda,
-  .resultados-preferencias .ctrl-select,
-  .resultados-preferencias .vista-btns {
+  .resultados-acciones .btn-copiar-busqueda {
     flex: 1;
     min-width: 0;
   }
-  .resultados-preferencias .ctrl-sep,
-  .resultados-acciones .ctrl-sep {
-    display: none;
+  .resultados-preferencias {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    width: 100%;
+    gap: 6px 8px;
   }
-  .ctrl-select { font-size: 11px; padding: 0 22px 0 8px; }
+  /* Ordenar por: toma su propia línea, full width */
+  .resultados-preferencias .sort-wrap {
+    width: 100%;
+    grid-column: 1 / -1;
+  }
+  /* Por página + vista: comparten línea con peso equilibrado */
+  .resultados-preferencias > .ctrl-select:not(.ctrl-select--sort) {
+    grid-column: 1;
+    grid-row: 2;
+    width: 100%;
+    font-size: 13px;
+    padding: 0 28px 0 12px;
+  }
+  .resultados-preferencias .vista-btns {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+  }
+  .resultados-preferencias .ctrl-sep,
+  .resultados-acciones .ctrl-sep { display: none; }
+  .sort-wrap-label { font-size: 12.5px; }
+  .ctrl-select--sort { font-size: 13.5px; font-weight: 600; }
+  .ctrl-select { font-size: 13px; }
   /* Sidebar: hide heavy widgets on mobile */
   .sidebar .widget:has(.hist-bar-wrap) { display: none; }
   .sidebar .widget:has(#masactivas-lista) { display: none; }
   .ad-slot-sidebar { display: none; }
-  /* Compacta en móvil: oculta tipo, compacta plazo/renta */
-  .row-meta { display: none; }
-  .oferta-row-header > :nth-child(2) { display: none; }
-  .row-plazo { flex: 0 0 88px; width: 88px; font-size: 10.5px; gap: 4px; white-space: normal; line-height: 1.25; }
-  .row-renta { flex: 0 0 98px; width: 98px; font-size: 11px; padding-right: 4px; line-height: 1.2; }
-  .row-renta .renta-rango { font-size: 10px; }
-  .oferta-row-header > :nth-child(3) { flex: 0 0 88px; width: 88px; }
-  .oferta-row-header > :nth-child(4) { flex: 0 0 98px; width: 98px; padding-right: 4px; }
-  .col-sort, .col-sort-label { font-size: 10px; letter-spacing: .3px; }
-  .oferta-row { padding: 0 12px; min-height: 68px; }
-  .oferta-row-header { padding: 0 12px; }
-  .row-main { padding: 10px 6px 10px 0; }
-  .row-inst { font-size: 9.5px; }
-  .row-cargo { font-size: 12.5px; -webkit-line-clamp: 3; }
-  .row-region { font-size: 9.5px; }
+  /* ═══ VISTA COMPACTA EN MÓVIL ══════════════════════════════════════
+     En pantallas pequeñas la tabla de columnas fijas (inst/cargo · tipo ·
+     plazo · renta) queda apretada y compite con la legibilidad del cargo.
+     Se reestructura cada .oferta-row en un layout de dos filas:
+       · Fila 1: institución + cargo (full width) y botón ♡ a la derecha.
+       · Fila 2: chips horizontales con plazo, renta y tipo de contrato.
+     El header de columnas (.oferta-row-header) pierde sentido aquí y se
+     oculta — la vista compacta en móvil pasa a ser una lista de tarjetas
+     resumidas, ordenable vía el selector "Ordenar por" de la cabecera.
+  ─────────────────────────────────────────────────────────────────── */
+  .oferta-row-header { display: none; }
+  .oferta-row {
+    flex-wrap: wrap;
+    padding: 12px 14px;
+    min-height: auto;
+    row-gap: 8px;
+    column-gap: 8px;
+    align-items: flex-start;
+  }
+  .oferta-row > .row-main {
+    flex: 1 1 calc(100% - 44px);
+    min-width: 0;
+    padding: 0;
+    order: 1;
+  }
+  .oferta-row > .btn-fav-row {
+    flex: 0 0 36px;
+    order: 2;
+    margin-left: 0;
+    margin-top: 0;
+  }
+  .oferta-row > .row-meta,
+  .oferta-row > .row-plazo,
+  .oferta-row > .row-renta {
+    flex: 0 0 auto;
+    width: auto;
+    order: 3;
+    font-size: 12px;
+    line-height: 1.25;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--bg2, #f1f3f5);
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .oferta-row > .row-meta { padding: 0; background: transparent; }
+  .oferta-row > .row-meta .badge { font-size: 11px; }
+  .oferta-row > .row-plazo { color: var(--texto2, #374151); gap: 6px; }
+  .oferta-row > .row-renta {
+    color: var(--texto, #111);
+    font-weight: 700;
+    text-align: left;
+    padding-right: 10px;
+    flex-direction: row;
+    align-items: baseline;
+  }
+  .oferta-row > .row-renta .renta-principal { font-size: 12px; }
+  .oferta-row > .row-renta .renta-rango { font-size: 11px; margin-left: 6px; display: inline; }
+  .row-main .row-inst { font-size: 10.5px; letter-spacing: .4px; }
+  .row-main .row-cargo { font-size: 14.5px; -webkit-line-clamp: 2; margin-top: 3px; }
+  .row-main .row-region { font-size: 11px; margin-top: 4px; }
 }
 @media (max-width: 420px) {
-  /* Compacta en móvil muy estrecho: compactar columnas */
-  .row-plazo { flex: 0 0 78px; width: 78px; font-size: 10px; }
-  .row-renta { flex: 0 0 88px; width: 88px; font-size: 10.5px; }
-  .row-renta .renta-rango { font-size: 9.5px; }
-  .oferta-row-header > :nth-child(3) { flex: 0 0 78px; width: 78px; }
-  .oferta-row-header > :nth-child(4) { flex: 0 0 88px; width: 88px; }
-  .oferta-row { padding: 0 10px; }
-  .oferta-row-header { padding: 0 10px; }
-  .col-sort, .col-sort-label { font-size: 9.5px; }
+  /* Muy estrecho: chips más compactos, cargo aún legible */
+  .oferta-row { padding: 11px 12px; column-gap: 6px; row-gap: 6px; }
+  .oferta-row > .row-meta,
+  .oferta-row > .row-plazo,
+  .oferta-row > .row-renta { font-size: 11.5px; padding: 3px 8px; }
+  .oferta-row > .row-renta { padding-right: 8px; }
+  .oferta-row > .row-renta .renta-principal { font-size: 11.5px; }
+  .oferta-row > .row-renta .renta-rango { font-size: 10.5px; margin-left: 5px; }
+  .row-main .row-cargo { font-size: 14px; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════

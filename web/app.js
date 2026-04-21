@@ -315,7 +315,7 @@ function syncSelectPorPagina(opts = {}) {
     : (cfg.opciones.includes(Number(guardadoPorVista)) ? Number(guardadoPorVista) : fallback);
 
   sel.innerHTML = cfg.opciones
-    .map((n) => `<option value="${n}">${n} / pág.</option>`)
+    .map((n) => `<option value="${n}">${n} por página</option>`)
     .join('');
   sel.value = String(siguiente);
   if (siguiente !== anterior) estado.por_pagina = siguiente;
@@ -2097,31 +2097,58 @@ async function abrirModal(ofertaId) {
       summaryNote.hidden = false;
     }
 
+    // Decision points — resumen de datos clave accionables antes del
+    // detalle completo. Renderizado por el helper compartido que además
+    // aplica el emptyText si no hay señales suficientes.
     const decisionPoints = _buildDecisionPoints(o, detalle);
     _renderListInto('modal-key-points', decisionPoints, {
       max: 6,
       emptyText: 'Revisa las bases oficiales para confirmar los datos clave.'
     });
 
-    // Texto completo expandible (sin mezclar con secciones semánticas)
+    // Descripción / funciones — formato enriquecido.
+    // Umbral bajo para que ambas secciones (Requisitos + Descripción)
+    // quepan en el primer viewport con un "Ver más" si hace falta. Los
+    // textos cortos (<= umbral) se muestran completos sin truncar.
+    // rich-text.js devuelve "" cuando sólo quedan subtítulos huérfanos,
+    // así que aquí sólo vemos contenido realmente renderizable.
     const desc = o.descripcion || '';
     const descHtml = formatRichText(desc, {
       truncate: true,
       truncateAt: 380,
       suppressHeadings: ['descripción', 'descripción del cargo', 'funciones', 'funciones del cargo']
     });
-    document.getElementById('modal-descripcion').innerHTML = descHtml ||
-      '<p>Revisa las bases del concurso para más información sobre funciones y beneficios.</p>';
-
-    // Requisitos — formato enriquecido (viñetas, numerados, títulos)
     const reqTexto = o.requisitos || '';
     const reqHtml  = formatRichText(reqTexto, {
       truncate: true,
       truncateAt: 360,
       suppressHeadings: ['requisitos', 'requisitos principales', 'requisitos del cargo']
     });
-    document.getElementById('modal-requisitos').innerHTML = reqHtml ||
-      '<p>Consulta las bases del concurso para conocer los requisitos completos.</p>';
+
+    // Oculta la sección completa (título incluido) cuando no hay contenido real.
+    // Si ambas vienen vacías, deja sólo la descripción con un mensaje breve
+    // que invita a revisar las bases, sin duplicar el fallback.
+    const reqEl  = document.getElementById('modal-requisitos');
+    const descEl = document.getElementById('modal-descripcion');
+    const reqSeccion  = reqEl  ? reqEl.closest('.modal-seccion')  : null;
+    const descSeccion = descEl ? descEl.closest('.modal-seccion') : null;
+    if (reqHtml) {
+      reqEl.innerHTML = reqHtml;
+      if (reqSeccion) reqSeccion.hidden = false;
+    } else if (reqSeccion) {
+      reqSeccion.hidden = true;
+      reqEl.innerHTML = '';
+    }
+    if (descHtml) {
+      descEl.innerHTML = descHtml;
+      if (descSeccion) descSeccion.hidden = false;
+    } else if (!reqHtml) {
+      descEl.innerHTML = '<p class="modal-empty-fallback">Revisa las bases del concurso para conocer requisitos, funciones y condiciones completas.</p>';
+      if (descSeccion) descSeccion.hidden = false;
+    } else if (descSeccion) {
+      descSeccion.hidden = true;
+      descEl.innerHTML = '';
+    }
 
     // Parser semántico para separar funciones / requisitos / condiciones.
     const semantic = window.richText?.buildSemanticSections
@@ -2184,7 +2211,7 @@ async function abrirModal(ofertaId) {
       };
     } else {
       btnPostular.disabled = true;
-      btnPostular.textContent = 'Enlace no disponible';
+      btnPostular.textContent = 'Postulación no disponible';
       btnPostular.onclick = null;
     }
 
