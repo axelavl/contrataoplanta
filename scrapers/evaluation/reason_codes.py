@@ -40,6 +40,7 @@ class ReasonCode(str, Enum):
     LISTING_PAGE_ONLY = "listing_page_only"
     STALE_ACTIVE_OFFER = "stale_active_offer"
     CATALOG_MISMATCH = "catalog_mismatch"
+    PLAYWRIGHT_RUNTIME_UNAVAILABLE = "playwright_runtime_unavailable"
 
 
 DEFAULT_REASON_DETAILS: dict[ReasonCode, str] = {
@@ -79,6 +80,7 @@ DEFAULT_REASON_DETAILS: dict[ReasonCode, str] = {
     ReasonCode.LISTING_PAGE_ONLY: "La entidad es solo una portada de listados y no una oferta.",
     ReasonCode.STALE_ACTIVE_OFFER: "La oferta seguia activa aunque su fecha de cierre ya paso.",
     ReasonCode.CATALOG_MISMATCH: "Los datos de la oferta no son consistentes con el catalogo operativo.",
+    ReasonCode.PLAYWRIGHT_RUNTIME_UNAVAILABLE: "El runtime no tiene Playwright operativo para renderizar JavaScript real.",
 }
 
 

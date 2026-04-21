@@ -3,7 +3,8 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 from scrapers.evaluation.models import Decision, ExtractorKind
-from scrapers.run_all import RuntimeSource, _build_scrapers
+from scrapers.evaluation.reason_codes import ReasonCode
+from scrapers.run_all import RuntimeSource, _build_scrapers, _enforce_playwright_capability
 
 
 def _runtime_source(*, inst_id: int, extractor: ExtractorKind, profile_name: str) -> RuntimeSource:
@@ -45,3 +46,23 @@ def test_build_scrapers_maps_pdf_first_and_custom_detail():
     assignments = _build_scrapers(runtime_sources)
     names = [type(assignment.scraper).__name__ for assignment in assignments]
     assert names == ["CarabinerosScraper", "PdiScraper", "FfaaScraper"]
+
+
+def test_playwright_without_runtime_is_demoted_to_source_status_only(monkeypatch):
+    runtime_sources = [
+        _runtime_source(inst_id=99, extractor=ExtractorKind.SCRAPER_PLAYWRIGHT, profile_name="js_required_profile"),
+    ]
+
+    monkeypatch.setattr(
+        "scrapers.run_all._playwright_runtime_available",
+        lambda: (False, "missing chromium"),
+    )
+    _enforce_playwright_capability(runtime_sources)
+
+    evaluation = runtime_sources[0].evaluation
+    assert evaluation.decision == Decision.SOURCE_STATUS_ONLY
+    assert evaluation.recommended_extractor is None
+    assert evaluation.reason_code == ReasonCode.PLAYWRIGHT_RUNTIME_UNAVAILABLE
+    assert evaluation.signals_json["playwright_runtime_available"] is False
+    assert "missing chromium" in evaluation.signals_json["playwright_runtime_error"]
+    assert _build_scrapers(runtime_sources) == []
