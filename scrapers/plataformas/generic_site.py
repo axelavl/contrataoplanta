@@ -153,7 +153,7 @@ class GenericSiteScraper(BaseScraper):
                 title = clean_text(item.get("title"))
                 description = self._html_to_text(item.get("description"))
                 url = clean_text(item.get("url")) or source_url
-                if not self._looks_like_offer(title, description):
+                if not self._looks_like_offer(title, description, url=url):
                     continue
                 results.append(
                     RawCandidate(
@@ -174,7 +174,7 @@ class GenericSiteScraper(BaseScraper):
         results: list[RawCandidate] = []
         for node in containers:
             content_text = clean_text(node.get_text(" ", strip=True))
-            if not self._looks_like_offer("", content_text):
+            if not self._looks_like_offer("", content_text, url=source_url):
                 continue
             title_el = node.select_one("h1 a, h2 a, h3 a, h4 a, .title a, .job-title a, a[href]")
             title = clean_text(title_el.get_text(" ", strip=True) if title_el else "")
@@ -200,7 +200,7 @@ class GenericSiteScraper(BaseScraper):
         results: list[RawCandidate] = []
         for row in soup.select("table tr"):
             row_text = clean_text(row.get_text(" ", strip=True))
-            if not self._looks_like_offer("", row_text):
+            if not self._looks_like_offer("", row_text, url=source_url):
                 continue
             link = row.select_one("a[href]")
             href = clean_text(link.get("href") if link else "")
@@ -228,7 +228,7 @@ class GenericSiteScraper(BaseScraper):
             title = clean_text(anchor.get_text(" ", strip=True))
             parent = anchor.find_parent(["li", "p", "div", "tr", "article", "section"])
             context = clean_text(parent.get_text(" ", strip=True)) if parent else title
-            if not self._looks_like_offer(title, context):
+            if not self._looks_like_offer(title, context, url=urljoin(source_url, href)):
                 continue
             pdf_links = [urljoin(source_url, href)] if ".pdf" in href.lower() else []
             results.append(
@@ -287,7 +287,7 @@ class GenericSiteScraper(BaseScraper):
     def _candidate_to_oferta(self, candidate: RawCandidate) -> OfertaRaw | None:
         title = clean_text(candidate.title)
         content_text = clean_text(candidate.content_text)
-        if not self._looks_like_offer(title, content_text):
+        if not self._looks_like_offer(title, content_text, url=candidate.url):
             return None
         fecha_publicacion = parse_date(candidate.date_value)
         fecha_cierre = parse_date(candidate.closing_value) or self._extract_closing_hint(content_text)
@@ -317,14 +317,14 @@ class GenericSiteScraper(BaseScraper):
             url_bases=url_bases,
         )
 
-    def _looks_like_offer(self, title: str, content: str) -> bool:
+    def _looks_like_offer(self, title: str, content: str, *, url: str | None = None) -> bool:
         hay_texto = clean_text(f"{title} {content}")
         if len(hay_texto) < 8:
             return False
         evaluation = classify_offer_candidate(
             title=title,
             content_text=content,
-            url=self.url_empleo or self.sitio_web,
+            url=url or self.url_empleo or self.sitio_web,
             extra_positive_keywords=self.extra_keywords,
         )
         return evaluation.likely_offer
