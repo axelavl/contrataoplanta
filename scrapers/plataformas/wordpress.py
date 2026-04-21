@@ -172,10 +172,14 @@ class WordPressScraper(BaseScraper):
         return None
 
     def _fetch_via_rest_api(self) -> list[dict[str, Any]]:
-        # Barrido progresivo: 180 días -> 365 días -> sin "after" (fallback final).
-        # Esto evita desistir por sitios con desfases de fecha o TZ en WP REST.
-        ventanas_dias: list[int | None] = [180, 365, None]
-        for dias in ventanas_dias:
+        # Consulta inicial acotada (180 días). Si no retorna vacantes, ejecutar
+        # barrido ampliado sin "after" y luego con 365 días para cubrir sitios
+        # con fechas desfasadas en WP REST. La vigencia real se valida después
+        # en parse_oferta (fecha_cierre y reglas de antigüedad).
+        ventanas_dias: list[int | None] = [180]
+        modo_ampliado = False
+        while ventanas_dias:
+            dias = ventanas_dias.pop(0)
             ofertas: list[dict[str, Any]] = []
             pagina = 1
             while pagina <= 10:
@@ -243,6 +247,13 @@ class WordPressScraper(BaseScraper):
                         len(ofertas_deduplicadas),
                     )
                 return ofertas_deduplicadas
+            if not modo_ampliado:
+                modo_ampliado = True
+                ventanas_dias = [None, 365]
+                self.logger.info(
+                    "evento=wordpress_rest_expandido scraper=%s razon=sin_vacantes_consulta_inicial",
+                    self.nombre,
+                )
         return []
 
     def _fetch_via_feed_json(self) -> list[dict[str, Any]]:
