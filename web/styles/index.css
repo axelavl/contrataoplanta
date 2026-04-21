@@ -863,11 +863,6 @@ nav {
   font-size: 14.5px;
   margin-right: 6px;
 }
-.oferta-renta--muted {
-  color: var(--texto3);
-  font-weight: 500;
-  font-size: 12px;
-}
 .oferta-frescura {
   font-size: 11px; font-weight: 600;
   color: var(--texto2); background: var(--bg2);
@@ -886,6 +881,20 @@ nav {
 .oferta-plazo {
   font-size: 12px; font-family: 'Inter', sans-serif;
   display: flex; align-items: center; gap: 5px;
+  color: var(--texto2);
+}
+/* Texto del estado: color determinado por la clase semántica. El color
+   se aplica vía clase (no inline style) para alinearse con el sistema
+   de tokens y permitir overrides por tema. */
+.plazo-text { font-weight: 600; }
+.plazo-text--status-active { color: var(--verde-d, #166534); }
+.plazo-text--status-closing-today { color: var(--naran-d, #C2410C); }
+.plazo-text--status-closed { color: var(--texto3); }
+.plazo-text--status-upcoming { color: var(--cielo-d, #0369A1); }
+.plazo-text--status-unknown { color: var(--texto3); }
+.oferta-plazo-fecha {
+  color: var(--texto3);
+  margin-left: 4px;
 }
 .plazo-dot {
   width: 7px; height: 7px; border-radius: 50%;
