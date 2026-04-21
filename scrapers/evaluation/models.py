@@ -157,6 +157,8 @@ class SourceProfile:
     trusted_job_source: bool = False
     page_type_priors: dict[PageType, float] = field(default_factory=dict)
     signal_weight_overrides: dict[str, float] = field(default_factory=dict)
+    extract_threshold: float | None = None
+    manual_threshold: float | None = None
     retry_policy: RetryPolicy = RetryPolicy.MEDIUM
     extractor_hint: ExtractorKind = ExtractorKind.SCRAPER_GENERIC_FALLBACK
     notes: str = ""

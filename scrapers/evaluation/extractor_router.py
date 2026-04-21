@@ -26,8 +26,8 @@ class ExtractorSelection:
 
 
 def select_extractor(profile: SourceProfile, *, availability: Availability, page_type: PageType, job_relevance: JobRelevance, validity_status: ValidityStatus, confidence: float) -> ExtractorSelection:
-    extract_threshold = 0.75
-    manual_threshold = 0.55
+    extract_threshold = profile.extract_threshold or 0.75
+    manual_threshold = profile.manual_threshold or 0.55
 
     if availability == Availability.JS_REQUIRED and profile.supports_playwright:
         return ExtractorSelection(

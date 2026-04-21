@@ -7,6 +7,7 @@ from scrapers.evaluation.models import (
     ExtractorKind,
     JobRelevance,
     PageType,
+    SourceProfile,
     ValidityStatus,
 )
 from scrapers.evaluation.source_profiles import match_source_profile
@@ -58,3 +59,23 @@ def test_external_ats_selection_is_extractable():
     )
     assert selection.recommended_extractor == ExtractorKind.SCRAPER_EXTERNAL_ATS
     assert selection.decision == Decision.EXTRACT
+
+
+def test_profile_threshold_overrides_are_applied_in_selection():
+    profile = SourceProfile(
+        name="custom",
+        extractor_hint=ExtractorKind.SCRAPER_GENERIC_FALLBACK,
+        extract_threshold=0.85,
+        manual_threshold=0.65,
+    )
+    selection = select_extractor(
+        profile,
+        availability=Availability.OK,
+        page_type=PageType.GENERAL_PAGE,
+        job_relevance=JobRelevance.UNCERTAIN,
+        validity_status=ValidityStatus.UNKNOWN_VALIDITY,
+        confidence=0.70,
+    )
+    assert selection.decision == Decision.MANUAL_REVIEW
+    assert selection.extract_threshold_applied == 0.85
+    assert selection.manual_threshold_applied == 0.65
