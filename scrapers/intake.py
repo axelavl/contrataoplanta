@@ -43,93 +43,29 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
+from classification.policy import (
+    INTERNAL_ONLY_PATTERNS,
+    NEGATIVE_PATTERNS,
+    NEGATIVE_URL_PARTS,
+    RULESET_VERSION,
+    classify_offer_candidate,
+)
 
 # ─────────────────────────── Listas negativas ─────────────────────────
 # Frases que, si aparecen en cargo/título/descripcion, descartan la oferta.
 # Ojo: deben ser frases discriminantes; "cerrado" como sustring de "cerrador
 # de operaciones" no debe gatillar — usamos límites de palabra.
 
-_GARBAGE_PHRASES: tuple[str, ...] = (
-    # Resultados / cierres administrativos
-    r"\bresultados? del concurso\b",
-    r"\bresultados? proceso\b",
-    r"\bn[oó]mina de seleccionad[oa]s\b",
-    r"\bn[oó]mina final\b",
-    r"\blista de seleccionad[oa]s\b",
-    r"\badjudicaci[oó]n\b",
-    r"\bproceso adjudicado\b",
-    r"\bproceso finalizado\b",
-    r"\bproceso cerrado\b",
-    r"\bconcurso cerrado\b",
-    r"\bconvocatoria cerrada\b",
-    r"\bpostulaciones cerradas\b",
-    # Material institucional general
-    r"\bnoticias?\b",
-    r"\bcomunicado\b",
-    r"\bbolet[ií]n\b",
-    r"\bnovedades?\b",
-    r"\bprensa\b",
-    r"\bdeclaraci[oó]n p[uú]blica\b",
-    # Eventos / agenda
-    r"\bagenda institucional\b",
-    r"\bcuenta p[uú]blica\b",
-    r"\bseminario\b",
-    r"\bcharla\b",
-    r"\bworkshop\b",
-    # Compras / fondos / no-laboral
-    r"\blicitaci[oó]n\b",
-    r"\bcompra p[uú]blica\b",
-    r"\bmercado p[uú]blico\b",
-    r"\bsubvenci[oó]n\b",
-    r"\bfondos? concursables?\b",
-    r"\bconcurso art[ií]stico\b",
-    r"\bconcurso escolar\b",
-    r"\bconcurso de proyectos?\b",
-    # Trazas históricas
-    r"\bproceso del a[nñ]o (?:201\d|20[12]0)\b",
-    r"\bconcursos? anteriores?\b",
-    r"\barchivo hist[oó]rico\b",
-    r"\bhist[oó]rico de concursos?\b",
-)
+_GARBAGE_PHRASES: tuple[str, ...] = NEGATIVE_PATTERNS
 
 _GARBAGE_RE = re.compile("|".join(_GARBAGE_PHRASES), re.IGNORECASE)
 
 # Palabras que, en URL o ruta, son indicador fuerte de que NO es una oferta.
-_GARBAGE_URL_PARTS: tuple[str, ...] = (
-    "/noticias",
-    "/news",
-    "/prensa",
-    "/blog",
-    "/comunicados",
-    "/actas",
-    "/cuenta-publica",
-    "/cuenta_publica",
-    "/cuentapublica",
-    "/agenda",
-    "/eventos",
-    "/galeria",
-    "/galería",
-    "/historico",
-    "/histórico",
-    "/anteriores",
-    "/resultados-concurso",
-    "/nomina-",
-    "/adjudicacion",
-    "/licitacion",
-    "/licitaciones",
-    "/compras",
-    "/mercadopublico",
-    "/subvenciones",
-    "/fondos-concursables",
-)
+_GARBAGE_URL_PARTS: tuple[str, ...] = NEGATIVE_URL_PARTS
 
 # Frases que indican explícitamente que un cargo es solo "difusión interna"
 # y por tanto no se publica (el postulante externo no puede acceder).
-_INTERNAL_ONLY_PHRASES: tuple[str, ...] = (
-    r"\bsolo difusi[oó]n\b",
-    r"\bsolo difusi[oó]n interna\b",
-    r"\bdifusi[oó]n interna\b",
-)
+_INTERNAL_ONLY_PHRASES: tuple[str, ...] = INTERNAL_ONLY_PATTERNS
 _INTERNAL_ONLY_RE = re.compile("|".join(_INTERNAL_ONLY_PHRASES), re.IGNORECASE)
 
 
@@ -416,6 +352,16 @@ def intake_validate_offer(
     if extra_text:
         blob_partes.append(extra_text)
     blob = " \n ".join(str(p) for p in blob_partes if p)
+
+    policy_eval = classify_offer_candidate(
+        title=str(cargo),
+        content_text=str(descripcion),
+        url=str(url),
+        extra_text=blob,
+    )
+    offer["policy_ruleset_version"] = RULESET_VERSION
+    offer["policy_score"] = policy_eval.score
+    offer["policy_reason_codes"] = list(policy_eval.reason_codes)
 
     # 2. Difusión interna → descarte (no es publicable a externos)
     if is_internal_only(cargo) or is_internal_only(blob):

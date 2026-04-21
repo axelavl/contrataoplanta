@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from urllib.parse import urlparse
 
 from .models import ExtractorKind, PageType, RetryPolicy, SourceProfile
@@ -131,7 +132,36 @@ PROFILES: tuple[SourceProfile, ...] = (
 )
 
 
-def match_source_profile(source: dict[str, object]) -> SourceProfile:
+@dataclass(slots=True)
+class SourceProfileMatch:
+    profile: SourceProfile
+    matched_by: str
+    evidence: list[str] = field(default_factory=list)
+    source_requires_override: bool = False
+    backlog_severity: str | None = None
+
+
+_RUNTIME_PROFILE_HINTS: dict[str, str] = {
+    "ats_trabajando": "ats_trabajando",
+    "ats_hiringroom": "ats_hiringroom",
+    "ats_buk": "ats_buk",
+    "cms_wordpress": "wordpress",
+}
+
+
+def _generic_profile() -> SourceProfile:
+    return next(profile for profile in PROFILES if profile.name == "generic_site")
+
+
+def _find_profile_by_name(name: str) -> SourceProfile:
+    return next(profile for profile in PROFILES if profile.name == name)
+
+
+def classify_source_profile(
+    source: dict[str, object],
+    *,
+    runtime_hints: tuple[str, ...] = (),
+) -> SourceProfileMatch:
     inst_id = source.get("id")
     platform = str(source.get("plataforma_empleo") or "").lower()
     url_candidates = [str(source.get("url_empleo") or ""), str(source.get("sitio_web") or "")]
@@ -139,10 +169,31 @@ def match_source_profile(source: dict[str, object]) -> SourceProfile:
 
     for profile in PROFILES:
         if inst_id in profile.institution_ids:
-            return profile
+            return SourceProfileMatch(profile=profile, matched_by="institution_id", evidence=[str(inst_id)])
+
     for profile in PROFILES:
         if any(domain and domain in host for domain in profile.domains for host in host_candidates):
-            return profile
+            return SourceProfileMatch(profile=profile, matched_by="domain", evidence=list(host_candidates))
+
+    for hint in runtime_hints:
+        profile_name = _RUNTIME_PROFILE_HINTS.get(hint)
+        if profile_name:
+            return SourceProfileMatch(profile=_find_profile_by_name(profile_name), matched_by="runtime", evidence=[hint])
+
+    # Override manual del catalogo: usar solo como ultimo recurso.
+    for profile in PROFILES:
         if any(marker and marker in platform for marker in profile.platform_markers):
-            return profile
-    return next(profile for profile in PROFILES if profile.name == "generic_site")
+            severity = "high" if profile.name.startswith("ats_") else "medium"
+            return SourceProfileMatch(
+                profile=profile,
+                matched_by="override",
+                evidence=[platform],
+                source_requires_override=True,
+                backlog_severity=severity,
+            )
+
+    return SourceProfileMatch(profile=_generic_profile(), matched_by="fallback")
+
+
+def match_source_profile(source: dict[str, object], *, runtime_hints: tuple[str, ...] = ()) -> SourceProfile:
+    return classify_source_profile(source, runtime_hints=runtime_hints).profile

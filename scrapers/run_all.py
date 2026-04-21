@@ -19,8 +19,10 @@ import json
 import sys
 import time
 from collections import Counter
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -48,24 +50,17 @@ from scrapers.base import (
 )
 from scrapers.frequency_policy import should_evaluate_now
 from scrapers.empleos_publicos import EmpleosPublicosScraper
+from scrapers.runtime_inventory import build_runtime_scraper
 from scrapers.evaluation.audit_store import AuditStore
 from scrapers.evaluation.catalog_loader import CatalogLoader
 from scrapers.evaluation.models import (
     Availability, Decision, ExtractorKind,
-    JobRelevance, OpenCallsStatus, PageType,
-    RetryPolicy, ValidityStatus, EvaluationResult,
+    JobRelevance, OpenCallsStatus, PageType, EvaluationResult,
+    RetryPolicy, ValidityStatus,
 )
+from scrapers.evaluation.reason_codes import ReasonCode, reason_detail
 from scrapers.evaluation.source_evaluator import SourceEvaluator
 from scrapers.source_status import ScraperKind, classify_source
-from scrapers.plataformas.buk import BukScraper
-from scrapers.plataformas.carabineros import CarabinerosScraper
-from scrapers.plataformas.ffaa import FfaaScraper
-from scrapers.plataformas.generic_site import GenericSiteScraper
-from scrapers.plataformas.hiringroom import HiringRoomScraper
-from scrapers.plataformas.pdi import PdiScraper
-from scrapers.plataformas.playwright_scraper import PlaywrightScraper
-from scrapers.plataformas.trabajando_cl import TrabajandoCLScraper
-from scrapers.plataformas.wordpress import WordPressScraper
 
 
 log = setup_logging("run_all")
@@ -97,6 +92,54 @@ _POLICIA_PROFILES = {
     161: (ExtractorKind.SCRAPER_PDF_JOBS, "carabineros_pdf_first"),
     162: (ExtractorKind.SCRAPER_PDF_JOBS, "pdi_pdf_first"),
 }
+
+
+@lru_cache(maxsize=1)
+def _playwright_runtime_available() -> tuple[bool, str | None]:
+    """Verifica si Playwright puede lanzar Chromium realmente en este runtime."""
+    try:
+        from playwright.sync_api import sync_playwright
+    except Exception as exc:
+        return False, f"Playwright import failed: {exc.__class__.__name__}: {exc}"
+
+    try:
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(headless=True)
+            browser.close()
+        return True, None
+    except Exception as exc:
+        return False, f"Playwright launch failed: {exc.__class__.__name__}: {exc}"
+
+
+def _enforce_playwright_capability(runtime_sources: list[RuntimeSource]) -> None:
+    available, error_detail = _playwright_runtime_available()
+    if available:
+        return
+
+    for item in runtime_sources:
+        evaluation = item.evaluation
+        if evaluation.recommended_extractor != ExtractorKind.SCRAPER_PLAYWRIGHT:
+            continue
+        evaluation.decision = Decision.SOURCE_STATUS_ONLY
+        evaluation.recommended_extractor = None
+        evaluation.reason_code = ReasonCode.PLAYWRIGHT_RUNTIME_UNAVAILABLE
+        evaluation.reason_detail = reason_detail(
+            ReasonCode.PLAYWRIGHT_RUNTIME_UNAVAILABLE,
+            fallback="Playwright runtime no disponible para rendering JS.",
+        )
+        evaluation.retry_policy = RetryPolicy.HIGH
+        with suppress(AttributeError):
+            signals = dict(getattr(evaluation, "signals_json", None) or {})
+            if error_detail:
+                signals["playwright_runtime_error"] = error_detail[:400]
+            signals["playwright_runtime_available"] = False
+            evaluation.signals_json = signals
+        log.warning(
+            "Fuente %s (id=%s) requiere SCRAPER_PLAYWRIGHT, pero runtime no disponible. Se marca SOURCE_STATUS_ONLY.",
+            item.institucion.get("nombre", "?"),
+            item.institucion.get("id"),
+        )
+
 
 def _bypass_evaluation(source: dict[str, Any]) -> EvaluationResult | None:
     """
@@ -438,77 +481,30 @@ def _build_scrapers(runtime_sources: list[RuntimeSource]) -> list[RuntimeScraper
                 empleos_publicos_agregado = True
             continue
 
-        if evaluation.recommended_extractor in {
-            ExtractorKind.SCRAPER_WORDPRESS_JOBS,
-            ExtractorKind.SCRAPER_WORDPRESS_NEWS_FILTER,
-        }:
-            url_base = (
-                str(item.institucion.get("url_empleo") or "").strip()
-                or str(item.institucion.get("sitio_web") or "").strip()
-            )
-            assignments.append(RuntimeScraperAssignment(
+        runtime_scraper = build_runtime_scraper(item)
+        if runtime_scraper is not None:
+            assignments.append(
+                RuntimeScraperAssignment(
                     institucion_id=item.institucion.get("id"),
-                    scraper=WordPressScraper(
-                        fuente_id=item.fuente_id,
-                        nombre_fuente=str(item.institucion.get("nombre") or item.institucion.get("sigla") or f"wp-{item.institucion.get('id')}"),
-                        url_base=url_base,
-                        sector=item.institucion.get("sector"),
-                        region=item.institucion.get("region"),
-                    ),
-                ))
-            continue
-
-        if evaluation.recommended_extractor == ExtractorKind.SCRAPER_EXTERNAL_ATS:
-            profile_name = item.evaluation.profile_name or ""
-            if profile_name == "ats_trabajando":
-                assignments.append(RuntimeScraperAssignment(institucion_id=item.institucion.get("id"), scraper=TrabajandoCLScraper(fuente_id=item.fuente_id, institucion=item.institucion)))
-            elif profile_name == "ats_hiringroom":
-                assignments.append(RuntimeScraperAssignment(institucion_id=item.institucion.get("id"), scraper=HiringRoomScraper(fuente_id=item.fuente_id, institucion=item.institucion)))
-            elif profile_name == "ats_buk":
-                assignments.append(RuntimeScraperAssignment(institucion_id=item.institucion.get("id"), scraper=BukScraper(fuente_id=item.fuente_id, institucion=item.institucion)))
-            else:
-                assignments.append(RuntimeScraperAssignment(institucion_id=item.institucion.get("id"), scraper=GenericSiteScraper(fuente_id=item.fuente_id, institucion=item.institucion)))
-            continue
-
-        if evaluation.recommended_extractor == ExtractorKind.SCRAPER_PDF_JOBS:
-            inst_id = item.institucion.get("id")
-            if inst_id == 161:
-                assignments.append(RuntimeScraperAssignment(institucion_id=item.institucion.get("id"), scraper=CarabinerosScraper(fuente_id=item.fuente_id, institucion=item.institucion)))
-            elif inst_id == 162:
-                assignments.append(RuntimeScraperAssignment(institucion_id=item.institucion.get("id"), scraper=PdiScraper(fuente_id=item.fuente_id, institucion=item.institucion)))
-            else:
-                assignments.append(RuntimeScraperAssignment(institucion_id=item.institucion.get("id"), scraper=GenericSiteScraper(fuente_id=item.fuente_id, institucion=item.institucion)))
-            continue
-
-        if evaluation.recommended_extractor == ExtractorKind.SCRAPER_CUSTOM_DETAIL:
-            profile_name = item.evaluation.profile_name or ""
-            if profile_name == "ffaa_waf" or item.institucion.get("id") in {157, 158}:
-                assignments.append(RuntimeScraperAssignment(institucion_id=item.institucion.get("id"), scraper=FfaaScraper(fuente_id=item.fuente_id, institucion=item.institucion)))
-            elif item.institucion.get("id") == 161:
-                assignments.append(RuntimeScraperAssignment(institucion_id=item.institucion.get("id"), scraper=CarabinerosScraper(fuente_id=item.fuente_id, institucion=item.institucion)))
-            elif item.institucion.get("id") == 162:
-                assignments.append(RuntimeScraperAssignment(institucion_id=item.institucion.get("id"), scraper=PdiScraper(fuente_id=item.fuente_id, institucion=item.institucion)))
-            else:
-                assignments.append(RuntimeScraperAssignment(institucion_id=item.institucion.get("id"), scraper=GenericSiteScraper(fuente_id=item.fuente_id, institucion=item.institucion)))
-            continue
-
-        if evaluation.recommended_extractor == ExtractorKind.SCRAPER_PLAYWRIGHT:
-            assignments.append(RuntimeScraperAssignment(institucion_id=item.institucion.get("id"), scraper=PlaywrightScraper(fuente_id=item.fuente_id, institucion=item.institucion)))
-            continue
-
-        if evaluation.recommended_extractor == ExtractorKind.SCRAPER_GENERIC_FALLBACK:
-            assignments.append(RuntimeScraperAssignment(institucion_id=item.institucion.get("id"), scraper=GenericSiteScraper(fuente_id=item.fuente_id, institucion=item.institucion)))
-            continue
+                    scraper=runtime_scraper,
+                )
+            )
     return assignments
 
 
-async def _run_scraper(scraper: BaseScraper, sem: asyncio.Semaphore) -> PrecisionReport:
+async def _run_scraper(assignment: RuntimeScraperAssignment, sem: asyncio.Semaphore) -> PrecisionReport:
     async with sem:
+        scraper = assignment.scraper
         try:
             async with scraper:
                 return await scraper.run()
         except Exception as exc:
-            log.exception("Scraper %s fallo: %s", scraper.nombre_fuente, exc)
+            log.exception(
+                "Scraper %s fallo para institucion_id=%s: %s",
+                scraper.nombre_fuente,
+                assignment.institucion_id,
+                exc,
+            )
             report = scraper.report
             report.errores += 1
             return report
@@ -518,9 +514,9 @@ async def _run_scrapers(assignments: list[RuntimeScraperAssignment]) -> list[tup
     if not assignments:
         return []
     sem = asyncio.Semaphore(MAX_SCRAPERS_CONCURRENT)
-    tasks = [_run_scraper(item.scraper, sem) for item in assignments]
+    tasks = [_run_scraper(assignment, sem) for assignment in assignments]
     reports = await asyncio.gather(*tasks)
-    return [(item.institucion_id, report) for item, report in zip(assignments, reports)]
+    return [(assignment.institucion_id, report) for assignment, report in zip(assignments, reports)]
 
 
 def _compute_consecutive_zero_extractions(
@@ -605,6 +601,15 @@ def _persist_source_evaluations(
                             institucion_id=inst_id,
                             event_type="missing_runtime_source",
                             detail="La fuente fue evaluada como extraible, pero no existe mapeo fuente_id en el runtime actual.",
+                            payload=item.evaluation.to_record(),
+                        )
+                    if item.evaluation.signals_json.get("source_requires_override"):
+                        severity = item.evaluation.signals_json.get("override_backlog_severity") or "medium"
+                        audit_store.save_catalog_event(
+                            conn_direct,
+                            institucion_id=inst_id,
+                            event_type="source_requires_override",
+                            detail=f"La fuente requiere override para clasificarse en runtime (severity={severity}).",
                             payload=item.evaluation.to_record(),
                         )
                     saved += 1
@@ -817,6 +822,7 @@ async def main(argv: list[str] | None = None) -> int:
         return 0
 
     runtime_sources = await _evaluate_sources(sources_to_evaluate, audit_store=audit_store, fuentes_index=fuentes_index)
+    _enforce_playwright_capability(runtime_sources)
     for item in runtime_sources:
         if item.evaluation.decision != Decision.EXTRACT:
             log.info(

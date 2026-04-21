@@ -15,3 +15,6 @@
 
 ## Hallazgo transversal
 La principal brecha histórica es **acoplar detección + extracción dentro de cada scraper**. Se corrige moviendo la inteligencia a módulos compartidos y auditables.
+
+## Inventario ejecutable único
+El inventario productivo/legacy y el plan de retiro/migración quedaron consolidados en `docs/SCRAPERS_RUNTIME_INVENTORY.md` y en la configuración ejecutable `scrapers/runtime_inventory.py`.

@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
+from classification.policy import NEGATIVE_PATTERNS, NEGATIVE_URL_PARTS, POSITIVE_KEYWORDS, RULESET_VERSION
 from models.classification import ClassificationResult, RuleTrace
 from models.raw_page import RawPage
 
@@ -40,6 +41,7 @@ class RuleEngine:
             "attachments": False,
             "contract_or_salary": False,
         }
+        rule_trace.append(RuleTrace(rule_id="ruleset_version", weight=0.0, reason=RULESET_VERSION))
 
         for rule in self.positive_rules:
             if self._matches(rule, text, raw_page.url, raw_page.attachment_urls, raw_page.tables_text):
@@ -59,8 +61,7 @@ class RuleEngine:
             score -= 0.25
             negatives.append("ausencia total de cargo/requisitos/fechas")
             rule_trace.append(RuleTrace(rule_id="missing_core_signals", weight=-0.25, reason="sin señales núcleo"))
-        trace_ids = {trace.rule_id for trace in rule_trace}
-        if {"news_keyword", "institutional_keyword"} & trace_ids and not essential_hits["deadline"]:
+        if re.search(r"noticias?|prensa|comunicado|bolet[ií]n|blog", text) and not essential_hits["deadline"]:
             score -= 0.22
             negatives.append("contexto noticioso sin fecha de cierre verificable")
             rule_trace.append(
@@ -184,35 +185,25 @@ class RuleEngine:
 
     @staticmethod
     def _build_positive_rules() -> list[Rule]:
-        return [
-            Rule("cargo_keyword", r"\bcargo\b|nombre del cargo|vacante|puesto", 0.20, "menciona cargo/vacante"),
-            Rule("postulacion_keyword", r"postulaci[oó]n|postular|recepci[oó]n de antecedentes|enviar antecedentes", 0.18, "menciona postulación operativa"),
-            Rule("concurso_keyword", r"concurso p[úu]blico|concurso", 0.14, "menciona concurso"),
-            Rule("funciones_keyword", r"funciones del cargo|principales funciones|objetivo del cargo", 0.14, "incluye funciones"),
-            Rule("requisitos_keyword", r"requisitos del cargo|requisitos exigibles|requisitos deseables|requisitos", 0.14, "incluye requisitos"),
-            Rule("salary_keyword", r"renta bruta mensual|remuneraci[oó]n mensual|honorarios mensuales|sueldo base", 0.14, "incluye renta/remuneración mensual"),
-            Rule("contract_keyword", r"contrata|planta|c[oó]digo del trabajo|calidad jur[ií]dica|reemplazo|suplencia", 0.12, "incluye calidad contractual"),
-            Rule("deadline_keyword", r"fecha de cierre|cierre de postulaci[oó]n|postulaciones hasta", 0.18, "incluye fecha de cierre"),
-            Rule("url_recruitment", r"/trabaja-con-nosotros|/concursos|/postulacion|/ofertas-laborales|/rrhh|/transparencia/(activa/)?trabaje-con-nosotros", 0.16, "URL de reclutamiento", target="url"),
-            Rule("table_job_columns", r"cargo\s+.*renta.*cierre|renta.*cargo", 0.14, "tabla con estructura laboral", target="tables"),
-            Rule("adjunto_bases", r"bases|perfil de cargo|concurso|tdr|convocatoria|formulario de postulaci[oó]n", 0.12, "adjunto de bases/perfil", target="attachments"),
-            Rule("email_postulacion", r"(enviar|remitir|postular).{0,45}[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}", 0.20, "correo explícito de postulación"),
-        ]
+        rules: list[Rule] = []
+        for keyword in POSITIVE_KEYWORDS:
+            slug = re.sub(r"[^a-z0-9]+", "_", keyword.lower()).strip("_")
+            pattern = re.escape(keyword).replace(r"\ ", r"\s+")
+            rules.append(Rule(f"positive_{slug}", pattern, 0.08, f"palabra clave positiva: {keyword}"))
+        rules.extend(
+            [
+                Rule("url_recruitment", r"/trabaja-con-nosotros|/concursos|/postulacion|/ofertas-laborales|/rrhh|/transparencia/(activa/)?trabaje-con-nosotros", 0.16, "URL de reclutamiento", target="url"),
+                Rule("table_job_columns", r"cargo\s+.*renta.*cierre|renta.*cargo", 0.14, "tabla con estructura laboral", target="tables"),
+                Rule("email_postulacion", r"(enviar|remitir|postular).{0,45}[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}", 0.20, "correo explícito de postulación"),
+            ]
+        )
+        return rules
 
     @staticmethod
     def _build_negative_rules() -> list[Rule]:
-        # Lista negativa unificada: convergen aquí las frases-marca que el
-        # intake transversal usa para descartar (scrapers/intake.py).
-        return [
-            Rule("news_keyword", r"noticias?|prensa|comunicado|bolet[ií]n|actualidad|novedades?", -0.24, "contenido de noticias/prensa"),
-            Rule("events_keyword", r"agenda|evento|seminario|charla|taller|ceremonia|aniversario|operativo", -0.24, "contenido de evento/agenda"),
-            Rule("institutional_keyword", r"publicaci[oó]n institucional|art[ií]culo|blog|memoria anual", -0.18, "contenido institucional genérico"),
-            Rule("results_keyword", r"resultados? del concurso|n[oó]mina de seleccionad|n[oó]mina final|lista de seleccionad|adjudicaci[oó]n|proceso finalizado|concurso cerrado|convocatoria cerrada|postulaciones cerradas", -0.35, "página de resultados/cierre"),
-            Rule("acta_resolucion", r"\bact[ao]\b|resoluci[oó]n exenta|decreto exento", -0.20, "acta/resolución/decreto sin convocatoria vigente"),
-            Rule("historical_keyword", r"archivo|hist[oó]rico|a[nñ]os anteriores|concursos? anteriores", -0.25, "contenido histórico"),
-            Rule("procurement_keyword", r"licitaci[oó]n|proveedor|compra p[úu]blica|mercado p[úu]blico|subvenci[oó]n|fondos concursables", -0.35, "contenido no laboral (compras/fondos)"),
-            Rule("community_keyword", r"participaci[oó]n ciudadana|actividad comunitaria|cuenta p[úu]blica|concurso escolar|concurso art[ií]stico|concurso de proyectos", -0.30, "convocatoria comunitaria no laboral"),
-            Rule("internal_only", r"solo difusi[oó]n( interna)?|difusi[oó]n interna", -0.40, "aviso solo de difusión interna"),
-            Rule("url_news", r"/noticias/|/prensa/|/blog/|/novedades/|/comunicados", -0.25, "URL de noticias", target="url"),
-            Rule("url_non_jobs", r"/licitaciones?|/cuenta-publica|/actividades|/agenda|/galer[ií]a|/historico|/anteriores", -0.25, "URL con baja probabilidad laboral", target="url"),
-        ]
+        rules: list[Rule] = []
+        for idx, pattern in enumerate(NEGATIVE_PATTERNS, start=1):
+            rules.append(Rule(f"negative_pattern_{idx}", pattern, -0.20, f"patrón negativo #{idx}"))
+        for idx, part in enumerate(NEGATIVE_URL_PARTS, start=1):
+            rules.append(Rule(f"negative_url_{idx}", re.escape(part), -0.25, f"URL negativa: {part}", target="url"))
+        return rules

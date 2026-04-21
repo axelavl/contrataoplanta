@@ -9,7 +9,7 @@ from scrapers.evaluation.models import (
     PageType,
     ValidityStatus,
 )
-from scrapers.evaluation.source_profiles import match_source_profile
+from scrapers.evaluation.source_profiles import classify_source_profile, match_source_profile
 
 
 def test_ats_profiles_route_trabajando_hiringroom_buk():
@@ -118,3 +118,34 @@ def test_generic_profile_keeps_global_default_thresholds():
     assert selection.decision == Decision.MANUAL_REVIEW
     assert selection.extract_threshold_applied == 0.75
     assert selection.manual_threshold_applied == 0.55
+
+
+def test_runtime_hints_match_ats_before_override():
+    match = classify_source_profile(
+        {"url_empleo": "https://example.gob.cl/empleos", "plataforma_empleo": "portal custom"},
+        runtime_hints=("ats_hiringroom",),
+    )
+    assert match.profile.name == "ats_hiringroom"
+    assert match.matched_by == "runtime"
+    assert match.source_requires_override is False
+
+
+def test_domain_match_has_priority_over_override():
+    match = classify_source_profile(
+        {"url_empleo": "https://portal.trabajando.cl/ofertas", "plataforma_empleo": "WordPress"},
+        runtime_hints=(),
+    )
+    assert match.profile.name == "ats_trabajando"
+    assert match.matched_by == "domain"
+    assert match.source_requires_override is False
+
+
+def test_override_only_after_auto_detection_fails_and_reports_severity():
+    match = classify_source_profile(
+        {"url_empleo": "https://example.gob.cl/empleos", "plataforma_empleo": "Trabajando.cl"},
+        runtime_hints=(),
+    )
+    assert match.profile.name == "ats_trabajando"
+    assert match.matched_by == "override"
+    assert match.source_requires_override is True
+    assert match.backlog_severity == "high"
