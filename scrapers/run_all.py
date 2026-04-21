@@ -152,6 +152,12 @@ class RuntimeSource:
     evaluation: Any
 
 
+@dataclass(slots=True)
+class RuntimeScraperAssignment:
+    institucion_id: int | None
+    scraper: BaseScraper
+
+
 def _host(url: str | None) -> str:
     if not url:
         return ""
@@ -407,8 +413,8 @@ async def _evaluate_sources(
     return list(runtime_sources)
 
 
-def _build_scrapers(runtime_sources: list[RuntimeSource]) -> list[BaseScraper]:
-    scrapers: list[BaseScraper] = []
+def _build_scrapers(runtime_sources: list[RuntimeSource]) -> list[RuntimeScraperAssignment]:
+    assignments: list[RuntimeScraperAssignment] = []
     empleos_publicos_agregado = False
 
     for item in runtime_sources:
@@ -430,27 +436,38 @@ def _build_scrapers(runtime_sources: list[RuntimeSource]) -> list[BaseScraper]:
 
         runtime_scraper = build_runtime_scraper(item)
         if runtime_scraper is not None:
-            scrapers.append(runtime_scraper)
-    return scrapers
+            assignments.append(
+                RuntimeScraperAssignment(
+                    institucion_id=item.institucion.get("id"),
+                    scraper=runtime_scraper,
+                )
+            )
+    return assignments
 
 
-async def _run_scraper(scraper: BaseScraper, sem: asyncio.Semaphore) -> PrecisionReport:
+async def _run_scraper(assignment: RuntimeScraperAssignment, sem: asyncio.Semaphore) -> PrecisionReport:
     async with sem:
+        scraper = assignment.scraper
         try:
             async with scraper:
                 return await scraper.run()
         except Exception as exc:
-            log.exception("Scraper %s fallo: %s", scraper.nombre_fuente, exc)
+            log.exception(
+                "Scraper %s fallo para institucion_id=%s: %s",
+                scraper.nombre_fuente,
+                assignment.institucion_id,
+                exc,
+            )
             report = scraper.report
             report.errores += 1
             return report
 
 
-async def _run_scrapers(scrapers: list[BaseScraper]) -> list[PrecisionReport]:
-    if not scrapers:
+async def _run_scrapers(assignments: list[RuntimeScraperAssignment]) -> list[PrecisionReport]:
+    if not assignments:
         return []
     sem = asyncio.Semaphore(MAX_SCRAPERS_CONCURRENT)
-    return list(await asyncio.gather(*[_run_scraper(scraper, sem) for scraper in scrapers]))
+    return list(await asyncio.gather(*[_run_scraper(assignment, sem) for assignment in assignments]))
 
 
 def persistir_corrida(
@@ -620,9 +637,9 @@ async def main(argv: list[str] | None = None) -> int:
 
     reports: list[PrecisionReport] = []
     if not args.evaluate_only:
-        scrapers = _build_scrapers(runtime_sources)
-        log.info("Scrapers ejecutables en este runtime: %s", len(scrapers))
-        reports = await _run_scrapers(scrapers)
+        assignments = _build_scrapers(runtime_sources)
+        log.info("Scrapers ejecutables en este runtime: %s", len(assignments))
+        reports = await _run_scrapers(assignments)
 
     vencidas_cerradas = 0
     try:

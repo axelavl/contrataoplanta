@@ -31,8 +31,8 @@ def test_build_scrapers_maps_ats_extractors():
         _runtime_source(inst_id=11, extractor=ExtractorKind.SCRAPER_EXTERNAL_ATS, profile_name="ats_hiringroom"),
         _runtime_source(inst_id=12, extractor=ExtractorKind.SCRAPER_EXTERNAL_ATS, profile_name="ats_buk"),
     ]
-    scrapers = _build_scrapers(runtime_sources)
-    names = [type(scraper).__name__ for scraper in scrapers]
+    assignments = _build_scrapers(runtime_sources)
+    names = [type(assignment.scraper).__name__ for assignment in assignments]
     assert names == ["TrabajandoCLScraper", "HiringRoomScraper", "BukScraper"]
 
 
@@ -42,6 +42,6 @@ def test_build_scrapers_maps_pdf_first_and_custom_detail():
         _runtime_source(inst_id=162, extractor=ExtractorKind.SCRAPER_PDF_JOBS, profile_name="pdi_pdf_first"),
         _runtime_source(inst_id=157, extractor=ExtractorKind.SCRAPER_CUSTOM_DETAIL, profile_name="ffaa_waf"),
     ]
-    scrapers = _build_scrapers(runtime_sources)
-    names = [type(scraper).__name__ for scraper in scrapers]
+    assignments = _build_scrapers(runtime_sources)
+    names = [type(assignment.scraper).__name__ for assignment in assignments]
     assert names == ["CarabinerosScraper", "PdiScraper", "FfaaScraper"]
