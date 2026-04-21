@@ -40,6 +40,21 @@ def test_wordpress_old_without_open_signals_expires_by_publication_age():
     assert assessment.reason_code == ReasonCode.PUBLICATION_TOO_OLD
 
 
+def test_wordpress_old_with_bases_pdf_does_not_expire_by_age():
+    assessment = assess_validity(
+        page_type=PageType.WORDPRESS_POST,
+        text="Publicacion historica sin fecha de cierre en la pagina.",
+        expanded_text="Publicacion historica. Adjuntos: bases-concurso.pdf perfil-del-cargo.pdf",
+        publication_date=date(2025, 12, 1),
+        closing_date=None,
+        application_deadline=None,
+        has_pdf_bases_or_profile=True,
+        reference_date=REFERENCE_DATE,
+    )
+    assert assessment.status == ValidityStatus.UNKNOWN_VALIDITY
+    assert assessment.reason_code is None
+
+
 def test_wordpress_old_but_future_deadline_stays_open():
     assessment = assess_validity(
         page_type=PageType.WORDPRESS_POST,
@@ -67,6 +82,19 @@ def test_contradictory_text_signals_go_to_manual_review():
         page_type=PageType.DETAIL_PAGE,
         text="Proceso abierto, pero tambien figura proceso cerrado por actualizacion del portal.",
         publication_date=date(2026, 4, 5),
+        closing_date=None,
+        application_deadline=None,
+        reference_date=REFERENCE_DATE,
+    )
+    assert assessment.status == ValidityStatus.MANUAL_REVIEW
+    assert assessment.reason_code == ReasonCode.MANUAL_REVIEW_REQUIRED
+
+
+def test_old_publication_with_mixed_signals_prioritizes_manual_review():
+    assessment = assess_validity(
+        page_type=PageType.WORDPRESS_POST,
+        text="Proceso abierto con nota previa del proceso cerrado.",
+        publication_date=date(2025, 12, 1),
         closing_date=None,
         application_deadline=None,
         reference_date=REFERENCE_DATE,

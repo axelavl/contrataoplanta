@@ -87,13 +87,27 @@ def _has_jobposting_jsonld(soup: BeautifulSoup) -> bool:
     return False
 
 
-def _extract_pdf_links(soup: BeautifulSoup, source_url: str) -> list[str]:
+def _extract_pdf_attachment_context(soup: BeautifulSoup, source_url: str, body_text: str) -> tuple[list[str], str]:
     links: list[str] = []
+    attachment_fragments: list[str] = []
     for anchor in soup.find_all("a", href=True):
         href = anchor["href"]
         if href.lower().endswith(".pdf"):
             links.append(urljoin(source_url, href))
-    return links
+            anchor_text = anchor.get_text(" ", strip=True)
+            fragment = f"{anchor_text} {href}".strip()
+            if fragment:
+                attachment_fragments.append(fragment)
+    if not attachment_fragments:
+        return links, body_text
+    return links, f"{body_text} {' '.join(attachment_fragments)}".strip()
+
+
+def _has_pdf_bases_or_profile(pdf_links: list[str], expanded_text: str) -> bool:
+    expanded_norm = _norm(expanded_text)
+    return any("bases" in _norm(link) or "perfil" in _norm(link) for link in pdf_links) or (
+        "bases" in expanded_norm and "pdf" in expanded_norm
+    ) or ("perfil del cargo" in expanded_norm and "pdf" in expanded_norm)
 
 
 def _infer_page_type(*, page: FetchedPage, soup: BeautifulSoup, profile: SourceProfile) -> tuple[PageType, str | None]:
@@ -255,17 +269,20 @@ class SourceEvaluator:
         soup = BeautifulSoup(page.body, "html.parser")
         page_type, cms = _infer_page_type(page=page, soup=soup, profile=profile)
         body_text = soup.get_text(" ", strip=True)
+        pdf_links, expanded_text = _extract_pdf_attachment_context(soup, page.final_url, body_text)
+        has_pdf_bases_or_profile = _has_pdf_bases_or_profile(pdf_links, expanded_text)
         title = soup.title.get_text(" ", strip=True) if soup.title else None
-        dates = extract_dates(html=page.body, text=body_text, reference_date=self.reference_date)
+        dates = extract_dates(html=page.body, text=expanded_text, reference_date=self.reference_date)
         validity = assess_validity(
             page_type=page_type,
             text=body_text,
             publication_date=dates.publication_date,
             closing_date=dates.closing_date,
             application_deadline=dates.application_deadline,
+            expanded_text=expanded_text,
+            has_pdf_bases_or_profile=has_pdf_bases_or_profile,
             reference_date=self.reference_date,
         )
-        pdf_links = _extract_pdf_links(soup, page.final_url)
         signal_bundle = build_signal_bundle(
             source_url=page.final_url,
             title=title,
@@ -316,6 +333,10 @@ class SourceEvaluator:
             elif open_calls_status == OpenCallsStatus.ONLY_EXPIRED_CALLS:
                 selection.reason_code = ReasonCode.ONLY_EXPIRED_CALLS
             selection.reason_detail = reason_detail(selection.reason_code)
+        if validity.status == ValidityStatus.MANUAL_REVIEW and selection.decision == Decision.SKIP:
+            selection.decision = Decision.MANUAL_REVIEW
+            selection.reason_code = ReasonCode.MANUAL_REVIEW_REQUIRED
+            selection.reason_detail = reason_detail(ReasonCode.MANUAL_REVIEW_REQUIRED)
 
         signals_json = signal_bundle.to_json()
         signals_json.update(
@@ -326,6 +347,7 @@ class SourceEvaluator:
                 "pdf_links": pdf_links[:5],
                 **dates.to_json(),
                 "open_calls_status": open_calls_status.value,
+                "age_expiry_evidence": validity.age_expiry_evidence,
                 "extract_threshold_applied": selection.extract_threshold_applied,
                 "manual_threshold_applied": selection.manual_threshold_applied,
             }
