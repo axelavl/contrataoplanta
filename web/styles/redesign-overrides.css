@@ -1501,8 +1501,11 @@ header {
   display: none !important;
 }
 
-/* ══ 2) Ocultar "Renta no informada" (redundante) ═════════════════════ */
-.oferta-renta--muted,
+/* ══ 2) Ocultar `.oferta-renta` vacío ═════════════════════════════════
+   El placeholder "Renta no informada" se eliminó del renderCard
+   (web/app.js) — ahora simplemente no se renderiza el span cuando no
+   hay renta. Dejamos este selector como red de seguridad para
+   entradas SSR o legacy que pudieran inyectar un span vacío. */
 .oferta-renta:empty {
   display: none !important;
 }
@@ -3137,10 +3140,6 @@ button:focus-visible,
     color: var(--texto, var(--azul)) !important;
     margin-right: 4px;
     letter-spacing: -0.01em;
-  }
-  .oferta-renta--muted {
-    font-size: 11.5px !important;
-    font-weight: 500 !important;
   }
   .oferta-detalle {
     color: var(--texto2, #374151);
