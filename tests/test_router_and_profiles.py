@@ -220,3 +220,13 @@ def test_override_only_after_auto_detection_fails_and_reports_severity():
     assert match.matched_by == "override"
     assert match.source_requires_override is True
     assert match.backlog_severity == "high"
+
+
+def test_trabajando_subdomain_matches_even_without_platform_override():
+    match = classify_source_profile(
+        {"url_empleo": "https://fiscaliadechile.trabajando.cl/trabajo-empleo", "plataforma_empleo": "Sitio propio"},
+        runtime_hints=(),
+    )
+    assert match.profile.name == "ats_trabajando"
+    assert match.matched_by == "domain"
+    assert match.source_requires_override is False
