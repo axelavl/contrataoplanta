@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from datetime import date
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 from bs4 import BeautifulSoup
 
@@ -64,7 +64,7 @@ class TrabajandoCLScraper(GenericSiteScraper):
         if self.http is None:
             raise RuntimeError("TrabajandoCLScraper requiere HttpClient activo.")
 
-        base_url = self._canonical_base()
+        base_url = await self._resolve_base_url()
         if not base_url:
             return []
 
@@ -90,6 +90,20 @@ class TrabajandoCLScraper(GenericSiteScraper):
 
         return offers
 
+    async def _resolve_base_url(self) -> str:
+        """
+        Resuelve la URL base ATS para scraping.
+
+        Prioridad:
+        1) url_empleo/sitio_web ya en trabajando.cl
+        2) descubrir enlace trabajando.cl desde página institucional
+        """
+        direct = self._canonical_base()
+        if direct:
+            return direct
+        discovered = await self._discover_base_from_institutional_site()
+        return discovered.rstrip("/") if discovered else ""
+
     # ── Parseo del estado SSR de Nuxt ─────────────────────────────────────────
 
     def _parse_nuxt_state(
@@ -102,9 +116,23 @@ class TrabajandoCLScraper(GenericSiteScraper):
         scripts = re.findall(r"<script[^>]*>(.*?)</script>", html, re.DOTALL)
         nuxt_state = ""
         for s in scripts:
-            if "ShallowReactive" in s:
+            if (
+                "ShallowReactive" in s
+                or "__NUXT" in s
+                or "cantidadPaginas" in s
+                or "oferta" in s.lower()
+            ):
                 nuxt_state = s
                 break
+
+        if not nuxt_state:
+            # Segundo intento: buscar en todo el HTML cuando el estado viene
+            # serializado fuera del primer script relevante.
+            if "cantidadPaginas" in html or re.search(r"(\d{6,8}),\"([^\"]{6,180})\"", html):
+                nuxt_state = html
+            else:
+                # Fallback: parseo HTML genérico
+                return self._parse_html_fallback(html, base_url), 1
 
         if not nuxt_state:
             # Fallback: parseo HTML genérico
@@ -189,6 +217,37 @@ class TrabajandoCLScraper(GenericSiteScraper):
             return url.rstrip("/")
         return ""
 
+    async def _discover_base_from_institutional_site(self) -> str:
+        """Busca enlaces a *.trabajando.cl desde url_empleo/sitio_web institucional."""
+        if self.http is None:
+            return ""
+        for seed in (self.url_empleo, self.sitio_web):
+            if not seed:
+                continue
+            html = await self.http.get(seed)
+            if not isinstance(html, str) or not html.strip():
+                continue
+            discovered = self._extract_trabajando_url_from_html(html, seed)
+            if discovered:
+                return discovered
+        return ""
+
+    def _extract_trabajando_url_from_html(self, html: str, base_url: str) -> str:
+        """Extrae y normaliza el primer enlace a trabajando.cl encontrado."""
+        soup = BeautifulSoup(html, "html.parser")
+        for anchor in soup.select("a[href]"):
+            href = clean_text(anchor.get("href"))
+            if not href:
+                continue
+            full = urljoin(base_url, href)
+            if "trabajando.cl" not in full.lower():
+                continue
+            if "/trabajo-empleo" in full or "/ofertas" in full or "/empleos" in full:
+                return full.rstrip("/")
+            parsed = urlparse(full)
+            return f"{parsed.scheme}://{parsed.netloc}/trabajo-empleo"
+        return ""
+
     def _resolve_offer_url(self, base_url: str, id_oferta: str) -> str:
         """Construye la URL de detalle de una oferta."""
         parsed = urlparse(base_url)
@@ -220,7 +279,6 @@ class TrabajandoCLScraper(GenericSiteScraper):
             title = clean_text(title_el.get_text(" ", strip=True))
             link = card.select_one("a[href]")
             href = clean_text(link.get("href") if link else "")
-            from urllib.parse import urljoin
             url = urljoin(base_url, href) if href else base_url
             is_offer, _ = self._score_offer_candidate(title, "", url=url)
             if not title or not is_offer:
