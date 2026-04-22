@@ -239,9 +239,9 @@
     {
       "id": 146,
       "status": "active",
-      "kind": "generic",
-      "reason": "Fiscalía de Chile — portal trabaja-con-nosotros propio",
-      "notes": "https://www.fiscaliadechile.cl/trabaja-con-nosotros"
+      "kind": "custom_trabajando",
+      "reason": "Fiscalía de Chile — portal institucional en Trabajando.cl",
+      "notes": "https://fiscaliadechile.trabajando.cl/trabajo-empleo (fallback informativo: https://www.fiscaliadechile.cl/trabaja-con-nosotros)"
     },
     {
       "id": 148,
