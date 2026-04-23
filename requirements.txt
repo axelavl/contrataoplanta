@@ -38,6 +38,7 @@ python-dotenv==1.0.1
 # ── Utilidades de datos ─────────────────────────────────────
 python-dateutil==2.9.0
 openpyxl==3.1.5
+streamlit==1.46.0
 
 # ── Emails transaccionales ──────────────────────────────────
 # resend 0.8.0 pineaba requests<2.32 y entraba en conflicto con el

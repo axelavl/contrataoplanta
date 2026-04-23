@@ -131,6 +131,20 @@ SELECT cargo, institucion_nombre, region, fecha_cierre FROM ofertas ORDER BY cre
 SELECT * FROM logs_scraping ORDER BY iniciado_en DESC LIMIT 5;
 ```
 
+### Dashboard de QA del scraper (Streamlit)
+
+```bash
+# 1) levantar API en local (otro terminal)
+python -m uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
+
+# 2) levantar dashboard
+streamlit run scripts/streamlit_scraper_dashboard.py
+
+# Opcional: apuntar a otra API
+export SCRAPER_API_BASE_URL="https://tu-api"
+streamlit run scripts/streamlit_scraper_dashboard.py
+```
+
 ---
 
 ## Automatización con cron (Linux/Mac)
