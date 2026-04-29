@@ -599,9 +599,16 @@
         <div class="modal-seccion-titulo">Cómo postular</div>
         <ul class="modal-list" id="modal-postulacion-list"></ul>
       </div>
-      <div class="modal-seccion">
+      <div class="modal-seccion" id="modal-fulltext-wrap">
         <details class="modal-fulltext-details">
           <summary>Texto completo del aviso</summary>
+          <!-- Residual: oraciones que el clasificador semántico no pudo
+               encajar en ninguna sección (Funciones, Requisitos, Condiciones,
+               etc.) — se exponen acá como bullets. Si está vacío, se oculta. -->
+          <div class="modal-residual-wrap" id="modal-residual-wrap" hidden>
+            <h5 class="modal-residual-title">Otros aspectos del aviso</h5>
+            <ul class="modal-list modal-list--residual" id="modal-residual-list"></ul>
+          </div>
           <div class="modal-rich-text" id="modal-descripcion"></div>
           <div class="modal-rich-text" id="modal-requisitos"></div>
         </details>

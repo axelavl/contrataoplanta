@@ -1157,13 +1157,76 @@
     return null;
   }
 
+  // Abreviaturas comunes en español/Chile que terminan en `.` y NO deben
+  // disparar el split de oración. La regla simple `(?<=[.!?])\s+` rompe
+  // en "Dr. Pérez" y deja "Dr." como oración huérfana; protegemos
+  // sustituyendo el punto por un placeholder antes del split y luego
+  // restaurándolo. Lista cubre títulos/profesiones, vialidad, abreviaturas
+  // de uso administrativo y siglas con punto interno (S.A., Ph.D., etc.).
+  var SIMPLE_ABBREVIATIONS = [
+    // Títulos / profesiones
+    'Dr', 'Dra', 'Sr', 'Sra', 'Srta', 'Don', 'Dn', 'Dña', 'Lic', 'Lcda',
+    'Ing', 'Inga', 'Mg', 'Mgs', 'Prof', 'Profa', 'PhD', 'MSc',
+    // Direcciones / vialidad
+    'Avda', 'Av', 'Pje', 'Pasaje', 'Cl', 'Cll',
+    // Administrativo / legal
+    'art', 'arts', 'inc', 'incs', 'lit', 'lits', 'pág', 'págs', 'p',
+    'núm', 'nº', 'No', 'Nro',
+    // Período y temporal
+    'Pdo', 'Pdta', 'Ej', 'aprox', 'máx', 'min', 'pgto',
+    // Razón social
+    'Ltda', 'Cía', 'Cia',
+    // Cargo
+    'Dpto', 'Dir', 'Dpo', 'Sec', 'Subd', 'Subdir',
+  ];
+  // Siglas con punto interno: protegemos TODOS los puntos del match.
+  var MULTI_DOT_ABBR_RE = /\b(S\.A|S\.p\.A|Ph\.D|M\.A|Ed\.D|U\.S\.A|R\.M|F\.A|E\.U)\.?/g;
+  // Iniciales: una sola letra mayúscula seguida de punto + espacio + otra mayúscula
+  // (típico en nombres tipo "J. M. Pérez").
+  var INITIAL_RE = /(^|[\s])([A-ZÁÉÍÓÚÑ])\.(?=\s+[A-ZÁÉÍÓÚÑ])/g;
+  // Placeholder fuera del set Unicode usable: U+0001 (Start Of Heading).
+  // Imposible que aparezca naturalmente en texto plano.
+  var DOT_PLACEHOLDER = '';
+
+  function _protectAbbreviations(text) {
+    var t = String(text || '');
+    // Abreviaturas simples: \bAbbr\. → Abbr<placeholder>
+    var simpleRe = new RegExp(
+      '\\b(' + SIMPLE_ABBREVIATIONS.map(function (a) {
+        return a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      }).join('|') + ')\\.',
+      'g'
+    );
+    t = t.replace(simpleRe, function (_, abbr) { return abbr + DOT_PLACEHOLDER; });
+    // Multi-punto: reemplaza todos los puntos del match.
+    t = t.replace(MULTI_DOT_ABBR_RE, function (m) {
+      return m.replace(/\./g, DOT_PLACEHOLDER);
+    });
+    // Iniciales: "J. M. Pérez" → "J<ph> M<ph> Pérez"
+    t = t.replace(INITIAL_RE, function (_, lead, letter) {
+      return lead + letter + DOT_PLACEHOLDER;
+    });
+    return t;
+  }
+
+  function _restorePlaceholders(text) {
+    return String(text || '').replace(new RegExp(DOT_PLACEHOLDER, 'g'), '.');
+  }
+
   function splitSemanticSentences(text) {
     if (!text) return [];
     var t = normalizeText(text);
     t = t.replace(/\n+/g, '. ');
     t = t.replace(/\s*[•·●◦▪▫■□]\s*/g, '. ');
     t = t.replace(/\s*[;]\s*/g, '. ');
-    return t.split(/(?<=[.!?])\s+/).map(trim).filter(function (s) { return s.length >= 18; });
+    // Protege abreviaturas antes del split para que "Dr. Pedro" /
+    // "art. 5°" / "Ph.D. en X" / "S.A." no generen oraciones huérfanas.
+    t = _protectAbbreviations(t);
+    var sentences = t.split(/(?<=[.!?])\s+/);
+    return sentences
+      .map(_restorePlaceholders)
+      .map(trim)
+      .filter(function (s) { return s.length >= 18; });
   }
 
   function normalizeCompareKey(value) {
@@ -1218,6 +1281,27 @@
     return '';
   }
 
+  // Heurísticas de penalización por ítem: ítems cortos, fragmentarios
+  // o muy breves bajan la confianza agregada de la sección. La idea es
+  // permitir que el caller muestre un badge "~ aproximado" cuando la
+  // clasificación, aunque haya matcheado una regla, no es del todo
+  // confiable porque los ítems detrás son ruido.
+  function _itemConfidence(text, ruleConfidence) {
+    var conf = Number(ruleConfidence) || 0.7;
+    var trimmed = String(text || '').trim();
+    var words = trimmed.split(/\s+/).filter(Boolean);
+    if (trimmed.length < 30) conf -= 0.1;
+    if (words.length < 4) conf -= 0.15;
+    // ALL CAPS suele ser cabecera / ruido sobreviviente, no contenido real.
+    if (trimmed.length >= 6 && trimmed === trimmed.toUpperCase()
+        && /[A-ZÁÉÍÓÚÑ]/.test(trimmed)) {
+      conf -= 0.1;
+    }
+    if (conf < 0) conf = 0;
+    if (conf > 1) conf = 1;
+    return conf;
+  }
+
   function buildSemanticSections(payload) {
     payload = payload || {};
     var descripcion = String(payload.descripcion || '');
@@ -1241,6 +1325,25 @@
         competencias: [],
         documentos: [],
       },
+      // Confianza media por categoría de requisitos (0-1). Sólo aplica a
+      // las 7 sub-categorías clasificadas vía cascade. Funciones y
+      // condiciones no usan reglas de confianza (asumimos confianza 1
+      // si pasaron el filtro). El caller puede usar este objeto para
+      // decidir si renderizar un badge "~ aproximado" cuando la media
+      // de la categoría queda por debajo de 0.7.
+      requisitosConfidence: {
+        obligatorios: 0,
+        deseables: 0,
+        experiencia: 0,
+        formacion: 0,
+        especialidades: 0,
+        competencias: 0,
+        documentos: 0,
+      },
+    };
+    var requisitosCount = {
+      obligatorios: 0, deseables: 0, experiencia: 0, formacion: 0,
+      especialidades: 0, competencias: 0, documentos: 0,
     };
 
     // Cascada por sentencia. Cada sentencia cae en UNA sola categoría.
@@ -1252,7 +1355,8 @@
     //      matchea señales de requisitos (REQ_SIGNAL_RE).
     //   2. Requisitos.* — cascade de reglas en CLASSIFICATION_RULES.
     //      Si matchea con confianza ≥ 0.4, gana y aplicamos
-    //      stripRedundantPrefix al bullet.
+    //      stripRedundantPrefix al bullet. Acumulamos la confianza por
+    //      ítem para promediarla en `requisitosConfidence[cat]`.
     //   3. Postulación — URL/portal/plazo/etapa (sentencias que hablan
     //      de cómo/cuándo postular, no de qué documentos presentar).
     //   4. Condiciones — keyword contextual (renta/jornada/horario/
@@ -1276,7 +1380,14 @@
         if (cleaned.length < 10) {
           out.residual.push(s);
         } else {
-          out.requisitos[classification.category].push(cleaned);
+          var cat = classification.category;
+          out.requisitos[cat].push(cleaned);
+          var itemConf = _itemConfidence(cleaned, classification.confidence);
+          // Promedio incremental: nuevo_promedio = (prev*n + valor) / (n+1)
+          var prev = out.requisitosConfidence[cat];
+          var n = requisitosCount[cat];
+          out.requisitosConfidence[cat] = (prev * n + itemConf) / (n + 1);
+          requisitosCount[cat] = n + 1;
         }
         continue;
       }
@@ -1360,6 +1471,7 @@
     splitTitleCaseRunOn: splitTitleCaseRunOn,
     splitFlexibleParagraph: splitFlexibleParagraph,
     buildSemanticSections: buildSemanticSections,
+    _itemConfidence: _itemConfidence,
     classifyRequirementItem: classifyRequirementItem,
     stripRedundantPrefix: stripRedundantPrefix
   };
