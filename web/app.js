@@ -1923,7 +1923,9 @@ function _setApproxBadge(secId, confidence) {
   const heading = sec.querySelector('h5');
   if (!heading) return;
   const existing = heading.querySelector('[data-approx-badge]');
-  const shouldShow = typeof confidence === 'number' && confidence < 0.7;
+  // confidence === 0 indica "categoría sin items / no medido", NO baja
+  // confianza. Sólo mostramos el badge en el rango medio (0 < x < 0.7).
+  const shouldShow = typeof confidence === 'number' && confidence > 0 && confidence < 0.7;
   if (shouldShow && !existing) {
     heading.insertAdjacentHTML('beforeend', ' ' + _APPROX_BADGE_HTML);
   } else if (!shouldShow && existing) {
