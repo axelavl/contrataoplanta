@@ -1218,6 +1218,27 @@
     return '';
   }
 
+  // Heurísticas de penalización por ítem: ítems cortos, fragmentarios
+  // o muy breves bajan la confianza agregada de la sección. La idea es
+  // permitir que el caller muestre un badge "~ aproximado" cuando la
+  // clasificación, aunque haya matcheado una regla, no es del todo
+  // confiable porque los ítems detrás son ruido.
+  function _itemConfidence(text, ruleConfidence) {
+    var conf = Number(ruleConfidence) || 0.7;
+    var trimmed = String(text || '').trim();
+    var words = trimmed.split(/\s+/).filter(Boolean);
+    if (trimmed.length < 30) conf -= 0.1;
+    if (words.length < 4) conf -= 0.15;
+    // ALL CAPS suele ser cabecera / ruido sobreviviente, no contenido real.
+    if (trimmed.length >= 6 && trimmed === trimmed.toUpperCase()
+        && /[A-ZÁÉÍÓÚÑ]/.test(trimmed)) {
+      conf -= 0.1;
+    }
+    if (conf < 0) conf = 0;
+    if (conf > 1) conf = 1;
+    return conf;
+  }
+
   function buildSemanticSections(payload) {
     payload = payload || {};
     var descripcion = String(payload.descripcion || '');
@@ -1241,6 +1262,25 @@
         competencias: [],
         documentos: [],
       },
+      // Confianza media por categoría de requisitos (0-1). Sólo aplica a
+      // las 7 sub-categorías clasificadas vía cascade. Funciones y
+      // condiciones no usan reglas de confianza (asumimos confianza 1
+      // si pasaron el filtro). El caller puede usar este objeto para
+      // decidir si renderizar un badge "~ aproximado" cuando la media
+      // de la categoría queda por debajo de 0.7.
+      requisitosConfidence: {
+        obligatorios: 0,
+        deseables: 0,
+        experiencia: 0,
+        formacion: 0,
+        especialidades: 0,
+        competencias: 0,
+        documentos: 0,
+      },
+    };
+    var requisitosCount = {
+      obligatorios: 0, deseables: 0, experiencia: 0, formacion: 0,
+      especialidades: 0, competencias: 0, documentos: 0,
     };
 
     // Cascada por sentencia. Cada sentencia cae en UNA sola categoría.
@@ -1252,7 +1292,8 @@
     //      matchea señales de requisitos (REQ_SIGNAL_RE).
     //   2. Requisitos.* — cascade de reglas en CLASSIFICATION_RULES.
     //      Si matchea con confianza ≥ 0.4, gana y aplicamos
-    //      stripRedundantPrefix al bullet.
+    //      stripRedundantPrefix al bullet. Acumulamos la confianza por
+    //      ítem para promediarla en `requisitosConfidence[cat]`.
     //   3. Postulación — URL/portal/plazo/etapa (sentencias que hablan
     //      de cómo/cuándo postular, no de qué documentos presentar).
     //   4. Condiciones — keyword contextual (renta/jornada/horario/
@@ -1276,7 +1317,14 @@
         if (cleaned.length < 10) {
           out.residual.push(s);
         } else {
-          out.requisitos[classification.category].push(cleaned);
+          var cat = classification.category;
+          out.requisitos[cat].push(cleaned);
+          var itemConf = _itemConfidence(cleaned, classification.confidence);
+          // Promedio incremental: nuevo_promedio = (prev*n + valor) / (n+1)
+          var prev = out.requisitosConfidence[cat];
+          var n = requisitosCount[cat];
+          out.requisitosConfidence[cat] = (prev * n + itemConf) / (n + 1);
+          requisitosCount[cat] = n + 1;
         }
         continue;
       }
@@ -1360,6 +1408,7 @@
     splitTitleCaseRunOn: splitTitleCaseRunOn,
     splitFlexibleParagraph: splitFlexibleParagraph,
     buildSemanticSections: buildSemanticSections,
+    _itemConfidence: _itemConfidence,
     classifyRequirementItem: classifyRequirementItem,
     stripRedundantPrefix: stripRedundantPrefix
   };

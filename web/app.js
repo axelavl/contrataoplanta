@@ -1907,6 +1907,30 @@ function _toggleSection(sectionId, visible) {
   if (el) el.hidden = !visible;
 }
 
+// Marca un subgroupo como "aproximado" cuando la confianza media de la
+// categoría está bajo el umbral. Inserta o remueve un span sutil al
+// lado del título h5. La idea: que el usuario sepa cuándo confiar
+// menos en la clasificación sin esconder los items.
+//
+// Umbrales (spec §5):
+//   confidence >= 0.7 → sin badge (clasificación confiable)
+//   0.4 ≤ confidence < 0.7 → badge "~ aproximado"
+//   confidence < 0.4 → no debería llegar acá (parser ya filtró)
+const _APPROX_BADGE_HTML = '<span class="modal-approx-badge" data-approx-badge="1" title="Clasificación aproximada — revisa el texto completo">~ aproximado</span>';
+function _setApproxBadge(secId, confidence) {
+  const sec = document.getElementById(secId);
+  if (!sec) return;
+  const heading = sec.querySelector('h5');
+  if (!heading) return;
+  const existing = heading.querySelector('[data-approx-badge]');
+  const shouldShow = typeof confidence === 'number' && confidence < 0.7;
+  if (shouldShow && !existing) {
+    heading.insertAdjacentHTML('beforeend', ' ' + _APPROX_BADGE_HTML);
+  } else if (!shouldShow && existing) {
+    existing.remove();
+  }
+}
+
 // _buildDecisionPoints fue eliminado: todo lo que devolvía ya está visible
 // arriba (cargo/institución en el header, estado/cierre en plazo-alert,
 // renta/ubicación/tipo/jornada en el grid). El bloque `modal-key-points`
@@ -2064,6 +2088,8 @@ async function abrirModal(ofertaId) {
   _renderListInto('modal-postulacion-list', []);
   _renderListInto('modal-residual-list', []);
   _toggleSection('modal-residual-wrap', false);
+  // Reset de badges aproximados (se recalculan tras buildSemanticSections).
+  document.querySelectorAll('#modal [data-approx-badge]').forEach((b) => b.remove());
   _toggleSection('modal-objetivo-wrap', false);
   _toggleSection('modal-postulacion-wrap', false);
   _toggleSection('modal-data-warning', false);
@@ -2213,6 +2239,18 @@ async function abrirModal(ofertaId) {
       _toggleSection('sec-req-competencias', semantic.requisitos.competencias.length > 0);
       _toggleSection('sec-req-documentos', semantic.requisitos.documentos.length > 0);
       _toggleSection('modal-requisitos-wrap', countReq > 0);
+      // Badge "~ aproximado" cuando la confianza media de la sub-categoría
+      // está por debajo de 0.7. Se aplica sólo a las 7 sub-categorías de
+      // requisitos clasificadas vía cascade — funciones/condiciones no
+      // pasan por la regla y se asumen confiables.
+      const confR = semantic.requisitosConfidence || {};
+      _setApproxBadge('sec-req-obligatorios', confR.obligatorios);
+      _setApproxBadge('sec-req-deseables', confR.deseables);
+      _setApproxBadge('sec-req-experiencia', confR.experiencia);
+      _setApproxBadge('sec-req-formacion', confR.formacion);
+      _setApproxBadge('sec-req-especialidades', confR.especialidades);
+      _setApproxBadge('sec-req-competencias', confR.competencias);
+      _setApproxBadge('sec-req-documentos', confR.documentos);
       _toggleSection('modal-objetivo-wrap', !!semantic.objetivo);
       if (semantic.objetivo) {
         document.getElementById('modal-objetivo').textContent = semantic.objetivo;

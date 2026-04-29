@@ -2305,6 +2305,25 @@ footer {
   letter-spacing: 0;
   text-transform: none;
 }
+
+/* Badge "~ aproximado" — se inserta junto al h5 cuando la confianza
+   media de la sub-categoría está por debajo de 0.7. Sirve como pista
+   sutil al usuario de que la clasificación es heurística y conviene
+   contrastar con el texto completo del aviso. Tipografía mucho más
+   discreta que el título — no debe robarle peso visual al subtítulo. */
+.modal-approx-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 4px;
+  background: var(--bg2);
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--texto3);
+  letter-spacing: 0.02em;
+  vertical-align: 1px;
+  cursor: help;
+}
 .modal-list {
   margin: 0;
   padding: 0 0 0 18px;
