@@ -184,7 +184,12 @@ const s1 = rt.buildSemanticSections({
   requisitos: '',
 });
 assertInBlock(s1, 'funciones', 'Realizar gestión de jornada', 'Verbo de acción "Realizar" → función');
-assertInBlock(s1, 'condiciones', 'Jornada completa 44 horas', 'Keyword jornada sin verbo de acción → condiciones');
+// Tras E5 (heading-aware split), "Jornada" se promueve a heading
+// y el bullet de condiciones queda como "completa 44 horas..." sin
+// repetir el rótulo. El cascade ahora usa el hint del heading anterior
+// para mandar el bullet a `condiciones` aunque pierda la palabra clave.
+assertInBlock(s1, 'condiciones', '44 horas semanales',
+  'Bullet bajo heading "Jornada" → condiciones (vía hint)');
 assertNotInBlock(s1, 'condiciones', 'Realizar gestión', 'Función NO aparece en condiciones (no doble match)');
 
 // Test 2: strip prefix en bullets clasificados
@@ -355,6 +360,91 @@ assert(
   sentencesMulti.length >= 2,
   true,
   `Múltiples oraciones reales se separan correctamente (got ${sentencesMulti.length})`
+);
+
+// ============================================================
+// E5 — splitSemanticSegments + heading-aware classification
+// ============================================================
+console.log('\n## E5 — splitSemanticSegments y heading-aware');
+
+assert(
+  typeof rt.splitSemanticSegments === 'function',
+  true,
+  'splitSemanticSegments expuesto en window.richText'
+);
+assert(
+  typeof rt._categoryFromHeading === 'function',
+  true,
+  '_categoryFromHeading expuesto en window.richText'
+);
+
+// _categoryFromHeading mapea headings comunes a categorías
+assert(rt._categoryFromHeading('Funciones del cargo'), 'funciones',
+  '"Funciones del cargo" → funciones');
+assert(rt._categoryFromHeading('Condiciones del contrato'), 'condiciones',
+  '"Condiciones del contrato" → condiciones');
+assert(rt._categoryFromHeading('Formación educacional'), 'formacion',
+  '"Formación educacional" → formacion');
+assert(rt._categoryFromHeading('Experiencia laboral'), 'experiencia',
+  '"Experiencia laboral" → experiencia');
+assert(rt._categoryFromHeading('Documentos requeridos'), 'documentos',
+  '"Documentos requeridos" → documentos');
+assert(rt._categoryFromHeading('Competencias requeridas'), 'competencias',
+  '"Competencias requeridas" → competencias');
+assert(rt._categoryFromHeading('Especialización y capacitación'), 'especialidades',
+  '"Especialización y capacitación" → especialidades');
+assert(rt._categoryFromHeading('Algo random'), null,
+  'Heading desconocido → null (no fuerza categoría)');
+assert(rt._categoryFromHeading(null), null,
+  'Heading null → null');
+
+// splitSemanticSegments preserva el contexto de heading
+const segs1 = rt.splitSemanticSegments(
+  'Funciones del cargo:\nCoordinar el equipo de trabajo y supervisar tareas.\nRevisar reportes mensuales del área.'
+);
+const segsConHeading = segs1.filter(s => s.prevHeading);
+assert(
+  segsConHeading.length >= 1,
+  true,
+  `Segments bajo "Funciones del cargo" tienen prevHeading (got ${segsConHeading.length})`
+);
+assert(
+  segsConHeading.every(s => /funciones/i.test(s.prevHeading || '')),
+  true,
+  'prevHeading apunta a "Funciones..." para los segments bajo ese heading'
+);
+
+// Heading-aware: bullet sin verbo de acción cae en funciones por hint
+const sHint1 = rt.buildSemanticSections({
+  descripcion: 'Funciones principales:\n- Atención al público.\n- Gestión de archivo.\n- Apoyo administrativo general.',
+  requisitos: '',
+});
+assert(
+  sHint1.funciones.length >= 2,
+  true,
+  `Bullets bajo "Funciones principales:" caen en funciones aunque no empiecen con verbo (got ${sHint1.funciones.length})`
+);
+
+// Heading-aware: bullet sin keyword obvia cae en formación por hint
+const sHint2 = rt.buildSemanticSections({
+  descripcion: '',
+  requisitos: 'Formación educacional:\nEnseñanza media completa rendida en establecimiento reconocido.',
+});
+assert(
+  sHint2.requisitos.formacion.length >= 1,
+  true,
+  '"Enseñanza media completa rendida" cae en formacion (heading explícito + regla de formación)'
+);
+
+// Sin heading explícito: comportamiento del cascade no cambia
+const sHint3 = rt.buildSemanticSections({
+  descripcion: '',
+  requisitos: 'Excluyente: tener ciudadanía chilena vigente y comprobable.',
+});
+assert(
+  sHint3.requisitos.obligatorios.length >= 1,
+  true,
+  'Sin heading: cascade clasifica por adjetivo "Excluyente" → obligatorios (sin regresión)'
 );
 
 console.log(`\n${passed} passed, ${failed} failed`);

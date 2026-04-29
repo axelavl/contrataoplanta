@@ -1229,6 +1229,93 @@
       .filter(function (s) { return s.length >= 18; });
   }
 
+  // Splittea un párrafo individual (sin headings ni listas) en oraciones.
+  // Reutilizado por splitSemanticSegments que opera bloque a bloque.
+  function _splitParagraphIntoSentences(paragraph) {
+    if (!paragraph) return [];
+    var t = _protectAbbreviations(String(paragraph));
+    return t.split(/(?<=[.!?])\s+/)
+      .map(_restorePlaceholders)
+      .map(trim)
+      .filter(function (s) { return s.length >= 18; });
+  }
+
+  // Versión heading-aware del split: corre la misma pipeline de
+  // normalización + detección de bloques que `format()`, y emite
+  // segmentos {text, prevHeading} para que `buildSemanticSections`
+  // pueda usar el heading anterior como contexto al clasificar.
+  //
+  // Esto unifica el camino de procesamiento: las dos APIs públicas
+  // (format y buildSemanticSections) comparten ahora la misma
+  // pipeline base (`splitIntoStructuredBlocks`), eliminando
+  // duplicación de lógica de normalización + detección de headings.
+  function splitSemanticSegments(text) {
+    if (!text) return [];
+    var t = normalizeText(text);
+    if (!t) return [];
+    t = dedupeConsecutiveLines(t);
+    t = splitOnInlineKnownHeaders(t);
+    t = splitOnKnownHeadersAnyContext(t);
+    t = splitStackedKnownHeaders(t);
+    t = explodeInlineListAfterHeader(t);
+    t = explodeInlineEnumerations(t);
+    t = liftEmphasizedHeaders(t);
+    t = liftInlineHeaders(t);
+    t = collapseSplitKnownHeaders(t.split('\n')).join('\n');
+    t = t.split('\n').map(trim).filter(Boolean).join('\n');
+    var blocks = splitIntoStructuredBlocks(t);
+
+    var segments = [];
+    var currentHeading = null;
+    for (var i = 0; i < blocks.length; i++) {
+      var b = blocks[i];
+      if (b.type === 'heading') {
+        currentHeading = b.text;
+        continue;
+      }
+      if (b.type === 'list') {
+        for (var j = 0; j < b.items.length; j++) {
+          var item = String(b.items[j] || '').trim();
+          if (item.length >= 10) {
+            segments.push({ text: item, prevHeading: currentHeading });
+          }
+        }
+        continue;
+      }
+      if (b.type === 'paragraph') {
+        var sentences = _splitParagraphIntoSentences(b.text);
+        for (var k = 0; k < sentences.length; k++) {
+          segments.push({ text: sentences[k], prevHeading: currentHeading });
+        }
+        continue;
+      }
+    }
+    return segments;
+  }
+
+  // Mapea un heading conocido a una categoría del cascade. Devuelve
+  // null si el heading no es reconocido. Usado como hint para
+  // resolver oraciones ambiguas: si el heading anterior dice
+  // "Funciones del cargo:", una oración ahí casi seguro es función,
+  // aunque no empiece con verbo de acción reconocido.
+  function _categoryFromHeading(heading) {
+    if (!heading) return null;
+    var k = headingKey(heading);
+    if (!k) return null;
+    if (/\bfunci[oó]n|funcion|tarea|responsabilidad|actividad\b/.test(k)) return 'funciones';
+    if (/\bcondici[oó]n|condicion|jornada|horario|turno|modalidad|remuneraci|honorario|renta\b/.test(k)) return 'condiciones';
+    if (/\bobjetivo|misi[oó]n|mision|prop[oó]sito|proposito|finalidad\b/.test(k)) return 'objetivo';
+    if (/\bpostulaci|postular|enviar|plazo|cronograma|c[oó]mo postular\b/.test(k)) return 'postulacion';
+    if (/\bdocumento|antecedente\b/.test(k)) return 'documentos';
+    if (/\bformaci[oó]n|formacion|estudio|t[ií]tulo|titulo|nivel educacional\b/.test(k)) return 'formacion';
+    if (/\bexperiencia|trayectoria\b/.test(k)) return 'experiencia';
+    if (/\blicencia|certificaci|especializaci|capacitaci|curso|diplomado\b/.test(k)) return 'especialidades';
+    if (/\bcompetencia|habilidad|conocimiento\b/.test(k)) return 'competencias';
+    if (/\bdeseable|opcional|preferentemente|valorable\b/.test(k)) return 'deseables';
+    if (/\brequisito|perfil del cargo|excluyente|obligatori\b/.test(k)) return 'obligatorios';
+    return null;
+  }
+
   function normalizeCompareKey(value) {
     return foldText(value).replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
   }
@@ -1306,9 +1393,15 @@
     payload = payload || {};
     var descripcion = String(payload.descripcion || '');
     var requisitos = String(payload.requisitos || '');
-    var reqSentences = splitSemanticSentences(requisitos);
-    var descSentences = splitSemanticSentences(descripcion);
-    var all = reqSentences.concat(descSentences);
+    // Pipeline unificada: ambas APIs (format y buildSemanticSections)
+    // ahora consumen `splitIntoStructuredBlocks` vía
+    // `splitSemanticSegments`, que preserva el contexto del heading
+    // anterior por segmento. Eso permite resolver oraciones ambiguas
+    // usando la pista del título de sección ("Funciones del cargo:" →
+    // hint = funciones).
+    var reqSegments = splitSemanticSegments(requisitos);
+    var descSegments = splitSemanticSegments(descripcion);
+    var allSegments = reqSegments.concat(descSegments);
 
     var out = {
       objetivo: extractObjective(descripcion + '\n' + requisitos),
@@ -1345,8 +1438,26 @@
       obligatorios: 0, deseables: 0, experiencia: 0, formacion: 0,
       especialidades: 0, competencias: 0, documentos: 0,
     };
+    var REQ_CATEGORIES = {
+      obligatorios: true, deseables: true, experiencia: true, formacion: true,
+      especialidades: true, competencias: true, documentos: true,
+    };
 
-    // Cascada por sentencia. Cada sentencia cae en UNA sola categoría.
+    function _pushReq(cat, text, ruleConf) {
+      var cleaned = stripRedundantPrefix(text, cat);
+      if (cleaned.length < 10) {
+        out.residual.push(text);
+        return;
+      }
+      out.requisitos[cat].push(cleaned);
+      var conf = _itemConfidence(cleaned, ruleConf);
+      var prev = out.requisitosConfidence[cat];
+      var n = requisitosCount[cat];
+      out.requisitosConfidence[cat] = (prev * n + conf) / (n + 1);
+      requisitosCount[cat] = n + 1;
+    }
+
+    // Cascada por segmento. Cada segmento cae en UNA sola categoría.
     // El orden prioriza clasificación de requisitos sobre postulacion
     // para evitar que "presentar certificado al postular" caiga en
     // postulacion en vez de en documentos.
@@ -1357,51 +1468,82 @@
     //      Si matchea con confianza ≥ 0.4, gana y aplicamos
     //      stripRedundantPrefix al bullet. Acumulamos la confianza por
     //      ítem para promediarla en `requisitosConfidence[cat]`.
-    //   3. Postulación — URL/portal/plazo/etapa (sentencias que hablan
-    //      de cómo/cuándo postular, no de qué documentos presentar).
-    //   4. Condiciones — keyword contextual (renta/jornada/horario/
+    //   3. Hint de heading — si la cascade no clasificó pero el
+    //      heading inmediato sugiere una categoría (ej: "Funciones
+    //      del cargo:" → funciones), usamos ese hint con confianza
+    //      reducida (0.55) para no inflar el badge "~ aproximado".
+    //   4. Postulación — URL/portal/plazo/etapa.
+    //   5. Condiciones — keyword contextual (renta/jornada/horario/
     //      modalidad) sin verbo de acción líder.
-    //   5. Residual — se expone para el bloque "Texto completo del
+    //   6. Residual — se expone para el bloque "Texto completo del
     //      aviso"; NO se inyecta en obligatorios como fallback.
-    for (var i = 0; i < all.length; i++) {
-      var s = all[i];
+    for (var i = 0; i < allSegments.length; i++) {
+      var seg = allSegments[i];
+      var s = seg && seg.text;
       if (!s) continue;
+      var hint = _categoryFromHeading(seg.prevHeading);
 
+      // 1. Funciones por verbo de acción
       if (looksLikeFunctionSentence(s)) {
         out.funciones.push(s);
         continue;
       }
 
+      // 2. Cascade de requisitos
       var classification = classifyRequirementItem(s);
       if (classification) {
-        var cleaned = stripRedundantPrefix(s, classification.category);
-        // Si tras el prefix strip el ítem queda muy corto, es ruido
-        // (probablemente era sólo un header embebido). Va a residual.
-        if (cleaned.length < 10) {
-          out.residual.push(s);
-        } else {
-          var cat = classification.category;
-          out.requisitos[cat].push(cleaned);
-          var itemConf = _itemConfidence(cleaned, classification.confidence);
-          // Promedio incremental: nuevo_promedio = (prev*n + valor) / (n+1)
-          var prev = out.requisitosConfidence[cat];
-          var n = requisitosCount[cat];
-          out.requisitosConfidence[cat] = (prev * n + itemConf) / (n + 1);
-          requisitosCount[cat] = n + 1;
-        }
+        _pushReq(classification.category, s, classification.confidence);
         continue;
       }
 
+      // 3. Hint de heading: el heading anterior ya nos dice de qué se trata
+      //    el segmento, aunque no haya keywords explícitas. Confianza
+      //    reducida porque es contexto inferido, no patrón directo.
+      if (hint === 'funciones') {
+        // Bajamos el umbral de looksLikeFunctionSentence: bajo heading
+        // "Funciones del cargo:", aceptamos también ítems sin verbo
+        // de acción si tienen >= 3 palabras (típico de bullets cortos
+        // como "Atención al público", "Gestión de archivo"). Filtramos
+        // ALL CAPS porque suele ser ruido sobreviviente, no contenido.
+        var words = s.split(/\s+/).filter(Boolean);
+        var isAllCapsBullet = s.length >= 6 && s === s.toUpperCase() && /[A-ZÁÉÍÓÚÑ]/.test(s);
+        if (words.length >= 3 && !REQ_SIGNAL_RE.test(s) && !isAllCapsBullet) {
+          out.funciones.push(s);
+          continue;
+        }
+      }
+      if (hint === 'condiciones') {
+        out.condiciones.push(s);
+        continue;
+      }
+      if (hint === 'postulacion') {
+        out.postulacion.push(s);
+        continue;
+      }
+      if (hint === 'objetivo' && !out.objetivo && s.length >= 20) {
+        // Sólo lo usamos como objetivo si extractObjective no lo detectó
+        // ya por la regex literal "El objetivo del cargo es...".
+        out.objetivo = s.replace(/\.$/, '') + '.';
+        continue;
+      }
+      if (REQ_CATEGORIES[hint]) {
+        _pushReq(hint, s, 0.55);
+        continue;
+      }
+
+      // 4. Postulación por keyword
       if (POSTULATION_RE.test(s)) {
         out.postulacion.push(s);
         continue;
       }
 
+      // 5. Condiciones por keyword contextual (sin verbo de acción)
       if (CONDITIONS_RE.test(s)) {
         out.condiciones.push(s);
         continue;
       }
 
+      // 6. Residual
       out.residual.push(s);
     }
 
@@ -1471,6 +1613,8 @@
     splitTitleCaseRunOn: splitTitleCaseRunOn,
     splitFlexibleParagraph: splitFlexibleParagraph,
     buildSemanticSections: buildSemanticSections,
+    splitSemanticSegments: splitSemanticSegments,
+    _categoryFromHeading: _categoryFromHeading,
     _itemConfidence: _itemConfidence,
     classifyRequirementItem: classifyRequirementItem,
     stripRedundantPrefix: stripRedundantPrefix
