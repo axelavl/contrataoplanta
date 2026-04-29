@@ -1145,6 +1145,14 @@ function renderCard(oferta) {
     console.debug('[SEO] JobPosting omitido en card por campos faltantes:', jobPosting.errores, oferta?.id);
   }
 
+  // Estructura obligatoria (spec §7):
+  //   1. Institución  →  2. Cargo  →  3. Chips clave (contrato + región)
+  //   4. Meta secundaria (renta + comuna + publicación)
+  //   5. Estado + fecha cierre  →  6. CTA "Ver detalle"  →  7. Favorito
+  // El sector se elimina del chip-wrap: es contextual y compite con la
+  // institución. La "Renta no informada" también se omite — es ruido
+  // cuando el dato no está; preferimos ocultar el span.
+  const UI = window.UI_STRINGS || {};
   return `
   <div class="oferta-card${esFav ? ' favorita' : ''}" data-oferta-id="${oferta.id}" role="button" tabindex="0" aria-label="Ver detalle: ${escAttr(cargoDisplay)}">
     <button class="btn-fav-card${esFav ? ' activo' : ''}"
@@ -1165,12 +1173,11 @@ function renderCard(oferta) {
         <div class="oferta-tipo-wrap">
           ${oferta.tipo_contrato ? `<span class="badge ${tipoCss}">${tipoLabel}</span>` : ''}
           ${regionCompleta ? `<span class="badge badge-region">🗺 ${escHtml(regionCompleta)}</span>` : ''}
-          ${sector ? `<span class="badge badge-sector">${escHtml(sector)}</span>` : ''}
         </div>
       </div>
     </div>
     <div class="oferta-detalles">
-      ${renta ? `<span class="oferta-renta">${renta}</span>` : '<span class="oferta-renta oferta-renta--muted">Renta no informada</span>'}
+      ${renta ? `<span class="oferta-renta">${renta}</span>` : ''}
       ${ciudad ? `<span class="oferta-detalle">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
         ${escHtml(ciudad)}
@@ -1186,11 +1193,11 @@ function renderCard(oferta) {
     <div class="oferta-footer">
       <div class="oferta-plazo">
         <div class="plazo-dot ${plazo.clase}"></div>
-        <span style="color:${plazo.color}">${plazo.texto}</span>
-        ${oferta.fecha_cierre ? `<span style="color:var(--texto3);margin-left:4px">· ${formatFecha(oferta.fecha_cierre)}</span>` : ''}
+        <span class="plazo-text plazo-text--${plazo.clase}">${plazo.texto}</span>
+        ${oferta.fecha_cierre ? `<span class="oferta-plazo-fecha">· ${formatFecha(oferta.fecha_cierre)}</span>` : ''}
       </div>
       <div class="oferta-acciones">
-        <button class="btn-detalle" type="button" data-action="abrir-modal" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}">Ver detalle</button>
+        <button class="btn-detalle" type="button" data-action="abrir-modal" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}">${UI.CTA_VER_DETALLE || 'Ver detalle →'}</button>
       </div>
     </div>
     ${jobPosting.markup}
@@ -1999,6 +2006,11 @@ async function abrirModal(ofertaId) {
   summaryNote.textContent = '';
   document.getElementById('modal-descripcion').innerHTML = '';
   document.getElementById('modal-requisitos').innerHTML = '';
+  // Reset de la visibilidad del bloque "Texto completo del aviso"
+  // — se recalcula tras fetch en base a si hay descripción/requisitos.
+  const _fullTextReset = document.getElementById('modal-descripcion');
+  const _fullTextSeccionReset = _fullTextReset ? _fullTextReset.closest('.modal-seccion') : null;
+  if (_fullTextSeccionReset) _fullTextSeccionReset.hidden = false;
   _renderListInto('modal-req-obligatorios', []);
   _renderListInto('modal-req-deseables', []);
   _renderListInto('modal-req-experiencia', []);
@@ -2106,29 +2118,23 @@ async function abrirModal(ofertaId) {
       suppressHeadings: ['requisitos', 'requisitos principales', 'requisitos del cargo']
     });
 
-    // Oculta la sección completa (título incluido) cuando no hay contenido real.
-    // Si ambas vienen vacías, deja sólo la descripción con un mensaje breve
-    // que invita a revisar las bases, sin duplicar el fallback.
+    // `modal-descripcion` y `modal-requisitos` viven dentro del mismo
+    // <details class="modal-fulltext-details"> en una única `.modal-seccion`.
+    // Si ni descripción ni requisitos traen contenido renderizable, se
+    // oculta el bloque entero "Texto completo del aviso". No se inyecta
+    // fallback acá — las secciones semánticas (funciones/requisitos/...)
+    // o el `NOTE_DATOS_PARCIALES` ya cubren el caso de ofertas pobres.
     const reqEl  = document.getElementById('modal-requisitos');
     const descEl = document.getElementById('modal-descripcion');
-    const reqSeccion  = reqEl  ? reqEl.closest('.modal-seccion')  : null;
-    const descSeccion = descEl ? descEl.closest('.modal-seccion') : null;
-    if (reqHtml) {
-      reqEl.innerHTML = reqHtml;
-      if (reqSeccion) reqSeccion.hidden = false;
-    } else if (reqSeccion) {
-      reqSeccion.hidden = true;
-      reqEl.innerHTML = '';
-    }
-    if (descHtml) {
-      descEl.innerHTML = descHtml;
-      if (descSeccion) descSeccion.hidden = false;
-    } else if (!reqHtml) {
-      descEl.innerHTML = '<p class="modal-empty-fallback">Revisa las bases del concurso para conocer requisitos, funciones y condiciones completas.</p>';
-      if (descSeccion) descSeccion.hidden = false;
-    } else if (descSeccion) {
-      descSeccion.hidden = true;
-      descEl.innerHTML = '';
+    const fullTextSeccion = descEl ? descEl.closest('.modal-seccion') : null;
+    if (!reqHtml && !descHtml) {
+      if (fullTextSeccion) fullTextSeccion.hidden = true;
+      descEl && (descEl.innerHTML = '');
+      reqEl && (reqEl.innerHTML = '');
+    } else {
+      if (fullTextSeccion) fullTextSeccion.hidden = false;
+      descEl && (descEl.innerHTML = descHtml || '');
+      reqEl && (reqEl.innerHTML = reqHtml || '');
     }
 
     // Parser semántico para separar funciones / requisitos / condiciones.

@@ -1501,8 +1501,11 @@ header {
   display: none !important;
 }
 
-/* ══ 2) Ocultar "Renta no informada" (redundante) ═════════════════════ */
-.oferta-renta--muted,
+/* ══ 2) Ocultar `.oferta-renta` vacío ═════════════════════════════════
+   El placeholder "Renta no informada" se eliminó del renderCard
+   (web/app.js) — ahora simplemente no se renderiza el span cuando no
+   hay renta. Dejamos este selector como red de seguridad para
+   entradas SSR o legacy que pudieran inyectar un span vacío. */
 .oferta-renta:empty {
   display: none !important;
 }
@@ -3138,10 +3141,6 @@ button:focus-visible,
     margin-right: 4px;
     letter-spacing: -0.01em;
   }
-  .oferta-renta--muted {
-    font-size: 11.5px !important;
-    font-weight: 500 !important;
-  }
   .oferta-detalle {
     color: var(--texto2, #374151);
     gap: 4px;
@@ -3638,10 +3637,23 @@ button:focus-visible,
   }
 }
 
-:root[data-theme="dark"] .modal-subsection,
+/* El bloque "Texto completo del aviso" conserva su caja (es el único
+   contenedor de texto bruto expandible). Las subsecciones de
+   Requisitos/Funciones/Condiciones/Postulación pasaron a `h5 + ul`
+   sin caja (ver `.modal-subsection-group` en index.css) y no
+   necesitan override de dark mode. */
 :root[data-theme="dark"] .modal-fulltext-details {
   background: rgba(18, 26, 43, 0.7);
   border-color: rgba(148, 163, 184, 0.26);
+}
+:root[data-theme="dark"] .modal-subgroup > h5 {
+  color: rgba(255, 255, 255, 0.72);
+}
+:root[data-theme="dark"] .modal-list {
+  color: var(--acento);
+}
+:root[data-theme="dark"] .modal-list li {
+  color: rgba(255, 255, 255, 0.88);
 }
 
 :root[data-theme="dark"] .modal-data-warning-text {
