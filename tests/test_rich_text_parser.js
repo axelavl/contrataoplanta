@@ -217,5 +217,62 @@ const s4 = rt.buildSemanticSections({
 assert(s4.requisitos.obligatorios.length, 0,
   'Oración genérica NO se inyecta como obligatorio (antes caía al fallback)');
 
+// ============================================================
+// Confidence per-category (E3)
+// ============================================================
+console.log('\n## Confidence per-category');
+
+// _itemConfidence está expuesto como helper interno para testing.
+function ic(text, ruleConf) {
+  return rt._itemConfidence(text, ruleConf);
+}
+
+assert(
+  ic('Conocimientos de SAP, Office, Excel y SQL avanzado', 0.75) >= 0.7,
+  true,
+  'Item largo (>30 chars, >=4 palabras) conserva confianza alta'
+);
+assert(
+  Math.round(ic('Conocimientos en C++', 0.75) * 100) / 100,
+  0.5,
+  'Item corto (<30 chars, <4 palabras) baja confianza a 0.5'
+);
+assert(
+  ic('LICENCIA CONDUCIR CLASE A2 PROFESIONAL VEHICULOS PESADOS EMERGENCIA', 0.8) < 0.75,
+  true,
+  'Item ALL CAPS baja confianza por penalización de mayúsculas'
+);
+
+// Integración: una sección con un item de baja calidad → confidence agregada baja
+const sLowConf = rt.buildSemanticSections({
+  descripcion: '',
+  requisitos: 'Conocimientos en C++.',
+});
+const conf = sLowConf.requisitosConfidence?.competencias;
+assert(
+  typeof conf === 'number' && conf < 0.7,
+  true,
+  `requisitosConfidence.competencias < 0.7 con sólo 1 item corto (medido: ${conf?.toFixed(2)})`
+);
+
+// Sección con items de alta calidad → confidence agregada alta
+const sHighConf = rt.buildSemanticSections({
+  descripcion: '',
+  requisitos: 'Experiencia laboral previa demostrable de 3 años en el sector público o privado equivalente. Mínimo 5 años en cargos de jefatura comprobable con referencias formales.',
+});
+const confExp = sHighConf.requisitosConfidence?.experiencia;
+assert(
+  typeof confExp === 'number' && confExp >= 0.7,
+  true,
+  `requisitosConfidence.experiencia >= 0.7 con items largos y bien formados (medido: ${confExp?.toFixed(2)})`
+);
+
+// Categoría sin items → confidence = 0 (no hay nada que medir)
+assert(
+  sLowConf.requisitosConfidence.documentos,
+  0,
+  'Categoría sin items: requisitosConfidence === 0 (no inicializado)'
+);
+
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed > 0 ? 1 : 0);

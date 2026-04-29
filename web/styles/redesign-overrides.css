@@ -3664,6 +3664,10 @@ button:focus-visible,
 :root[data-theme="dark"] .modal-list--residual li {
   color: rgba(255, 255, 255, 0.78);
 }
+:root[data-theme="dark"] .modal-approx-badge {
+  background: rgba(148, 163, 184, 0.16);
+  color: rgba(255, 255, 255, 0.6);
+}
 
 :root[data-theme="dark"] .modal-data-warning-text {
   background: rgba(146, 64, 14, 0.2);
