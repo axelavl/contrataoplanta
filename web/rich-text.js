@@ -1157,13 +1157,76 @@
     return null;
   }
 
+  // Abreviaturas comunes en español/Chile que terminan en `.` y NO deben
+  // disparar el split de oración. La regla simple `(?<=[.!?])\s+` rompe
+  // en "Dr. Pérez" y deja "Dr." como oración huérfana; protegemos
+  // sustituyendo el punto por un placeholder antes del split y luego
+  // restaurándolo. Lista cubre títulos/profesiones, vialidad, abreviaturas
+  // de uso administrativo y siglas con punto interno (S.A., Ph.D., etc.).
+  var SIMPLE_ABBREVIATIONS = [
+    // Títulos / profesiones
+    'Dr', 'Dra', 'Sr', 'Sra', 'Srta', 'Don', 'Dn', 'Dña', 'Lic', 'Lcda',
+    'Ing', 'Inga', 'Mg', 'Mgs', 'Prof', 'Profa', 'PhD', 'MSc',
+    // Direcciones / vialidad
+    'Avda', 'Av', 'Pje', 'Pasaje', 'Cl', 'Cll',
+    // Administrativo / legal
+    'art', 'arts', 'inc', 'incs', 'lit', 'lits', 'pág', 'págs', 'p',
+    'núm', 'nº', 'No', 'Nro',
+    // Período y temporal
+    'Pdo', 'Pdta', 'Ej', 'aprox', 'máx', 'min', 'pgto',
+    // Razón social
+    'Ltda', 'Cía', 'Cia',
+    // Cargo
+    'Dpto', 'Dir', 'Dpo', 'Sec', 'Subd', 'Subdir',
+  ];
+  // Siglas con punto interno: protegemos TODOS los puntos del match.
+  var MULTI_DOT_ABBR_RE = /\b(S\.A|S\.p\.A|Ph\.D|M\.A|Ed\.D|U\.S\.A|R\.M|F\.A|E\.U)\.?/g;
+  // Iniciales: una sola letra mayúscula seguida de punto + espacio + otra mayúscula
+  // (típico en nombres tipo "J. M. Pérez").
+  var INITIAL_RE = /(^|[\s])([A-ZÁÉÍÓÚÑ])\.(?=\s+[A-ZÁÉÍÓÚÑ])/g;
+  // Placeholder fuera del set Unicode usable: U+0001 (Start Of Heading).
+  // Imposible que aparezca naturalmente en texto plano.
+  var DOT_PLACEHOLDER = '';
+
+  function _protectAbbreviations(text) {
+    var t = String(text || '');
+    // Abreviaturas simples: \bAbbr\. → Abbr<placeholder>
+    var simpleRe = new RegExp(
+      '\\b(' + SIMPLE_ABBREVIATIONS.map(function (a) {
+        return a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      }).join('|') + ')\\.',
+      'g'
+    );
+    t = t.replace(simpleRe, function (_, abbr) { return abbr + DOT_PLACEHOLDER; });
+    // Multi-punto: reemplaza todos los puntos del match.
+    t = t.replace(MULTI_DOT_ABBR_RE, function (m) {
+      return m.replace(/\./g, DOT_PLACEHOLDER);
+    });
+    // Iniciales: "J. M. Pérez" → "J<ph> M<ph> Pérez"
+    t = t.replace(INITIAL_RE, function (_, lead, letter) {
+      return lead + letter + DOT_PLACEHOLDER;
+    });
+    return t;
+  }
+
+  function _restorePlaceholders(text) {
+    return String(text || '').replace(new RegExp(DOT_PLACEHOLDER, 'g'), '.');
+  }
+
   function splitSemanticSentences(text) {
     if (!text) return [];
     var t = normalizeText(text);
     t = t.replace(/\n+/g, '. ');
     t = t.replace(/\s*[•·●◦▪▫■□]\s*/g, '. ');
     t = t.replace(/\s*[;]\s*/g, '. ');
-    return t.split(/(?<=[.!?])\s+/).map(trim).filter(function (s) { return s.length >= 18; });
+    // Protege abreviaturas antes del split para que "Dr. Pedro" /
+    // "art. 5°" / "Ph.D. en X" / "S.A." no generen oraciones huérfanas.
+    t = _protectAbbreviations(t);
+    var sentences = t.split(/(?<=[.!?])\s+/);
+    return sentences
+      .map(_restorePlaceholders)
+      .map(trim)
+      .filter(function (s) { return s.length >= 18; });
   }
 
   function normalizeCompareKey(value) {

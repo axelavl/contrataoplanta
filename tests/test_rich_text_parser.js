@@ -274,5 +274,88 @@ assert(
   'Categoría sin items: requisitosConfidence === 0 (no inicializado)'
 );
 
+// ============================================================
+// splitSemanticSentences — abreviaturas (E4)
+// ============================================================
+console.log('\n## splitSemanticSentences — abreviaturas');
+
+// El split no se exporta directamente, validamos comportamiento via
+// buildSemanticSections: ninguna oración debe quedar huérfana como
+// "Dr.", "Avda.", "art." cuando son parte de una oración mayor.
+function buildAll(text) {
+  const out = rt.buildSemanticSections({ descripcion: text, requisitos: '' });
+  return out.funciones.concat(
+    out.residual || [],
+    out.condiciones || [],
+    out.postulacion || [],
+    ...Object.values(out.requisitos || {})
+  );
+}
+
+// "Dr. Pedro Soto" no debe quedar como oración huérfana
+const sentencesDr = buildAll(
+  'El Dr. Pedro Soto fue contratado para liderar el área de salud preventiva durante 2024.'
+);
+assert(
+  sentencesDr.every(s => !/^Dr\.?$/i.test(s.trim())),
+  true,
+  '"Dr." no genera oración huérfana'
+);
+assert(
+  sentencesDr.some(s => s.includes('Dr.') && s.includes('Pedro Soto')),
+  true,
+  '"Dr. Pedro Soto" se mantiene en una sola oración'
+);
+
+// "Avda. Libertador" no rompe
+const sentencesAv = buildAll(
+  'La oficina queda en Avda. Libertador 1234, Las Condes, fácil acceso al transporte público.'
+);
+assert(
+  sentencesAv.some(s => s.includes('Avda. Libertador')),
+  true,
+  '"Avda. Libertador" se mantiene unido'
+);
+
+// "art. 5°" administrativo
+const sentencesArt = buildAll(
+  'Según el art. 5° del decreto del Ministerio de Hacienda, el sueldo será grado 12 de la escala única.'
+);
+assert(
+  sentencesArt.some(s => /art\.\s*5/.test(s)),
+  true,
+  '"art. 5°" se mantiene unido'
+);
+
+// Iniciales: "J. M. Pérez"
+const sentencesIni = buildAll(
+  'El cargo lo ejerce J. M. Pérez, jefe de departamento, con experiencia en gestión pública desde 2010.'
+);
+assert(
+  sentencesIni.some(s => s.includes('J. M. Pérez') || s.includes('J. M.')),
+  true,
+  'Iniciales "J. M. Pérez" se mantienen en una sola oración'
+);
+
+// Sigla con punto interno: "S.A."
+const sentencesSA = buildAll(
+  'La empresa BancoEstado S.A. ofrece beneficios complementarios a la renta principal del cargo.'
+);
+assert(
+  sentencesSA.every(s => !/^S\.?A\.?$/i.test(s.trim())),
+  true,
+  '"S.A." no genera oración huérfana'
+);
+
+// Múltiples oraciones reales SÍ deben separarse
+const sentencesMulti = buildAll(
+  'La oficina queda en Avda. Libertador 1234. Postular antes del 30 de marzo del 2026 al portal oficial.'
+);
+assert(
+  sentencesMulti.length >= 2,
+  true,
+  `Múltiples oraciones reales se separan correctamente (got ${sentencesMulti.length})`
+);
+
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed > 0 ? 1 : 0);
