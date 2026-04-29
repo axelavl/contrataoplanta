@@ -32,9 +32,10 @@ def test_build_scrapers_maps_ats_extractors():
         _runtime_source(inst_id=11, extractor=ExtractorKind.SCRAPER_EXTERNAL_ATS, profile_name="ats_hiringroom"),
         _runtime_source(inst_id=12, extractor=ExtractorKind.SCRAPER_EXTERNAL_ATS, profile_name="ats_buk"),
     ]
-    assignments = _build_scrapers(runtime_sources)
+    assignments, run_empleos_publicos = _build_scrapers(runtime_sources)
     names = [type(assignment.scraper).__name__ for assignment in assignments]
     assert names == ["TrabajandoCLScraper", "HiringRoomScraper", "BukScraper"]
+    assert run_empleos_publicos is False
 
 
 def test_build_scrapers_maps_pdf_first_and_custom_detail():
@@ -43,9 +44,36 @@ def test_build_scrapers_maps_pdf_first_and_custom_detail():
         _runtime_source(inst_id=162, extractor=ExtractorKind.SCRAPER_PDF_JOBS, profile_name="pdi_pdf_first"),
         _runtime_source(inst_id=157, extractor=ExtractorKind.SCRAPER_CUSTOM_DETAIL, profile_name="ffaa_waf"),
     ]
-    assignments = _build_scrapers(runtime_sources)
+    assignments, run_empleos_publicos = _build_scrapers(runtime_sources)
     names = [type(assignment.scraper).__name__ for assignment in assignments]
     assert names == ["CarabinerosScraper", "PdiScraper", "FfaaScraper"]
+    assert run_empleos_publicos is False
+
+
+def test_build_scrapers_flags_empleos_publicos_for_legacy_batch():
+    runtime_sources = [
+        _runtime_source(
+            inst_id=1,
+            extractor=ExtractorKind.SCRAPER_EMPLEOS_PUBLICOS,
+            profile_name="empleos_publicos_central",
+        ),
+        _runtime_source(
+            inst_id=2,
+            extractor=ExtractorKind.SCRAPER_EMPLEOS_PUBLICOS,
+            profile_name="empleos_publicos_central",
+        ),
+        _runtime_source(
+            inst_id=3,
+            extractor=ExtractorKind.SCRAPER_EXTERNAL_ATS,
+            profile_name="ats_trabajando",
+        ),
+    ]
+    assignments, run_empleos_publicos = _build_scrapers(runtime_sources)
+    # Las dos fuentes empleos_publicos no van al despacho async, pero sí
+    # deben gatillar la corrida del batch legacy en main().
+    assert run_empleos_publicos is True
+    names = [type(assignment.scraper).__name__ for assignment in assignments]
+    assert names == ["TrabajandoCLScraper"]
 
 
 def test_playwright_without_runtime_is_demoted_to_source_status_only(monkeypatch):
@@ -65,4 +93,4 @@ def test_playwright_without_runtime_is_demoted_to_source_status_only(monkeypatch
     assert evaluation.reason_code == ReasonCode.PLAYWRIGHT_RUNTIME_UNAVAILABLE
     assert evaluation.signals_json["playwright_runtime_available"] is False
     assert "missing chromium" in evaluation.signals_json["playwright_runtime_error"]
-    assert _build_scrapers(runtime_sources) == []
+    assert _build_scrapers(runtime_sources) == ([], False)
