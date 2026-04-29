@@ -145,6 +145,24 @@ document.addEventListener('click', function (e) {
       if (typeof abrirInputPagina === 'function') abrirInputPagina(el, mid, max);
       break;
     }
+    case 'modal-list-expand': {
+      // Toggle "Ver más / Ver menos" inline para listas truncadas del
+      // modal. Alterna `data-expanded` en el <ul> destino y actualiza el
+      // texto del botón. CSS controla la visibilidad de los .modal-list-item--truncated.
+      var listTargetId = el.getAttribute('data-target') || '';
+      var list = listTargetId ? document.getElementById(listTargetId) : null;
+      if (!list) break;
+      var expanded = list.getAttribute('data-expanded') === 'true';
+      if (expanded) {
+        list.removeAttribute('data-expanded');
+        var hiddenCount = list.querySelectorAll('.modal-list-item--truncated').length;
+        el.textContent = 'Ver ' + hiddenCount + ' más';
+      } else {
+        list.setAttribute('data-expanded', 'true');
+        el.textContent = el.getAttribute('data-collapse-label') || 'Ver menos';
+      }
+      break;
+    }
     case 'noop':
       // Hace sólo stopPropagation (caso botón "bases no disponibles"
       // dentro de card, que evita que se dispare el click de la card).
@@ -1849,15 +1867,38 @@ function _setSummaryField(itemId, value, opts = {}) {
 }
 
 function _renderListInto(listId, values, opts = {}) {
-  const { max = 6, emptyText = '' } = opts;
+  const { max = 6, emptyText = '', truncateAt = null } = opts;
   const el = document.getElementById(listId);
   if (!el) return 0;
   const items = Array.isArray(values) ? values.filter(Boolean).slice(0, max) : [];
   if (!items.length) {
     el.innerHTML = emptyText ? `<li class="modal-list-empty">${escHtml(emptyText)}</li>` : '';
+    el.removeAttribute('data-truncated');
+    el.removeAttribute('data-expanded');
     return 0;
   }
-  el.innerHTML = items.map((item) => `<li>${escHtml(String(item))}</li>`).join('');
+  // Truncado con "Ver más" inline: si truncateAt está activo y hay más
+  // ítems que el límite, los excedentes se renderizan con
+  // `class="modal-list-item--truncated"` y se ocultan vía CSS hasta que
+  // el usuario expande la lista.
+  const shouldTruncate = truncateAt && items.length > truncateAt;
+  if (shouldTruncate) {
+    const visible = items.slice(0, truncateAt)
+      .map((item) => `<li>${escHtml(String(item))}</li>`).join('');
+    const hidden = items.slice(truncateAt)
+      .map((item) => `<li class="modal-list-item--truncated">${escHtml(String(item))}</li>`).join('');
+    const cuantos = items.length - truncateAt;
+    el.innerHTML = `${visible}${hidden}` +
+      `<li class="modal-list-toggle">` +
+        `<button type="button" data-action="modal-list-expand" data-target="${escAttr(listId)}" data-collapse-label="Ver menos">Ver ${cuantos} más</button>` +
+      `</li>`;
+    el.setAttribute('data-truncated', 'true');
+    el.removeAttribute('data-expanded');
+  } else {
+    el.innerHTML = items.map((item) => `<li>${escHtml(String(item))}</li>`).join('');
+    el.removeAttribute('data-truncated');
+    el.removeAttribute('data-expanded');
+  }
   return items.length;
 }
 
@@ -2021,6 +2062,8 @@ async function abrirModal(ofertaId) {
   _renderListInto('modal-funciones-list', []);
   _renderListInto('modal-condiciones-list', []);
   _renderListInto('modal-postulacion-list', []);
+  _renderListInto('modal-residual-list', []);
+  _toggleSection('modal-residual-wrap', false);
   _toggleSection('modal-objetivo-wrap', false);
   _toggleSection('modal-postulacion-wrap', false);
   _toggleSection('modal-data-warning', false);
@@ -2142,24 +2185,25 @@ async function abrirModal(ofertaId) {
       ? window.richText.buildSemanticSections({ descripcion: desc, requisitos: reqTexto })
       : null;
 
-    // Render de secciones semánticas. Regla: una sección sin contenido
-    // real se oculta COMPLETA (incluyendo su título). No se muestra
-    // fallback por sección — eso generaba ruido y duplicación con el
-    // mensaje global. El único fallback queda como NOTE_DATOS_PARCIALES
-    // arriba y como mensaje de advertencia cuando nada extrae.
+    // Render de secciones semánticas. Reglas:
+    // - Una sección sin contenido real se oculta COMPLETA (título incluido).
+    // - Listas largas se truncan a `truncateAt` y exponen un "Ver N más"
+    //   inline que expande la lista in-place sin abrir un modal nuevo.
+    //   Spec §6: máx 6 funciones visibles + Ver más; 4 deseables; 4 docs;
+    //   etc. `max` sigue siendo el techo absoluto (corte definitivo).
     if (semantic) {
-      const countFunc = _renderListInto('modal-funciones-list', semantic.funciones, { max: 8 });
+      const countFunc = _renderListInto('modal-funciones-list', semantic.funciones, { max: 12, truncateAt: 6 });
       _toggleSection('modal-funciones-wrap', countFunc > 0);
-      const countCond = _renderListInto('modal-condiciones-list', semantic.condiciones, { max: 8 });
+      const countCond = _renderListInto('modal-condiciones-list', semantic.condiciones, { max: 8, truncateAt: 5 });
       _toggleSection('modal-condiciones-wrap', countCond > 0);
       const countReq = [
-        _renderListInto('modal-req-obligatorios', semantic.requisitos.obligatorios, { max: 6 }),
-        _renderListInto('modal-req-deseables', semantic.requisitos.deseables, { max: 6 }),
-        _renderListInto('modal-req-experiencia', semantic.requisitos.experiencia, { max: 6 }),
-        _renderListInto('modal-req-formacion', semantic.requisitos.formacion, { max: 6 }),
-        _renderListInto('modal-req-especialidades', semantic.requisitos.especialidades, { max: 6 }),
-        _renderListInto('modal-req-competencias', semantic.requisitos.competencias, { max: 6 }),
-        _renderListInto('modal-req-documentos', semantic.requisitos.documentos, { max: 6 }),
+        _renderListInto('modal-req-obligatorios', semantic.requisitos.obligatorios, { max: 8, truncateAt: 6 }),
+        _renderListInto('modal-req-deseables', semantic.requisitos.deseables, { max: 6, truncateAt: 4 }),
+        _renderListInto('modal-req-experiencia', semantic.requisitos.experiencia, { max: 6, truncateAt: 4 }),
+        _renderListInto('modal-req-formacion', semantic.requisitos.formacion, { max: 6, truncateAt: 4 }),
+        _renderListInto('modal-req-especialidades', semantic.requisitos.especialidades, { max: 6, truncateAt: 4 }),
+        _renderListInto('modal-req-competencias', semantic.requisitos.competencias, { max: 6, truncateAt: 4 }),
+        _renderListInto('modal-req-documentos', semantic.requisitos.documentos, { max: 6, truncateAt: 4 }),
       ].reduce((a, b) => a + b, 0);
       _toggleSection('sec-req-obligatorios', semantic.requisitos.obligatorios.length > 0);
       _toggleSection('sec-req-deseables', semantic.requisitos.deseables.length > 0);
@@ -2175,12 +2219,22 @@ async function abrirModal(ofertaId) {
       }
       _toggleSection('modal-postulacion-wrap', semantic.postulacion.length > 0);
       _renderListInto('modal-postulacion-list', semantic.postulacion, { max: 5 });
+
+      // Pool residual: oraciones que el clasificador no encajó en ninguna
+      // categoría con confianza ≥ 0.4. Se exponen al final del bloque
+      // "Texto completo del aviso" como bullets — son contenido potencialmente
+      // relevante que no merecía un slot propio. Si no hay residuos, el
+      // sub-bloque entero queda hidden.
+      const residuals = Array.isArray(semantic.residual) ? semantic.residual : [];
+      const countResidual = _renderListInto('modal-residual-list', residuals, { max: 12, truncateAt: 5 });
+      _toggleSection('modal-residual-wrap', countResidual > 0);
     } else {
       _toggleSection('modal-requisitos-wrap', false);
       _toggleSection('modal-funciones-wrap', false);
       _toggleSection('modal-condiciones-wrap', false);
       _toggleSection('modal-objetivo-wrap', false);
       _toggleSection('modal-postulacion-wrap', false);
+      _toggleSection('modal-residual-wrap', false);
     }
 
     const warnings = _collectDataWarnings(o);

@@ -2321,6 +2321,64 @@ footer {
   color: var(--texto);
   padding-left: 4px;
 }
+
+/* Truncado inline con "Ver más / Ver menos".
+   - Cuando `[data-truncated="true"]` está presente y NO está expandido,
+     los li con `.modal-list-item--truncated` se ocultan via CSS.
+   - El botón se muestra como un li sin viñeta, alineado al cuerpo del
+     bullet. El click alterna `[data-expanded="true"]` en el <ul>. */
+.modal-list[data-truncated="true"] .modal-list-item--truncated {
+  display: none;
+}
+.modal-list[data-expanded="true"] .modal-list-item--truncated {
+  display: list-item;
+}
+.modal-list .modal-list-toggle {
+  list-style: none;
+  margin-left: -18px;
+  margin-top: 6px;
+  padding-left: 0;
+}
+.modal-list .modal-list-toggle button {
+  background: none;
+  border: 0;
+  padding: 4px 0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--azul);
+  cursor: pointer;
+  text-align: left;
+}
+.modal-list .modal-list-toggle button:hover { text-decoration: underline; }
+.modal-list .modal-list-toggle button:focus-visible {
+  outline: 2px solid var(--cielo);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* "Otros aspectos del aviso" — bloque con el residual del clasificador,
+   embebido dentro del <details> del texto completo. Se muestra sólo si
+   `semantic.residual.length > 0`. Tono visual más sutil que las
+   secciones principales: sirve como complemento, no como protagonista. */
+.modal-residual-wrap {
+  margin: 0 0 14px;
+  padding: 0;
+}
+.modal-residual-title {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--texto2);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.modal-list--residual li {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--texto2);
+}
+
 .modal-objetivo {
   margin: 0;
   font-size: 15px;

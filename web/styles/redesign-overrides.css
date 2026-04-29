@@ -3655,6 +3655,15 @@ button:focus-visible,
 :root[data-theme="dark"] .modal-list li {
   color: rgba(255, 255, 255, 0.88);
 }
+:root[data-theme="dark"] .modal-list .modal-list-toggle button {
+  color: var(--acento);
+}
+:root[data-theme="dark"] .modal-residual-title {
+  color: rgba(255, 255, 255, 0.65);
+}
+:root[data-theme="dark"] .modal-list--residual li {
+  color: rgba(255, 255, 255, 0.78);
+}
 
 :root[data-theme="dark"] .modal-data-warning-text {
   background: rgba(146, 64, 14, 0.2);
