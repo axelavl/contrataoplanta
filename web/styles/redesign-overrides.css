@@ -3499,7 +3499,7 @@ button:focus-visible,
   }
   .oferta-frescura.frescura-nueva {
     background: var(--verde-l) !important;
-    color: #166534 !important;
+    color: var(--alert-green-text) !important;
     padding: 2px 8px !important;
     border-radius: 999px !important;
     font-weight: 600 !important;
@@ -3672,5 +3672,5 @@ button:focus-visible,
 :root[data-theme="dark"] .modal-data-warning-text {
   background: rgba(146, 64, 14, 0.2);
   border-color: rgba(245, 158, 11, 0.55);
-  color: #FDE68A;
+  color: var(--alert-amber-text);
 }
