@@ -101,6 +101,17 @@
   --logo-bg: var(--navy);
   --logo-fg: var(--gold-brilliant);
 
+  /* ── Paleta semántica de alertas (rose / amber tailwind).
+     Centralizada para que dark mode pueda redefinir cada slot sin
+     duplicar hex en redesign-overrides.css. ─────────────────────── */
+  --alert-rose-bg: #FEF2F2;
+  --alert-rose-bg-strong: #FEE2E2;
+  --alert-rose-border: #FCA5A5;
+  --alert-rose-border-strong: #F87171;
+  --alert-rose-text: #DC2626;
+  --alert-rose-text-strong: #991B1B;
+  --alert-amber-text: #92400E;
+
   color-scheme: light;
 }
 
@@ -186,6 +197,17 @@
      el azul oscuro, modificá acá y propaga. ───────────────────────── */
   --gold-mid: #F1C977;          /* dorado intermedio entre soft y dim */
   --text-on-dark-soft: #A5B8DF; /* texto azulado claro sobre dark */
+
+  /* Paleta de alertas en dark — slots paralelos a la light. Permite
+     que las clases .btn-limpiar-filtros, .btn-modal-sec--activo,
+     .btn-fav-* funcionen en ambos temas SIN regla dark-only. */
+  --alert-rose-bg: rgba(252, 165, 165, 0.08);
+  --alert-rose-bg-strong: rgba(252, 165, 165, 0.14);
+  --alert-rose-border: rgba(252, 165, 165, 0.35);
+  --alert-rose-border-strong: #FCA5A5;
+  --alert-rose-text: #FCA5A5;
+  --alert-rose-text-strong: #FECACA;
+  --alert-amber-text: #FDE68A;
 
   color-scheme: dark;
 }
