@@ -153,6 +153,10 @@ class HiringRoomScraper(GenericSiteScraper):
                     detail_url = urljoin(source_url, f"/jobs/{detail_url.strip('/')}")
                 else:
                     detail_url = self._infer_detail_url(source_url, title, job)
+                if not detail_url:
+                    # Sin URL canónica única, otros candidatos colapsarían a la
+                    # misma fila por dedup. Mejor descartar.
+                    continue
 
                 location = clean_text(job.get("location") or job.get("city") or job.get("region"))
                 modality = clean_text(job.get("modality") or job.get("workplace") or job.get("workMode"))
@@ -190,13 +194,27 @@ class HiringRoomScraper(GenericSiteScraper):
                 )
         return results
 
+    # Tope para evitar explosión O(n²) en bundles JS grandes (>1MB de
+    # frameworks, JSON-LD, configs). Empíricamente las ofertas reales viven
+    # en unos pocos bloques al inicio o tras un marcador identificable; iterar
+    # cada `{`/`[` del bundle entero colgaba la corrida.
+    _MAX_JSON_SCAN_ATTEMPTS = 4000
+    _MAX_TEXT_SCAN_BYTES = 800_000
+
     def _extract_jobs_from_text(self, text: str) -> list[dict[str, Any]]:
         objects: list[dict[str, Any]] = []
+        if not text:
+            return objects
+        snippet = text if len(text) <= self._MAX_TEXT_SCAN_BYTES else text[: self._MAX_TEXT_SCAN_BYTES]
         decoder = json.JSONDecoder()
-        for match in re.finditer(r"[\[{]", text):
+        attempts = 0
+        for match in re.finditer(r"[\[{]", snippet):
+            attempts += 1
+            if attempts > self._MAX_JSON_SCAN_ATTEMPTS:
+                break
             start = match.start()
             try:
-                obj, _ = decoder.raw_decode(text[start:])
+                obj, _ = decoder.raw_decode(snippet[start:])
             except Exception:
                 continue
             for item in self._walk_json(obj):
@@ -254,6 +272,13 @@ class HiringRoomScraper(GenericSiteScraper):
         return m.group(1) if m else ""
 
     def _infer_detail_url(self, source_url: str, title: str, job: dict[str, Any]) -> str:
+        """Construye una URL de detalle a partir de slug/id/title.
+
+        Devuelve cadena vacía cuando no hay nada que la identifique únicamente:
+        antes caía a la home (`{scheme}://{netloc}`), provocando que múltiples
+        ofertas colapsaran a la misma URL y todas excepto una se descartaran
+        por el dedup en ``seen_offer_urls``.
+        """
         slug = clean_text(job.get("slug"))
         if slug:
             return urljoin(source_url, f"/jobs/{slug}")
@@ -263,8 +288,7 @@ class HiringRoomScraper(GenericSiteScraper):
         safe_title = re.sub(r"[^a-z0-9]+", "-", clean_text(title).lower()).strip("-")
         if safe_title:
             return urljoin(source_url, f"/jobs/{safe_title}")
-        parsed = urlparse(source_url)
-        return f"{parsed.scheme}://{parsed.netloc}"
+        return ""
 
     def _candidate_to_oferta(self, candidate) -> OfertaRaw | None:
         oferta = super()._candidate_to_oferta(candidate)

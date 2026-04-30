@@ -114,12 +114,17 @@ class PlaywrightScraper(GenericSiteScraper):
         seen_urls: set[str] = set()
 
         async with async_playwright() as pw:
-            browser = await pw.chromium.launch(headless=True)
-            context = await browser.new_context(user_agent=user_agent)
-            page = await context.new_page()
-            page.set_default_timeout(timeout_ms)
-
+            # Inicializar a None antes del try para que el finally no truene
+            # con UnboundLocalError si pw.chromium.launch() falla — eso
+            # enmascararía la excepción real de launch.
+            browser = None
+            context = None
             try:
+                browser = await pw.chromium.launch(headless=True)
+                context = await browser.new_context(user_agent=user_agent)
+                page = await context.new_page()
+                page.set_default_timeout(timeout_ms)
+
                 await page.goto(entry_url, wait_until="networkidle", timeout=timeout_ms)
                 await self._wait_card_selector(page, timeout_ms)
 
@@ -141,8 +146,16 @@ class PlaywrightScraper(GenericSiteScraper):
             except PlaywrightTimeoutError as exc:
                 raise RuntimeError(f"Timeout renderizando {entry_url}") from exc
             finally:
-                await context.close()
-                await browser.close()
+                if context is not None:
+                    try:
+                        await context.close()
+                    except Exception:
+                        pass
+                if browser is not None:
+                    try:
+                        await browser.close()
+                    except Exception:
+                        pass
 
         return candidates
 

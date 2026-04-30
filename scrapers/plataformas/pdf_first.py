@@ -13,11 +13,16 @@ from .generic_site import GenericSiteScraper, RawCandidate
 
 try:  # pragma: no cover - depende del entorno
     import pdfplumber  # type: ignore
-except Exception:  # pragma: no cover - depende del entorno
+except Exception as _pdfplumber_import_error:  # pragma: no cover
     pdfplumber = None
+    _PDFPLUMBER_IMPORT_ERROR: Exception | None = _pdfplumber_import_error
+else:
+    _PDFPLUMBER_IMPORT_ERROR = None
 
 
 PDF_TITLE_HINTS = ("perfil", "descriptor", "bases", "concurso", "cargo", "postulacion")
+# Para priorizar qué PDF leer cuando una candidata adjunta varios.
+_PDF_RELEVANCE_HINTS = ("bases", "perfil", "descriptor", "concurso", "tdr", "convocatoria")
 
 
 class PdfFirstScraper(GenericSiteScraper):
@@ -33,12 +38,19 @@ class PdfFirstScraper(GenericSiteScraper):
         enriched = await super()._enrich_candidates(candidates)
         if self.http is None:
             return enriched
+        if pdfplumber is None and _PDFPLUMBER_IMPORT_ERROR is not None:
+            self.log.warning(
+                "evento=pdfplumber_no_disponible scraper=%s error=%s — los PDFs no se enriquecerán.",
+                self.nombre_fuente,
+                _PDFPLUMBER_IMPORT_ERROR,
+            )
 
         results: list[RawCandidate] = []
         for candidate in enriched:
             pdf_links = list(candidate.pdf_links or [])
+            ordered = self._sort_pdfs_by_relevance(pdf_links)
             merged_text = candidate.content_text
-            for pdf_url in pdf_links[:2]:
+            for pdf_url in ordered[:2]:
                 pdf_text = await self._extract_pdf_text(pdf_url)
                 if pdf_text:
                     merged_text = clean_text(f"{merged_text} {pdf_text}")
@@ -53,6 +65,22 @@ class PdfFirstScraper(GenericSiteScraper):
                 )
             )
         return results
+
+    @staticmethod
+    def _sort_pdfs_by_relevance(pdf_links: list[str]) -> list[str]:
+        """Pone primero los PDFs cuyo nombre contenga hints de bases/perfil/etc.
+
+        Antes se leían los primeros 2 PDFs en orden de aparición; cuando el PDF
+        relevante venía en posición 3+ (típico cuando el primero es un genérico
+        institucional o de privacidad), se ignoraba.
+        """
+        def score(url: str) -> int:
+            name = unquote(url).lower()
+            for i, hint in enumerate(_PDF_RELEVANCE_HINTS):
+                if hint in name:
+                    return i
+            return len(_PDF_RELEVANCE_HINTS)
+        return sorted(pdf_links, key=score)
 
     def _parse_pdf_blocks(self, soup: BeautifulSoup, source_url: str) -> list[RawCandidate]:
         candidates: list[RawCandidate] = []
@@ -88,7 +116,14 @@ class PdfFirstScraper(GenericSiteScraper):
     async def _extract_pdf_text(self, pdf_url: str) -> str:
         if self.http is None or pdfplumber is None:
             return ""
-        binary = await self.http.get_bytes(pdf_url)
+        try:
+            binary = await self.http.get_bytes(pdf_url)
+        except Exception as exc:  # red, timeout, WAF, redirección rota
+            self.log.info(
+                "evento=pdf_fetch_error scraper=%s url=%s error=%s:%s",
+                self.nombre_fuente, pdf_url, type(exc).__name__, exc,
+            )
+            return ""
         if not binary:
             return ""
         try:
@@ -99,7 +134,14 @@ class PdfFirstScraper(GenericSiteScraper):
                     if page_text:
                         text_parts.append(page_text)
                 return clean_text(" ".join(text_parts))
-        except Exception:
+        except Exception as exc:
+            # PDF cifrado/corrupto/imagen escaneada: preferimos seguir vivos
+            # con un texto vacío antes que abortar la fuente, pero queremos
+            # rastro mínimo para distinguir esto de un PDF realmente vacío.
+            self.log.info(
+                "evento=pdf_parse_error scraper=%s url=%s error=%s:%s",
+                self.nombre_fuente, pdf_url, type(exc).__name__, exc,
+            )
             return ""
 
     @staticmethod

@@ -219,11 +219,25 @@ def marcar_ofertas_cerradas(db: Session, fuente_id: int, urls_activas: list[str]
     `fecha_cierre_detectada` (solo si aún está NULL, para no pisarla si
     reaparecen y vuelven a desaparecer).
     Retorna la cantidad de ofertas cerradas.
+
+    Defensa: si la sesión llega aquí con la transacción en estado abortado
+    (visto en logs/empleos_publicos.log: psycopg2.errors.InFailedSqlTransaction
+    sobre esta misma query), hacemos rollback antes de ejecutar — el rollback
+    es no-op en sesión sana y rescata sesiones rotas. Sin esto, todo el run
+    aborta con la cleanup en cascada.
     """
     if not urls_activas:
         return 0
 
     hashes_activos = [url_a_hash(u) for u in urls_activas]
+
+    # Rollback defensivo previo: en sesión sana es no-op; en sesión con
+    # transacción abortada por un upsert previo, evita que el UPDATE
+    # de cleanup haga cascada con InFailedSqlTransaction.
+    try:
+        db.rollback()
+    except Exception:
+        pass
 
     try:
         result = db.execute(text("""

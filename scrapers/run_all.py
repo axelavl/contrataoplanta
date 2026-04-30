@@ -471,9 +471,19 @@ async def _evaluate_sources(
     return list(runtime_sources)
 
 
-def _build_scrapers(runtime_sources: list[RuntimeSource]) -> list[RuntimeScraperAssignment]:
+def _build_scrapers(
+    runtime_sources: list[RuntimeSource],
+) -> tuple[list[RuntimeScraperAssignment], bool]:
+    """Construye assignments runtime y reporta si hay que correr el batch
+    legacy de empleospublicos.cl.
+
+    EmpleosPublicosScraper no implementa el contrato async ``descubrir_ofertas``
+    de BaseScraper — usa la API síncrona ``LegacyBaseScraper.run()`` y barre
+    el portal central completo en una sola corrida. Por eso se omite del
+    despacho concurrente y se ejecuta aparte (ver ``_run_empleos_publicos_sync``).
+    """
     assignments: list[RuntimeScraperAssignment] = []
-    empleos_publicos_agregado = False
+    empleos_publicos_pendiente = False
 
     for item in runtime_sources:
         evaluation = item.evaluation
@@ -485,11 +495,11 @@ def _build_scrapers(runtime_sources: list[RuntimeSource]) -> list[RuntimeScraper
         # los scrapers aceptan None y la columna ofertas.fuente_id es nullable.
 
         if evaluation.recommended_extractor == ExtractorKind.SCRAPER_EMPLEOS_PUBLICOS:
-            # EmpleosPublicosScraper usa arquitectura legacy (ejecutar() propio,
-            # no implementa descubrir_ofertas). Se ejecuta aparte si es necesario.
-            if not empleos_publicos_agregado:
-                log.info("SCRAPER_EMPLEOS_PUBLICOS detectado — se omite del despacho BaseScraper (correr por separado)")
-                empleos_publicos_agregado = True
+            if not empleos_publicos_pendiente:
+                log.info(
+                    "SCRAPER_EMPLEOS_PUBLICOS detectado — se ejecutará en batch legacy aparte del despacho async."
+                )
+                empleos_publicos_pendiente = True
             continue
 
         runtime_scraper = build_runtime_scraper(item)
@@ -500,7 +510,38 @@ def _build_scrapers(runtime_sources: list[RuntimeSource]) -> list[RuntimeScraper
                     scraper=runtime_scraper,
                 )
             )
-    return assignments
+    return assignments, empleos_publicos_pendiente
+
+
+def _run_empleos_publicos_sync(
+    instituciones: list[dict[str, Any]],
+) -> PrecisionReport:
+    """Corre el batch legacy del portal central empleospublicos.cl y traduce
+    sus stats a un PrecisionReport para que se integre al reporte global.
+    """
+    log.info("Ejecutando EmpleosPublicosScraper (batch legacy del portal central)...")
+    scraper = EmpleosPublicosScraper(instituciones=instituciones, dry_run=False)
+    report = PrecisionReport(institucion="empleospublicos.cl")
+    try:
+        stats = scraper.run() or {}
+    except Exception as exc:
+        log.exception("EmpleosPublicosScraper falló: %s", exc)
+        report.errores += 1
+        return report
+    report.total_encontradas = int(stats.get("found") or 0)
+    report.guardadas = int(stats.get("nuevas") or 0)
+    report.ya_existian = int(stats.get("actualizadas") or 0)
+    report.errores = int(stats.get("errores") or 0)
+    log.info(
+        "EmpleosPublicosScraper terminó: found=%s nuevas=%s actualizadas=%s cerradas=%s errores=%s duracion=%ss",
+        stats.get("found"),
+        stats.get("nuevas"),
+        stats.get("actualizadas"),
+        stats.get("cerradas"),
+        stats.get("errores"),
+        stats.get("duracion_seg"),
+    )
+    return report
 
 
 async def _run_scraper(assignment: RuntimeScraperAssignment, sem: asyncio.Semaphore) -> PrecisionReport:
@@ -870,10 +911,14 @@ async def main(argv: list[str] | None = None) -> int:
     reports: list[PrecisionReport] = []
     report_rows: list[tuple[int | None, PrecisionReport]] = []
     if not args.evaluate_only:
-        assignments = _build_scrapers(runtime_sources)
+        assignments, run_empleos_publicos = _build_scrapers(runtime_sources)
         log.info("Scrapers ejecutables en este runtime: %s", len(assignments))
         report_rows = await _run_scrapers(assignments)
         reports = [report for _, report in report_rows]
+
+        if run_empleos_publicos and not getattr(args, "skip_empleos_publicos", False):
+            ep_report = await asyncio.to_thread(_run_empleos_publicos_sync, catalog_sources)
+            reports.append(ep_report)
 
     consecutive_zero_by_inst = _compute_consecutive_zero_extractions(
         runtime_sources=runtime_sources,

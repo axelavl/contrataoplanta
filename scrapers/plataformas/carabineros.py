@@ -152,7 +152,7 @@ class CarabinerosScraper(PdfFirstScraper):
             if not candidate.url or candidate.url.lower().endswith(".pdf"):
                 enriched.append(candidate)
                 continue
-            if candidate.url.rstrip("/") == self.url_empleo.rstrip("/"):
+            if candidate.url.rstrip("/") == (self.url_empleo or "").rstrip("/"):
                 enriched.append(candidate)
                 continue
 

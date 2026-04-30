@@ -640,12 +640,48 @@ class EmpleosPublicosScraper(BaseScraper):
         ]
         return " | ".join(part for part in partes if part)
 
+    # Hints (en orden de relevancia) para identificar el link a las "bases"
+    # del concurso. Antes la heurística era "primer anchor con .pdf O texto
+    # 'bases'", lo que terminaba devolviendo PDFs de privacidad o footer
+    # genérico cuando aparecían antes en el DOM. Ahora priorizamos por hint
+    # y caemos al .pdf solo como último recurso.
+    _BASES_HINT_TOKENS: tuple[str, ...] = (
+        "bases",
+        "bases del concurso",
+        "bases administrativas",
+        "tdr",
+        "termino de referencia",
+        "términos de referencia",
+        "perfil",
+        "convocatoria",
+    )
+    _BASES_NEGATIVE_TOKENS: frozenset[str] = frozenset(
+        {"privacidad", "privacy", "cookies", "aviso legal", "terminos de uso", "términos de uso"}
+    )
+
     def _extraer_url_bases(self, soup: BeautifulSoup, fallback_url: str) -> str | None:
-        for anchor in soup.select("a[href]"):
+        anchors = soup.select("a[href]")
+        # Pase 1: matchear por hint, en el orden definido. Devolvemos el
+        # PRIMER hint que aparezca en el DOM para cada nivel de prioridad.
+        for hint in self._BASES_HINT_TOKENS:
+            for anchor in anchors:
+                href = anchor.get("href", "")
+                text = clean_text(anchor.get_text(" ", strip=True)).lower()
+                href_low = href.lower()
+                if any(neg in text or neg in href_low for neg in self._BASES_NEGATIVE_TOKENS):
+                    continue
+                if hint in text or hint in href_low:
+                    return urljoin(fallback_url, href)
+        # Pase 2: fallback al primer .pdf que NO sea privacidad/legales.
+        for anchor in anchors:
             href = anchor.get("href", "")
+            href_low = href.lower()
+            if ".pdf" not in href_low:
+                continue
             text = clean_text(anchor.get_text(" ", strip=True)).lower()
-            if ".pdf" in href.lower() or "bases" in text:
-                return urljoin(fallback_url, href)
+            if any(neg in text or neg in href_low for neg in self._BASES_NEGATIVE_TOKENS):
+                continue
+            return urljoin(fallback_url, href)
         return fallback_url
 
     def _extraer_mapa_encabezados(self, container: Tag | None) -> dict[str, str]:
