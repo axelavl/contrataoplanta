@@ -274,15 +274,38 @@ class GenericSiteScraper(BaseScraper):
             )
         return results
 
+    # Anchors de navegación que aparecen en cualquier sitio y NUNCA son ofertas.
+    # Pre-filtro local antes del scoring (evita falsos positivos por keywords
+    # demasiado laxas en hijas como Buk/HiringRoom).
+    _NAV_ANCHOR_TITLES: frozenset[str] = frozenset(
+        {
+            "inicio", "home", "contacto", "contact", "login", "ingresar",
+            "registro", "registrarse", "nosotros", "nosotras", "quienes somos",
+            "transparencia", "noticias", "buscar", "menu", "menú",
+            "ver mas", "ver más", "leer mas", "leer más", "anterior",
+            "siguiente", "atras", "atrás", "volver", "siguiente página",
+            "mapa del sitio", "ayuda",
+        }
+    )
+    _MIN_ANCHOR_TITLE_LEN: int = 6
+
     def _parse_anchor_fallback(self, soup: BeautifulSoup, source_url: str) -> list[RawCandidate]:
         results: list[RawCandidate] = []
         for anchor in soup.select("a[href]"):
             href = clean_text(anchor.get("href"))
-            if not href or href.startswith("#") or href.startswith("mailto:"):
+            if not href or href.startswith("#") or href.startswith("mailto:") or href.startswith("tel:") or href.startswith("javascript:"):
                 continue
             if not self._trusted_url(href, source_url):
                 continue
             title = clean_text(anchor.get_text(" ", strip=True))
+            # Pre-filtros baratos antes del scoring: descartar nav/icons/links
+            # vacíos para no inflar candidatos en sitios con menús grandes.
+            if len(title) < self._MIN_ANCHOR_TITLE_LEN:
+                continue
+            if title.lower() in self._NAV_ANCHOR_TITLES:
+                continue
+            if title.replace(" ", "").isdigit():
+                continue
             parent = anchor.find_parent(["li", "p", "div", "tr", "article", "section"])
             context = clean_text(parent.get_text(" ", strip=True)) if parent else title
             is_offer, _ = self._score_offer_candidate(title, context, url=urljoin(source_url, href))

@@ -183,7 +183,11 @@ class WordPressScraper(BaseScraper):
             dias = ventanas_dias.pop(0)
             ofertas: list[dict[str, Any]] = []
             pagina = 1
-            while pagina <= 10:
+            # Cap subido de 10→25 páginas (500 posts a per_page=20). Municipios
+            # grandes superan los 200 posts en 180 días — antes se cortaba la
+            # paginación y se perdían vacantes vigentes pero "antiguas". Si la
+            # API responde con array vacío antes, el while corta solo en L210.
+            while pagina <= 25:
                 query = f"per_page=20&page={pagina}"
                 if dias is not None:
                     cutoff = (datetime.now(timezone.utc) - timedelta(days=dias)).strftime(
@@ -261,22 +265,46 @@ class WordPressScraper(BaseScraper):
                 )
         return []
 
-    def _fetch_via_feed_json(self) -> list[dict[str, Any]]:
-        url = f"{self.base_url}/category/concursos-publicos/feed/json"
-        try:
-            payload = self.request_json(url)
-        except Exception as exc:
-            self.logger.warning(
-                "evento=wordpress_feed_skip scraper=%s url=%s error=%s",
-                self.nombre,
-                url,
-                exc,
-            )
-            self.report.errores_red += 1
-            return []
+    # Slugs de categorías comunes en municipios chilenos. WP típicamente
+    # expone /category/<slug>/feed/json. Antes se hardcodeaba uno solo
+    # (concursos-publicos) y muchos municipios usan otros nombres.
+    _FEED_CATEGORY_SLUGS: tuple[str, ...] = (
+        "concursos-publicos",
+        "concursos",
+        "empleos",
+        "llamados",
+        "llamados-a-concurso",
+        "trabaja-con-nosotros",
+        "ofertas-laborales",
+        "convocatorias",
+    )
 
-        items = payload.get("items") if isinstance(payload, dict) else None
-        if not items:
+    def _fetch_via_feed_json(self) -> list[dict[str, Any]]:
+        last_error: Exception | None = None
+        last_url = ""
+        items: list[dict[str, Any]] | None = None
+        for slug in self._FEED_CATEGORY_SLUGS:
+            url = f"{self.base_url}/category/{slug}/feed/json"
+            last_url = url
+            try:
+                payload = self.request_json(url)
+            except Exception as exc:
+                last_error = exc
+                continue
+            slug_items = payload.get("items") if isinstance(payload, dict) else None
+            if slug_items:
+                items = slug_items
+                break
+
+        if items is None:
+            if last_error is not None:
+                self.logger.warning(
+                    "evento=wordpress_feed_skip scraper=%s url=%s error=%s",
+                    self.nombre,
+                    last_url,
+                    last_error,
+                )
+                self.report.errores_red += 1
             return []
 
         ofertas: list[dict[str, Any]] = []
