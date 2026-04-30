@@ -204,6 +204,7 @@ class WordPressScraper(BaseScraper):
                             url,
                             exc,
                         )
+                        self.report.errores_red += 1
                     break
 
                 if not isinstance(payload, list) or not payload:
@@ -271,6 +272,7 @@ class WordPressScraper(BaseScraper):
                 url,
                 exc,
             )
+            self.report.errores_red += 1
             return []
 
         items = payload.get("items") if isinstance(payload, dict) else None
@@ -310,6 +312,7 @@ class WordPressScraper(BaseScraper):
                     url,
                     exc,
                 )
+                self.report.errores_red += 1
                 continue
 
             ofertas = self._parse_html_listing(html, url)

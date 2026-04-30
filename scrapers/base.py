@@ -793,7 +793,11 @@ def match_institucion(
     if mejor_id is not None and mejor_ratio >= umbral:
         return mejor_id
 
-    # Insertar nueva (nombre_corto guarda la versión normalizada para futuras consultas)
+    # Insertar nueva (nombre_corto guarda la versión normalizada para futuras consultas).
+    # No hacemos conn.commit() aquí: antes lo hacíamos y eso comiteaba toda la
+    # transacción del caller, incluyendo upserts de ofertas previas que aún no
+    # debían persistirse. El commit corresponde al caller (BaseScraper.run hace
+    # commit al final del run, o el caller per-offer si quiere granularidad).
     with conn.cursor() as cur:
         cur.execute(
             """
@@ -804,7 +808,6 @@ def match_institucion(
             (nombre_raw.strip(), nombre_norm, sector, url_empleo),
         )
         nuevo_id = cur.fetchone()[0]
-    conn.commit()
     log.info("Institución nueva creada: %s (id=%s)", nombre_raw, nuevo_id)
     return nuevo_id
 
@@ -866,6 +869,13 @@ class PrecisionReport:
     guardadas: int = 0
     ya_existian: int = 0
     errores: int = 0
+    # `errores_red` cuenta fallos HTTP terminales (401/403/404/5xx, timeouts,
+    # WAFs, DNS) que dejan a la fuente sin extraer NADA. Antes estos errores
+    # se logueaban a info y la fuente aparecía como `errores=0 found=0` —
+    # indistinguible de "no había nada". Separado de `errores` (que se reserva
+    # para parse-errors) para que el resumen distinga "no hay vacantes" de
+    # "no pudimos llegar al servidor".
+    errores_red: int = 0
     descartes_por_reason_code: dict[str, int] = field(default_factory=dict)
 
     @property
@@ -875,10 +885,11 @@ class PrecisionReport:
         return (self.guardadas + self.ya_existian) / self.total_encontradas * 100.0
 
     def resumen(self) -> str:
+        red_marker = f" | RED:{self.errores_red}" if self.errores_red else ""
         return (
             f"{self.institucion:40.40} | {self.total_encontradas:4d} encontradas → "
             f"{self.guardadas:3d} nuevas, {self.ya_existian:3d} ya existían | "
-            f"precisión: {self.tasa_precision:5.1f}%"
+            f"precisión: {self.tasa_precision:5.1f}%{red_marker}"
         )
 
     def registrar_descarte_reason_code(self, reason_code: str | None) -> None:
@@ -902,6 +913,7 @@ class PrecisionReport:
             "descartadas_sin_keywords": self.descartadas_sin_keywords,
             "descartadas_vencidas": self.descartadas_vencidas,
             "descartadas_duplicadas": self.descartadas_duplicadas,
+            "errores_red": self.errores_red,
             "guardadas": self.guardadas,
             "ya_existian": self.ya_existian,
             "errores": self.errores,
@@ -1271,6 +1283,14 @@ class BaseScraper(abc.ABC):
             for raw in crudas:
                 try:
                     self._procesar_una(conn, raw)
+                    # Commit per-oferta: cada oferta es su propia unidad
+                    # transaccional. Antes el commit era al final del run, y
+                    # match_institucion comiteaba toda la conexión a mitad de
+                    # camino para que el lookup de instituciones funcionara —
+                    # eso filtraba trabajo a medio cocer al caller. Ahora la
+                    # granularidad es explícita: si esta oferta falló, sólo
+                    # se pierde esta oferta.
+                    conn.commit()
                 except Exception as e:
                     self.log.exception("Error procesando %s: %s", raw.url, e)
                     self.report.errores += 1
@@ -1283,9 +1303,15 @@ class BaseScraper(abc.ABC):
 
             # Cerrar ofertas que NO vimos en esta corrida (post-audit 1.6)
             if not self.hubo_error_fatal:
-                self._cerrar_desaparecidas(conn)
-
-            conn.commit()
+                try:
+                    self._cerrar_desaparecidas(conn)
+                    conn.commit()
+                except Exception as e:
+                    self.log.exception("Error cerrando desaparecidas: %s", e)
+                    try:
+                        conn.rollback()
+                    except Exception:
+                        pass
 
         duracion = time.monotonic() - inicio
         self.log.info(
@@ -1707,7 +1733,14 @@ class LegacyBaseScraper(abc.ABC):
         }
 
         if not self.dry_run:
-            self.ensure_schema()
+            # ensure_schema() ya NO se invoca en init: corría DDL (CREATE TABLE
+            # IF NOT EXISTS + cientos de ALTER TABLE ADD COLUMN IF NOT EXISTS)
+            # cada vez que se instanciaba un LegacyBaseScraper, racing con
+            # Alembic. Por convención del proyecto (ver CLAUDE.md y
+            # docs/MIGRATIONS.md) las migraciones de schema van por
+            # `alembic upgrade head` en el step de deploy. Si el schema no
+            # está aplicado, la primera operación contra la BD fallará con
+            # un error claro de psycopg2 — preferible al runtime DDL silente.
             if self._instituciones:
                 self.sync_instituciones_catalogo(self._instituciones)
 

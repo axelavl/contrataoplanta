@@ -88,15 +88,22 @@ class GenericSiteScraper(BaseScraper):
         candidates: list[RawCandidate] = []
         seen_urls: set[str] = set()
         successful_source_url: str | None = None
+        # Track si al menos un GET de listado respondió con cuerpo. Si ningún
+        # candidato resolvió (todos 4xx/5xx/timeout/DNS), bumpeamos errores_red
+        # para distinguir "fuente sin vacantes" de "fuente caída" en el reporte.
+        any_listing_fetched = False
+        listing_attempts = 0
 
         short_limit = max(1, min(2, self.max_candidate_urls))
         for max_urls in (short_limit, self.max_candidate_urls):
             if candidates:
                 break
             for source_url in self._candidate_urls(max_urls=max_urls, preferred_url=preferred_url):
+                listing_attempts += 1
                 html = await self.http.get(source_url)
                 if not isinstance(html, str) or not html.strip():
                     continue
+                any_listing_fetched = True
                 page_candidates = self._extract_candidates_from_listing(html, source_url)
                 if page_candidates and successful_source_url is None:
                     successful_source_url = source_url
@@ -106,6 +113,14 @@ class GenericSiteScraper(BaseScraper):
                         continue
                     seen_urls.add(key)
                     candidates.append(candidate)
+
+        if listing_attempts > 0 and not any_listing_fetched:
+            self.report.errores_red += 1
+            self.log.warning(
+                "evento=listing_unreachable scraper=%s intentos=%s",
+                self.nombre_fuente,
+                listing_attempts,
+            )
 
         enriched = await self._enrich_candidates(candidates)
         offers: list[OfertaRaw] = []
