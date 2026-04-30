@@ -112,6 +112,23 @@
   --alert-rose-text-strong: #991B1B;
   --alert-amber-text: #92400E;
 
+  /* Paleta success (verde tailwind para alertas/badges positivos). */
+  --alert-green-bg: #DCFCE7;
+  --alert-green-border: #86EFAC;
+  --alert-green-text: #166534;
+  --alert-green-brand: #16A34A;
+
+  /* Paleta del banner de plazo (modal-plazo-alert).
+     5 estados: closed / closing-today / active / upcoming / unknown. */
+  --status-closed-bg: #F3F4F6;
+  --status-closed-border: #D1D5DB;
+  --status-closed-text: #374151;
+  --status-closing-border: #FDE68A;
+  --status-active-border: #86EFAC;     /* alias visual de --alert-green-border */
+  --status-active-text: #166534;       /* alias visual de --alert-green-text */
+  --status-upcoming-border: #93C5FD;
+  --status-upcoming-text: #1D4ED8;
+
   color-scheme: light;
 }
 
@@ -208,6 +225,22 @@
   --alert-rose-text: #FCA5A5;
   --alert-rose-text-strong: #FECACA;
   --alert-amber-text: #FDE68A;
+
+  /* Success en dark — fondos translúcidos, texto verde pálido. */
+  --alert-green-bg: rgba(143, 205, 165, 0.10);
+  --alert-green-border: rgba(143, 205, 165, 0.45);
+  --alert-green-text: #B8E0C5;
+  --alert-green-brand: #8FCDA5;
+
+  /* Status del modal-plazo-alert en dark. */
+  --status-closed-bg: rgba(255, 255, 255, 0.04);
+  --status-closed-border: rgba(255, 255, 255, 0.12);
+  --status-closed-text: #B8C0D2;
+  --status-closing-border: rgba(229, 169, 70, 0.45);
+  --status-active-border: rgba(143, 205, 165, 0.45);
+  --status-active-text: #B8E0C5;
+  --status-upcoming-border: rgba(127, 169, 221, 0.45);
+  --status-upcoming-text: #A5B8DF;
 
   color-scheme: dark;
 }
