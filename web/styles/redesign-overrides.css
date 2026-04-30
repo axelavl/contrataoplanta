@@ -121,7 +121,7 @@
   border-radius: 10px;
   padding: 11px 11px 10px;
 }
-:root[data-theme="dark"] .modal-seccion-titulo { color: #F1C977 !important; }
+:root[data-theme="dark"] .modal-seccion-titulo { color: var(--gold-mid) !important; }
 :root[data-theme="dark"] .modal-info-item {
   background: #0F213C !important;
   border: 1px solid rgba(255,255,255,0.06) !important;
@@ -141,8 +141,8 @@
   border-color: rgba(255,255,255,0.18) !important;
 }
 :root[data-theme="dark"] .btn-modal-sec:hover {
-  border-color: #F1C977 !important;
-  color: #F1C977 !important;
+  border-color: var(--gold-mid) !important;
+  color: var(--gold-mid) !important;
 }
 :root[data-theme="dark"] .bases-viewer-panel {
   background: #112440 !important;
@@ -174,7 +174,7 @@
     color: #D7DEEC !important;
   }
   :root[data-theme="dark"] .modal-rich-text .rt-toggle {
-    color: #F1C977 !important;
+    color: var(--gold-mid) !important;
     border-bottom-color: rgba(241,201,119,0.7) !important;
   }
   :root[data-theme="dark"] .modal-actions {
@@ -825,7 +825,7 @@ body, .hero, .buscador-wrap, .oferta-card, .widget, .filtro-tag, .ribbon {
 /* 1) Badges de tipo de contrato con mejor contraste en DARK */
 :root[data-theme="dark"] .badge-planta {
   background: rgba(127, 169, 221, 0.16);
-  color: #A5B8DF;
+  color: var(--text-on-dark-soft);
 }
 :root[data-theme="dark"] .badge-contrata {
   background: rgba(234, 184, 88, 0.18);
@@ -1520,7 +1520,7 @@ header {
 }
 :root[data-theme="dark"] .badge.badge-region {
   background: rgba(127, 169, 221, 0.16) !important;
-  color: #A5B8DF !important;
+  color: var(--text-on-dark-soft) !important;
   border: none !important;
 }
 
@@ -2307,7 +2307,7 @@ header {
 :root[data-theme="dark"] .estado-alerta-cta,
 :root[data-theme="dark"] .btn-detalle {
   background: var(--acento);
-  color: #0A1426;
+  color: var(--azul);  /* navy-deep dark = #0A1426 — contraste sobre dorado */
   border: 1px solid var(--acento);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08) inset, 0 6px 16px rgba(234, 184, 88, 0.18);
 }
@@ -2352,7 +2352,7 @@ header {
 :root[data-theme="dark"] .pag-btn.activo {
   background: var(--acento);
   border-color: var(--acento);
-  color: #0A1426;
+  color: var(--azul);
 }
 :root[data-theme="dark"] .pag-ellipsis:hover {
   background: rgba(234, 184, 88, 0.12);
@@ -2429,7 +2429,7 @@ header {
 }
 :root[data-theme="dark"] .modal-plazo-alert.status-closing-today .modal-plazo-label,
 :root[data-theme="dark"] .modal-plazo-alert.status-closing-today .modal-plazo-fecha {
-  color: #F5D289;
+  color: var(--gold-soft);  /* en dark, gold-soft === #F5D289 */
 }
 :root[data-theme="dark"] .modal-plazo-alert.status-active {
   background: rgba(143, 205, 165, 0.15);

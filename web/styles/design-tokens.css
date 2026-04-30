@@ -181,5 +181,11 @@
   --logo-bg: var(--surface);
   --logo-fg: var(--gold);
 
+  /* ── Tokens auxiliares de dark mode (centralizan hex repetidos en
+     redesign-overrides.css). Si tenés que cambiar el tono dorado o
+     el azul oscuro, modificá acá y propaga. ───────────────────────── */
+  --gold-mid: #F1C977;          /* dorado intermedio entre soft y dim */
+  --text-on-dark-soft: #A5B8DF; /* texto azulado claro sobre dark */
+
   color-scheme: dark;
 }
