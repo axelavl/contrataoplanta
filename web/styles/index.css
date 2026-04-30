@@ -653,7 +653,7 @@ nav {
 .btn-copiar-busqueda--sec:hover { color: var(--texto2); border-color: var(--borde); }
 .btn-copiar-busqueda:hover { border-color: var(--cielo); color: var(--cielo); }
 .btn-copiar-busqueda.btn-copiar-ok {
-  border-color: #86EFAC; color: #166534; background: var(--verde-l);
+  border-color: var(--alert-green-border); color: var(--alert-green-text); background: var(--verde-l);
 }
 .btn-compartir-busqueda { color: var(--azul); }
 /* "Limpiar filtros" — acción destructiva suave (borra el estado de
@@ -681,9 +681,9 @@ nav {
   font-size: 14px;
 }
 .share-btn--copy-inline.is-copied {
-  background: #DCFCE7;
-  border-color: #86EFAC;
-  color: #166534;
+  background: var(--alert-green-bg);
+  border-color: var(--alert-green-border);
+  color: var(--alert-green-text);
 }
 
 .popover-share {
@@ -862,7 +862,7 @@ nav {
   font-family: 'Inter', sans-serif;
 }
 .oferta-frescura.frescura-nueva {
-  color: #166534; background: var(--verde-l);
+  color: var(--alert-green-text); background: var(--verde-l);
 }
 .oferta-footer {
   display: flex; justify-content: space-between;
@@ -2229,10 +2229,10 @@ footer {
   border: 1.5px solid transparent;
 }
 .modal-plazo-fecha:empty { display: none; }
-.modal-plazo-alert.status-closed { background: #F3F4F6; border-color: #D1D5DB; }
-.modal-plazo-alert.status-closing-today { background: var(--naran-l); border-color: #FDE68A; }
-.modal-plazo-alert.status-active { background: var(--verde-l); border-color: #86EFAC; }
-.modal-plazo-alert.status-upcoming { background: var(--cielo-l); border-color: #93C5FD; }
+.modal-plazo-alert.status-closed { background: var(--status-closed-bg); border-color: var(--status-closed-border); }
+.modal-plazo-alert.status-closing-today { background: var(--naran-l); border-color: var(--status-closing-border); }
+.modal-plazo-alert.status-active { background: var(--verde-l); border-color: var(--status-active-border); }
+.modal-plazo-alert.status-upcoming { background: var(--cielo-l); border-color: var(--status-upcoming-border); }
 .modal-plazo-alert.status-unknown { background: var(--bg2); border-color: var(--borde); }
 .modal-plazo-icon {
   width: 34px; height: 34px; border-radius: 50%;
@@ -2249,10 +2249,10 @@ footer {
   font-family: 'Inter', sans-serif;
   line-height: 1.2;
 }
-.status-closed .modal-plazo-label { color: #374151; }
+.status-closed .modal-plazo-label { color: var(--status-closed-text); }
 .status-closing-today .modal-plazo-label { color: var(--alert-amber-text); }
-.status-active .modal-plazo-label { color: #166534; }
-.status-upcoming .modal-plazo-label { color: #1D4ED8; }
+.status-active .modal-plazo-label { color: var(--status-active-text); }
+.status-upcoming .modal-plazo-label { color: var(--status-upcoming-text); }
 .status-unknown .modal-plazo-label { color: var(--texto2); }
 .modal-plazo-fecha {
   font-size: 12px; color: var(--texto2);
