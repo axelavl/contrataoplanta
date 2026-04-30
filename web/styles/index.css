@@ -660,25 +660,17 @@ nav {
    búsqueda). Tinte rojo sobrio para distinguirla de las otras acciones
    pero sin competir visualmente con el botón primario "Buscar". */
 .btn-limpiar-filtros {
-  color: var(--rojo, #DC2626);
-  border-color: #FCA5A5;
-  background: #FEF2F2;
+  color: var(--alert-rose-text);
+  border-color: var(--alert-rose-border);
+  background: var(--alert-rose-bg);
 }
 .btn-limpiar-filtros:hover {
-  border-color: var(--rojo, #DC2626);
-  color: #991B1B;
-  background: #FEE2E2;
+  border-color: var(--alert-rose-text);
+  color: var(--alert-rose-text-strong);
+  background: var(--alert-rose-bg-strong);
 }
-:root[data-theme="dark"] .btn-limpiar-filtros {
-  color: #FCA5A5;
-  border-color: rgba(252, 165, 165, 0.35);
-  background: rgba(252, 165, 165, 0.08);
-}
-:root[data-theme="dark"] .btn-limpiar-filtros:hover {
-  color: #FECACA;
-  border-color: #FCA5A5;
-  background: rgba(252, 165, 165, 0.14);
-}
+/* Dark mode ya no necesita override aquí — los tokens
+   --alert-rose-* se redefinen en design-tokens.css según el tema. */
 .share-btn--copy-inline {
   width: 32px;
   height: 32px;
@@ -1028,8 +1020,8 @@ nav {
   transition: all .15s; display: grid; place-items: center;
   margin-left: auto;
 }
-.btn-fav-row:hover { border-color: #FCA5A5; color: var(--rojo); background: #FEF2F2; }
-.btn-fav-row.activo { color: var(--rojo); border-color: #FCA5A5; background: #FEF2F2; }
+.btn-fav-row:hover { border-color: var(--alert-rose-border); color: var(--rojo); background: var(--alert-rose-bg); }
+.btn-fav-row.activo { color: var(--rojo); border-color: var(--alert-rose-border); background: var(--alert-rose-bg); }
 
 .row-inst   {
   font-size: 10px; font-weight: 600; color: var(--cielo);
@@ -1580,14 +1572,14 @@ footer {
 .modal-rich-text ul + .rt-heading,
 .modal-rich-text ol + .rt-heading { margin-top: 18px; }
 .modal-rich-text .rt-heading--excluyente {
-  color: #991B1B;
+  color: var(--alert-rose-text-strong);
 }
 .modal-rich-text .rt-heading--excluyente::before {
   content: '⚠'; color: var(--rojo);
   margin-right: 6px; font-weight: 700;
 }
 .modal-rich-text .rt-heading--deseable {
-  color: #92400E;
+  color: var(--alert-amber-text);
 }
 .modal-rich-text .rt-heading--deseable::before {
   content: '+'; color: var(--acento);
@@ -1747,8 +1739,8 @@ footer {
   transition: all .15s; white-space: nowrap;
 }
 .btn-modal-sec:hover { border-color: var(--cielo); color: var(--cielo); }
-.btn-modal-sec--activo { background: #FEF2F2; color: #DC2626; border-color: #FCA5A5; }
-.btn-modal-sec--activo:hover { background: #FEE2E2; color: #DC2626; border-color: #F87171; }
+.btn-modal-sec--activo { background: var(--alert-rose-bg); color: var(--alert-rose-text); border-color: var(--alert-rose-border); }
+.btn-modal-sec--activo:hover { background: var(--alert-rose-bg-strong); color: var(--alert-rose-text); border-color: var(--alert-rose-border-strong); }
 .modal-share-group {
   display: flex;
   align-items: center;
@@ -2258,7 +2250,7 @@ footer {
   line-height: 1.2;
 }
 .status-closed .modal-plazo-label { color: #374151; }
-.status-closing-today .modal-plazo-label { color: #92400E; }
+.status-closing-today .modal-plazo-label { color: var(--alert-amber-text); }
 .status-active .modal-plazo-label { color: #166534; }
 .status-upcoming .modal-plazo-label { color: #1D4ED8; }
 .status-unknown .modal-plazo-label { color: var(--texto2); }
@@ -2419,7 +2411,7 @@ footer {
 .modal-data-warning-text {
   border: 1px dashed #F59E0B;
   background: #FFF7E6;
-  color: #92400E;
+  color: var(--alert-amber-text);
   border-radius: 10px;
   padding: 10px 12px;
   font-size: 13px;
@@ -2448,8 +2440,8 @@ footer {
   box-shadow: 0 1px 4px rgba(0,0,0,0.08);
   z-index: 1; line-height: 1;
 }
-.btn-fav-card:hover { border-color: #FCA5A5; color: var(--rojo); background: #FEF2F2; }
-.btn-fav-card.activo { background: #FEF2F2; border-color: #FCA5A5; color: var(--rojo); }
+.btn-fav-card:hover { border-color: var(--alert-rose-border); color: var(--rojo); background: var(--alert-rose-bg); }
+.btn-fav-card.activo { background: var(--alert-rose-bg); border-color: var(--alert-rose-border); color: var(--rojo); }
 .oferta-card.favorita {
   border-color: rgba(232,168,32,0.65);
   box-shadow: inset 3px 0 0 var(--acento), var(--sombra);
