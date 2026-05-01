@@ -5,13 +5,14 @@ import unicodedata
 from dataclasses import dataclass
 from typing import Iterable
 
-RULESET_VERSION = "2026.04.21"
+RULESET_VERSION = "2026.05.01"
 
 POSITIVE_KEYWORDS: tuple[str, ...] = (
     "concurso",
     "concurso publico",
     "convocatoria",
     "vacante",
+    "vacantes",
     "llamado",
     "cargo",
     "puesto",
@@ -22,6 +23,8 @@ POSITIVE_KEYWORDS: tuple[str, ...] = (
     "trabaje con nosotros",
     "empleo",
     "oportunidad laboral",
+    "oferta laboral",
+    "ofertas laborales",
     "requisitos",
     "funciones",
     "renta bruta mensual",
@@ -36,9 +39,13 @@ POSITIVE_KEYWORDS: tuple[str, ...] = (
     "fecha de cierre",
     "cierre de postulacion",
     "postulaciones hasta",
+    "se requiere contratar",
     "bases",
     "perfil de cargo",
     "tdr",
+    "terminos de referencia",
+    "alta direccion publica",
+    "adp",
 )
 
 NEGATIVE_PATTERNS: tuple[str, ...] = (
@@ -74,6 +81,8 @@ NEGATIVE_PATTERNS: tuple[str, ...] = (
     r"\bconcurso art[ií]stico\b",
     r"\bconcurso escolar\b",
     r"\bconcurso de proyectos?\b",
+    r"\bconcurso (?:de )?cuentos?\b",
+    r"\bconcurso (?:de )?fotograf[ií]as?\b",
     r"\bproceso del a[nñ]o (?:201\d|20[12]0)\b",
     r"\bconcursos? anteriores?\b",
     r"\barchivo hist[oó]rico\b",
@@ -82,12 +91,23 @@ NEGATIVE_PATTERNS: tuple[str, ...] = (
     r"\bart[ií]culo\b",
     r"\bblog\b",
     r"\bmemoria anual\b",
+    r"\bsala\s*de\s*prensa\b",
+    r"\bgaler[ií]a de fotos?\b",
+    # 'becas' y 'subsidios' aislados generan falsos positivos cuando un cargo
+    # los menciona como beneficios. Sólo gatillamos sobre frases sociales
+    # claras o sobre 'beca' como contenido principal del aviso.
+    r"\bconvocatoria de becas?\b",
+    r"\bllamado a becas?\b",
+    r"\bbeneficios?\s+sociales?\b",
 )
 
 NEGATIVE_URL_PARTS: tuple[str, ...] = (
     "/noticias",
     "/news",
     "/prensa",
+    "/sala-de-prensa",
+    "/sala_de_prensa",
+    "/saladeprensa",
     "/blog",
     "/comunicados",
     "/actas",
@@ -98,6 +118,7 @@ NEGATIVE_URL_PARTS: tuple[str, ...] = (
     "/eventos",
     "/galeria",
     "/galería",
+    "/multimedia",
     "/historico",
     "/histórico",
     "/anteriores",
