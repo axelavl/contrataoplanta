@@ -2,10 +2,33 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from datetime import date
 
 from classification.policy import NEGATIVE_PATTERNS, NEGATIVE_URL_PARTS, POSITIVE_KEYWORDS, RULESET_VERSION
 from models.classification import ClassificationResult, RuleTrace
 from models.raw_page import RawPage
+
+
+def _historical_year_patterns(today: date | None = None) -> tuple[str, str]:
+    """Construye patrones (historical, current_hint) relativos al año en curso.
+
+    Hardcodear años hace que la heurística envejezca: en 2026, "2025" es
+    válido; en 2027, "2025" empieza a ser sospechoso. Se deriva de la fecha
+    actual:
+      - histórico: cualquier año entre (current_year - 6) y (current_year - 2)
+        inclusive — es decir, dos años o más de antigüedad.
+      - current_hint: (current_year - 1), current_year, (current_year + 1) más
+        las palabras-señal de vigencia. Añadir +1 cubre concursos plurianuales
+        (p.ej. "vigente hasta marzo 2027" en una pub de 2026).
+    """
+    today = today or date.today()
+    current = today.year
+    historical_years = "|".join(str(y) for y in range(current - 6, current - 1))
+    current_years = "|".join(str(y) for y in (current - 1, current, current + 1))
+    return (
+        rf"\b({historical_years})\b",
+        rf"\b({current_years}|vigente|abierto|postulaciones hasta|en curso)\b",
+    )
 
 
 @dataclass(frozen=True)
@@ -61,7 +84,18 @@ class RuleEngine:
             score -= 0.25
             negatives.append("ausencia total de cargo/requisitos/fechas")
             rule_trace.append(RuleTrace(rule_id="missing_core_signals", weight=-0.25, reason="sin señales núcleo"))
-        if re.search(r"noticias?|prensa|comunicado|bolet[ií]n|blog", text) and not essential_hits["deadline"]:
+        # Guard: contexto noticioso sin fecha de cierre. Antes la regla
+        # buscaba la palabra-clave en cualquier parte del texto, lo que
+        # generaba falsos positivos en avisos legítimos que mencionaban
+        # "comunicado del proceso" o "publicar en el boletín". Ahora el
+        # guard sólo se activa si la pista noticiosa está en la URL,
+        # breadcrumbs, section_hint o título — es decir, en metadatos
+        # estructurales — Y el texto no tiene fecha de cierre detectada.
+        news_context = re.search(
+            r"noticias?|prensa|comunicado|bolet[ií]n|blog|sala\s*de\s*prensa",
+            self._structural_blob(raw_page),
+        )
+        if news_context and not essential_hits["deadline"]:
             score -= 0.22
             negatives.append("contexto noticioso sin fecha de cierre verificable")
             rule_trace.append(
@@ -127,6 +161,22 @@ class RuleEngine:
         )
 
     @staticmethod
+    def _structural_blob(raw_page: RawPage) -> str:
+        """Sólo metadatos estructurales: URL, breadcrumbs, section_hint, título.
+
+        Sirve para guards que NO deben dispararse por menciones casuales en
+        el cuerpo del aviso (p.ej. "comunicado del proceso de selección" en
+        la descripción de un cargo real).
+        """
+        chunks = [
+            raw_page.url or "",
+            raw_page.title or "",
+            " ".join(raw_page.breadcrumbs),
+            raw_page.section_hint or "",
+        ]
+        return "\n".join(chunks).lower()
+
+    @staticmethod
     def _make_text_blob(raw_page: RawPage) -> str:
         chunks = [
             raw_page.title or "",
@@ -165,9 +215,10 @@ class RuleEngine:
             essentials["contract_or_salary"] = True
 
     @staticmethod
-    def _is_historical(text: str) -> bool:
-        old_year = re.search(r"\b(2020|2021|2022|2023|2024)\b", text)
-        current_hint = re.search(r"\b(2025|2026|vigente|abierto|postulaciones hasta)\b", text)
+    def _is_historical(text: str, *, today: date | None = None) -> bool:
+        historical_re, current_re = _historical_year_patterns(today)
+        old_year = re.search(historical_re, text)
+        current_hint = re.search(current_re, text)
         return bool(old_year and not current_hint)
 
     @staticmethod
