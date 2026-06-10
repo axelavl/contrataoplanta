@@ -1,0 +1,37 @@
+# Cloudflare Pages aplica estos headers a las respuestas que sirve desde
+# este directorio (frontend en estadoemplea.pages.dev). El backend
+# (Railway) añade los mismos headers vía middleware en `api/main.py`.
+#
+# CSP en modo **enforce**. Tras pasar por PR #164 (JS inline a
+# archivos externos + onclick= a addEventListener), PR #165 (fuentes
+# self-hosted, fuera `fonts.googleapis.com` y `fonts.gstatic.com`) y
+# un ciclo de observación en modo Report-Only sin violations, el
+# browser ahora **bloquea** cualquier recurso que viole la política.
+# `style-src` mantiene `'unsafe-inline'` por los `style=` del HTML de
+# oferta — moverlos a clases va en otro PR.
+
+/*
+  X-Frame-Options: SAMEORIGIN
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https:; connect-src 'self' https://contrataoplanta-production.up.railway.app; frame-ancestors 'self'; base-uri 'self'; form-action 'self' https://contrataoplanta-production.up.railway.app; object-src 'none'; upgrade-insecure-requests
+
+# Hash en nombres todavía no está implementado, así que los assets no
+# se cachean eternamente. Cuando se versionen (ej: index.abc123.css)
+# subir esto a `max-age=31536000, immutable`.
+/styles/*
+  Cache-Control: public, max-age=3600
+
+/*.js
+  Cache-Control: public, max-age=3600
+
+/logo/*
+  Cache-Control: public, max-age=604800
+
+# Las fuentes self-hosted no cambian salvo que Google actualice el glyph set.
+# Nombre del archivo (familia-peso-estilo-subset) cambia si regeneramos → se
+# puede cachear largo sin immutable porque el Cloudflare purge igual limpia.
+/fonts/*
+  Cache-Control: public, max-age=31536000

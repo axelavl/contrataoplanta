@@ -1,0 +1,246 @@
+/* ══════════════════════════════════════════════════════════════════════
+   design-tokens.css — v2 (redesign)
+   Los tokens legacy (--azul, --cielo, --acento, --texto, etc.) tienen
+   valores hex directos para pasar el check de contraste AA de
+   scripts/qa/check_accessibility_basics.py. Los tokens nuevos de la
+   paleta canónica (--navy, --gold, etc.) son aliases que apuntan a los
+   legacy — ambos nombres funcionan para código nuevo y existente.
+   ══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Tipografía ──────────────────────────────────────────────────── */
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-serif: 'Fraunces', Georgia, serif;
+
+  /* ── PALETA LEGACY (valores hex directos) ────────────────────────── */
+  --azul: #142E6B;       /* navy profundo para ribbon y footer */
+  --azul-m: #254BA0;     /* navy vivo — CTAs, tabs activos */
+  --cielo: #254BA0;      /* unificado con azul-m */
+  --cielo-l: #E1E8F6;    /* fondo sutil con matiz azul */
+
+  --acento: #C88724;
+  --acento-l: #FBE4C0;
+
+  --bg: #FDFCF8;
+  --bg2: #F3F0E6;
+  --borde: #E5E1D2;
+  --blanco: #FFFFFF;
+
+  --texto: #18202F;
+  --texto2: #4B5167;
+  --texto3: #747B91;
+
+  --verde: #2F6E4E;
+  --verde-l: #DAEADE;
+  --naran: #C87A0C;
+  --naran-l: #FBE4BE;
+  --rojo: #B23B24;
+  --rojo-l: #F6DDD5;
+
+  --sombra: 0 1px 2px rgba(14, 32, 70, 0.04), 0 12px 28px rgba(14, 32, 70, 0.07);
+  --r: 10px;
+  --r-l: 16px;
+  --radius: 12px;
+
+  /* ── PALETA NUEVA (aliases + extensiones) ────────────────────────── */
+  --navy-deep: var(--azul);
+  --navy: var(--cielo);
+  --navy-bright: #2E58B5;
+  --navy-80: #3057AA;
+  --navy-60: #5570BD;
+  --navy-ink: #0B1E48;
+  --navy-tint: var(--cielo-l);
+
+  --gold: var(--acento);
+  --gold-soft: #E5A946;
+  --gold-brilliant: #F2C26A;
+  --gold-dim: #A66E1B;
+  --gold-bg: var(--acento-l);
+  --gold-ink: #5C3A10;
+
+  --sage: var(--verde);
+  --sage-soft: var(--verde-l);
+  --terra: var(--rojo);
+  --terra-soft: var(--rojo-l);
+  --amber: var(--naran);
+  --amber-soft: var(--naran-l);
+
+  --bg-subtle: var(--bg2);
+  --bg-deeper: #EBE7D9;
+  --surface: var(--blanco);
+  --surface-hover: #FBF9F3;
+  --border: var(--borde);
+  --border-soft: #EEEADC;
+  --border-strong: #D1CBB8;
+
+  --text: var(--texto);
+  --text-80: #2E3445;
+  --text-60: var(--texto2);
+  --text-40: var(--texto3);
+  --text-muted: #8E94A6;
+
+  --shadow-sm: 0 1px 2px rgba(14, 32, 70, 0.04);
+  --shadow: var(--sombra);
+  --shadow-strong: 0 24px 48px rgba(14, 32, 70, 0.14);
+
+  /* ── Tokens semánticos de superficie (cross-layout) ─────────────── */
+  --background: var(--bg);
+  --surface-base: var(--surface);
+  --surface-elevated: #FFFFFF;
+  --border-subtle: var(--border-soft);
+  --text-primary: var(--text);
+  --text-secondary: var(--text-60);
+  --text-muted-2: var(--text-muted);
+  --accent: var(--navy);
+  --success: var(--sage);
+  --warning: var(--amber);
+  --danger: var(--terra);
+  --overlay: rgba(8, 16, 32, 0.46);
+
+  /* Logo — facilita overrides por tema */
+  --logo-bg: var(--navy);
+  --logo-fg: var(--gold-brilliant);
+
+  /* ── Paleta semántica de alertas (rose / amber tailwind).
+     Centralizada para que dark mode pueda redefinir cada slot sin
+     duplicar hex en redesign-overrides.css. ─────────────────────── */
+  --alert-rose-bg: #FEF2F2;
+  --alert-rose-bg-strong: #FEE2E2;
+  --alert-rose-border: #FCA5A5;
+  --alert-rose-border-strong: #F87171;
+  --alert-rose-text: #DC2626;
+  --alert-rose-text-strong: #991B1B;
+  --alert-amber-text: #92400E;
+
+  /* Paleta success (verde tailwind para alertas/badges positivos). */
+  --alert-green-bg: #DCFCE7;
+  --alert-green-border: #86EFAC;
+  --alert-green-text: #166534;
+  --alert-green-brand: #16A34A;
+
+  /* Paleta del banner de plazo (modal-plazo-alert).
+     5 estados: closed / closing-today / active / upcoming / unknown. */
+  --status-closed-bg: #F3F4F6;
+  --status-closed-border: #D1D5DB;
+  --status-closed-text: #374151;
+  --status-closing-border: #FDE68A;
+  --status-active-border: #86EFAC;     /* alias visual de --alert-green-border */
+  --status-active-text: #166534;       /* alias visual de --alert-green-text */
+  --status-upcoming-border: #93C5FD;
+  --status-upcoming-text: #1D4ED8;
+
+  color-scheme: light;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   MODO OSCURO — valores redefinidos en mismo espacio de nombres
+   ══════════════════════════════════════════════════════════════════════ */
+:root[data-theme="dark"] {
+  --azul: #0A1426;
+  --azul-m: #3057AA;
+  --cielo: #3057AA;
+  --cielo-l: rgba(127, 169, 221, 0.14);
+
+  --acento: #EAB858;
+  --acento-l: rgba(234, 184, 88, 0.14);
+
+  --bg: #0A1426;
+  --bg2: #10203D;
+  --borde: #2A4068;
+  --blanco: #152847;
+
+  --texto: #ECE8DB;
+  --texto2: #B8C0D2;
+  --texto3: #9AA2B6;
+
+  --verde: #8FCDA5;
+  --verde-l: rgba(143, 205, 165, 0.16);
+  --naran: #E5A946;
+  --naran-l: rgba(229, 169, 70, 0.15);
+  --rojo: #EB8A75;
+  --rojo-l: rgba(235, 138, 117, 0.18);
+
+  --navy-deep: #0A1426;
+  --navy: #3057AA;
+  --navy-bright: #3E68C4;
+  --navy-80: #2B4585;
+  --navy-60: #4A6AAD;
+  --navy-ink: #E5EDF9;
+  --navy-tint: rgba(127, 169, 221, 0.14);
+
+  --gold: #EAB858;
+  --gold-soft: #F5D289;
+  --gold-brilliant: #F5D289;
+  --gold-dim: #C99939;
+  --gold-bg: rgba(234, 184, 88, 0.14);
+  --gold-ink: #F5D289;
+
+  --bg-subtle: #10203D;
+  --bg-deeper: #0A1426;
+  --surface: #152847;
+  --surface-hover: #1C345A;
+  --border: #2A4068;
+  --border-soft: #1F3356;
+  --border-strong: #3B547F;
+
+  --text: #ECE8DB;
+  --text-80: #DAD6C8;
+  --text-60: #B8C0D2;
+  --text-40: #9AA2B6;
+  --text-muted: #8B93A8;
+
+  --shadow-sm: 0 1px 0 rgba(255,255,255,0.03) inset;
+  --shadow: 0 1px 0 rgba(255,255,255,0.03) inset, 0 10px 24px rgba(0,0,0,0.35);
+
+  /* ── Tokens semánticos de dark mode ─────────────────────────────── */
+  --background: #081223;
+  --surface-base: #12233F;
+  --surface-elevated: #193156;
+  --border-subtle: #27436D;
+  --text-primary: #F3F0E6;
+  --text-secondary: #C2CADE;
+  --text-muted-2: #9FA8BE;
+  --accent: #EAB858;
+  --success: #8FCDA5;
+  --warning: #F0BC67;
+  --danger: #EB8A75;
+  --overlay: rgba(4, 10, 20, 0.68);
+
+  --logo-bg: var(--surface);
+  --logo-fg: var(--gold);
+
+  /* ── Tokens auxiliares de dark mode (centralizan hex repetidos en
+     redesign-overrides.css). Si tenés que cambiar el tono dorado o
+     el azul oscuro, modificá acá y propaga. ───────────────────────── */
+  --gold-mid: #F1C977;          /* dorado intermedio entre soft y dim */
+  --text-on-dark-soft: #A5B8DF; /* texto azulado claro sobre dark */
+
+  /* Paleta de alertas en dark — slots paralelos a la light. Permite
+     que las clases .btn-limpiar-filtros, .btn-modal-sec--activo,
+     .btn-fav-* funcionen en ambos temas SIN regla dark-only. */
+  --alert-rose-bg: rgba(252, 165, 165, 0.08);
+  --alert-rose-bg-strong: rgba(252, 165, 165, 0.14);
+  --alert-rose-border: rgba(252, 165, 165, 0.35);
+  --alert-rose-border-strong: #FCA5A5;
+  --alert-rose-text: #FCA5A5;
+  --alert-rose-text-strong: #FECACA;
+  --alert-amber-text: #FDE68A;
+
+  /* Success en dark — fondos translúcidos, texto verde pálido. */
+  --alert-green-bg: rgba(143, 205, 165, 0.10);
+  --alert-green-border: rgba(143, 205, 165, 0.45);
+  --alert-green-text: #B8E0C5;
+  --alert-green-brand: #8FCDA5;
+
+  /* Status del modal-plazo-alert en dark. */
+  --status-closed-bg: rgba(255, 255, 255, 0.04);
+  --status-closed-border: rgba(255, 255, 255, 0.12);
+  --status-closed-text: #B8C0D2;
+  --status-closing-border: rgba(229, 169, 70, 0.45);
+  --status-active-border: rgba(143, 205, 165, 0.45);
+  --status-active-text: #B8E0C5;
+  --status-upcoming-border: rgba(127, 169, 221, 0.45);
+  --status-upcoming-text: #A5B8DF;
+
+  color-scheme: dark;
+}

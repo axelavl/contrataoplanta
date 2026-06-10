@@ -1,0 +1,32 @@
+# Cloudflare Pages — reglas de proxy / redirección.
+#
+# Por qué existe este archivo:
+# ---------------------------
+# El frontend se sirve estático desde Cloudflare Pages (estadoemplea.pages.dev).
+# El backend vive en Railway (contrataoplanta-production.up.railway.app) y es
+# quien:
+#
+#   - Devuelve JSON en `/api/*`.
+#   - Renderiza HTML con meta tags Open Graph dinámicos en `/oferta/:id` —
+#     los crawlers de WhatsApp/LinkedIn/Facebook/X/Slack hacen GET a esa URL
+#     y leen `og:image`, `og:title`, `og:description` para armar el unfurl.
+#
+# Si no proxeamos, Cloudflare Pages no tiene ruta para `/oferta/:id` y cae
+# al 404 (o al fallback /index.html con meta tags DEFAULT) — lo que
+# arruina el unfurl: todos los enlaces compartidos se ven con la misma
+# tarjeta genérica en lugar de la imagen dinámica por oferta.
+#
+# Estas reglas se evalúan en orden. La primera que matchea gana.
+# Sintaxis: https://developers.cloudflare.com/pages/configuration/redirects/
+
+# Imagen OG dinámica por oferta (1200x630 / 1080x1080) — proxy directo.
+# Status 200 = el navegador ve el PNG como si fuera del mismo origen (ayuda
+# con el atributo download cross-origin y evita bloqueos de referrer).
+/api/og/*                https://contrataoplanta-production.up.railway.app/api/og/:splat   200
+
+# Páginas SSR de detalle por oferta — deben renderizarse en Railway para
+# que lleven los meta og:* dinámicos.
+/oferta/*                https://contrataoplanta-production.up.railway.app/oferta/:splat   200
+
+# Por consistencia: cualquier /api/* al backend (si alguien linkea un JSON).
+/api/*                   https://contrataoplanta-production.up.railway.app/api/:splat      200

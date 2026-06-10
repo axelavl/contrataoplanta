@@ -1,0 +1,17 @@
+{
+  "name": "Estado Emplea",
+  "short_name": "EstadoEmplea",
+  "description": "Buscador de empleo del sector público chileno",
+  "lang": "es-CL",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F5F4EF",
+  "theme_color": "#0A2E6E",
+  "icons": [
+    { "src": "/favicon.svg",          "sizes": "any",     "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon-192.png",         "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png",         "sizes": "512x512", "type": "image/png" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

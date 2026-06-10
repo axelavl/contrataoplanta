@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<script>(function(){try{var t=localStorage.getItem('theme');var p=window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.setAttribute('data-theme',t||(p?'dark':'light'));}catch(e){}})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>document.documentElement.classList.add('js-nav');</script>
+<title>Panel de estadísticas — contrata o planta .cl</title>
+<meta name="description" content="Consulta estadísticas del empleo público en Chile: concursos, instituciones activas y tendencias del sector.">
+<link rel="canonical" href="https://estadoemplea.pages.dev/estadisticas.html">
+<meta property="og:title" content="Estadísticas del empleo público — contrata o planta .cl">
+<meta property="og:description" content="Métricas y tendencias de concursos públicos e instituciones del Estado chileno.">
+<meta property="og:url" content="https://estadoemplea.pages.dev/estadisticas.html">
+<meta property="og:image" content="https://estadoemplea.pages.dev/og-default.jpg">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_CL">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Estadísticas del empleo público — contrata o planta .cl">
+<meta name="twitter:description" content="Datos y tendencias de vacantes y concursos en el sector público chileno.">
+<meta name="twitter:image" content="https://estadoemplea.pages.dev/og-default.jpg">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="alternate icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#0A2E6E">
+<link rel="stylesheet" href="styles/fonts.css">
+<link rel="stylesheet" href="styles/shared-layout.css">
+<link rel="stylesheet" href="styles/redesign-overrides.css">
+<!-- Analytics deshabilitado: reactivar cuando haya subdominio propio de Umami. -->
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--texto);-webkit-font-smoothing:antialiased;min-height:100vh}
+
+.skip-link{position:absolute;left:12px;top:-48px;z-index:1000;background:var(--azul, #0A2E6E);color:var(--blanco, #FAFAF8);padding:10px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;transition:top .2s}
+.skip-link:focus{top:10px}
+
+.page-content{max-width:1100px;margin:0 auto;padding:40px 24px 80px}
+.data-update{font-size:13px;color:var(--texto3);margin:-8px 0 22px}
+.data-update strong{color:var(--texto2)}
+
+/* KPI CARDS */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:40px}
+.kpi-card{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--r-l);padding:24px;box-shadow:var(--sombra)}
+.kpi-label{font-size:11px;font-weight:700;color:var(--texto3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+.kpi-valor{font-family:'Lora',Georgia,serif;font-size:40px;color:var(--azul);line-height:1;margin-bottom:4px}
+.kpi-desc{font-size:12px;color:var(--texto3);line-height:1.5}
+
+/* SECCIONES */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px}
+.stats-card{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--r-l);padding:24px;box-shadow:var(--sombra)}
+.stats-titulo{font-family:'Lora',Georgia,serif;font-size:17px;color:var(--azul);margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid var(--borde)}
+.stats-card-full{grid-column:1/-1}
+
+/* BARRAS SECTORIALES */
+.sector-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.sector-nombre{font-size:13px;color:var(--texto2);min-width:160px;flex-shrink:0}
+.sector-bar-wrap{flex:1;background:var(--bg2);border-radius:4px;height:8px;overflow:hidden}
+.sector-bar{height:8px;background:var(--azul-m);border-radius:4px;transition:width 0.6s ease}
+.sector-total{font-size:13px;font-weight:600;color:var(--texto);min-width:40px;text-align:right}
+
+/* GRÁFICO MENSUAL */
+.historico-wrap{display:flex;align-items:flex-end;gap:6px;height:120px;padding-bottom:4px;border-bottom:1px solid var(--borde);margin-bottom:8px}
+.historico-barra-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%}
+.historico-barra{width:100%;background:var(--azul-m);border-radius:3px 3px 0 0;min-height:2px;transition:height 0.5s ease;margin-top:auto}
+.historico-mes{font-size:10px;color:var(--texto3);text-align:center;white-space:nowrap}
+.historico-vacio{font-size:13px;color:var(--texto3);text-align:center;padding:20px 0}
+
+/* MÁS ACTIVAS */
+.inst-tabla{width:100%;border-collapse:collapse}
+.inst-tabla th{font-size:11px;font-weight:700;color:var(--texto3);letter-spacing:.8px;text-transform:uppercase;text-align:left;padding:0 12px 10px 0;border-bottom:1px solid var(--borde)}
+.inst-tabla th:last-child{text-align:right;padding-right:0}
+.inst-tabla td{font-size:14px;color:var(--texto2);padding:10px 12px 10px 0;border-bottom:1px solid var(--bg2);vertical-align:middle}
+.inst-tabla td:last-child{text-align:right;padding-right:0}
+.inst-tabla tr:last-child td{border-bottom:none}
+.inst-nombre{color:var(--texto);font-weight:500;text-decoration:none;transition:color .15s}
+.inst-nombre:hover{color:var(--cielo)}
+.badge-activas{display:inline-block;background:var(--cielo-l);color:var(--azul-m);font-size:12px;font-weight:700;padding:2px 8px;border-radius:20px}
+.badge-nuevas{display:inline-block;background:#DCFCE7;color:#166534;font-size:12px;font-weight:700;padding:2px 8px;border-radius:20px}
+
+/* SKELETON */
+.skeleton{background:linear-gradient(90deg,var(--bg2) 25%,var(--borde) 50%,var(--bg2) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:6px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ERROR */
+.error-estado{text-align:center;padding:40px;color:var(--texto3);font-size:14px}
+
+.info-section{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--r-l);padding:24px;box-shadow:var(--sombra);margin-top:24px}
+.info-title{font-family:'Lora',Georgia,serif;font-size:24px;color:var(--azul);margin-bottom:10px}
+.info-sub{font-size:14px;color:var(--texto2);line-height:1.7;margin-bottom:16px}
+.pasos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.paso-card{background:var(--bg);border:1px solid var(--borde);border-radius:12px;padding:14px}
+.paso-num{font-size:11px;font-weight:700;letter-spacing:.8px;color:var(--cielo);text-transform:uppercase;margin-bottom:6px}
+.paso-card h3{font-size:15px;color:var(--texto);margin-bottom:6px}
+.paso-card p{font-size:13px;color:var(--texto2);line-height:1.6}
+.metodo-lista{margin:10px 0 0 18px;color:var(--texto2);font-size:13px;line-height:1.7}
+.metodo-lista li{margin-bottom:4px}
+.meta-link{font-size:12px;color:var(--cielo);text-decoration:none}
+.meta-link:hover{text-decoration:underline}
+
+@media(max-width:900px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .stats-grid{grid-template-columns:1fr}
+  .stats-card-full{grid-column:auto}
+  .pasos-grid{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+  .kpi-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+<script defer src="shared-shell.js"></script>
+</head>
+<body data-page="estadisticas">
+<a class="skip-link" href="#contenido-principal">Saltar al contenido</a>
+
+
+<div id="site-ribbon"></div>
+<div id="site-header"></div>
+
+<nav class="breadcrumb" aria-label="Ruta de navegación">
+  <div class="breadcrumb-inner">
+    <a href="index.html">Inicio</a>
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-actual">Panel de estadísticas</span>
+  </div>
+</nav>
+
+<main id="contenido-principal">
+
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <div class="page-kicker">Datos abiertos</div>
+    <h1 class="page-titulo">Panel de estadísticas del empleo público</h1>
+    <p class="page-sub">Una vista clara para decidir mejor dónde enfocar tu búsqueda esta semana.</p>
+  </div>
+</div>
+
+<div class="page-content">
+  <p class="data-update">Última actualización de datos: <strong id="data-last-update">cargando…</strong></p>
+
+  <!-- KPIs -->
+  <div class="kpi-grid" id="kpi-grid">
+    <div class="kpi-card"><div class="kpi-label">Ofertas activas</div><div class="kpi-valor skeleton" style="height:44px;width:80px;margin-bottom:6px"></div><div class="kpi-desc">En este momento</div></div>
+    <div class="kpi-card"><div class="kpi-label">Nuevas (48 h)</div><div class="kpi-valor skeleton" style="height:44px;width:60px;margin-bottom:6px"></div><div class="kpi-desc">Detectadas recientemente</div></div>
+    <div class="kpi-card"><div class="kpi-label">Cierran hoy</div><div class="kpi-valor skeleton" style="height:44px;width:50px;margin-bottom:6px"></div><div class="kpi-desc">Plazo vence hoy</div></div>
+    <div class="kpi-card"><div class="kpi-label">Instituciones activas</div><div class="kpi-valor skeleton" style="height:44px;width:60px;margin-bottom:6px"></div><div class="kpi-desc">Con al menos un concurso</div></div>
+  </div>
+
+  <!-- Grilla inferior -->
+  <div class="stats-grid">
+
+    <!-- Por sector -->
+    <div class="stats-card">
+      <div class="stats-titulo">Por sector</div>
+      <div id="sector-contenido"><div class="skeleton" style="height:14px;margin-bottom:10px"></div><div class="skeleton" style="height:14px;margin-bottom:10px"></div><div class="skeleton" style="height:14px"></div></div>
+    </div>
+
+    <!-- Instituciones más activas -->
+    <div class="stats-card">
+      <div class="stats-titulo">Instituciones con más ofertas</div>
+      <div id="mas-activas-contenido"><div class="skeleton" style="height:14px;margin-bottom:10px"></div><div class="skeleton" style="height:14px;margin-bottom:10px"></div><div class="skeleton" style="height:14px"></div></div>
+    </div>
+
+    <!-- Histórico mensual (ancho completo) -->
+    <div class="stats-card stats-card-full">
+      <div class="stats-titulo">Ofertas detectadas por mes (últimos 12 meses)</div>
+      <div id="historico-contenido"><div class="skeleton" style="height:120px"></div></div>
+    </div>
+
+  </div>
+
+  <section class="info-section">
+    <h2 class="info-title">Cómo usar estos datos</h2>
+    <p class="info-sub">Tres formas concretas de orientar tu búsqueda con lo que muestra el panel.</p>
+    <div class="pasos-grid">
+      <article class="paso-card">
+        <div class="paso-num">Paso 1</div>
+        <h3>Ubica dónde hay más movimiento</h3>
+        <p>Observa el desglose por sector para concentrar tu búsqueda donde sí están publicando concursos afines a tu perfil.</p>
+      </article>
+      <article class="paso-card">
+        <div class="paso-num">Paso 2</div>
+        <h3>Anticipa los picos del año</h3>
+        <p>El histórico mensual te muestra las temporadas fuertes. Llega con CV, certificados y documentos listos antes de la próxima ola.</p>
+      </article>
+      <article class="paso-card">
+        <div class="paso-num">Paso 3</div>
+        <h3>Prioriza las instituciones que más convocan</h3>
+        <p>Identifica los organismos que publican con más frecuencia y sigue sus bases para postular a lo que realmente se repite.</p>
+      </article>
+    </div>
+  </section>
+
+</div>
+
+</main>
+
+<div id="site-footer"></div>
+
+<script>
+const API_BASE = (
+  window.location.hostname === 'localhost' ||
+  window.location.hostname === '127.0.0.1' ||
+  window.location.hostname === ''
+) ? 'http://localhost:8000' : '';
+
+function fmt(n) {
+  return (n ?? 0).toLocaleString('es-CL');
+}
+
+function renderUltimaActualizacion(ts) {
+  const el = document.getElementById('data-last-update');
+  if (!el || !ts) return;
+  el.textContent = new Date(ts).toLocaleString('es-CL', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+function renderKpis(d) {
+  document.getElementById('kpi-grid').innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-label">Ofertas activas</div>
+      <div class="kpi-valor">${fmt(d.activas_hoy)}</div>
+      <div class="kpi-desc">En este momento</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Nuevas (48 h)</div>
+      <div class="kpi-valor">${fmt(d.nuevas_48h)}</div>
+      <div class="kpi-desc">Detectadas recientemente</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Cierran hoy</div>
+      <div class="kpi-valor">${fmt(d.cierran_hoy)}</div>
+      <div class="kpi-desc">Plazo vence hoy</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Instituciones activas</div>
+      <div class="kpi-valor">${fmt(d.instituciones_activas)}</div>
+      <div class="kpi-desc">Con al menos un concurso</div>
+    </div>
+  `;
+}
+
+function renderSectores(sectores) {
+  if (!sectores || !sectores.length) {
+    document.getElementById('sector-contenido').innerHTML = '<p class="error-estado">Sin datos disponibles.</p>';
+    return;
+  }
+  const max = Math.max(...sectores.map(s => s.total));
+  const html = sectores.map(s => `
+    <div class="sector-row">
+      <span class="sector-nombre">${s.sector || 'Sin sector'}</span>
+      <div class="sector-bar-wrap">
+        <div class="sector-bar" style="width:${Math.round(s.total / max * 100)}%"></div>
+      </div>
+      <span class="sector-total">${fmt(s.total)}</span>
+    </div>
+  `).join('');
+  document.getElementById('sector-contenido').innerHTML = html;
+}
+
+function renderHistorico(meses) {
+  if (!meses || !meses.length) {
+    document.getElementById('historico-contenido').innerHTML = '<p class="historico-vacio">Sin datos históricos disponibles.</p>';
+    return;
+  }
+  const max = Math.max(...meses.map(m => m.total));
+  const barras = meses.map(m => {
+    const pct = max > 0 ? Math.round(m.total / max * 100) : 0;
+    const label = m.mes ? m.mes.slice(0, 7) : '';
+    const mesCorto = label ? label.slice(5) : '';
+    return `
+      <div class="historico-barra-wrap" title="${label}: ${fmt(m.total)} ofertas">
+        <div class="historico-barra" style="height:${pct}%"></div>
+        <span class="historico-mes">${mesCorto}</span>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('historico-contenido').innerHTML = `<div class="historico-wrap">${barras}</div>`;
+}
+
+function renderMasActivas(lista) {
+  if (!lista || !lista.length) {
+    document.getElementById('mas-activas-contenido').innerHTML = '<p class="error-estado">Sin datos disponibles.</p>';
+    return;
+  }
+  const filas = lista.map(inst => `
+    <tr>
+      <td><a href="index.html?q=${encodeURIComponent(inst.nombre)}" class="inst-nombre">${inst.nombre}</a></td>
+      <td><span class="badge-activas">${fmt(inst.activas)}</span></td>
+      <td>${inst.nuevas_semana > 0 ? `<span class="badge-nuevas">+${inst.nuevas_semana}</span>` : '<span style="color:var(--texto3);font-size:12px">—</span>'}</td>
+    </tr>
+  `).join('');
+  document.getElementById('mas-activas-contenido').innerHTML = `
+    <table class="inst-tabla">
+      <thead>
+        <tr>
+          <th>Institución</th>
+          <th>Activas</th>
+          <th>Esta semana</th>
+        </tr>
+      </thead>
+      <tbody>${filas}</tbody>
+    </table>
+  `;
+}
+
+async function cargar() {
+  try {
+    const res = await fetch(`${API_BASE}/api/estadisticas`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const d = await res.json();
+    renderUltimaActualizacion(d.ultima_actualizacion);
+    renderKpis(d);
+    renderSectores(d.por_sector);
+    renderHistorico(d.historico_mensual);
+    renderMasActivas(d.mas_activas);
+  } catch (e) {
+    const msg = '<p class="error-estado">No pudimos cargar el panel ahora. Inténtalo nuevamente en unos minutos.</p>';
+    document.getElementById('kpi-grid').innerHTML = msg;
+    document.getElementById('sector-contenido').innerHTML = msg;
+    document.getElementById('historico-contenido').innerHTML = msg;
+    document.getElementById('mas-activas-contenido').innerHTML = msg;
+  }
+}
+
+cargar();
+</script>
+
+<script>
+(function(){
+  const favs = JSON.parse(localStorage.getItem('fav_contrataoplanta')||'[]');
+  const link = document.getElementById('nav-favoritos');
+  if(link && favs.length > 0){ link.textContent = '♥ Mis favoritos ('+favs.length+')'; link.style.color='white'; }
+})();
+</script>
+<script src="nav-mobile.js"></script>
+
+</body>
+</html>

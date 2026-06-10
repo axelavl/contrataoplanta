@@ -1,0 +1,3676 @@
+/* ══════════════════════════════════════════════════════════════════════
+   redesign-overrides.css — v3
+   Capa de overrides para aplicar el rediseño visual del home sobre los
+   estilos existentes de index.css. Se carga DESPUÉS de index.css para
+   que estas reglas ganen por orden de cascada.
+
+   No reescribe index.css para minimizar riesgo. Si hay que revertir,
+   basta quitar el <link> a este archivo en web/index.html.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ══ HERO · de navy oscuro a cream claro, Fraunces editorial ══════════ */
+.hero {
+  background: var(--bg);
+  padding: 56px 24px 24px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   DARK MODE SYSTEM POLISH — menú/listado/detalle integrado (móvil)
+   Abril 2026: reducción de densidad + jerarquía visual consistente.
+   ══════════════════════════════════════════════════════════════════════ */
+:root[data-theme="dark"] {
+  --bg: var(--background);
+  --blanco: var(--surface-base);
+  --bg2: #0E1D37;
+  --borde: var(--border-subtle);
+  --texto: var(--text-primary);
+  --texto2: var(--text-secondary);
+  --texto3: var(--text-muted-2);
+}
+
+:root[data-theme="dark"] .resultados-shell,
+:root[data-theme="dark"] .oferta-card,
+:root[data-theme="dark"] .modal,
+:root[data-theme="dark"] .bases-viewer-panel {
+  border-color: var(--border-subtle) !important;
+}
+
+:root[data-theme="dark"] .resultados-shell {
+  background: var(--surface-base);
+  box-shadow: 0 14px 32px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.03);
+}
+
+/* Controles y chips de listado: menos “blancos” y más coherentes con dark. */
+:root[data-theme="dark"] .ctrl-select,
+:root[data-theme="dark"] .btn-copiar-busqueda,
+:root[data-theme="dark"] .vista-btns,
+:root[data-theme="dark"] .filtro-tag,
+:root[data-theme="dark"] .pag-btn,
+:root[data-theme="dark"] .campo input,
+:root[data-theme="dark"] .campo select,
+:root[data-theme="dark"] .comunas-trigger {
+  background: #0F213E !important;
+  color: var(--text-secondary) !important;
+  border-color: var(--border-subtle) !important;
+}
+:root[data-theme="dark"] .vista-btn.activo,
+:root[data-theme="dark"] .pag-btn.activo {
+  background: var(--accent) !important;
+  color: #1B2640 !important;
+  border-color: var(--accent) !important;
+}
+
+/* Cards: menos contorno, mejor jerarquía de cargo/institución/metadata. */
+:root[data-theme="dark"] .ofertas-lista { gap: 12px; }
+:root[data-theme="dark"] .oferta-card {
+  background: linear-gradient(180deg, #132746 0%, #10203A 100%) !important;
+  border-width: 1px !important;
+  border-color: rgba(107, 136, 180, 0.35) !important;
+  padding: 15px 14px 13px !important;
+}
+:root[data-theme="dark"] .oferta-card:hover {
+  background: linear-gradient(180deg, #183056 0%, #122542 100%) !important;
+  border-color: rgba(156, 182, 220, 0.52) !important;
+  transform: translateY(-1px);
+}
+:root[data-theme="dark"] .oferta-institucion {
+  color: #C9D4E9 !important;
+  font-weight: 600 !important;
+  font-size: 11.5px !important;
+}
+:root[data-theme="dark"] .oferta-cargo,
+:root[data-theme="dark"] .oferta-cargo-link {
+  color: #F3F0E6 !important;
+  font-size: 17px !important;
+  line-height: 1.28 !important;
+}
+:root[data-theme="dark"] .oferta-detalles {
+  color: #A9B4CB !important;
+  font-size: 12px !important;
+  gap: 10px !important;
+  margin-bottom: 9px !important;
+}
+:root[data-theme="dark"] .oferta-renta {
+  color: #F6D38D !important;
+  font-size: 14px !important;
+}
+:root[data-theme="dark"] .oferta-footer {
+  border-top-color: rgba(255,255,255,0.07) !important;
+  padding-top: 9px !important;
+}
+:root[data-theme="dark"] .btn-detalle,
+:root[data-theme="dark"] .btn-ver {
+  min-height: 36px !important;
+  border-radius: 8px !important;
+}
+
+/* Detalle: compactación y separación de capas sin “cajas iguales”. */
+:root[data-theme="dark"] .modal {
+  background: linear-gradient(180deg, #12243F 0%, #101F38 100%) !important;
+  box-shadow: 0 24px 54px rgba(0,0,0,.52), inset 0 1px 0 rgba(255,255,255,.04);
+}
+:root[data-theme="dark"] .modal-header {
+  padding: 14px 16px 12px !important;
+  border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+}
+:root[data-theme="dark"] .modal-body { padding: 14px 16px 10px !important; }
+:root[data-theme="dark"] .modal-seccion {
+  margin-bottom: 15px !important;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 10px;
+  padding: 11px 11px 10px;
+}
+:root[data-theme="dark"] .modal-seccion-titulo { color: var(--gold-mid) !important; }
+:root[data-theme="dark"] .modal-info-item {
+  background: #0F213C !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+}
+:root[data-theme="dark"] .modal-info-label { color: #93A4C2 !important; }
+:root[data-theme="dark"] .modal-info-val { color: #EEF2FA !important; }
+
+:root[data-theme="dark"] .btn-modal-primary {
+  background: linear-gradient(180deg, #EFC676 0%, #E3B45A 100%) !important;
+  color: #1D2A45 !important;
+  border: none !important;
+}
+:root[data-theme="dark"] .btn-modal-primary:hover { filter: brightness(1.03); }
+:root[data-theme="dark"] .btn-modal-sec {
+  background: #102442 !important;
+  color: #CFD9EE !important;
+  border-color: rgba(255,255,255,0.18) !important;
+}
+:root[data-theme="dark"] .btn-modal-sec:hover {
+  border-color: var(--gold-mid) !important;
+  color: var(--gold-mid) !important;
+}
+:root[data-theme="dark"] .bases-viewer-panel {
+  background: #112440 !important;
+  color: var(--text-primary) !important;
+}
+
+@media (max-width: 600px) {
+  :root[data-theme="dark"] .estado-listado-copy {
+    color: #9BA8C2 !important;
+    font-size: 11px !important;
+  }
+  :root[data-theme="dark"] .resultados-header {
+    margin-bottom: 10px !important;
+    gap: 10px !important;
+  }
+  :root[data-theme="dark"] .btn-copiar-busqueda {
+    font-size: 11px !important;
+    min-height: 33px !important;
+  }
+  :root[data-theme="dark"] .modal-close {
+    width: 32px !important;
+    height: 32px !important;
+    background: rgba(255,255,255,0.08) !important;
+    border: 1px solid rgba(255,255,255,0.16) !important;
+  }
+  :root[data-theme="dark"] .modal-rich-text {
+    font-size: 13.5px !important;
+    line-height: 1.66 !important;
+    color: #D7DEEC !important;
+  }
+  :root[data-theme="dark"] .modal-rich-text .rt-toggle {
+    color: var(--gold-mid) !important;
+    border-bottom-color: rgba(241,201,119,0.7) !important;
+  }
+  :root[data-theme="dark"] .modal-actions {
+    border-top-color: rgba(255,255,255,0.08) !important;
+    background: rgba(16, 30, 54, 0.96) !important;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+  :root[data-theme="dark"] .back-to-top-btn {
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+.hero::before {
+  background: radial-gradient(
+      ellipse 80% 50% at 20% 20%,
+      rgba(37, 75, 160, 0.05),
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 50% 40% at 90% 30%,
+      rgba(200, 135, 36, 0.04),
+      transparent 60%
+    );
+}
+
+.hero-kicker {
+  color: var(--gold-dim);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  margin-bottom: 22px;
+}
+.hero-kicker::before { background: var(--gold-dim); }
+
+.hero-h1 {
+  font-family: 'Fraunces', Georgia, serif;
+  color: var(--navy-ink);
+  font-weight: 400;
+  font-size: clamp(38px, 5.2vw, 58px);
+  line-height: 1.04;
+  letter-spacing: -0.022em;
+  margin-bottom: 18px;
+}
+.hero-h1 em {
+  color: var(--gold);
+  font-style: italic;
+  font-variation-settings: 'opsz' 144;
+  font-weight: 400;
+}
+
+.hero-sub {
+  color: var(--text-80);
+  font-weight: 400;
+  font-size: 16.5px;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.hero-stats-bar { gap: 10px; }
+.hero-stat-pill {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-60);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+}
+.hero-stat-pill strong {
+  color: var(--navy);
+  font-weight: 700;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+
+/* ══ SEARCH · card blanca con mejor shadow y typography ═══════════════ */
+.buscador-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 22px 22px;
+}
+.buscador-form, .buscador-fila2 {
+  gap: 14px;
+}
+.campo label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-40);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.campo input, .campo select {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 11px 14px;
+  font-size: 14.5px;
+  font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.campo input:focus, .campo select:focus {
+  outline: none;
+  border-color: var(--navy);
+  box-shadow: 0 0 0 3px var(--navy-tint);
+}
+.campo input::placeholder { color: var(--text-40); }
+
+.btn-buscar {
+  background: var(--navy);
+  color: var(--blanco);
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 14.5px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  font-family: inherit;
+}
+.btn-buscar:hover { background: var(--navy-deep); transform: translateY(-1px); }
+
+/* ══ SHORTCUTS (atajos) · chips pill con navy active ══════════════════ */
+.filtros-rapidos { margin-top: 18px; }
+.filtros-titulo {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-40);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-right: 10px;
+}
+.filtro-tag {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.filtro-tag:hover {
+  border-color: var(--navy);
+  color: var(--navy);
+}
+.filtro-tag.activo {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: var(--gold-brilliant);
+  font-weight: 600;
+}
+
+/* ══ TABS Vigentes/Cerradas · conservador, mejor contraste ════════════ */
+.estado-listado-tabs {
+  background: var(--bg2);
+  border-color: var(--border);
+  padding: 5px;
+}
+.estado-listado-tabs::before {
+  background: var(--navy);
+}
+.estado-tab {
+  font-size: 12.5px;
+  color: var(--text-60);
+  padding: 8px 16px;
+}
+.estado-tab:hover { color: var(--text); }
+.estado-tab.activo { color: var(--gold-brilliant); }
+
+.estado-listado-copy {
+  font-size: 13px;
+  color: var(--text-60);
+  margin-bottom: 16px;
+}
+.estado-listado-copy strong { color: var(--text); }
+
+/* ══ RESULTADOS HEADER ════════════════════════════════════════════════ */
+.resultados-count {
+  font-size: 14.5px;
+  color: var(--text-60);
+}
+.resultados-count strong {
+  color: var(--navy);
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 500;
+  font-size: 20px;
+  letter-spacing: -0.01em;
+}
+.count-sub { color: var(--text-40); font-size: 12.5px; }
+
+.ctrl-select {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 13px;
+  color: var(--text-60);
+  background: var(--surface);
+}
+.ctrl-select:hover { border-color: var(--navy-60); color: var(--text); }
+.vista-btn.activo { background: var(--surface); color: var(--navy); }
+
+/* ══ CARDS DE OFERTAS · border-left semántico y tipo editorial ════════ */
+.oferta-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid transparent;
+  border-radius: 10px;
+  padding: 20px 22px;
+  transition: all 0.2s;
+}
+.oferta-card:hover {
+  background: var(--surface-hover);
+  border-color: var(--navy-60);
+  border-left-color: var(--gold);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+/* Estado urgente (cierra pronto) */
+.oferta-card.urgente,
+.oferta-card[data-urgente="true"] {
+  border-left-color: var(--terra);
+}
+/* Destacada por equipo */
+.oferta-card.destacada {
+  border-top: 2px solid var(--gold);
+  border-left: 1px solid var(--border);
+  padding-top: 22px;
+}
+.oferta-card.destacada::before {
+  background: var(--navy);
+  color: var(--gold-brilliant);
+  font-weight: 600;
+  font-size: 10.5px;
+  letter-spacing: 0.03em;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.oferta-institucion {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--navy);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.oferta-cargo {
+  font-family: 'Inter', sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--navy-ink);
+  line-height: 1.35;
+}
+.oferta-cargo-link { color: var(--navy-ink); }
+.oferta-cargo-link:hover { color: var(--navy); }
+
+/* Tags de tipo de contrato más refinadas */
+.badge {
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+}
+.badge-planta     { background: #E0E7FF; color: #3730A3; }
+.badge-contrata   { background: var(--navy-tint); color: var(--navy); }
+.badge-honorarios { background: #FCE7F3; color: #9D174D; }
+.badge-codigo     { background: #E0F2FE; color: #075985; }
+.badge-otro       { background: var(--bg-subtle); color: var(--text-60); }
+.badge-sin-dato   { color: var(--text-40); border-color: var(--border); }
+.badge-region     { background: transparent; border: 1px solid var(--border); color: var(--text-60); }
+
+/* ══ SIDEBAR WIDGETS · más blancos y con mejor typography ═════════════ */
+.widget {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: none;
+}
+.widget-titulo {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  color: var(--navy-ink);
+}
+.widget-titulo::before { display: none; }
+
+.alerta-form input, .alerta-form select {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 14px;
+  background: var(--bg);
+}
+.alerta-form input:focus, .alerta-form select:focus {
+  border-color: var(--gold);
+  outline: 2px solid var(--gold);
+  outline-offset: -1px;
+}
+.alerta-label {
+  font-size: 11px;
+  color: var(--text-40);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.btn-alerta {
+  background: var(--navy);
+  border-radius: 8px;
+  padding: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  transition: background 0.15s;
+}
+.btn-alerta:hover { background: var(--navy-deep); }
+
+/* ══ DATA UPDATE GLOBAL ════════════════════════════════════════════════ */
+.data-update-global {
+  font-size: 13px;
+  color: var(--text-60);
+}
+.data-update-global strong { color: var(--text); font-weight: 600; }
+
+/* ══ INFO SECTIONS (pasos) ═════════════════════════════════════════════ */
+.info-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 500;
+  color: var(--navy-ink);
+  font-size: 24px;
+  letter-spacing: -0.012em;
+}
+.paso-num { color: var(--gold-dim); }
+
+/* ══ AD SLOTS · si están vacíos, colapsa ═══════════════════════════════ */
+.ad-slot:empty { display: none; }
+.ad-slot-sidebar:empty { display: none; }
+.ad-slot-resultados:empty { display: none; }
+.ad-slot-inner { opacity: 0.3; }
+
+/* ══ RESPONSIVE · mantener spacing en mobile ══════════════════════════ */
+@media (max-width: 768px) {
+  .hero { padding: 36px 16px 18px; }
+  .hero-h1 { font-size: clamp(30px, 7vw, 40px); }
+  .buscador-wrap { padding: 16px; }
+  .oferta-card { padding: 16px 18px; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   THEME TOGGLE · pill switch en el header
+   ══════════════════════════════════════════════════════════════════════ */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  position: relative;
+  margin-left: 8px;
+}
+.theme-toggle button {
+  background: transparent;
+  border: none;
+  width: 28px; height: 28px;
+  border-radius: 999px;
+  display: grid; place-items: center;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.55);
+  transition: color 0.2s, background 0.2s;
+  padding: 0;
+  position: relative;
+  z-index: 1;
+}
+.theme-toggle button svg { width: 14px; height: 14px; stroke-width: 2; }
+.theme-toggle button:hover { color: rgba(255, 255, 255, 0.9); }
+.theme-toggle button.is-active {
+  color: var(--acento);
+  background: rgba(255, 255, 255, 0.1);
+}
+.theme-toggle button:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 1px;
+}
+
+/* En páginas interiores (shared-layout) el nav también es navy oscuro,
+   así que estos estilos aplican igual. No necesito variante light. */
+
+/* ══════════════════════════════════════════════════════════════════════
+   RIBBON · freshness bar sobre el header
+   ══════════════════════════════════════════════════════════════════════ */
+.ribbon {
+  background: #050C1A;
+  color: rgba(244, 241, 232, 0.75);
+  font-size: 12.5px;
+  letter-spacing: 0.01em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.ribbon-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 8px 24px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.ribbon-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  position: relative;
+}
+/* Separador visual entre items */
+.ribbon-item + .ribbon-item::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(244, 241, 232, 0.25);
+  margin-right: 14px;
+}
+.ribbon-item strong {
+  color: #F2C26A;
+  font-weight: 600;
+  margin: 0 2px;
+}
+.ribbon-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #6CB989;
+  box-shadow: 0 0 0 0 rgba(108, 185, 137, 0.5);
+  animation: ribbon-pulse 2s infinite;
+  display: inline-block;
+}
+@keyframes ribbon-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(108, 185, 137, 0.5); }
+  50% { box-shadow: 0 0 0 5px rgba(108, 185, 137, 0); }
+}
+@media (max-width: 600px) {
+  .ribbon-inner { gap: 14px; font-size: 12px; padding: 7px 14px; }
+  .ribbon-item--sm-hide { display: none; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   DARK MODE · activa cuando data-theme="dark" en <html>
+   Los tokens legacy ya se invierten en design-tokens.css. Acá refuerzo
+   donde el CSS existente hardcodea colores y no responde a tokens.
+   ══════════════════════════════════════════════════════════════════════ */
+:root[data-theme="dark"] body {
+  background: var(--bg);
+  color: var(--texto);
+}
+:root[data-theme="dark"] .hero {
+  background: var(--bg);
+}
+:root[data-theme="dark"] .hero-h1 { color: var(--texto); }
+:root[data-theme="dark"] .hero-sub { color: var(--texto2); }
+:root[data-theme="dark"] .hero-stat-pill {
+  background: var(--blanco);
+  border-color: var(--borde);
+  color: var(--texto2);
+}
+:root[data-theme="dark"] .hero-stat-pill strong { color: var(--acento); }
+
+:root[data-theme="dark"] .buscador-wrap {
+  background: var(--blanco);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .campo input,
+:root[data-theme="dark"] .campo select {
+  background: var(--bg);
+  color: var(--texto);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .campo label { color: var(--texto3); }
+
+:root[data-theme="dark"] .filtro-tag {
+  background: var(--blanco);
+  border-color: var(--borde);
+  color: var(--texto);
+}
+:root[data-theme="dark"] .filtro-tag.activo {
+  background: var(--acento);
+  color: var(--azul);
+  border-color: var(--acento);
+}
+
+:root[data-theme="dark"] .oferta-card {
+  background: var(--blanco);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .oferta-card:hover {
+  background: #1C345A;
+}
+:root[data-theme="dark"] .oferta-institucion { color: var(--acento); }
+:root[data-theme="dark"] .oferta-cargo,
+:root[data-theme="dark"] .oferta-cargo-link { color: var(--texto); }
+
+:root[data-theme="dark"] .widget {
+  background: var(--blanco);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .widget-titulo { color: var(--texto); }
+
+:root[data-theme="dark"] .estado-listado-tabs {
+  background: var(--bg2);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .estado-tab.activo { color: var(--azul); }
+:root[data-theme="dark"] .estado-listado-tabs::before { background: var(--acento); }
+
+:root[data-theme="dark"] .resultados-count strong { color: var(--acento); }
+:root[data-theme="dark"] .ctrl-select {
+  background: var(--blanco);
+  color: var(--texto2);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .vista-btn.activo { background: var(--bg); color: var(--acento); }
+
+:root[data-theme="dark"] .badge-contrata {
+  background: rgba(234, 184, 88, 0.15);
+  color: var(--acento);
+}
+
+:root[data-theme="dark"] .info-title { color: var(--texto); }
+:root[data-theme="dark"] .info-section {
+  background: var(--blanco);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .paso-card {
+  background: var(--bg);
+  border-color: var(--borde);
+}
+
+:root[data-theme="dark"] .data-update-global { color: var(--texto2); }
+:root[data-theme="dark"] .data-update-global strong { color: var(--texto); }
+
+/* Navbar en dark: mantener oscuro pero ajustar colores de texto activos */
+:root[data-theme="dark"] header nav {
+  background: #050C1A;
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Theme toggle active state en dark */
+:root[data-theme="dark"] .theme-toggle button.is-active { color: var(--acento); }
+
+/* Transiciones suaves entre temas */
+body, .hero, .buscador-wrap, .oferta-card, .widget, .filtro-tag, .ribbon {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body, .hero, .buscador-wrap, .oferta-card, .widget, .filtro-tag, .ribbon {
+    transition: none;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   MODAL DETALLE DE OFERTA · más compacto y con CTA sticky
+   ══════════════════════════════════════════════════════════════════════ */
+.modal-overlay {
+  padding: 16px;
+}
+.modal {
+  max-width: 720px;
+  max-height: 94vh;
+  display: flex;
+  flex-direction: column;
+}
+.modal-header {
+  padding: 16px 20px;
+  flex-shrink: 0;
+}
+.modal-body {
+  padding: 18px 22px 12px;
+  flex: 1 1 auto;
+  overflow-y: auto;
+}
+.modal-seccion { margin-bottom: 18px; }
+
+/* KPIs más compactos */
+.modal-body .kpis-grid,
+.modal-body .modal-kpis {
+  gap: 8px !important;
+}
+.modal-body .kpi,
+.modal-body .modal-kpi {
+  padding: 10px 14px !important;
+}
+
+/* CTA principal STICKY al final del modal, siempre visible */
+.modal-cta-footer,
+.modal-acciones-principales,
+.modal-acciones,
+.ig-modal-acciones {
+  position: sticky;
+  bottom: 0;
+  background: var(--blanco);
+  border-top: 1px solid var(--borde);
+  padding: 14px 22px 16px !important;
+  margin-top: 0 !important;
+  z-index: 5;
+  box-shadow: 0 -8px 16px rgba(10, 46, 110, 0.04);
+}
+:root[data-theme="dark"] .modal-cta-footer,
+:root[data-theme="dark"] .modal-acciones-principales,
+:root[data-theme="dark"] .modal-acciones,
+:root[data-theme="dark"] .ig-modal-acciones {
+  background: var(--blanco);
+  border-top-color: var(--borde);
+}
+
+/* Botón principal más compacto */
+.btn-modal-primary {
+  height: 46px !important;
+  font-size: 14.5px !important;
+  border-radius: 10px !important;
+}
+
+/* Alertas dentro del modal (Cierra pronto) más compactas */
+.modal-body .oferta-alerta,
+.modal-body .alerta-urgencia,
+.modal-body .deadline-banner {
+  padding: 10px 14px !important;
+  margin-bottom: 14px !important;
+}
+
+@media (max-width: 600px) {
+  .modal { max-height: 100vh; border-radius: 0; }
+  .modal-overlay { padding: 0; }
+  .modal-body { padding: 14px 16px 10px; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   AJUSTES POST-DEPLOY · legibilidad dark mode y layout
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* 1) Badges de tipo de contrato con mejor contraste en DARK */
+:root[data-theme="dark"] .badge-planta {
+  background: rgba(127, 169, 221, 0.16);
+  color: var(--text-on-dark-soft);
+}
+:root[data-theme="dark"] .badge-contrata {
+  background: rgba(234, 184, 88, 0.18);
+  color: var(--acento);
+}
+:root[data-theme="dark"] .badge-honorarios {
+  background: rgba(236, 72, 153, 0.16);
+  color: #F5A3C7;
+}
+:root[data-theme="dark"] .badge-codigo {
+  background: rgba(14, 165, 233, 0.16);
+  color: #7DC8EC;
+}
+:root[data-theme="dark"] .badge-otro {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--texto2);
+}
+:root[data-theme="dark"] .badge-sin-dato {
+  background: transparent;
+  color: var(--texto3);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .badge-region {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--texto2);
+  border-color: var(--borde);
+}
+
+/* 2) Chips neutros (Región, Sector como tags) mucho más legibles en DARK */
+:root[data-theme="dark"] .tag.tag--neutral,
+:root[data-theme="dark"] .badge.badge--neutral {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--texto);
+}
+
+/* 3) "Publicada hace X" y tags de frescura */
+:root[data-theme="dark"] .oferta-frescura,
+:root[data-theme="dark"] .frescura-chip,
+:root[data-theme="dark"] .badge-frescura {
+  background: rgba(234, 184, 88, 0.15);
+  color: var(--acento);
+  border: none;
+}
+
+/* 4) Tags de "Nueva · hace X días" mejor contraste (verde) */
+:root[data-theme="dark"] .tag-nueva,
+:root[data-theme="dark"] .oferta-nueva {
+  background: rgba(143, 205, 165, 0.18);
+  color: var(--verde);
+}
+
+/* 5) Stats pills del hero — asegurar visibilidad en ambos modos */
+.hero-stat-pill strong {
+  color: var(--navy);
+}
+:root[data-theme="dark"] .hero-stat-pill {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: var(--texto2);
+}
+:root[data-theme="dark"] .hero-stat-pill strong {
+  color: var(--acento);
+}
+
+/* 6) Widget "Alertas de empleo" con borde y título destacado en dark */
+:root[data-theme="dark"] .widget {
+  background: var(--blanco);
+  border: 1px solid var(--borde);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+}
+:root[data-theme="dark"] .widget-titulo { color: var(--acento); }
+:root[data-theme="dark"] .alerta-form input,
+:root[data-theme="dark"] .alerta-form select {
+  background: var(--bg);
+  color: var(--texto);
+  border-color: var(--borde);
+}
+
+/* 7) "PUBLICIDAD" placeholder — ocultar con selectores más agresivos */
+.ad-slot-resultados,
+.ad-slot-sidebar,
+.ad-slot {
+  /* Si el slot no tiene hijos significativos (solo el span "PUBLICIDAD"), ocultarlo */
+}
+.ad-slot-resultados .ad-slot-inner:only-child,
+.ad-slot-sidebar .ad-slot-inner:only-child {
+  display: none;
+}
+.ad-slot-resultados:not(:has(iframe, img, a)),
+.ad-slot-sidebar:not(:has(iframe, img, a)),
+.ad-slot:not(:has(iframe, img, a)) {
+  display: none !important;
+}
+
+/* 8) Mejorar contraste global de texto muted en dark */
+:root[data-theme="dark"] .oferta-meta-linea,
+:root[data-theme="dark"] .oferta-region,
+:root[data-theme="dark"] .oferta-ciudad,
+:root[data-theme="dark"] .oferta-jornada {
+  color: var(--texto2);
+}
+
+/* 9) "Cierra mañana" / "Cierra en X días" — indicadores de urgencia */
+:root[data-theme="dark"] .oferta-deadline,
+:root[data-theme="dark"] .oferta-plazo {
+  color: var(--texto);
+}
+:root[data-theme="dark"] .oferta-deadline--urgente,
+:root[data-theme="dark"] .oferta-plazo--urgente {
+  color: #F5A98E;
+}
+
+/* 10) Renta y precios — mayor peso visual en dark */
+:root[data-theme="dark"] .oferta-renta,
+:root[data-theme="dark"] .oferta-monto {
+  color: var(--texto);
+  font-weight: 600;
+}
+
+/* 11) Pestañas "Vigentes/Cerradas" — el slider gold más notorio en dark */
+:root[data-theme="dark"] .estado-listado-tabs::before {
+  background: var(--acento);
+}
+:root[data-theme="dark"] .estado-tab.activo { color: var(--azul); }
+
+/* 12) Paginación — mejor contraste botones */
+:root[data-theme="dark"] .paginacion button,
+:root[data-theme="dark"] .paginacion a {
+  background: var(--blanco);
+  border-color: var(--borde);
+  color: var(--texto2);
+}
+:root[data-theme="dark"] .paginacion button:hover,
+:root[data-theme="dark"] .paginacion a:hover {
+  border-color: var(--acento);
+  color: var(--acento);
+}
+:root[data-theme="dark"] .paginacion button.activo,
+:root[data-theme="dark"] .paginacion a.activo {
+  background: var(--acento);
+  color: var(--azul);
+  border-color: var(--acento);
+}
+
+/* 13) "Última actualización de datos" en light/dark */
+.data-update-global { color: var(--texto2); }
+.data-update-global strong { color: var(--texto); font-weight: 600; }
+:root[data-theme="dark"] .data-update-global { color: var(--texto2); }
+:root[data-theme="dark"] .data-update-global strong { color: var(--acento); }
+
+/* 14) Fav icon heart en dark con mejor visibilidad */
+:root[data-theme="dark"] .btn-fav-card {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: var(--texto2);
+}
+:root[data-theme="dark"] .btn-fav-card:hover,
+:root[data-theme="dark"] .btn-fav-card.activo {
+  background: rgba(235, 138, 117, 0.15);
+  border-color: var(--rojo);
+  color: var(--rojo);
+}
+
+/* 15) Oferta-logo (avatar) — fondo apropiado en dark */
+:root[data-theme="dark"] .oferta-logo {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+:root[data-theme="dark"] .oferta-logo img { background: rgba(255, 255, 255, 0.9); }
+
+/* ══════════════════════════════════════════════════════════════════════
+   BUSCADOR COMPACTO · colapsa a cargo + región + buscar
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Grid del form con el botón Buscar al final de la primera fila */
+.buscador-form {
+  display: grid !important;
+  grid-template-columns: 2.2fr 1fr 1fr 1fr auto !important;
+  gap: 14px !important;
+  align-items: end !important;
+}
+
+.btn-buscar-compact {
+  align-self: end;
+  height: 42px !important;
+  padding: 0 22px !important;
+  white-space: nowrap;
+}
+
+/* Campo comunas: mismo look que inputs/selects */
+.comunas-trigger {
+  background: var(--bg) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text) !important;
+  border-radius: 8px !important;
+  padding: 11px 14px !important;
+  font-size: 14.5px !important;
+  font-family: inherit !important;
+  font-weight: 400 !important;
+  text-align: left !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+}
+.comunas-trigger:hover { border-color: var(--navy-60) !important; }
+.comunas-trigger[aria-expanded="true"] {
+  border-color: var(--navy) !important;
+  box-shadow: 0 0 0 3px var(--navy-tint) !important;
+}
+.comunas-trigger-meta {
+  color: var(--text-60);
+  font-size: 12.5px;
+  margin-left: auto;
+}
+/* En dark consistency */
+:root[data-theme="dark"] .comunas-trigger {
+  background: var(--bg) !important;
+  border-color: var(--borde) !important;
+  color: var(--texto) !important;
+}
+
+/* Toggle "+ Más filtros" */
+.filtros-toggle-wrap {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-start;
+}
+.btn-filtros-mas {
+  background: transparent;
+  border: none;
+  color: var(--navy);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.15s;
+}
+.btn-filtros-mas:hover { color: var(--navy-deep); }
+:root[data-theme="dark"] .btn-filtros-mas { color: var(--acento); }
+:root[data-theme="dark"] .btn-filtros-mas:hover { color: var(--gold-soft, #F5D289); }
+.btn-filtros-mas .icon {
+  display: inline-grid;
+  place-items: center;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--navy-tint);
+  color: var(--navy);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+}
+:root[data-theme="dark"] .btn-filtros-mas .icon {
+  background: rgba(234, 184, 88, 0.18);
+  color: var(--acento);
+}
+
+/* ESTADO COLAPSADO (default): solo Cargo + Región + Buscar */
+.buscador-wrap:not(.is-expanded) .buscador-form {
+  grid-template-columns: 2.2fr 1fr auto !important;
+}
+.buscador-wrap:not(.is-expanded) .buscador-form > .campo:nth-child(3),
+.buscador-wrap:not(.is-expanded) .buscador-form > .campo:nth-child(4),
+.buscador-wrap:not(.is-expanded) .buscador-fila2,
+.buscador-wrap:not(.is-expanded) .filtros-rapidos {
+  display: none !important;
+}
+
+/* ESTADO EXPANDIDO: ocultar el botón duplicado de fila1 */
+.buscador-wrap.is-expanded .btn-buscar-compact {
+  display: none !important;
+}
+.buscador-wrap.is-expanded .buscador-fila2 {
+  display: grid !important;
+  grid-template-columns: 2fr 1fr auto !important;
+  gap: 14px !important;
+  align-items: end !important;
+  margin-top: 14px;
+}
+.buscador-wrap.is-expanded .filtros-rapidos {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+/* Hacer el buscador un poco más compacto */
+.buscador-wrap {
+  padding: 18px 20px !important;
+}
+.campo label {
+  margin-bottom: 5px !important;
+}
+
+/* Mobile: siempre expandido en mobile o stacked */
+@media (max-width: 720px) {
+  .buscador-form {
+    grid-template-columns: 1fr !important;
+  }
+  .buscador-wrap:not(.is-expanded) .buscador-form {
+    grid-template-columns: 1fr !important;
+  }
+  .btn-buscar-compact { width: 100%; }
+  .buscador-wrap.is-expanded .buscador-fila2 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   HEADER STICKY · barra superior siempre visible al hacer scroll.
+   El ribbon va primero (arriba), el nav queda justo debajo y ambos
+   se quedan fijos juntos para dar una sensación de barra única.
+   ══════════════════════════════════════════════════════════════════════ */
+.ribbon {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 110 !important;
+}
+header nav,
+header {
+  position: sticky !important;
+  /* 33px ≈ altura real del ribbon (padding 8px + line-height). En móvil
+     se recalcula con var(--ribbon-h) si fuera necesario, pero este valor
+     funciona bien en todos los breakpoints actuales. */
+  top: 33px !important;
+  z-index: 100 !important;
+}
+@media (max-width: 600px) {
+  header nav, header { top: 31px !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   LIMPIEZA · remover "Última actualización de datos" al final
+   (ya la mostramos en el ribbon arriba)
+   ══════════════════════════════════════════════════════════════════════ */
+.data-update-global {
+  display: none !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   SIDEBAR · alineación y consistencia de widgets
+   ══════════════════════════════════════════════════════════════════════ */
+.widget {
+  border-radius: 12px !important;
+}
+.widget-titulo {
+  font-family: var(--font-serif) !important;
+  font-size: 16.5px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.012em !important;
+  color: var(--navy-ink) !important;
+  margin-bottom: 4px !important;
+}
+:root[data-theme="dark"] .widget-titulo { color: var(--acento) !important; }
+.widget-titulo::before { display: none !important; }
+
+/* Labels de formulario alerta más consistentes */
+.alerta-label {
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
+  color: var(--text-40) !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  margin-bottom: 4px !important;
+  line-height: 1.2 !important;
+  min-height: 24px;
+  display: block;
+}
+:root[data-theme="dark"] .alerta-label { color: var(--texto3) !important; }
+
+/* Grid de Región/Condición y Sector/Frecuencia con altura consistente */
+.alerta-row {
+  gap: 10px !important;
+  row-gap: 10px !important;
+}
+.alerta-row > div > label {
+  /* Reservar altura para que los labels largos no desalineen */
+  min-height: 32px;
+  align-items: flex-end;
+  display: flex;
+}
+.alerta-form input,
+.alerta-form select {
+  font-size: 13.5px !important;
+  padding: 9px 11px !important;
+  min-height: 40px;
+  line-height: 1.3;
+}
+
+/* Botón activar alerta consistente */
+.btn-alerta {
+  height: 42px !important;
+  font-size: 13.5px !important;
+  border-radius: 8px !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   RESULTADOS · consistencia de tipografía
+   ══════════════════════════════════════════════════════════════════════ */
+.resultados-count strong {
+  font-size: 18px !important;
+}
+.resultados-count .count-sub {
+  font-size: 12px !important;
+}
+.estado-listado-copy {
+  font-size: 13px !important;
+  line-height: 1.5;
+}
+
+/* Error state de ofertas más limpio */
+.ofertas-error,
+.listado-error,
+[data-listado-error] {
+  border-radius: 10px !important;
+  padding: 28px 20px !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   AJUSTES EN DARK para buscador
+   ══════════════════════════════════════════════════════════════════════ */
+:root[data-theme="dark"] .buscador-wrap {
+  background: var(--blanco);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .campo input,
+:root[data-theme="dark"] .campo select {
+  background: var(--bg) !important;
+  color: var(--texto) !important;
+  border-color: var(--borde) !important;
+}
+:root[data-theme="dark"] .campo input:focus,
+:root[data-theme="dark"] .campo select:focus {
+  border-color: var(--acento) !important;
+  box-shadow: 0 0 0 3px rgba(234, 184, 88, 0.2) !important;
+}
+:root[data-theme="dark"] .campo label {
+  color: var(--texto3) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   POLISH FINAL · UX improvements identificados en revisión
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* 1) Loading skeleton para pills cuando aún cargan stats */
+.hero-stat-pill strong:empty::before,
+.hero-stat-pill strong:is([data-loading="true"])::before {
+  content: '';
+  display: inline-block;
+  width: 32px;
+  height: 10px;
+  border-radius: 3px;
+  background: linear-gradient(90deg,
+    var(--border) 0%,
+    var(--bg-subtle) 50%,
+    var(--border) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s linear infinite;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* 2) Mostrar atajos SIEMPRE, incluso en modo colapsado */
+.buscador-wrap:not(.is-expanded) .filtros-rapidos {
+  display: block !important;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.buscador-wrap.is-expanded .filtros-rapidos {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+/* 3) Error state de ofertas más cuidado */
+[data-listado-error],
+.listado-error,
+.ofertas-error {
+  background: rgba(178, 59, 36, 0.04) !important;
+  border: 1px solid rgba(178, 59, 36, 0.22) !important;
+  border-radius: 12px !important;
+  padding: 32px 24px !important;
+  text-align: center;
+  color: var(--text-80);
+}
+:root[data-theme="dark"] [data-listado-error],
+:root[data-theme="dark"] .listado-error,
+:root[data-theme="dark"] .ofertas-error {
+  background: rgba(235, 138, 117, 0.06) !important;
+  border-color: rgba(235, 138, 117, 0.25) !important;
+  color: var(--texto) !important;
+}
+
+/* 4) Card hover con indicador de clickeable (flecha sutil) */
+.oferta-card {
+  position: relative;
+}
+.oferta-card::after {
+  content: '→';
+  position: absolute;
+  right: 18px;
+  bottom: 20px;
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: all 0.2s ease;
+  color: var(--navy);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1;
+  pointer-events: none;
+}
+.oferta-card:hover::after {
+  opacity: 0.6;
+  transform: translateX(0);
+}
+:root[data-theme="dark"] .oferta-card::after { color: var(--acento); }
+
+/* 5) Focus visible accesible en todos los controles interactivos */
+*:focus-visible {
+  outline: 2px solid var(--navy) !important;
+  outline-offset: 2px !important;
+  border-radius: 4px;
+}
+:root[data-theme="dark"] *:focus-visible {
+  outline-color: var(--acento) !important;
+}
+
+/* 6) Scrollbar personalizada en light y dark */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong, var(--borde));
+  background-clip: padding-box;
+}
+
+/* 7) Ribbon — stack en mobile para no cortar items */
+@media (max-width: 500px) {
+  .ribbon-inner {
+    gap: 10px;
+    padding: 7px 14px;
+  }
+  .ribbon-item {
+    font-size: 11.5px;
+  }
+  .ribbon-item + .ribbon-item::before {
+    margin-right: 8px;
+  }
+}
+
+/* 8) Sidebar: unificar separación entre widgets */
+.sidebar > .widget + .widget {
+  margin-top: 14px;
+}
+
+/* Alineación visual: en desktop la primera tarjeta del sidebar (alertas
+   de empleo) debe empezar al mismo Y que el recuadro blanco de ofertas.
+   `.resultados-shell` usa margin-top: -30px para solaparse con el hero;
+   replicamos ese offset en el sidebar para que quede a la misma altura. */
+@media (min-width: 901px) {
+  .sidebar { margin-top: -30px; }
+}
+
+/* 9) Estados vacíos más amigables */
+.widget-vacio {
+  color: var(--text-40);
+  font-size: 13px;
+  padding: 14px 8px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* 10) Back-to-top button consistente con paleta */
+.back-to-top-btn {
+  background: var(--navy) !important;
+  color: #F4F1E8 !important;
+  border: none !important;
+  box-shadow: 0 8px 20px rgba(14, 32, 70, 0.2) !important;
+}
+.back-to-top-btn:hover {
+  background: var(--navy-deep) !important;
+}
+:root[data-theme="dark"] .back-to-top-btn {
+  background: var(--acento) !important;
+  color: var(--azul) !important;
+}
+
+/* 11) Selección de texto con el color de marca */
+::selection {
+  background: rgba(37, 75, 160, 0.22);
+  color: var(--navy-ink);
+}
+:root[data-theme="dark"] ::selection {
+  background: rgba(234, 184, 88, 0.25);
+  color: var(--texto);
+}
+
+/* 12) Smooth scroll global (con respeto a reduce motion) */
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+
+/* 13) Skip link más prominente cuando recibe foco */
+.skip-link {
+  background: var(--navy) !important;
+  color: #F4F1E8 !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  padding: 10px 16px !important;
+}
+.skip-link:focus {
+  outline: 2px solid var(--acento) !important;
+  outline-offset: 3px !important;
+}
+
+/* 14) Animación sutil de aparición de cards en listado */
+@media (prefers-reduced-motion: no-preference) {
+  .oferta-card {
+    animation: cardFadeIn 0.35s ease backwards;
+  }
+  @keyframes cardFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* 15) Tipografía: asegurar Fraunces en todos los títulos editoriales */
+.info-title,
+.widget-titulo,
+.page-hero h1,
+.page-titulo,
+.hero-h1 {
+  font-feature-settings: 'ss01', 'cv11';
+}
+
+/* 16) Hover en el logo del header para feedback */
+.logo:hover .logo-name,
+.logo:hover .logo-name em {
+  opacity: 0.85;
+  transition: opacity 0.15s;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   MEJORAS FINALES (feedback de screenshots)
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ══ 1) Ocultar stats pills del hero (redundantes con el ribbon) ═══════ */
+.hero-stats-bar {
+  display: none !important;
+}
+
+/* ══ 2) Ocultar `.oferta-renta` vacío ═════════════════════════════════
+   El placeholder "Renta no informada" se eliminó del renderCard
+   (web/app.js) — ahora simplemente no se renderiza el span cuando no
+   hay renta. Dejamos este selector como red de seguridad para
+   entradas SSR o legacy que pudieran inyectar un span vacío. */
+.oferta-renta:empty {
+  display: none !important;
+}
+
+/* ══ 3) Region badge con mejor contraste en light y dark ══════════════ */
+.badge.badge-region {
+  background: var(--navy-tint) !important;
+  color: var(--navy) !important;
+  border: none !important;
+  padding: 3px 10px !important;
+  font-weight: 500 !important;
+}
+:root[data-theme="dark"] .badge.badge-region {
+  background: rgba(127, 169, 221, 0.16) !important;
+  color: var(--text-on-dark-soft) !important;
+  border: none !important;
+}
+
+/* ══ 4) Plazo progresivo por días hasta cierre ═══════════════════════ */
+/* Crítico (0-2 días): rojo terra */
+.oferta-card.plazo-critico {
+  border-left-color: var(--rojo) !important;
+  border-left-width: 4px !important;
+}
+.oferta-card.plazo-critico .plazo-dot {
+  background: var(--rojo) !important;
+  box-shadow: 0 0 0 3px rgba(178, 59, 36, 0.15);
+}
+.oferta-card.plazo-critico .plazo-dot + span,
+.oferta-card.plazo-critico .plazo-dot ~ span {
+  color: var(--rojo) !important;
+  font-weight: 700 !important;
+}
+
+/* Warning (3-5 días): ámbar */
+.oferta-card.plazo-warning {
+  border-left-color: var(--naran) !important;
+}
+.oferta-card.plazo-warning .plazo-dot {
+  background: var(--naran) !important;
+}
+.oferta-card.plazo-warning .plazo-dot + span,
+.oferta-card.plazo-warning .plazo-dot ~ span {
+  color: var(--naran) !important;
+  font-weight: 600 !important;
+}
+
+/* Safe (6+): verde */
+.oferta-card.plazo-safe .plazo-dot {
+  background: var(--verde) !important;
+}
+.oferta-card.plazo-safe .plazo-dot + span,
+.oferta-card.plazo-safe .plazo-dot ~ span {
+  color: var(--verde) !important;
+}
+
+/* Cerrado: gris */
+.oferta-card.plazo-cerrado {
+  opacity: 0.75;
+}
+.oferta-card.plazo-cerrado .plazo-dot {
+  background: var(--texto3) !important;
+}
+.oferta-card.plazo-cerrado .plazo-dot + span,
+.oferta-card.plazo-cerrado .plazo-dot ~ span {
+  color: var(--texto3) !important;
+}
+
+/* ══ 5) Modal de detalle más compacto ═════════════════════════════════ */
+.modal {
+  max-height: 92vh !important;
+}
+.modal-body {
+  padding: 16px 20px 8px !important;
+}
+.modal-seccion {
+  margin-bottom: 14px !important;
+}
+/* KPIs en 2 columnas pero más compactos */
+.modal-body .kpis-grid,
+.modal-body .modal-kpis,
+.modal-body [class*="kpi-grid"] {
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 6px !important;
+}
+.modal-body .kpi,
+.modal-body .modal-kpi,
+.modal-body [class*="kpi-card"] {
+  padding: 8px 12px !important;
+  background: var(--bg2) !important;
+  border-radius: 8px !important;
+}
+.modal-body .kpi-label,
+.modal-body [class*="kpi-label"] {
+  font-size: 11px !important;
+  color: var(--text-40) !important;
+  margin-bottom: 2px !important;
+}
+.modal-body .kpi-value,
+.modal-body [class*="kpi-value"] {
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  color: var(--text) !important;
+}
+
+/* Alerta "Cierra pronto" en modal más compacta */
+.modal-plazo-alert {
+  padding: 10px 14px !important;
+  margin-bottom: 12px !important;
+}
+.modal-plazo-label {
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+}
+.modal-plazo-fecha {
+  font-size: 13px !important;
+}
+
+/* Header del modal más ajustado */
+.modal-header {
+  padding: 14px 20px !important;
+}
+.modal-titulo,
+.modal-header h2 {
+  font-size: 20px !important;
+  line-height: 1.25 !important;
+}
+
+/* ══ 6) Share modal (ig-modal) rediseñado con paleta del sitio ═══════ */
+.ig-modal {
+  background: rgba(10, 20, 38, 0.7) !important;
+  backdrop-filter: blur(6px);
+}
+.ig-modal-caja {
+  background: var(--blanco) !important;
+  border: 1px solid var(--borde) !important;
+  border-radius: 14px !important;
+  padding: 24px !important;
+  max-width: 520px !important;
+  box-shadow: 0 24px 80px rgba(10, 46, 110, 0.3);
+}
+.ig-modal-cerrar {
+  background: var(--bg2) !important;
+  color: var(--texto) !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  top: 16px !important;
+  right: 16px !important;
+  border: none !important;
+  font-size: 18px !important;
+  display: grid !important;
+  place-items: center !important;
+}
+.ig-modal-cerrar:hover {
+  background: var(--borde) !important;
+  color: var(--texto) !important;
+}
+.ig-modal-titulo {
+  font-family: var(--font-serif) !important;
+  font-size: 20px !important;
+  font-weight: 500 !important;
+  color: var(--navy-ink) !important;
+  letter-spacing: -0.015em !important;
+  margin-bottom: 16px !important;
+}
+:root[data-theme="dark"] .ig-modal-titulo { color: var(--texto) !important; }
+
+/* Preview de imagen */
+.share-preview {
+  border-radius: 10px !important;
+  overflow: hidden;
+  margin-bottom: 14px !important;
+  background: var(--bg2);
+  border: 1px solid var(--borde);
+}
+.share-preview-frame {
+  border-radius: 8px;
+}
+.share-preview-estado {
+  color: var(--text-60);
+  font-size: 13px;
+}
+
+/* Switch de formato más limpio */
+.share-preview-switch {
+  background: var(--bg2) !important;
+  border: 1px solid var(--borde) !important;
+  border-radius: 999px !important;
+  padding: 4px !important;
+  display: inline-flex !important;
+  gap: 2px !important;
+  margin: 12px auto !important;
+}
+.share-preview-switch-btn {
+  background: transparent !important;
+  border: none !important;
+  padding: 7px 14px !important;
+  border-radius: 999px !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  color: var(--texto2) !important;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.share-preview-switch-btn.is-active {
+  background: var(--navy) !important;
+  color: var(--gold-brilliant) !important;
+  font-weight: 600 !important;
+}
+:root[data-theme="dark"] .share-preview-switch-btn.is-active {
+  background: var(--acento) !important;
+  color: var(--azul) !important;
+}
+
+/* Meta info */
+.share-meta {
+  padding: 12px 0;
+  border-top: 1px solid var(--borde);
+}
+.share-meta-kicker {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: var(--navy) !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  margin-bottom: 4px !important;
+}
+:root[data-theme="dark"] .share-meta-kicker { color: var(--acento) !important; }
+.share-meta-titulo {
+  font-family: var(--font-sans) !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: var(--navy-ink) !important;
+  line-height: 1.35 !important;
+}
+:root[data-theme="dark"] .share-meta-titulo { color: var(--texto) !important; }
+
+/* Input de enlace */
+.share-link {
+  display: flex !important;
+  gap: 8px !important;
+  margin: 12px 0 16px !important;
+}
+.share-link-input {
+  flex: 1;
+  background: var(--bg2) !important;
+  border: 1px solid var(--borde) !important;
+  border-radius: 8px !important;
+  padding: 10px 14px !important;
+  font-size: 13px !important;
+  color: var(--texto) !important;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  min-width: 0;
+}
+.share-link-copy {
+  background: var(--navy) !important;
+  color: var(--blanco) !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 10px 16px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.share-link-copy:hover { background: var(--navy-deep) !important; }
+.share-link-copy.is-copied {
+  background: var(--verde) !important;
+}
+:root[data-theme="dark"] .share-link-copy {
+  background: var(--acento) !important;
+  color: var(--azul) !important;
+}
+
+/* Acciones finales: solo descargar (ocultamos WhatsApp duplicado) */
+.ig-modal-acciones {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  position: static !important;
+  box-shadow: none !important;
+}
+.ig-modal-acciones .ig-btn {
+  height: 44px !important;
+  border-radius: 10px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  text-decoration: none !important;
+  transition: all 0.15s;
+}
+.ig-modal-acciones .ig-btn--primary {
+  background: var(--navy) !important;
+  color: var(--blanco) !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.ig-modal-acciones .ig-btn--primary:hover {
+  background: var(--navy-deep) !important;
+  transform: translateY(-1px);
+}
+:root[data-theme="dark"] .ig-modal-acciones .ig-btn--primary {
+  background: var(--acento) !important;
+  color: var(--azul) !important;
+}
+/* Ocultar WhatsApp duplicado (ya existe en modal-share-group) */
+.ig-modal-acciones .ig-btn--wa {
+  display: none !important;
+}
+.ig-modal-nota {
+  font-size: 12.5px !important;
+  color: var(--text-60) !important;
+  line-height: 1.55 !important;
+  margin-top: 12px !important;
+  padding: 0 !important;
+}
+
+/* ══ 7) Mejoras misc. de consistencia ═════════════════════════════════ */
+
+/* Evitar que los spans de plazo se pisen en modo compact */
+.oferta-plazo,
+.plazo-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Fav icon heart con mejor afordance */
+.btn-fav-card {
+  transition: all 0.15s !important;
+}
+.btn-fav-card:hover {
+  transform: scale(1.08);
+}
+
+/* Oferta-logo container para sector icons */
+.oferta-logo {
+  overflow: hidden;
+  background: #F4F3EE;
+}
+.oferta-logo .sector-icon-fallback {
+  width: 100%;
+  height: 100%;
+}
+:root[data-theme="dark"] .oferta-logo {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   SHARE MEJORAS · email + IG copy-link + toast + orden
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Share group: alinear y distribuir bien los botones */
+.modal-share-group {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 10px !important;
+  padding: 14px 20px 16px !important;
+  border-top: 1px solid var(--borde) !important;
+  margin-top: 0 !important;
+  flex-wrap: wrap;
+}
+
+/* Todos los share-btn con mismo look circular */
+.modal-share-group .share-btn {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+  border: 1px solid var(--borde) !important;
+  background: var(--blanco) !important;
+  color: var(--texto2) !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  padding: 0 !important;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex: 0 0 auto;
+}
+.modal-share-group .share-btn svg {
+  width: 18px;
+  height: 18px;
+}
+.modal-share-group .share-btn:hover {
+  border-color: var(--navy);
+  color: var(--navy);
+  transform: translateY(-1px);
+}
+
+/* Colores por canal en hover para feedback */
+.modal-share-group .share-btn--wa:hover { border-color: #25D366; color: #25D366; }
+.modal-share-group .share-btn--li:hover { border-color: #0A66C2; color: #0A66C2; }
+.modal-share-group .share-btn--email:hover { border-color: #C88724; color: #C88724; }
+.modal-share-group .share-btn--ig:hover { border-color: #E1306C; color: #E1306C; }
+.modal-share-group .share-btn--copy:hover { border-color: var(--navy); color: var(--navy); }
+
+:root[data-theme="dark"] .modal-share-group {
+  border-top-color: var(--borde) !important;
+}
+:root[data-theme="dark"] .modal-share-group .share-btn {
+  background: var(--bg2) !important;
+  border-color: var(--borde) !important;
+  color: var(--texto2) !important;
+}
+
+/* Ocultar el modal generador de imagen (ig-modal) — ya no se usa */
+.ig-modal,
+#ig-modal {
+  display: none !important;
+}
+
+/* Toast para feedback de copiar */
+.share-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--navy);
+  color: var(--blanco);
+  padding: 12px 20px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 12px 32px rgba(14, 32, 70, 0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  z-index: 9999;
+  max-width: 90vw;
+  text-align: center;
+}
+.share-toast.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+:root[data-theme="dark"] .share-toast {
+  background: var(--acento);
+  color: var(--azul);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   MODAL DETALLE · máxima densidad sin perder legibilidad.
+   Meta: que tanto REQUISITOS como DESCRIPCIÓN aparezcan en el primer
+   viewport (ambos con "Ver más") sin robar demasiado alto con el header,
+   el aviso de plazo y el resumen ejecutivo.
+   ══════════════════════════════════════════════════════════════════════ */
+.modal-overlay {
+  padding: 14px !important;
+}
+.modal {
+  max-width: min(980px, calc(100vw - 28px)) !important;
+  max-height: 96vh !important;
+}
+
+/* Header del modal: más compacto en alto, misma jerarquía visual */
+.modal-header {
+  padding: 10px 22px 12px !important;
+}
+.modal-kicker { font-size: 10px !important; margin-bottom: 2px !important; letter-spacing: 1.1px !important; min-height: 0 !important; }
+.modal-institucion { font-size: 13px !important; margin-bottom: 4px !important; }
+.modal-cargo {
+  font-size: clamp(17px, 1.9vw, 21px) !important;
+  line-height: 1.22 !important;
+  letter-spacing: -0.01em !important;
+  margin: 0 0 6px 0 !important;
+  padding-left: 10px !important;
+  border-left-width: 3px !important;
+}
+.modal-header #modal-badges { gap: 5px !important; }
+.modal-header .badge { font-size: 11px !important; padding: 3px 8px !important; }
+
+/* Alerta de plazo — una línea compacta con icono pequeño */
+.modal-plazo-alert {
+  padding: 6px 10px !important;
+  margin-bottom: 10px !important;
+  gap: 8px !important;
+  border-width: 1px !important;
+}
+.modal-plazo-icon {
+  width: 26px !important;
+  height: 26px !important;
+  font-size: 13px !important;
+}
+.modal-plazo-label { font-size: 12.5px !important; line-height: 1.15 !important; }
+.modal-plazo-fecha { font-size: 11px !important; margin-top: 1px !important; }
+
+/* Resumen ejecutivo: fallback auto-fit para cuando el JS aún no aplicó
+   data-count (carga inicial). Una vez seteado, el CSS específico abajo
+   toma el control y elige la cuadrícula óptima según items visibles. */
+.modal-info-grid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+  gap: 6px !important;
+}
+.modal-info-item {
+  padding: 6px 10px !important;
+  border-radius: 6px !important;
+  min-width: 0;
+}
+.modal-info-label { font-size: 10px !important; margin-bottom: 1px !important; letter-spacing: .2px !important; }
+.modal-info-val   { font-size: 12.5px !important; line-height: 1.3 !important; font-weight: 600 !important; word-break: break-word; }
+
+/* Distribución óptima por count — minimiza filas con 1 item colgando. */
+.modal-info-grid[data-count="1"] { grid-template-columns: 1fr !important; }
+.modal-info-grid[data-count="2"] { grid-template-columns: repeat(2, 1fr) !important; }
+.modal-info-grid[data-count="3"] { grid-template-columns: repeat(3, 1fr) !important; }
+.modal-info-grid[data-count="4"] { grid-template-columns: repeat(2, 1fr) !important; } /* 2+2 */
+.modal-info-grid[data-count="5"] { grid-template-columns: repeat(3, 1fr) !important; } /* 3+2 */
+.modal-info-grid[data-count="6"] { grid-template-columns: repeat(3, 1fr) !important; } /* 3+3 */
+@media (max-width: 600px) {
+  /* En móvil preferimos 2 columnas salvo cuando hay sólo 1 item. */
+  .modal-info-grid[data-count="1"] { grid-template-columns: 1fr !important; }
+  .modal-info-grid:not([data-count="1"]) { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+/* Secciones del body: margen menor entre ellas para que Requisitos +
+   Descripción quepan en el primer viewport */
+.modal-seccion {
+  margin-bottom: 12px !important;
+}
+.modal-body {
+  padding: 12px 22px 10px !important;
+}
+
+/* Títulos de sección más compactos */
+.modal-seccion-titulo,
+.modal-seccion h3 {
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  color: var(--navy) !important;
+  margin-bottom: 6px !important;
+  padding-bottom: 0 !important;
+}
+:root[data-theme="dark"] .modal-seccion-titulo,
+:root[data-theme="dark"] .modal-seccion h3 { color: var(--acento) !important; }
+
+/* Descripción/funciones/requisitos — legibles pero con menor line-height */
+.modal-descripcion,
+.modal-body .prose,
+.modal-body .modal-rich-text {
+  font-size: 13.5px !important;
+  line-height: 1.55 !important;
+  color: var(--texto) !important;
+}
+.modal-rich-text p { margin: 0 0 7px 0 !important; }
+.modal-rich-text ul, .modal-rich-text ol { margin: 6px 0 10px 0 !important; gap: 4px !important; }
+.modal-rich-text li { line-height: 1.55 !important; padding-left: 20px !important; }
+
+/* Truncado por defecto más corto — así REQUISITOS y DESCRIPCIÓN muestran
+   sólo unas líneas y el usuario expande con "Ver más" si quiere leer el
+   detalle completo. */
+.modal-rich-text .rt-truncate[data-rt-collapsed="true"] .rt-truncate-inner {
+  max-height: 180px !important;
+}
+@media (min-width: 900px) {
+  .modal-rich-text .rt-truncate[data-rt-collapsed="true"] .rt-truncate-inner {
+    max-height: 210px !important;
+  }
+}
+.modal-rich-text .rt-toggle {
+  margin-top: 6px !important;
+  padding: 5px 12px !important;
+  font-size: 11.5px !important;
+}
+
+/* Acciones al pie: el primario + secundarios en una sola fila cuando hay
+   espacio, para que no roben tanta altura y el usuario vea más contenido. */
+@media (min-width: 720px) {
+  .modal-actions {
+    flex-direction: row !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 10px 12px !important;
+    padding: 12px 22px !important;
+  }
+  .modal-actions .btn-modal-primary {
+    flex: 1 1 260px !important;
+    width: auto !important;
+  }
+  .modal-actions-secondary {
+    flex: 1 1 260px !important;
+    display: flex !important;
+    gap: 8px !important;
+  }
+  .modal-actions-secondary .btn-modal-sec {
+    flex: 1 1 auto !important;
+  }
+  .modal-share-group {
+    flex: 0 0 auto !important;
+    margin-left: auto !important;
+    padding-top: 0 !important;
+    border-top: none !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   TRUNCADO DE TITULOS · ellipsis visual en cards
+   ══════════════════════════════════════════════════════════════════════ */
+.oferta-cargo,
+.oferta-cargo-link {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   LOGOS · shared-shell.js reemplaza la <img> por un .sector-icon-fallback
+   cuando la cadena de logos no entrega una versión lo suficientemente
+   nítida. Nos aseguramos de que ese fallback nunca quede invisible y
+   que el contenedor siempre tenga un fondo consistente.
+   ══════════════════════════════════════════════════════════════════════ */
+.oferta-logo {
+  background: var(--navy-tint, #E1E8F6) !important;
+  border: 1px solid var(--borde) !important;
+}
+.oferta-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 4px;
+  background: var(--blanco);
+  border-radius: 8px;
+}
+.sector-icon-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14%;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, rgba(37, 75, 160, 0.10), rgba(232, 168, 32, 0.10));
+  color: var(--navy, #254BA0);
+  border-radius: 10px;
+}
+.sector-icon-fallback svg {
+  width: 100%;
+  height: 100%;
+  max-width: 60%;
+  max-height: 60%;
+  display: block;
+}
+/* Matiz de fondo por sector para dar identidad sin depender del logo real. */
+.sector-icon-fallback--salud       { background: linear-gradient(135deg, rgba(220, 38, 38, 0.10),  rgba(251, 146, 60, 0.10)); color: #B91C1C; }
+.sector-icon-fallback--educacion   { background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(232, 168, 32, 0.10)); color: #1D4ED8; }
+.sector-icon-fallback--universidad { background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(129, 140, 248, 0.12)); color: #1E40AF; }
+.sector-icon-fallback--judicial    { background: linear-gradient(135deg, rgba(120, 53, 15, 0.12),  rgba(217, 119, 6, 0.10));  color: #78350F; }
+.sector-icon-fallback--ffaa        { background: linear-gradient(135deg, rgba(22, 101, 52, 0.12),  rgba(34, 139, 34, 0.12));  color: #14532D; }
+.sector-icon-fallback--municipal   { background: linear-gradient(135deg, rgba(232, 168, 32, 0.15), rgba(37, 75, 160, 0.10));  color: #92400E; }
+.sector-icon-fallback--empresa     { background: linear-gradient(135deg, rgba(14, 165, 233, 0.12), rgba(37, 75, 160, 0.10));  color: #075985; }
+.sector-icon-fallback--regional    { background: linear-gradient(135deg, rgba(244, 114, 182, 0.12), rgba(139, 92, 246, 0.12)); color: #86198F; }
+.sector-icon-fallback--ejecutivo   { background: linear-gradient(135deg, rgba(37, 75, 160, 0.12),  rgba(232, 168, 32, 0.10));  color: #1E3A8A; }
+
+:root[data-theme="dark"] .oferta-logo {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+:root[data-theme="dark"] .oferta-logo img {
+  background: rgba(255, 255, 255, 0.95);
+}
+:root[data-theme="dark"] .sector-icon-fallback {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--acento);
+}
+:root[data-theme="dark"] .sector-icon-fallback[class*="--"] {
+  /* Unifica los matices por sector cuando estamos en oscuro para evitar
+     que algunos queden casi invisibles. */
+  background: rgba(232, 168, 32, 0.12);
+  color: var(--acento);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   AUDITORÍA UI · 2026-04 · Fase 1–3
+   Repara dark mode incompleto, refuerza contraste y estandariza badges,
+   encabezados de columna y subtítulos del modal. Usa exclusivamente
+   tokens ya definidos en design-tokens.css.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── FASE 1 · DARK MODE ─────────────────────────────────────────────── */
+
+/* 1.1 · Listado compacto (tabla) y cabecera ordenable.
+   Ambas caían a `background: white` literal en index.css y dejaban un
+   bloque blanco partiendo la página en oscuro. */
+:root[data-theme="dark"] .ofertas-lista.compacta {
+  background: var(--blanco);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .oferta-row {
+  background: var(--blanco);
+  border-bottom-color: var(--borde);
+  color: var(--texto);
+}
+:root[data-theme="dark"] .oferta-row:hover {
+  background: var(--surface-hover);
+}
+:root[data-theme="dark"] .oferta-row-header {
+  background: var(--bg2);
+  border-bottom-color: var(--borde);
+}
+:root[data-theme="dark"] .col-sort,
+:root[data-theme="dark"] .col-sort-label {
+  color: var(--texto3);
+}
+:root[data-theme="dark"] .col-sort:hover,
+:root[data-theme="dark"] .col-sort.activo {
+  color: var(--acento);
+}
+:root[data-theme="dark"] .row-inst { color: var(--acento); }
+:root[data-theme="dark"] .row-cargo { color: var(--texto); }
+:root[data-theme="dark"] .row-renta { color: var(--texto); }
+
+/* 1.2 · Tarjetas destacadas: el gradiente hacia blanco puro dejaba la
+   mitad luminosa en oscuro. Lo invertimos al navy profundo. */
+:root[data-theme="dark"] .oferta-card.destacada {
+  background: linear-gradient(135deg, var(--blanco) 0%, rgba(234, 184, 88, 0.12) 100%);
+  border-color: var(--acento);
+}
+
+/* 1.3 · Widgets del sidebar (alertas, histórico, sectores, instituciones,
+   estadísticas). El contenedor ya tenía dark pero los internos seguían
+   con fondos o bordes claros hardcodeados. */
+:root[data-theme="dark"] .widget-header {
+  background: var(--bg2);
+  border-bottom-color: var(--borde);
+}
+:root[data-theme="dark"] .sector-explorado {
+  background: var(--bg);
+  border-color: var(--borde);
+  color: var(--texto);
+}
+:root[data-theme="dark"] .sector-explorado:hover {
+  background: var(--surface-hover);
+  border-color: var(--acento);
+}
+:root[data-theme="dark"] .sector-explorado-nombre { color: var(--texto); }
+:root[data-theme="dark"] .sector-explorado-clics {
+  background: var(--bg2);
+  color: var(--texto2);
+}
+:root[data-theme="dark"] .stat-item { background: var(--bg2); }
+:root[data-theme="dark"] .stat-num { color: var(--acento); }
+:root[data-theme="dark"] .stat-label { color: var(--texto3); }
+:root[data-theme="dark"] .sector-item {
+  border-bottom-color: var(--borde);
+}
+:root[data-theme="dark"] .sector-nombre { color: var(--texto2); }
+:root[data-theme="dark"] .sector-count {
+  background: rgba(234, 184, 88, 0.16);
+  color: var(--acento);
+}
+:root[data-theme="dark"] .sector-bar { background: var(--borde); }
+:root[data-theme="dark"] .sector-fill { background: var(--acento); }
+:root[data-theme="dark"] .inst-item { border-bottom-color: var(--borde); }
+:root[data-theme="dark"] .inst-icon {
+  background: var(--bg2);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .inst-nombre { color: var(--texto); }
+:root[data-theme="dark"] .inst-activos,
+:root[data-theme="dark"] .inst-arrow { color: var(--texto3); }
+
+/* 1.4 · Widget "Histórico mensual" / barras de tendencia.
+   .hist-bar-outer usaba var(--bg2) que ya funciona, pero la barra de
+   relleno quedaba navy sobre fondo navy. Cambiamos a acento. */
+:root[data-theme="dark"] .hist-bar-outer { background: var(--bg2); }
+:root[data-theme="dark"] .hist-bar-fill { background: var(--acento); }
+:root[data-theme="dark"] .hist-label { color: var(--texto2); }
+:root[data-theme="dark"] .hist-val { color: var(--texto3); }
+
+/* 1.5 · Caja "Alertas de empleo" (botón Activar alerta).
+   .btn-alerta usaba var(--azul) que en dark colapsa al mismo tono que
+   el fondo — el botón se volvía invisible. */
+:root[data-theme="dark"] .btn-alerta {
+  background: var(--acento);
+  color: var(--azul-deep, #0A1426);
+}
+:root[data-theme="dark"] .btn-alerta:hover {
+  background: var(--gold-soft, #F5D289);
+}
+:root[data-theme="dark"] .alerta-nota { color: var(--texto3); }
+
+/* 1.6 · Botón principal "Buscar" y CTAs análogos.
+   Mismo problema: var(--azul) en dark = #0A1426 = background. Reforzamos
+   con acento dorado, que cumple contraste AA sobre #0A1426. */
+:root[data-theme="dark"] .btn-buscar,
+:root[data-theme="dark"] .btn-buscar-compact,
+:root[data-theme="dark"] .estado-alerta-cta,
+:root[data-theme="dark"] .btn-detalle {
+  background: var(--acento);
+  color: var(--azul);  /* navy-deep dark = #0A1426 — contraste sobre dorado */
+  border: 1px solid var(--acento);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08) inset, 0 6px 16px rgba(234, 184, 88, 0.18);
+}
+:root[data-theme="dark"] .btn-buscar:hover,
+:root[data-theme="dark"] .btn-buscar-compact:hover,
+:root[data-theme="dark"] .estado-alerta-cta:hover,
+:root[data-theme="dark"] .btn-detalle:hover {
+  background: var(--gold-soft, #F5D289);
+  border-color: var(--gold-soft, #F5D289);
+}
+
+/* Secundarios "Ver"/"Ver bases" — borde apagado dejaba el botón flotando
+   sin afordance; subimos el borde y color a acento. */
+:root[data-theme="dark"] .btn-ver {
+  color: var(--acento);
+  border-color: rgba(234, 184, 88, 0.35);
+  background: transparent;
+}
+:root[data-theme="dark"] .btn-ver:hover {
+  background: rgba(234, 184, 88, 0.12);
+  border-color: var(--acento);
+}
+:root[data-theme="dark"] .btn-ver-off,
+:root[data-theme="dark"] .btn-postular-off {
+  background: var(--bg2);
+  color: var(--texto3);
+  border-color: var(--borde);
+}
+
+/* 1.7 · Paginador.
+   .pag-btn quedaba `background: white` y `.pag-btn.activo` con
+   `background: var(--azul)` (= bg en dark). */
+:root[data-theme="dark"] .pag-btn {
+  background: var(--blanco);
+  border-color: var(--borde);
+  color: var(--texto2);
+}
+:root[data-theme="dark"] .pag-btn:hover {
+  border-color: var(--acento);
+  color: var(--acento);
+}
+:root[data-theme="dark"] .pag-btn.activo {
+  background: var(--acento);
+  border-color: var(--acento);
+  color: var(--azul);
+}
+:root[data-theme="dark"] .pag-ellipsis:hover {
+  background: rgba(234, 184, 88, 0.12);
+  border-color: var(--acento);
+  color: var(--acento);
+}
+:root[data-theme="dark"] .pag-input {
+  background: var(--bg);
+  color: var(--texto);
+  border-color: var(--acento);
+  outline-color: rgba(234, 184, 88, 0.28);
+}
+
+/* 1.8 · Estados vacíos / error dentro del listado. */
+:root[data-theme="dark"] .estado-vacio {
+  background: var(--blanco);
+  border-color: var(--borde);
+  color: var(--texto2);
+}
+:root[data-theme="dark"] .estado-mensaje { color: var(--texto3); }
+:root[data-theme="dark"] .estado-sugerencias-titulo { color: var(--texto3); }
+:root[data-theme="dark"] .sugerencia-chip {
+  background: var(--bg2);
+  color: var(--acento);
+  border-color: rgba(234, 184, 88, 0.3);
+}
+:root[data-theme="dark"] .sugerencia-chip:hover {
+  background: rgba(234, 184, 88, 0.14);
+  border-color: var(--acento);
+}
+
+/* 1.9 · Favorito en tarjeta (boton vacío tenía fondo blanco fijo). */
+:root[data-theme="dark"] .btn-fav-row:hover,
+:root[data-theme="dark"] .btn-fav-row.activo {
+  background: rgba(235, 138, 117, 0.18);
+  border-color: var(--rojo);
+  color: var(--rojo);
+}
+
+/* ── FASE 2 · CONTRASTE Y ACCESIBILIDAD ─────────────────────────────── */
+
+/* 2.1 · Banner "Cierra hoy / Cierra pronto" del modal.
+   index.css fija labels en #92400E sobre fondo ámbar claro, lo que en
+   algunos tamaños queda ajustado para WCAG AA. Endurecemos a naranja
+   casi marrón y subimos peso de la fecha secundaria. */
+.modal-plazo-alert.status-closing-today {
+  background: var(--naran-l);
+  border-color: #F59E0B;
+}
+.modal-plazo-alert.status-closing-today .modal-plazo-label {
+  color: #7C2D12; /* orange-900 — contraste AA sobre #FBE4BE */
+  font-weight: 700;
+}
+.modal-plazo-alert.status-closing-today .modal-plazo-fecha {
+  color: #7C2D12;
+  opacity: 0.85;
+  font-weight: 500;
+}
+.modal-plazo-alert.status-closing-today .modal-plazo-icon {
+  background: #C2410C;
+  color: #FFFBEB;
+}
+.modal-plazo-alert.status-active .modal-plazo-label { color: #14532D; font-weight: 700; }
+.modal-plazo-alert.status-active .modal-plazo-fecha { color: #14532D; opacity: 0.85; }
+.modal-plazo-alert.status-upcoming .modal-plazo-label { color: #1E3A8A; font-weight: 700; }
+.modal-plazo-alert.status-upcoming .modal-plazo-fecha { color: #1E3A8A; opacity: 0.85; }
+.modal-plazo-alert.status-closed .modal-plazo-label { color: #1F2937; font-weight: 700; }
+.modal-plazo-alert.status-closed .modal-plazo-fecha { color: #374151; }
+
+/* En dark, los fondos translúcidos suavizan y necesitan texto claro. */
+:root[data-theme="dark"] .modal-plazo-alert.status-closing-today {
+  background: rgba(234, 184, 88, 0.18);
+  border-color: rgba(234, 184, 88, 0.5);
+}
+:root[data-theme="dark"] .modal-plazo-alert.status-closing-today .modal-plazo-label,
+:root[data-theme="dark"] .modal-plazo-alert.status-closing-today .modal-plazo-fecha {
+  color: var(--gold-soft);  /* en dark, gold-soft === #F5D289 */
+}
+:root[data-theme="dark"] .modal-plazo-alert.status-active {
+  background: rgba(143, 205, 165, 0.15);
+  border-color: rgba(143, 205, 165, 0.45);
+}
+:root[data-theme="dark"] .modal-plazo-alert.status-active .modal-plazo-label,
+:root[data-theme="dark"] .modal-plazo-alert.status-active .modal-plazo-fecha {
+  color: #B8E0C5;
+}
+:root[data-theme="dark"] .modal-plazo-alert.status-upcoming {
+  background: rgba(127, 169, 221, 0.16);
+  border-color: rgba(127, 169, 221, 0.4);
+}
+:root[data-theme="dark"] .modal-plazo-alert.status-upcoming .modal-plazo-label,
+:root[data-theme="dark"] .modal-plazo-alert.status-upcoming .modal-plazo-fecha {
+  color: #C5D4EE;
+}
+:root[data-theme="dark"] .modal-plazo-alert.status-closed {
+  background: var(--bg2);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .modal-plazo-alert.status-closed .modal-plazo-label,
+:root[data-theme="dark"] .modal-plazo-alert.status-closed .modal-plazo-fecha {
+  color: var(--texto);
+}
+
+/* 2.2 · Footer — enlaces y meta con mejor contraste.
+   Pasamos de rgba(255,255,255,0.25–0.5) a 0.72 que alcanza AA sobre el
+   navy profundo del footer (#142E6B) y mantiene la sensación etérea. */
+.footer-link {
+  color: rgba(255, 255, 255, 0.78);
+}
+.footer-link:hover,
+.footer-link:focus-visible {
+  color: #FFFFFF;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.footer-desc { color: rgba(255, 255, 255, 0.7); }
+.footer-col-titulo { color: rgba(255, 255, 255, 0.78); }
+.footer-bottom { color: rgba(255, 255, 255, 0.6); }
+
+/* ── FASE 3 · ESTANDARIZACIÓN Y ALINEACIÓN ─────────────────────────── */
+
+/* 3.1 · Badges / pills unificados.
+   Unifica padding, radius y tipografía en todas las variantes, sin
+   romper los colores semánticos ya asignados. */
+.badge,
+.badge-planta,
+.badge-contrata,
+.badge-honorarios,
+.badge-codigo,
+.badge-otro,
+.badge-sin-dato,
+.badge-region,
+.badge-sector {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.2px;
+  font-family: 'Inter', sans-serif;
+}
+.badge-sin-dato { padding: 2px 9px; }
+
+/* Pill de frescura y chips auxiliares siguen la misma regla para que
+   todo lo que parezca "pill" se sienta de la misma familia. */
+.oferta-frescura,
+.sugerencia-chip {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+/* 3.2 · Encabezado de columnas del listado compacto.
+   Sube jerarquía: tipografía un punto mayor, peso más denso, color más
+   alto, y alinea label→contenido (texto numérico/renta a la derecha,
+   resto a la izquierda). */
+.col-sort,
+.col-sort-label {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  color: var(--texto2);
+}
+.col-sort:hover { color: var(--azul); }
+.col-sort.activo { color: var(--azul); }
+/* Columna de renta alineada a la derecha (como su contenido) */
+.oferta-row-header > :nth-child(4) .col-sort,
+.oferta-row-header > :nth-child(4) .col-sort-label {
+  justify-content: flex-end;
+  width: 100%;
+}
+.oferta-row-header {
+  height: 38px;
+}
+:root[data-theme="dark"] .col-sort:hover,
+:root[data-theme="dark"] .col-sort.activo { color: var(--acento); }
+
+/* 3.3 · Subtítulos del modal ("Requisitos principales", "Descripción",
+   "Resumen ejecutivo").
+   El archivo redesign-overrides.css ya bajaba a 11.5px; recuperamos
+   peso editorial con font-semibold + margen inferior mayor y un
+   separador de acento más definido. */
+.modal-seccion-titulo,
+.modal-seccion h3 {
+  font-size: 12.5px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  color: var(--navy-ink) !important;
+  margin: 0 0 12px 0 !important;
+  padding: 0 0 0 12px !important;
+  border-left: 3px solid var(--acento);
+  line-height: 1.25;
+}
+:root[data-theme="dark"] .modal-seccion-titulo,
+:root[data-theme="dark"] .modal-seccion h3 {
+  color: var(--acento) !important;
+}
+.modal-seccion { margin-bottom: 18px !important; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   AUDITORÍA UI · 2026-04 · Alineación del grid principal
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* A1 · Borde izquierdo del contenedor de ofertas = borde izquierdo del
+   buscador. Raíz del problema: `.hero` usa padding 24px sobre su propio
+   border-box y `.hero-inner` es max-width 1200 centrado DENTRO de ese
+   contenido ya inset. `.main` en cambio usa max-width 1200 con padding
+   interno. En viewports > 1248px eso generaba un desfase de 24px.
+   Fix: mover el padding horizontal de `.hero` a `.hero-inner` para que
+   ambas capas compartan el mismo modelo box-sizing. */
+.hero {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+.hero-inner {
+  max-width: 1200px;
+  padding-left: 24px;
+  padding-right: 24px;
+  box-sizing: border-box;
+}
+@media (max-width: 600px) {
+  .hero-inner {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+/* A2 · Top de ofertas y top de sidebar en la misma línea horizontal.
+   Ambas columnas viven en el grid `.main` (align-items: start) y cada
+   una se tira -30px hacia arriba para solaparse con la base del hero.
+   Explicitamos ambos para blindar contra overrides accidentales. */
+@media (min-width: 901px) {
+  .resultados-shell,
+  .sidebar {
+    align-self: start;
+    margin-top: -30px;
+  }
+}
+
+/* A3 · Borde derecho del sidebar = borde derecho del buscador.
+   Con A1 aplicado, el `.main` y el `.hero-inner` tienen el mismo
+   max-width + padding. El gap del grid (24px) + el ancho fijo del
+   sidebar (300px) caben exactamente dentro del área de contenido que
+   el buscador ocupa. Reforzamos el gap y garantizamos que el sidebar
+   no colapse ni se pase del límite derecho. */
+@media (min-width: 901px) {
+  .main {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 24px;
+    align-items: start;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   AUDITORÍA UI · 2026-04 · Control de orden rediseñado
+   Envuelve el <select> nativo en un contenedor con prefijo "Ordenar
+   por:" y un chevron visible, para que se lea claramente como un
+   dropdown interactivo y no como texto plano. Conserva el <select>
+   nativo → accesibilidad de teclado y screen reader intactas.
+   ══════════════════════════════════════════════════════════════════════ */
+.sort-wrap {
+  --ctrl-h: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--ctrl-h);
+  padding: 0 10px 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.sort-wrap:hover {
+  background: var(--bg-subtle);
+  border-color: var(--navy-60);
+}
+.sort-wrap:focus-within {
+  border-color: var(--navy);
+  box-shadow: 0 0 0 3px var(--navy-tint);
+  outline: none;
+}
+.sort-wrap-label {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-40);
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
+}
+.sort-wrap .ctrl-select--sort {
+  /* Neutraliza la caja propia del select (border, bg, chevron). El
+     wrapper hace de caja; el select sólo aporta texto + dropdown. */
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 0 4px 0 0 !important;
+  border: none !important;
+  background: transparent !important;
+  background-image: none !important;
+  color: var(--text-80) !important;
+  font-family: inherit !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+  box-shadow: none !important;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.sort-wrap .ctrl-select--sort:hover,
+.sort-wrap .ctrl-select--sort:focus,
+.sort-wrap .ctrl-select--sort:focus-visible {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  background: transparent !important;
+}
+.sort-wrap-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-60);
+  pointer-events: none;
+  transition: color 0.15s, transform 0.15s;
+  flex-shrink: 0;
+}
+.sort-wrap:hover .sort-wrap-chevron { color: var(--navy); }
+.sort-wrap:focus-within .sort-wrap-chevron {
+  color: var(--navy);
+  transform: translateY(1px);
+}
+
+/* Dark mode: mismos tokens que los demás controles en oscuro. */
+:root[data-theme="dark"] .sort-wrap {
+  background: var(--blanco);
+  border-color: var(--borde);
+}
+:root[data-theme="dark"] .sort-wrap:hover {
+  background: var(--surface-hover);
+  border-color: var(--acento);
+}
+:root[data-theme="dark"] .sort-wrap:focus-within {
+  border-color: var(--acento);
+  box-shadow: 0 0 0 3px rgba(234, 184, 88, 0.22);
+}
+:root[data-theme="dark"] .sort-wrap-label { color: var(--texto3); }
+:root[data-theme="dark"] .sort-wrap .ctrl-select--sort { color: var(--texto) !important; }
+:root[data-theme="dark"] .sort-wrap-chevron { color: var(--texto3); }
+:root[data-theme="dark"] .sort-wrap:hover .sort-wrap-chevron,
+:root[data-theme="dark"] .sort-wrap:focus-within .sort-wrap-chevron { color: var(--acento); }
+
+/* Alineación vertical con hermanos (.ctrl-select de por-página y
+   .vista-btns): los tres comparten var(--ctrl-h) = 36px y viven en
+   `.resultados-preferencias` con align-items: center. */
+.resultados-preferencias .sort-wrap { align-self: center; }
+
+/* Responsive: en mobile, el sort-wrap necesita fila completa para
+   propia para que no se superponga con `ctrl-por-pagina` ni con los
+   botones de vista. Antes quedaban los 3 controles en la misma fila,
+   y con min-width: 200px del sort-wrap el contenido reventaba hacia
+   la derecha pisando "20 / pág.". */
+@media (max-width: 600px) {
+  .resultados-preferencias .sort-wrap {
+    flex: 1 1 100%;   /* fila completa — fuerza wrap de los hermanos */
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    overflow: hidden; /* red de seguridad si el texto del select es largo */
+  }
+  .sort-wrap-label { font-size: 10.5px; }
+  .sort-wrap .ctrl-select--sort {
+    font-size: 12px !important;
+    min-width: 0 !important;   /* gana al `min-width: 120px` del override */
+    max-width: 100%;
+  }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   UX FIXES (audit de bugs mobile + desktop, abril 2026).
+
+   Cierra 7 bugs visuales reportados:
+   1. Hamburguesa: no aparecía en mobile cuando nav-mobile.js no cargaba.
+   2. Widgets del sidebar (alertas): cortados arriba por `overflow: hidden`.
+   3. Bloque "Explora por región/sector": fondo contrastaba mal con el
+      body (especialmente dark mode) por --surface-alt sin definir.
+   4. Botón "Ordenar por": dropdown nativo angosto vs. el trigger.
+   5. Tabs vigentes/cerradas: el estado activo casi invisible en dark.
+   6. Autocomplete/comunas dropdowns: ancho menor que el trigger.
+   7. Modal de detalle en mobile: cortado arriba/abajo (sin safe-area).
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Hamburguesa: muestra en mobile SIN depender de .js-nav ───────
+   El CSS original ocultaba con `.hamburger { display: none }` y sólo
+   lo mostraba vía `.js-nav .hamburger { display: flex }` dentro del
+   media. Si la clase `.js-nav` no llega al <html> (CSP, JS falla,
+   script en cache stale), el botón queda invisible. Regla baseline
+   sin dependencia de JS:
+*/
+@media (max-width: 600px) {
+  .hamburger { display: flex !important; }
+  .nav-links { display: none !important; }
+}
+
+/* ── 2. Widgets del sidebar: bordes/esquinas limpios ────────────────
+   El widget tiene `border-radius: 12px` y un `.widget-header` interno
+   con su propio `background` rectangular (#fbfdff en light, var(--bg2)
+   en dark). Para que el header respete las esquinas redondeadas del
+   contenedor, `.widget` DEBE tener `overflow: hidden`. Si lo ponemos
+   visible, el rectángulo del header se "escapa" de los corners y
+   produce el artefacto reportado en "Alertas de empleo" (bordes que
+   parecen rotos o desalineados).
+
+   Shadows y focus rings del interior se mantienen contenidos — para
+   los elementos que necesiten "asomarse" (p.ej. tooltips), usan
+   `position: fixed` y escapan del clipping sin ayuda del widget.
+
+   Para que NINGÚN wrapper externo corte el shadow del widget:
+   `.sidebar` renuncia a su `overflow: hidden` previo.
+*/
+.widget {
+  overflow: hidden;
+}
+.sidebar {
+  overflow: visible;
+}
+
+/* ── 3. Bloque "Explora por región/sector": fondo integrado ────────
+   Define --surface-alt con color derivado del tema activo para que
+   los chips se integren con el body en vez de flotar sobre un fondo
+   gris crudo. Además, quitamos el border-top separador que lo hacía
+   ver desconectado.
+*/
+:root {
+  --surface-alt: rgba(15, 23, 42, 0.04);
+}
+:root[data-theme="dark"] {
+  --surface-alt: rgba(255, 255, 255, 0.06);
+}
+
+.explora-landings {
+  border-top: none;
+  margin-top: 24px;
+}
+.explora-landings-chips a {
+  background: var(--surface-alt);
+  border: 1px solid transparent;
+  color: var(--text-secondary, var(--texto2, #374151));
+}
+.explora-landings-chips a:hover,
+.explora-landings-chips a:focus-visible {
+  background: var(--navy-tint, rgba(10, 46, 110, 0.08));
+  border-color: var(--navy, #0A2E6E);
+  color: var(--navy, #0A2E6E);
+}
+:root[data-theme="dark"] .explora-landings-chips a {
+  color: var(--texto2, rgba(255, 255, 255, 0.72));
+}
+:root[data-theme="dark"] .explora-landings-chips a:hover,
+:root[data-theme="dark"] .explora-landings-chips a:focus-visible {
+  background: rgba(234, 184, 88, 0.14);
+  border-color: var(--acento);
+  color: var(--acento);
+}
+:root[data-theme="dark"] .explora-landings-seccion h2 {
+  color: var(--texto, #fafafa);
+}
+
+/* ── 4. Sort-wrap: mostrar la opción activa y corregir ancho ─────────
+   El `<select>` con `appearance: none` ocultaba su texto por padding
+   insuficiente. Le damos espacio + min-width para que la opción se
+   lea completa y el dropdown nativo iguale al trigger visualmente.
+*/
+.sort-wrap {
+  min-width: 200px;
+}
+.sort-wrap .ctrl-select--sort {
+  padding: 0 6px 0 2px !important;
+  min-width: 120px;
+  width: 100%;
+  /* Fuerza al browser a mostrar el texto del value seleccionado en
+     vez de dejarlo en blanco cuando `appearance: none` es muy
+     agresivo (bug Chromium histórico). */
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* ── 5. Tabs Vigentes / Cerradas: contraste del estado activo ────────
+   El .activo en light ya tiene buen contraste (fondo azul, texto
+   blanco). En dark, el fondo activo era navy y el texto navy — casi
+   invisible. Forzamos acento dorado para el texto activo en dark
+   mode y un background más claro para que se lea.
+*/
+.estado-tab {
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+.estado-tab.activo {
+  color: #fff;
+}
+:root[data-theme="dark"] .estado-tab.activo {
+  color: var(--azul, #0A2E6E) !important;
+  background: var(--acento, #E8A820) !important;
+}
+:root[data-theme="dark"] .estado-listado-tabs::before {
+  background: var(--acento, #E8A820) !important;
+}
+
+/* Filter tags (Cierra pronto / Últimas 48h / Sin experiencia): también
+   más claros cuando están activos. */
+.filtro-tag.activo {
+  background: var(--navy, #0A2E6E) !important;
+  color: #fff !important;
+  border-color: var(--navy, #0A2E6E) !important;
+}
+:root[data-theme="dark"] .filtro-tag.activo {
+  background: var(--acento, #E8A820) !important;
+  color: var(--azul, #0A2E6E) !important;
+  border-color: var(--acento, #E8A820) !important;
+}
+
+/* ── 6. Dropdowns: ancho alineado al trigger ──────────────────────
+   El autocomplete de institución y el panel de comunas salían con
+   ancho `auto` (el del contenido), pero el botón trigger ocupa el
+   100% del campo. El desalineamiento se ve como un "popup flotante
+   angosto". Forzamos ancho ≥ el del padre.
+*/
+.autocomplete-wrap {
+  position: relative;
+  width: 100%;
+}
+.autocomplete-dropdown {
+  left: 0;
+  right: 0;
+  width: auto;
+  min-width: 100%;
+}
+.comunas-selector {
+  position: relative;
+}
+.comunas-panel {
+  left: 0;
+  right: auto;
+  width: 100%;
+  min-width: 280px;
+}
+
+/* ── 7. Modal de detalle en mobile: safe-area + 100dvh ────────────
+   En mobile `max-height: 100vh` solapaba status bar / notch / home
+   indicator. Reemplazamos por `100dvh` (dynamic viewport) y
+   añadimos `padding` con `env(safe-area-inset-*)` para que el
+   contenido respete los márgenes del device.
+   Además fijamos `overflow-y: auto` explícito y `overscroll-behavior:
+   contain` para evitar que el scroll del modal arrastre el body.
+*/
+@media (max-width: 600px) {
+  .modal-overlay {
+    padding: 0 !important;
+  }
+  .modal {
+    max-height: none !important;
+    height: 100dvh;
+    border-radius: 0 !important;
+    padding-top: env(safe-area-inset-top, 0);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .modal-header {
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  .modal-body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ── 8. Mejoras complementarias (touch + focus) ───────────────────
+   Evita el 300ms-tap delay de browsers mobile y mejora el focus
+   ring visible con keyboard (sin molestar a usuarios mouse).
+*/
+button, [role="button"], .vista-btn, .filtro-tag,
+.pag-btn, .explora-landings-chips a {
+  touch-action: manipulation;
+}
+button:focus-visible,
+.vista-btn:focus-visible,
+.estado-tab:focus-visible,
+.filtro-tag:focus-visible,
+.explora-landings-chips a:focus-visible,
+.sort-wrap:focus-within {
+  outline: 2px solid var(--navy, #0A2E6E);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+:root[data-theme="dark"] button:focus-visible,
+:root[data-theme="dark"] .vista-btn:focus-visible,
+:root[data-theme="dark"] .estado-tab:focus-visible,
+:root[data-theme="dark"] .filtro-tag:focus-visible,
+:root[data-theme="dark"] .explora-landings-chips a:focus-visible,
+:root[data-theme="dark"] .sort-wrap:focus-within {
+  outline-color: var(--acento, #E8A820);
+}
+
+/* ── 9. Theme toggle visible también en mobile ──────────────────
+   El toggle (luna / sol) vivía dentro de `.nav-links` — al ocultarse
+   el menú desktop en mobile, el toggle se iba con él. Ahora está
+   fuera de `.nav-links` (ver partials/header.html). Acá le damos
+   algo de respiración en mobile y un tamaño un poco menor para que
+   no compita con la hamburguesa.
+*/
+.nav-inner .theme-toggle {
+  margin-left: auto;
+}
+.nav-inner .hamburger {
+  margin-left: 6px;
+}
+@media (max-width: 600px) {
+  .theme-toggle {
+    padding: 2px;
+    gap: 1px;
+    margin-left: auto;
+  }
+  .theme-toggle button {
+    padding: 4px 6px;
+  }
+  .theme-toggle button svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+@media (max-width: 360px) {
+  /* En pantallas muy chicas, escondemos el texto del brand para
+     que el logo + theme-toggle + hamburguesa no se amontonen. */
+  .logo-tagline { display: none; }
+}
+
+/* ── 10. Explora-landings integrado al contenedor .main ──────────
+   Usuario reporta que el bloque de abajo (chips de "Empleos por
+   región/sector") sigue viéndose con tono distinto al resto. La
+   causa: `.main` (pre-existente) tiene un box-shadow inner arriba
+   + border-radius superior + max-width 1200 que lo hace sentir una
+   "caja flotante". `.explora-landings` quedaba suelto en el body,
+   con el mismo color (var(--bg)) pero sin decoración → se percibe
+   desconectado.
+   Fix: igualamos el container style — mismo max-width y padding,
+   border-radius inverso (redondo abajo) y box-shadow "cerrando" la
+   caja por debajo, para que parezca la continuación natural del
+   .main. Así la sensación visual es "un solo contenedor".
+*/
+.explora-landings {
+  max-width: 1200px;
+  margin: 0 auto 0;
+  padding: 28px 24px 34px;
+  background: var(--bg);
+  border-radius: 0 0 18px 18px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.55) inset,
+    0 18px 36px rgba(10, 46, 110, 0.09);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 28px 40px;
+  border-top: none;
+}
+:root[data-theme="dark"] .explora-landings {
+  background: var(--bg);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 18px 36px rgba(0, 0, 0, 0.35);
+}
+
+/* La línea del "data-update-global" quedaba justo entre .main y
+   .explora-landings. Le damos padding/color acorde para que no sea
+   un bloque visualmente suelto tampoco. */
+.data-update-global {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 12px 24px;
+  background: var(--bg);
+  text-align: right;
+  color: var(--texto3, var(--muted, #6b7280));
+  font-size: 12.5px;
+  border-left: none;
+  border-right: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   UX MOBILE POLISH (abril 2026) — listado + detalle.
+
+   Dos objetivos:
+   1. LISTADO: el cargo es el foco. Institución baja, menos chips, renta
+      con más peso, footer sin border que sume ruido.
+   2. DETALLE: el primer pantallazo entrega cargo + ubicación + renta +
+      cierre sin scroll. Header compacto, resumen denso, secciones
+      largas con jerarquía más clara.
+
+   Todo dentro de `@media (max-width: 600px)` — desktop intacto.
+   ══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  /* ── LISTADO · Tarjeta de oferta ──────────────────────────────── */
+
+  .oferta-card {
+    padding: 14px 14px 12px;
+    border-radius: 12px;
+  }
+
+  /* Logo más chico — libera ancho para el texto del cargo. */
+  .oferta-header {
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .oferta-logo {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+  }
+
+  /* Institución: pasa de "shouty" (uppercase + bold + azul) a subline
+     discreta. El lector ya tiene al cargo como ancla principal. */
+  .oferta-institucion {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: var(--texto3, #6b7280) !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    margin-bottom: 3px !important;
+    -webkit-line-clamp: 1 !important;
+    line-clamp: 1 !important;
+  }
+  :root[data-theme="dark"] .oferta-institucion {
+    color: rgba(255, 255, 255, 0.58) !important;
+  }
+
+  /* Cargo: promovido. Más peso, mejor ritmo tipográfico. */
+  .oferta-cargo {
+    font-size: 17px !important;
+    font-weight: 600 !important;
+    line-height: 1.22 !important;
+    margin-bottom: 8px !important;
+    color: var(--navy-ink, var(--azul)) !important;
+  }
+  .oferta-cargo-link {
+    text-decoration: none;   /* quita el subrayado en mobile — el cargo ya es visualmente distinto */
+  }
+
+  /* Badges: ocultamos sector (redundante con región + tipo en mobile).
+     Dejamos tipo (Contrata/Planta/…) y región — dos chips máximo. */
+  .oferta-tipo-wrap {
+    gap: 5px;
+    margin-bottom: 2px;
+  }
+  .oferta-tipo-wrap .badge-sector { display: none; }
+  .oferta-tipo-wrap .badge {
+    font-size: 10.5px;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  /* Línea de metadata: renta como ancla → más peso, más tamaño.
+     El resto (ciudad, jornada, frescura) queda en secundario. */
+  .oferta-detalles {
+    gap: 6px 12px;
+    margin-bottom: 8px;
+    font-size: 11.5px;
+    align-items: center;
+  }
+  .oferta-renta {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    color: var(--texto, var(--azul)) !important;
+    margin-right: 4px;
+    letter-spacing: -0.01em;
+  }
+  .oferta-detalle {
+    color: var(--texto2, #374151);
+    gap: 4px;
+  }
+  .oferta-detalle svg { opacity: 0.45; }
+  .oferta-frescura {
+    font-size: 10.5px;
+    padding: 2px 7px;
+  }
+
+  /* Footer: sin border-top (reduce ruido visual), inline en 1 fila
+     cuando entre — plazo a la izquierda, botón como ancla derecha. */
+  .oferta-footer {
+    border-top: none !important;
+    padding-top: 6px !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 10px !important;
+  }
+  .oferta-plazo {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 12.5px;
+  }
+  .oferta-acciones {
+    width: auto !important;
+    flex: 0 0 auto;
+  }
+  .btn-detalle {
+    flex: 0 0 auto !important;
+    padding: 8px 18px !important;
+    font-size: 13px !important;
+    min-height: 38px;
+  }
+
+  /* Favorito: tappeable pero sin dominar la esquina. */
+  .btn-fav-card {
+    top: 10px !important;
+    right: 10px !important;
+    width: 34px;
+    height: 34px;
+  }
+
+  /* ── DETALLE · Modal ──────────────────────────────────────────── */
+
+  /* Header: kicker + institución en UNA línea separados por middot.
+     Antes eran 2 renglones apilados → bajamos ~12px de alto. */
+  .modal-header {
+    padding: 14px 18px 12px !important;
+  }
+  .modal-kicker {
+    display: inline;
+    font-size: 10px !important;
+    opacity: 0.85;
+  }
+  .modal-institucion {
+    display: inline !important;
+    font-size: 12.5px !important;
+    margin-bottom: 8px !important;
+    font-weight: 600;
+  }
+  /* Si el kicker existe y la institución también, muestra un separador
+     punto entre ellos. Sin cambios en el markup. */
+  .modal-kicker:not(:empty) + .modal-institucion[hidden="false"]::before,
+  .modal-kicker:not(:empty) + .modal-institucion:not([hidden])::before {
+    content: '  ·  ';
+    color: rgba(255, 255, 255, 0.38);
+    font-weight: 400;
+  }
+  .modal-cargo {
+    font-size: 20px !important;
+    line-height: 1.2 !important;
+    margin: 6px 0 8px 0 !important;
+    padding-left: 0 !important;
+    border-left: none !important;
+  }
+  .modal-header #modal-badges { gap: 5px !important; }
+  .modal-header .badge {
+    font-size: 10.5px !important;
+    padding: 2px 7px !important;
+  }
+
+  /* Alerta de plazo: muy compacta — ya no domina el primer viewport. */
+  .modal-plazo-alert {
+    padding: 8px 12px !important;
+    margin-bottom: 12px !important;
+    gap: 10px !important;
+  }
+  .modal-plazo-icon {
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 12px !important;
+  }
+  .modal-plazo-label { font-size: 12.5px !important; }
+  .modal-plazo-fecha { font-size: 11px !important; }
+
+  /* Resumen ejecutivo: siempre 2 columnas. Items pequeños pero legibles.
+     Renta y cierre se destacan con weight extra via modifier. */
+  .modal-info-grid[data-count]:not([data-count="1"]) {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px !important;
+  }
+  .modal-info-item {
+    padding: 8px 10px !important;
+  }
+  .modal-info-label {
+    font-size: 9.5px !important;
+    letter-spacing: 0.3px !important;
+  }
+  .modal-info-val {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+  }
+  /* Destaca renta — principal dato accionable del grid. La fecha de
+     cierre vive en `.modal-plazo-alert` (arriba) y ya tiene su propio
+     tratamiento visual, por eso no aparece en el grid. */
+  #summary-item-renta .modal-info-val {
+    color: var(--azul, var(--navy));
+    font-weight: 700 !important;
+  }
+  :root[data-theme="dark"] #summary-item-renta .modal-info-val {
+    color: var(--acento) !important;
+  }
+
+  /* Body del modal: más denso, secciones más juntas. */
+  .modal-body { padding: 14px 16px 12px !important; }
+  .modal-seccion { margin-bottom: 16px !important; }
+  .modal-seccion-titulo {
+    font-size: 11px !important;
+    margin-bottom: 8px !important;
+    padding-left: 10px !important;
+    border-left-width: 3px !important;
+  }
+
+  /* Rich-text: line-height ajustada para lectura móvil cómoda. */
+  .modal-rich-text {
+    font-size: 13.5px !important;
+    line-height: 1.62 !important;
+  }
+  .modal-rich-text li { padding-left: 20px !important; }
+
+  /* Actions: botón primario alto y ancla. Share group más pequeño. */
+  .modal-actions {
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+    gap: 8px !important;
+  }
+  .modal-share-group {
+    gap: 10px !important;
+    padding-top: 6px !important;
+  }
+  .share-btn { width: 38px !important; height: 38px !important; }
+  .share-btn svg { width: 16px !important; height: 16px !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   UX MOBILE POLISH — RONDA 2 (abril 2026).
+
+   Segunda pasada fina tras merge de PR #179. Objetivos:
+   - Detalle: header aún más compacto, plazo-alert mínimo, summary denso,
+     "Ver más" como link (no pill), acciones secundarias más livianas.
+   - Listado: más respiración entre cards, botón "Ver detalle" con
+     tratamiento secundario, frescura como texto plano, títulos largos
+     con 3 líneas.
+   - Controles superiores: grupos claros (tabs → copy → count → acciones
+     → sort → por-página + vista), más aire, menos saturación.
+   - Back-to-top: menor presencia para no tapar "Ver detalle".
+
+   Todo dentro de @media (max-width: 600px) — desktop intacto.
+   ══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  /* ── DETALLE · Header compacto ────────────────────────────────── */
+  .modal-header {
+    padding: 10px 16px 10px !important;
+  }
+  .modal-close {
+    top: 8px !important;
+    right: 8px !important;
+    width: 30px !important;
+    height: 30px !important;
+  }
+  .modal-kicker {
+    font-size: 9.5px !important;
+    opacity: 0.72 !important;
+    letter-spacing: 0.8px !important;
+  }
+  .modal-institucion {
+    font-size: 11.5px !important;
+    margin-bottom: 5px !important;
+    opacity: 0.92;
+  }
+  .modal-cargo {
+    font-size: 18.5px !important;
+    line-height: 1.2 !important;
+    margin: 4px 0 6px 0 !important;
+    letter-spacing: -0.015em !important;
+    font-weight: 600 !important;
+  }
+  .modal-header #modal-badges { gap: 4px !important; }
+  .modal-header .badge {
+    font-size: 10px !important;
+    padding: 2px 6px !important;
+  }
+
+  /* ── DETALLE · Plazo alert mínimo ────────────────────────────── */
+  .modal-plazo-alert {
+    padding: 6px 10px !important;
+    margin-bottom: 10px !important;
+    gap: 8px !important;
+    border-width: 1px !important;
+    border-radius: 8px !important;
+  }
+  .modal-plazo-icon {
+    width: 20px !important;
+    height: 20px !important;
+    font-size: 11px !important;
+  }
+  .modal-plazo-label {
+    font-size: 12px !important;
+    line-height: 1.15 !important;
+  }
+  .modal-plazo-fecha {
+    font-size: 10.5px !important;
+    opacity: 0.85;
+  }
+
+  /* ── DETALLE · Summary grid más denso ────────────────────────── */
+  .modal-info-item {
+    padding: 6px 10px !important;
+    border-radius: 6px !important;
+  }
+  .modal-info-label {
+    font-size: 9px !important;
+    letter-spacing: 0.4px !important;
+    margin-bottom: 1px !important;
+  }
+  .modal-info-val {
+    font-size: 12.5px !important;
+    line-height: 1.25 !important;
+  }
+
+  /* ── DETALLE · Body + secciones compactas ─────────────────────── */
+  .modal-body { padding: 12px 16px 10px !important; }
+  .modal-seccion { margin-bottom: 14px !important; }
+  .modal-seccion-titulo {
+    font-size: 10.5px !important;
+    margin-bottom: 7px !important;
+    padding-left: 9px !important;
+    border-left-width: 3px !important;
+    letter-spacing: 0.9px !important;
+  }
+
+  /* ── DETALLE · Rich-text + "Ver más" como link ─────────────────
+     El pill rounded 7px 14px con borde 1.5px pesaba visualmente. Lo
+     bajamos a link tipográfico con subrayado punteado. */
+  .modal-rich-text {
+    font-size: 13.5px !important;
+    line-height: 1.6 !important;
+  }
+  .modal-rich-text li {
+    padding-left: 20px !important;
+    line-height: 1.55 !important;
+  }
+  .modal-rich-text .rt-toggle {
+    display: inline-block !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 4px 0 !important;
+    margin-top: 6px !important;
+    border-radius: 0 !important;
+    width: auto !important;
+    color: var(--cielo) !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.1px !important;
+    border-bottom: 1px dashed currentColor !important;
+    line-height: 1.3 !important;
+  }
+  .modal-rich-text .rt-toggle:hover,
+  .modal-rich-text .rt-toggle:focus-visible {
+    background: transparent !important;
+    color: var(--azul) !important;
+    border-bottom-style: solid !important;
+    outline: none !important;
+  }
+  :root[data-theme="dark"] .modal-rich-text .rt-toggle {
+    color: var(--acento) !important;
+  }
+
+  /* Truncado: más alto permitido en colapsado para que la mayoría
+     de textos se muestren completos y el "Ver más" sólo aparezca
+     cuando realmente vale la pena desplegar. */
+  .modal-rich-text .rt-truncate[data-rt-collapsed="true"] .rt-truncate-inner {
+    max-height: 480px !important;
+  }
+
+  /* ── DETALLE · Acciones secundarias más livianas ───────────────
+     Primario navy full-width intacto — es la decisión. Los secundarios
+     bajan a "ghost" con borde fino, el share group pierde fondo. */
+  .modal-actions {
+    padding: 8px 16px calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+    gap: 6px !important;
+    border-top-color: var(--bg2) !important;
+  }
+  .btn-modal-primary {
+    height: 44px !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    border-radius: 8px !important;
+  }
+  .btn-modal-sec {
+    height: 36px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    border-width: 1px !important;
+    color: var(--texto2) !important;
+  }
+  .modal-share-group {
+    gap: 8px !important;
+    padding-top: 6px !important;
+    border-top: none !important;
+  }
+  .share-btn {
+    width: 34px !important;
+    height: 34px !important;
+    border: 1px solid var(--borde) !important;
+    background: transparent !important;
+    opacity: 0.85;
+  }
+  .share-btn:hover { opacity: 1; }
+  .share-btn svg { width: 14px !important; height: 14px !important; }
+
+  /* ── LISTADO · Respiración entre cards ──────────────────────── */
+  .ofertas-lista {
+    gap: 12px !important;
+  }
+  .oferta-card {
+    padding: 16px 14px 14px !important;
+  }
+
+  /* ── LISTADO · Cargo con hasta 3 líneas para títulos largos ── */
+  .oferta-cargo {
+    -webkit-line-clamp: 3 !important;
+    line-clamp: 3 !important;
+  }
+
+  /* ── LISTADO · Frescura como texto plano (sin pill gris) ──────
+     Sólo las ofertas "nuevas" (<=2 días) mantienen el pill verde como
+     señal positiva — el resto es metadata secundaria discreta. */
+  .oferta-frescura {
+    background: transparent !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    color: var(--texto3) !important;
+  }
+  .oferta-frescura.frescura-nueva {
+    background: var(--verde-l) !important;
+    color: var(--alert-green-text) !important;
+    padding: 2px 8px !important;
+    border-radius: 999px !important;
+    font-weight: 600 !important;
+  }
+  :root[data-theme="dark"] .oferta-frescura.frescura-nueva {
+    background: rgba(34, 197, 94, 0.14) !important;
+    color: #86EFAC !important;
+  }
+
+  /* ── LISTADO · "Ver detalle" como ghost ───────────────────────
+     Antes sólido navy full-width competía con la card entera. Ahora
+     es un CTA secundario: ghost + borde fino + color navy. La card
+     completa es tappeable (role="button" en app.js), así que este
+     botón sólo refuerza la affordance sin robar jerarquía. */
+  .btn-detalle {
+    background: transparent !important;
+    color: var(--azul, var(--navy)) !important;
+    border: 1px solid var(--borde) !important;
+    padding: 7px 14px !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    min-height: 36px !important;
+  }
+  .btn-detalle:hover {
+    background: var(--navy-tint, rgba(10, 46, 110, 0.08)) !important;
+    border-color: var(--azul, var(--navy)) !important;
+  }
+  :root[data-theme="dark"] .btn-detalle {
+    color: var(--acento) !important;
+    border-color: rgba(255, 255, 255, 0.18) !important;
+  }
+  :root[data-theme="dark"] .btn-detalle:hover {
+    background: rgba(234, 184, 88, 0.12) !important;
+    border-color: var(--acento) !important;
+  }
+
+  /* ── CONTROLES SUPERIORES · Grupos con aire ──────────────────
+     Jerarquía: tabs (primary nav) → copy explicativa → count +
+     meta → acciones contextuales → preferencias de vista. */
+
+  /* Tabs Vigentes/Cerradas: separación suficiente del copy. */
+  .estado-listado-tabs {
+    margin-bottom: 10px !important;
+  }
+
+  /* Copy explicativo: menor peso — es acompañamiento. */
+  .estado-listado-copy {
+    font-size: 11.5px !important;
+    margin-bottom: 12px !important;
+    color: var(--texto3, #6b7280) !important;
+    line-height: 1.4;
+  }
+
+  /* Count + sub: info principal del header de resultados. */
+  .resultados-count {
+    font-size: 13px !important;
+    color: var(--texto2) !important;
+  }
+  .resultados-count strong {
+    font-size: 15px !important;
+  }
+  .count-sub {
+    font-size: 11px !important;
+    margin-left: 6px !important;
+    color: var(--texto3) !important;
+  }
+
+  /* Resultados-header: un poco más de aire vertical. */
+  .resultados-header {
+    gap: 12px !important;
+    margin-bottom: 12px !important;
+  }
+
+  /* Acciones contextuales (Limpiar / Compartir): menos imponentes. */
+  .resultados-acciones {
+    gap: 6px !important;
+  }
+  .resultados-acciones .btn-copiar-busqueda {
+    font-size: 11.5px !important;
+    padding: 7px 10px !important;
+    min-height: 34px !important;
+    font-weight: 500 !important;
+  }
+
+  /* Preferencias: más aire entre sort (fila propia) y el par
+     por-pagina + vista-btns (fila siguiente). */
+  .resultados-preferencias {
+    gap: 8px !important;
+  }
+
+  /* vista-btns: trío más aireado, tappable cómodo. */
+  .vista-btns {
+    gap: 3px !important;
+    padding: 3px !important;
+    flex: 0 0 auto !important;    /* no crece, queda al lado del por-pagina */
+  }
+  .vista-btn {
+    padding: 7px 10px !important;
+  }
+  .resultados-preferencias #ctrl-por-pagina {
+    flex: 1 1 auto !important;    /* ocupa el espacio que deja vista-btns */
+  }
+
+  /* Paginación con más aire. */
+  .paginacion {
+    gap: 6px !important;
+    margin-top: 22px !important;
+    margin-bottom: 4px;
+  }
+  .pag-btn {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 13px !important;
+  }
+
+  /* ── BOTÓN FLOTANTE · Back-to-top con menor presencia ─────────
+     Usuario reporta que tapa el "Ver detalle" de la última card. El
+     botón anterior: 36×36 bottom 76px opacity 0.92. Ahora: 32×32,
+     opacity 0.55 (hover 0.88), más abajo (26px). Menos intrusivo,
+     sigue siendo tappeable. */
+  .back-to-top-btn {
+    width: 32px !important;
+    height: 32px !important;
+    right: 10px !important;
+    bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
+    font-size: 14px !important;
+    opacity: 0 !important;
+  }
+  .back-to-top-btn.is-visible {
+    opacity: 0.55 !important;
+  }
+  .back-to-top-btn.is-visible:hover,
+  .back-to-top-btn.is-visible:focus-visible {
+    opacity: 0.9 !important;
+  }
+}
+
+/* El bloque "Texto completo del aviso" conserva su caja (es el único
+   contenedor de texto bruto expandible). Las subsecciones de
+   Requisitos/Funciones/Condiciones/Postulación pasaron a `h5 + ul`
+   sin caja (ver `.modal-subsection-group` en index.css) y no
+   necesitan override de dark mode. */
+:root[data-theme="dark"] .modal-fulltext-details {
+  background: rgba(18, 26, 43, 0.7);
+  border-color: rgba(148, 163, 184, 0.26);
+}
+:root[data-theme="dark"] .modal-subgroup > h5 {
+  color: rgba(255, 255, 255, 0.72);
+}
+:root[data-theme="dark"] .modal-list {
+  color: var(--acento);
+}
+:root[data-theme="dark"] .modal-list li {
+  color: rgba(255, 255, 255, 0.88);
+}
+:root[data-theme="dark"] .modal-list .modal-list-toggle button {
+  color: var(--acento);
+}
+:root[data-theme="dark"] .modal-residual-title {
+  color: rgba(255, 255, 255, 0.65);
+}
+:root[data-theme="dark"] .modal-list--residual li {
+  color: rgba(255, 255, 255, 0.78);
+}
+:root[data-theme="dark"] .modal-approx-badge {
+  background: rgba(148, 163, 184, 0.16);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+:root[data-theme="dark"] .modal-data-warning-text {
+  background: rgba(146, 64, 14, 0.2);
+  border-color: rgba(245, 158, 11, 0.55);
+  color: var(--alert-amber-text);
+}

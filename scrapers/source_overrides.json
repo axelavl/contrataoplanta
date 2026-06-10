@@ -1,0 +1,630 @@
+{
+  "_doc": "Overrides manuales por institución. Tiene prioridad absoluta sobre la clasificación automática. Cada entrada: {id, status, kind, frequency_tier?, reason?, notes?}. status ∈ active|experimental|manual_review|js_required|blocked|broken|no_data|disabled. kind ∈ empleos_publicos|wordpress|generic|custom_trabajando|custom_hiringroom|custom_buk|custom_policia|custom_ffaa|skip. frequency_tier ∈ critical|high|medium|low|eventual|exploratory (ver scrapers/frequency_policy.py). Si no se declara, se infiere automáticamente.",
+  "overrides": [
+    {"_comment": "=== FF.AA. y Orden ==="},
+
+    {
+      "id": 157,
+      "status": "active",
+      "kind": "custom_ffaa",
+      "reason": "Ejercito de Chile — scraper dedicado con warmup de sesion y URLs especificas",
+      "notes": "https://ingreso.ejercito.cl/ + fallback transparencia ejercito.cl"
+    },
+    {
+      "id": 158,
+      "status": "active",
+      "kind": "custom_ffaa",
+      "reason": "Armada de Chile — scraper dedicado con warmup de sesion y URLs especificas",
+      "notes": "https://www.admisionarmada.cl/ + fallback transparencia armada.cl"
+    },
+    {
+      "id": 159,
+      "status": "active",
+      "kind": "custom_trabajando",
+      "reason": "FACH — portal en Trabajando.cl (fach.trabajando.cl)",
+      "notes": "https://fach.trabajando.cl/"
+    },
+    {
+      "id": 161,
+      "status": "active",
+      "kind": "custom_policia",
+      "reason": "Carabineros — scraper dedicado con warmup de sesion y URLs especificas",
+      "notes": "https://postulaciones.carabineros.cl/ + fallback transparencia carabineros.cl"
+    },
+    {
+      "id": 162,
+      "status": "active",
+      "kind": "custom_policia",
+      "reason": "PDI — scraper dedicado con warmup de sesion y URLs especificas",
+      "notes": "https://postulaciones.investigaciones.cl/ + fallback transparencia pdichile.cl"
+    },
+    {
+      "id": 164,
+      "status": "active",
+      "kind": "generic",
+      "reason": "ASMAR — portal propio trabaja-con-nosotros. No publica en EP",
+      "notes": "https://www.asmar.cl/trabaja-con-nosotros/"
+    },
+    {
+      "id": 165,
+      "status": "active",
+      "kind": "generic",
+      "reason": "FAMAE — portal propio trabaja-con-nosotros. No publica en EP",
+      "notes": "https://www.famae.cl/trabaja-con-nosotros/"
+    },
+    {
+      "id": 166,
+      "status": "active",
+      "kind": "generic",
+      "reason": "ENAER — portal propio bolsa-de-trabajo. No publica en EP",
+      "notes": "https://www.enaer.cl/bolsa-de-trabajo/"
+    },
+
+    {"_comment": "=== Ejecutivo Central ==="},
+
+    {
+      "id": 43,
+      "status": "active",
+      "kind": "generic",
+      "reason": "SII — portal propio en_postulacion.html, también publica en EP",
+      "notes": "https://www.sii.cl/sobre_el_sii/en_postulacion.html"
+    },
+    {
+      "id": 132,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Fundación Integra — portal propio integra.cl/trabaje-con-nosotros. No publica en EP",
+      "notes": "https://www.integra.cl/trabaje-con-nosotros/ (trabajaconnosotros.integra.cl requiere JS)"
+    },
+
+    {"_comment": "=== Empresas del Estado ==="},
+
+    {
+      "id": 275,
+      "status": "active",
+      "kind": "custom_playwright",
+      "reason": "CODELCO — empleos.codelco.cl requiere JS. Gran volumen de cargos",
+      "notes": "https://empleos.codelco.cl/search/"
+    },
+    {
+      "id": 276,
+      "status": "active",
+      "kind": "custom_trabajando",
+      "reason": "ENAP — portal en Trabajando.cl",
+      "notes": "https://enap.trabajando.cl/trabajo-empleo"
+    },
+    {
+      "id": 277,
+      "status": "active",
+      "kind": "custom_trabajando",
+      "reason": "BancoEstado — portal en Trabajando.cl (plataforma propia con JS)",
+      "notes": "https://bancoestado.trabajando.cl/trabajo-empleo"
+    },
+    {
+      "id": 278,
+      "status": "active",
+      "kind": "custom_trabajando",
+      "reason": "Metro S.A. — portal en Trabajando.cl",
+      "notes": "https://metro.trabajando.cl/trabajo-empleo"
+    },
+    {
+      "id": 279,
+      "status": "experimental",
+      "kind": "generic",
+      "reason": "EFE — portal en Laborum (sin módulo dedicado). GenericSiteScraper como fallback",
+      "notes": "https://www.laborum.cl/perfiles/empresa_efe-trenes-de-chile_12041027.html"
+    },
+    {
+      "id": 280,
+      "status": "active",
+      "kind": "custom_playwright",
+      "reason": "TVN — empleos.tvn.cl requiere JS",
+      "notes": "https://empleos.tvn.cl"
+    },
+    {
+      "id": 281,
+      "status": "active",
+      "kind": "custom_trabajando",
+      "reason": "Correos de Chile — portal en Trabajando.cl",
+      "notes": "https://correos.trabajando.cl"
+    },
+    {
+      "id": 282,
+      "status": "broken",
+      "kind": "skip",
+      "reason": "Polla Chilena — solo publica en LinkedIn (no scrapeable)",
+      "notes": "https://www.linkedin.com/company/polla-chilena-de-beneficencia-s.a./"
+    },
+    {
+      "id": 283,
+      "status": "active",
+      "kind": "custom_trabajando",
+      "reason": "ZOFRI — portal en Trabajando.cl",
+      "notes": "https://zofri.trabajando.cl"
+    },
+    {
+      "id": 284,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Empresa Portuaria de Arica — portal propio portal.tpa.cl",
+      "notes": "https://portal.tpa.cl/trabaje-con-nosotros/"
+    },
+    {
+      "id": 285,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Empresa Portuaria Iquique — portal propio epi.cl/postulaciones",
+      "notes": "https://epi.cl/postulaciones/"
+    },
+    {
+      "id": 286,
+      "status": "active",
+      "kind": "custom_buk",
+      "reason": "Empresa Portuaria Antofagasta — portal en Buk",
+      "notes": "https://puertoantofagasta.buk.cl/trabaja-con-nosotros"
+    },
+    {
+      "id": 287,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Empresa Portuaria Coquimbo — portal propio puertocoquimbo.cl",
+      "notes": "https://puertocoquimbo.cl/"
+    },
+    {
+      "id": 288,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Empresa Portuaria Valparaíso — portal propio puertovalparaiso.cl",
+      "notes": "https://www.puertovalparaiso.cl"
+    },
+    {
+      "id": 289,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Empresa Portuaria San Antonio — portal propio trabaja-con-nosotros",
+      "notes": "https://www.puertosanantonio.com/trabaja-con-nosotros"
+    },
+    {
+      "id": 290,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Empresa Portuaria Talcahuano — portal propio llamado-a-concurso",
+      "notes": "https://www.puertotalcahuano.cl/llamado-a-concurso/"
+    },
+    {
+      "id": 291,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Empresa Portuaria Puerto Montt — portal propio vacantes",
+      "notes": "https://www.empormontt.cl/vacantes"
+    },
+    {
+      "id": 292,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Empresa Portuaria Chacabuco — portal propio trabaja-con-nosotros",
+      "notes": "https://chacabucoport.cl/index.php/trabaja-con-nosotros/"
+    },
+    {
+      "id": 293,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Empresa Portuaria Austral — portal propio trabaje-con-nosotros",
+      "notes": "https://www.epustral.cl/trabaje-con-nosotros"
+    },
+    {
+      "id": 294,
+      "status": "active",
+      "kind": "custom_buk",
+      "reason": "SASIPA — portal Buk, también publica en EP",
+      "notes": "https://www.sasipa.cl/nosotros/ofertas-de-empleo/"
+    },
+
+    {"_comment": "=== Autónomos / Reguladores ==="},
+
+    {
+      "id": 46,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Contraloría General de la República — portal trabajar-con-nosotros propio",
+      "notes": "https://www.contraloria.cl/web/cgr/trabajar-con-nosotros"
+    },
+    {
+      "id": 145,
+      "status": "active",
+      "kind": "custom_playwright",
+      "reason": "Banco Central — scraper Playwright dedicado (empleos.bcentral.cl requiere JS)",
+      "notes": "https://empleos.bcentral.cl/ + https://www.bcentral.cl/el-banco/trabaja-en-el-bc/oportunidades-de-trabajo"
+    },
+    {
+      "id": 146,
+      "status": "active",
+      "kind": "custom_trabajando",
+      "reason": "Fiscalía de Chile — portal institucional en Trabajando.cl",
+      "notes": "https://fiscaliadechile.trabajando.cl/trabajo-empleo (fallback informativo: https://www.fiscaliadechile.cl/trabaja-con-nosotros)"
+    },
+    {
+      "id": 148,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Defensoría Penal Pública — portal /concursos propio, también publica en EP",
+      "notes": "https://www.dpp.cl/concursos"
+    },
+    {
+      "id": 149,
+      "status": "active",
+      "kind": "custom_trabajando",
+      "reason": "Comisión para el Mercado Financiero — portal en Trabajando.cl",
+      "notes": "https://cmfchile.trabajando.cl"
+    },
+    {
+      "id": 150,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Consejo para la Transparencia — portal trabaja-con-nosotros propio",
+      "notes": "https://www.consejotransparencia.cl/trabaja-con-nosotros/"
+    },
+    {
+      "id": 151,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Comisión Nacional de Acreditación — portal Trabaje-con-nosotros (aspx)",
+      "notes": "https://www.cnachile.cl/Paginas/Trabaje-con-nosotros.aspx"
+    },
+    {
+      "id": 154,
+      "status": "active",
+      "kind": "custom_buk",
+      "reason": "Coordinador Eléctrico Nacional — Buk RRHH. Renderizado server-side (Rails), no requiere JS",
+      "notes": "https://coordinador.buk.cl/trabaja-con-nosotros"
+    },
+    {
+      "id": 155,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Consejo Nacional de Educación — portal propio novedades-y-eventos, también publica en EP",
+      "notes": "https://cned.cl/novedades-y-eventos/"
+    },
+    {
+      "id": 698,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Defensoría de los Derechos de la Niñez — portal propio verificado, también publica en EP",
+      "notes": "https://www.defensorianinez.cl/trabaja-con-nosotros/"
+    },
+    {
+      "id": 700,
+      "status": "active",
+      "kind": "generic",
+      "reason": "INDH — portal de selección propio verificado. No usa empleospublicos.cl",
+      "notes": "https://seleccionpersonal.indh.cl/"
+    },
+
+    {"_comment": "=== Universidades del Estado ==="},
+
+    {
+      "id": 242,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Universidad de Chile — portal empleos.uchile.cl propio",
+      "notes": "https://empleos.uchile.cl/"
+    },
+    {
+      "id": 243,
+      "status": "experimental",
+      "kind": "generic",
+      "reason": "USACH — URL de empleo no es un enlace válido, se usará sitio_web como fallback",
+      "notes": "URL original era un título de página, no una URL"
+    },
+    {
+      "id": 244,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Universidad de Valparaíso — portal cyl.uv.cl/cargos propio",
+      "notes": "https://cyl.uv.cl/cargos"
+    },
+    {
+      "id": 245,
+      "status": "experimental",
+      "kind": "generic",
+      "reason": "Universidad de Antofagasta — URL apunta a intranet/asp, puede no responder externamente",
+      "notes": "https://intranetua.uantof.cl/academicos/pages/academicos.asp?ID=concurso2018"
+    },
+    {
+      "id": 246,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Universidad de La Frontera — portal personas.ufro.cl propio",
+      "notes": "https://personas.ufro.cl/servicio/convocatorias/"
+    },
+    {
+      "id": 247,
+      "status": "active",
+      "kind": "empleos_publicos",
+      "reason": "Universidad de La Serena — no tiene portal propio, publica solo en empleospublicos.cl",
+      "notes": "Cubierto por batch empleospublicos.cl"
+    },
+    {
+      "id": 248,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Universidad del Bío-Bío — portal ubiobio.cl/concursos propio",
+      "notes": "https://ubiobio.cl/concursos/"
+    },
+    {
+      "id": 249,
+      "status": "active",
+      "kind": "custom_trabajando",
+      "reason": "Universidad de Magallanes — portal en Trabajando.cl",
+      "notes": "https://umag.trabajando.cl/"
+    },
+    {
+      "id": 250,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Universidad de Los Lagos — portal ulagos.cl/concursos-publicos propio",
+      "notes": "https://www.ulagos.cl/concursos-publicos/"
+    },
+    {
+      "id": 251,
+      "status": "experimental",
+      "kind": "generic",
+      "reason": "Universidad Arturo Prat — portal PHP legacy (sispartime/llamado.php), puede no ser parseable",
+      "notes": "http://portal.unap.cl/kb/dewey/app/sispartime/llamado.php"
+    },
+    {
+      "id": 252,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Universidad de Tarapacá — portal RRHH propio en zapahuira.uta.cl",
+      "notes": "https://zapahuira.uta.cl/negocio/RRHH/MantLaboral/"
+    },
+    {
+      "id": 253,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Universidad de Atacama — portal uda.cl/concursos-publicos propio",
+      "notes": "https://uda.cl/concursos-publicos/"
+    },
+    {
+      "id": 254,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Universidad Tecnológica Metropolitana — portal empleos.utem.cl propio",
+      "notes": "https://empleos.utem.cl/"
+    },
+    {
+      "id": 255,
+      "status": "experimental",
+      "kind": "generic",
+      "reason": "UMCE — URL apunta a Joomla legacy (umceold.umce.cl), puede estar obsoleto",
+      "notes": "https://umceold.umce.cl/index.php?option=com_content&view=article&id=1126"
+    },
+    {
+      "id": 256,
+      "status": "experimental",
+      "kind": "generic",
+      "reason": "UPLA — URL usa búsqueda interna de noticias, resultados pueden ser inestables",
+      "notes": "https://upla.cl/noticias/?s=concurso+p%C3%Bablico"
+    },
+    {
+      "id": 257,
+      "status": "active",
+      "kind": "custom_trabajando",
+      "reason": "Universidad de Talca — portal en Trabajando.cl",
+      "notes": "https://utalca.trabajando.cl/"
+    },
+    {
+      "id": 258,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Universidad de O'Higgins — portal uoh.cl/trabaja-con-nosotros propio",
+      "notes": "https://www.uoh.cl/trabaja-con-nosotros/"
+    },
+    {
+      "id": 259,
+      "status": "active",
+      "kind": "generic",
+      "reason": "Universidad de Aysén — portal uaysen.cl/trabaja-con-nosotros propio",
+      "notes": "https://uaysen.cl/trabaja-con-nosotros/"
+    },
+
+    {"_comment": "=== CFTs Estatales ==="},
+
+    {
+      "id": 260,
+      "status": "active",
+      "kind": "generic",
+      "reason": "CFT Estatal Arica y Parinacota — portal propio, también publica en EP",
+      "notes": "https://cftestatalaricayparinacota.cl/postulacion-docente-primer-semestre-2026/"
+    },
+    {
+      "id": 261,
+      "status": "active",
+      "kind": "generic",
+      "reason": "CFT Estatal Tarapacá — portal propio trabaja-con-nosotros, también publica en EP",
+      "notes": "https://www.cftestataltarapaca.cl/inicio/trabaja-con-nosotros/"
+    },
+    {
+      "id": 263,
+      "status": "active",
+      "kind": "generic",
+      "reason": "CFT Estatal Atacama — portal propio trabajaconnosotros.html, también publica en EP",
+      "notes": "https://www.cftdeatacama.cl/trabajaconnosotros.html"
+    },
+    {
+      "id": 265,
+      "status": "active",
+      "kind": "generic",
+      "reason": "CFT Estatal Valparaíso — portal propio trabaja-con-nosotros, también publica en EP",
+      "notes": "https://tecnologicovalparaiso.cl/trabaja-con-nosotros/"
+    },
+    {
+      "id": 268,
+      "status": "broken",
+      "kind": "skip",
+      "reason": "CFT Estatal del Maule — solo publica en LinkedIn (no scrapeable). Usar EP como fuente",
+      "notes": "https://www.linkedin.com/company/cft-del-maule/"
+    },
+    {
+      "id": 269,
+      "status": "active",
+      "kind": "generic",
+      "reason": "CFT Estatal Biobío — portal propio ofertas-laborales, también publica en EP",
+      "notes": "https://cftestatalbiobio.cl/ofertas-laborales/"
+    },
+    {
+      "id": 270,
+      "status": "active",
+      "kind": "generic",
+      "reason": "CFT Estatal La Araucanía — portal propio trabaja-con-nosotros, también publica en EP",
+      "notes": "https://cftaraucania.cl/trabaja-con-nosotros/"
+    },
+    {
+      "id": 271,
+      "status": "active",
+      "kind": "generic",
+      "reason": "CFT Estatal Los Ríos — portal propio postulaciondocente, también publica en EP",
+      "notes": "https://postulaciondocente.cftdelosrios.cl"
+    },
+    {
+      "id": 272,
+      "status": "broken",
+      "kind": "skip",
+      "reason": "CFT Estatal de Los Lagos — solo publica en LinkedIn (no scrapeable). Usar EP como fuente",
+      "notes": "https://www.linkedin.com/school/cftregionloslagos/"
+    },
+    {
+      "id": 273,
+      "status": "active",
+      "kind": "generic",
+      "reason": "CFT Estatal Aysén — portal propio concursoscft, también publica en EP",
+      "notes": "https://cftestataldeaysen.cl/concursoscft/"
+    },
+    {
+      "id": 274,
+      "status": "active",
+      "kind": "generic",
+      "reason": "CFT Estatal Magallanes — portal propio trabaja-con-nosotros, también publica en EP",
+      "notes": "https://cftdemagallanes.cl/trabaja-con-nosotros/"
+    },
+
+    {"_comment": "=== Municipios verificados — promovidos tras validación e2e 2026-04-18 ==="},
+
+    {
+      "id": 562,
+      "status": "active",
+      "kind": "wordpress",
+      "frequency_tier": "low",
+      "reason": "Municipalidad de Pucón — WordPress listing verificado (?page_id=89). Solo convocatorias expiradas en evaluación inicial; normal en municipios pequeños",
+      "notes": "https://municipalidadpucon.cl/?page_id=89 — gatekeeper: wordpress_listing, 50% confianza, only_expired_calls"
+    },
+    {
+      "id": 387,
+      "status": "active",
+      "kind": "wordpress",
+      "frequency_tier": "low",
+      "reason": "Municipalidad de Independencia — WordPress trabaja-con-nosotros verificado. Gatekeeper clasifica como wordpress_post por estructura de página, no señal negativa",
+      "notes": "https://www.independencia.cl/trabaja-con-nosotros/ — gatekeeper: wordpress_post, 30% confianza"
+    },
+    {
+      "id": 315,
+      "status": "experimental",
+      "kind": "wordpress",
+      "frequency_tier": "low",
+      "reason": "Municipalidad de Copiapó — WordPress listing verificado pero evidencia contradictoria (15% confianza). Experimental hasta confirmar calidad de extracción",
+      "notes": "https://copiapo.cl/index.php/direccion-rrhh/ — gatekeeper: wordpress_listing, 15% confianza, unknown_status"
+    },
+    {
+      "id": 538,
+      "status": "manual_review",
+      "kind": "generic",
+      "frequency_tier": "eventual",
+      "reason": "Municipalidad de Tucapel — página de transparencia PHP (?id_seccion=18) con listado genérico de documentos, no fichas de oferta parseable. Requiere scraper custom o URL diferente",
+      "notes": "http://www.munitucapel.cl/transparencia/articulos.php?id_seccion=18&id_categoria=105&dominio=M — gatekeeper: listing_page scraper_generic_fallback, 30% confianza, unknown_status"
+    },
+
+    {"_comment": "=== Gobiernos Regionales y Delegaciones Presidenciales ==="},
+
+    {
+      "id": 169,
+      "status": "active",
+      "kind": "generic",
+      "reason": "GORE Arica y Parinacota — portal propio concursos-publicos, también publica en EP",
+      "notes": "https://gorearicayparinacota.gov.cl/index.php/concursos-publicos"
+    },
+    {
+      "id": 170,
+      "status": "experimental",
+      "kind": "generic",
+      "reason": "DPR Arica y Parinacota — publica concursos en sección noticias, también publica en EP",
+      "notes": "https://dpraricayparinacota.dpr.gob.cl/noticias/"
+    },
+    {
+      "id": 175,
+      "status": "active",
+      "kind": "generic",
+      "reason": "GORE Atacama — portal propio concursos-publicos, también publica en EP",
+      "notes": "https://goreatacama.gob.cl/concursos-publicos/"
+    },
+    {
+      "id": 179,
+      "status": "active",
+      "kind": "generic",
+      "reason": "GORE Valparaíso — portal propio concursosPersonal.php, también publica en EP",
+      "notes": "https://www.gobiernovalparaiso.cl/concursosPersonal.php"
+    },
+    {
+      "id": 185,
+      "status": "active",
+      "kind": "generic",
+      "reason": "GORE Maule — portal propio concursos-publicos, también publica en EP",
+      "notes": "https://www.goremaule.cl/goremauleVII/concursos-publicos/"
+    },
+    {
+      "id": 187,
+      "status": "active",
+      "kind": "generic",
+      "reason": "GORE Ñuble — portal propio trabaje-con-nosotros, también publica en EP",
+      "notes": "https://goredenuble.cl/trabaje-con-nosotros/"
+    },
+    {
+      "id": 189,
+      "status": "active",
+      "kind": "generic",
+      "reason": "GORE Biobío — portal propio concursopublicoplanta, también publica en EP",
+      "notes": "https://gorebiobio.cl/concursopublicoplanta/"
+    },
+    {
+      "id": 195,
+      "status": "active",
+      "kind": "generic",
+      "reason": "GORE Los Lagos — portal propio concurso_publico.html, también publica en EP",
+      "notes": "https://www.goreloslagos.cl/gobierno_regional/concurso_publico.html"
+    },
+    {
+      "id": 197,
+      "status": "active",
+      "kind": "generic",
+      "reason": "GORE Aysén — portal propio trabaje-con-nosotros, también publica en EP",
+      "notes": "https://www.goreaysen.cl/trabaje-con-nosotros-2/"
+    },
+    {
+      "id": 199,
+      "status": "active",
+      "kind": "generic",
+      "reason": "GORE Magallanes — portal propio trabaja-en-el-gore, también publica en EP",
+      "notes": "https://www.goremagallanes.cl/trabaja-en-el-gore/"
+    },
+
+    {"_comment": "=== Buk — municipios con portal propio ==="},
+
+    {
+      "id": 394,
+      "status": "active",
+      "kind": "custom_buk",
+      "reason": "Municipalidad de Lo Barnechea — portal en Buk, renderizado server-side",
+      "notes": "https://lobarnechea.buk.cl/trabaja-con-nosotros"
+    }
+  ]
+}

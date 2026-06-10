@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Sitemap-index estático en Cloudflare Pages que delega al sitemap dinámico
+  servido por el backend (Railway). Las URLs internas del dinámico apuntan
+  a https://estadoemplea.pages.dev/... — para que Google las indexe hay
+  que verificar ambos dominios en Search Console.
+-->
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap>
+    <loc>https://contrataoplanta-production.up.railway.app/sitemap.xml</loc>
+  </sitemap>
+</sitemapindex>

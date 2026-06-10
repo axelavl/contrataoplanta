@@ -1,0 +1,18 @@
+[Unit]
+Description=contrata o planta .cl — Scrapers (ejecución única)
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=oneshot
+User=APP_USER
+WorkingDirectory=APP_DIR
+EnvironmentFile=APP_DIR/.env
+ExecStart=APP_DIR/venv/bin/python scrapers/run_all.py --mode production
+TimeoutStartSec=1800
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=contrataoplanta-scrapers
+
+NoNewPrivileges=true
+PrivateTmp=true

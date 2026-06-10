@@ -1,0 +1,54 @@
+<header>
+  <nav>
+    <div class="nav-inner">
+      <a href="index.html" class="logo" aria-label="Inicio · contrata o planta punto cl">
+        <span class="logo-mark" aria-hidden="true">
+          <!-- Logo "o" itálica con punto de acento (v2). Colores inline para
+               que se renderice consistente en light/dark sin depender de CSS. -->
+          <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true">
+            <g transform="translate(16 16) skewX(-10) translate(-16 -16)">
+              <circle cx="14" cy="17" r="7" fill="none" stroke="#F2C26A" stroke-width="2.6"/>
+              <circle cx="21" cy="11" r="2.1" fill="#F2C26A"/>
+            </g>
+          </svg>
+        </span>
+        <span class="logo-wordmark">
+          <span class="logo-name">contrata <em>o</em> planta <em class="logo-domain-muted">.cl</em></span>
+          <span class="logo-tagline">empleo público confiable</span>
+        </span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html" data-nav="home">Buscar empleos</a>
+        <a href="favoritos.html" id="nav-favoritos" class="nav-link-favs" data-nav="favoritos">♡ Mis favoritos</a>
+        <a href="estadisticas.html" data-nav="estadisticas">Estadísticas</a>
+        <a href="faq.html" data-nav="faq">Preguntas frecuentes</a>
+        <a href="ruta-ingreso-empleo-publico.html" data-nav="ruta">Ruta de ingreso</a>
+      </div>
+      <!-- Theme toggle fuera de .nav-links para que siga visible en
+           mobile (donde .nav-links se oculta tras la hamburguesa). -->
+      <div class="theme-toggle" role="group" aria-label="Cambiar tema">
+        <button id="light-btn" type="button" aria-label="Tema claro" title="Tema claro">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+          </svg>
+        </button>
+        <button id="dark-btn" type="button" aria-label="Tema oscuro" title="Tema oscuro">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+      </div>
+      <!-- Botón hamburguesa estático: aparece en mobile aunque
+           `nav-mobile.js` no alcance a inyectarlo (fallo de carga,
+           CSP, etc.). Los 3 spans son las barras; la clase `.abierto`
+           la agrega el JS al abrir. El JS engancha el click al
+           overlay/panel via `document.getElementById('hamburger-btn')`. -->
+      <button class="hamburger" id="hamburger-btn" type="button"
+              aria-label="Abrir menú" aria-expanded="false"
+              aria-controls="nav-mobile-panel">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+</header>
