@@ -915,8 +915,11 @@ async def main(argv: list[str] | None = None) -> int:
                 policy = last_evaluations.get(int(inst_id)).retry_policy if inst_id and last_evaluations.get(int(inst_id)) else "unknown"
                 cooldown_by_policy[policy] = cooldown_by_policy.get(policy, 0) + 1
             log.info("Distribución cooldown por retry_policy: %s", cooldown_by_policy)
+            # Detalle por-fuente solo en DEBUG: en producción son cientos de
+            # líneas que saturan el límite de logs de Railway (500/seg). El
+            # resumen por retry_policy de arriba ya da la visibilidad necesaria.
             for src in in_cooldown:
-                log.info("Fuente omitida por cooldown: id=%s nombre=%s", src.get("id"), src.get("nombre", "?"))
+                log.debug("Fuente omitida por cooldown: id=%s nombre=%s", src.get("id"), src.get("nombre", "?"))
         else:
             log.info("Todas las %d fuentes están listas para evaluación.", len(sources_to_evaluate))
         if reevaluated_in_cooldown:
@@ -937,7 +940,8 @@ async def main(argv: list[str] | None = None) -> int:
     _enforce_playwright_capability(runtime_sources)
     for item in runtime_sources:
         if item.evaluation.decision != Decision.EXTRACT:
-            log.info(
+            # DEBUG: el resumen agregado lo da _print_evaluation_summary abajo.
+            log.debug(
                 "Fuente omitida por evaluador: id=%s nombre=%s decision=%s reason=%s",
                 item.institucion.get("id"),
                 item.institucion.get("nombre", "?"),
