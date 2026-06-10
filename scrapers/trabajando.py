@@ -401,7 +401,8 @@ def _construir_oferta_api(
 
     return {
         "id_externo": generar_id_estable(fuente_id, nombre, cargo, str(id_oferta)),
-        "fuente_id": fuente_id,
+        "institucion_id": fuente_id,  # id del catalogo de instituciones
+        "fuente_id": None,            # FK a fuentes: no aplica a scraper standalone
         "url_original": url,
         "cargo": cargo,
         "descripcion": descripcion[:2000] if len(descripcion) > 30 else None,
@@ -612,7 +613,8 @@ def _construir_oferta_html(cargo: str, contexto: str, url: str, fuente: dict[str
     nombre = fuente.get("nombre") or ""
     return {
         "id_externo": generar_id_estable(fuente_id, nombre, cargo_limpio, contexto[:300]),
-        "fuente_id": fuente_id,
+        "institucion_id": fuente_id,  # id del catalogo de instituciones
+        "fuente_id": None,            # FK a fuentes: no aplica a scraper standalone
         "url_original": url,
         "cargo": cargo_limpio,
         "descripcion": contexto[:2000] if len(contexto) > 30 else None,

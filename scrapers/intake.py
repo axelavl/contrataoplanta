@@ -105,6 +105,31 @@ RENTA_MAX_SOSPECHOSA: int = 15_000_000
 RENTA_MIN_RAZONABLE: int = 250_000  # < $250k mensual no es empleo público real
 
 
+# ─────────────── Fecha desde la URL / cierre futuro inverosímil ────────
+# Muchos sitios WordPress municipales codifican la fecha de publicación en la
+# ruta: /2019/11/13/titulo/. Es la señal más fiable de antigüedad cuando el
+# scraper no extrajo fecha_publicacion del contenido.
+_URL_DATE_RE = re.compile(r"/(20\d{2})/(\d{1,2})/(\d{1,2})(?:/|$)")
+_URL_YM_RE = re.compile(r"/(20\d{2})/(\d{1,2})(?:/|$)")
+
+# Un cierre a más de ~5 meses casi nunca es real en empleo público chileno:
+# suele ser una fecha inventada (se tomó "15 de noviembre" de una noticia vieja
+# y se le puso el año actual/siguiente). No se confía en ella.
+DIAS_CIERRE_FUTURO_MAX: int = 150
+
+# Títulos que NO son cargos: actas, decretos, resultados, etiquetas de
+# navegación y titulares de noticias. Si el CARGO es esto, la fila es basura.
+_NON_JOB_TITLE_PATTERNS: tuple[str, ...] = (
+    r"\bacta\b", r"\blistado final\b", r"\bseleccionad", r"\bganador",
+    r"\badjudicaci", r"\bn[oó]mina\b", r"\bdeliberaci", r"\bdecreto\b",
+    r"\bpr[oó]rroga\b", r"\bampliaci[oó]n de plazo", r"\bproyectos admisibles\b",
+    r"\banexos?\b", r"\bficha de postulaci", r"\bver decreto\b", r"\bver m[aá]s\b",
+    r"\btrabaja con nosotros\b", r"\bpostula aqu[ií]\b", r"^\s*cargos?\s*$",
+    r"\bbases administrativas\b", r"\bhomenaje", r"\bconmemora", r"\baniversario\b",
+)
+_NON_JOB_TITLE_RE = re.compile("|".join(_NON_JOB_TITLE_PATTERNS), re.IGNORECASE)
+
+
 # ─────────────────────────── Resultado ────────────────────────────────
 
 @dataclass(slots=True)
@@ -158,6 +183,33 @@ def _coerce_date(value: Any) -> date | None:
 
 def _today() -> date:
     return datetime.now(timezone.utc).date()
+
+
+def fecha_desde_url(url: Any) -> date | None:
+    """Extrae la fecha de publicación embebida en la ruta (WordPress: /AAAA/MM/DD/)."""
+    sx = str(url or "")
+    m = _URL_DATE_RE.search(sx)
+    if m:
+        try:
+            return date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+        except ValueError:
+            pass
+    m = _URL_YM_RE.search(sx)
+    if m:
+        try:
+            return date(int(m.group(1)), int(m.group(2)), 1)
+        except ValueError:
+            pass
+    return None
+
+
+def titulo_es_no_laboral(cargo: Any) -> bool:
+    """True si el título es un acta/decreto/resultado/etiqueta de navegación
+    o titular de noticia, en vez de un cargo real."""
+    sx = str(cargo or "").strip()
+    if not sx:
+        return False
+    return bool(_NON_JOB_TITLE_RE.search(sx))
 
 
 # ─────────────────────────── Reglas individuales ──────────────────────
@@ -281,10 +333,22 @@ def assess_vigencia(
     if cierre and cierre < today:
         return True, motivo_cierre_vencido, False
 
+    # Una publicación de más de 365 días invalida CUALQUIER fecha de cierre:
+    # un cierre futuro sobre un post tan viejo está inventado. (La fecha puede
+    # venir de la URL /AAAA/MM/DD/ vía fecha_desde_url en el caller.)
+    if publi and (today - publi).days > ANTIGUEDAD_DESCARTE_DIAS:
+        return True, "publicacion_excede_365_dias", False
+
+    cierre_sospechoso = False
     if cierre and cierre >= today:
-        # Hay cierre futuro válido → confiamos en él incluso si la
-        # publicación es antigua (procesos largos legítimos).
-        return False, None, False
+        if (cierre - today).days > DIAS_CIERRE_FUTURO_MAX:
+            # Cierre sospechosamente lejano: probable fecha inventada. No se
+            # confía; se evalúa por antigüedad de publicación más abajo.
+            cierre_sospechoso = True
+        else:
+            # Cierre futuro plausible → confiamos en él aunque la publicación
+            # sea antigua (procesos largos legítimos).
+            return False, None, False
 
     if publi:
         edad = (today - publi).days
@@ -295,6 +359,10 @@ def assess_vigencia(
         if edad > ANTIGUEDAD_OK_DIAS:
             return False, None, True
 
+    if cierre_sospechoso:
+        # Cierre lejano no confiable y sin publicación que lo respalde →
+        # no se descarta en duro (puede ser real), pero se marca para revisión.
+        return False, None, True
     return False, None, False
 
 
@@ -375,6 +443,9 @@ def intake_validate_offer(
     if is_garbage_text(cargo):
         return decision.reject("cargo_es_noticia_o_resultado")
 
+    if titulo_es_no_laboral(cargo):
+        return decision.reject("cargo_no_laboral_acta_decreto_etiqueta")
+
     if is_garbage_text(blob):
         # El blob completo puede contener "noticias", "resultados", etc. por
         # contexto institucional, pero aún así corresponder a un cargo válido
@@ -397,7 +468,7 @@ def intake_validate_offer(
         else "publicacion_excede_180_dias_sin_cierre"
     )
     descartar, motivo_v, review_v = assess_vigencia(
-        offer.get("fecha_publicacion"),
+        offer.get("fecha_publicacion") or fecha_desde_url(url),
         offer.get("fecha_cierre"),
         today=today,
         motivo_cierre_vencido=motivo_cierre,

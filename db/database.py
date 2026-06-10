@@ -127,6 +127,7 @@ def upsert_oferta(db: Session, datos: dict) -> tuple[bool, bool]:
         datos["renta_bruta_max"] = intake_view.get("renta_bruta_max")
 
     datos = normalizar_datos_oferta(datos)
+    datos.setdefault("institucion_id", None)  # FK a instituciones; NULL si no aplica
     url_hash = url_a_hash(datos["url_original"])
     try:
         # ¿Existe?
@@ -141,7 +142,7 @@ def upsert_oferta(db: Session, datos: dict) -> tuple[bool, bool]:
                 INSERT INTO ofertas (
                     id_externo, fuente_id, url_original, url_hash,
                     cargo, descripcion,
-                    institucion_nombre, sector, area_profesional,
+                    institucion_id, institucion_nombre, sector, area_profesional,
                     tipo_cargo, nivel,
                     region, ciudad,
                     renta_bruta_min, renta_bruta_max, renta_texto,
@@ -151,7 +152,7 @@ def upsert_oferta(db: Session, datos: dict) -> tuple[bool, bool]:
                 ) VALUES (
                     :id_externo, :fuente_id, :url_original, :url_hash,
                     :cargo, :descripcion,
-                    :institucion_nombre, :sector, :area_profesional,
+                    (SELECT id FROM instituciones WHERE id = :institucion_id), :institucion_nombre, :sector, :area_profesional,
                     :tipo_cargo, :nivel,
                     :region, :ciudad,
                     :renta_bruta_min, :renta_bruta_max, :renta_texto,

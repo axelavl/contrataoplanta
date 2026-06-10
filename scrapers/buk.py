@@ -337,7 +337,8 @@ def construir_oferta(item: dict[str, Any], det: dict[str, Any],
 
     return {
         "id_externo": generar_id_estable(fuente_id, nombre, cargo, item["url"]),
-        "fuente_id": fuente_id,
+        "institucion_id": fuente_id,  # id del catalogo de instituciones
+        "fuente_id": None,            # FK a fuentes: no aplica a scraper standalone
         "url_original": item["url"],
         "cargo": cargo,
         "descripcion": descripcion[:2000] if len(descripcion) > 30 else None,
