@@ -780,7 +780,17 @@ class EmpleosPublicosScraper(BaseScraper):
     def _extraer_metadata_detalle(self, soup: BeautifulSoup) -> dict[str, Any]:
         meta_container = soup.select_one("#lblAvisoTrabajoDatos")
         meta = self._extraer_mapa_encabezados(meta_container)
-        condiciones = self._texto_seccion_sin_heading(soup.select_one("#lblCondiciones"))
+        # Fallback: el portal migró de la ficha en iframe (#lblAvisoTrabajoDatos)
+        # a render inline por encabezados ("Institución", "Renta Bruta",
+        # "Condiciones", "Tipo de Vacante", ...). Si el contenedor viejo no aporta
+        # la institución, mapeamos por encabezados de TODA la página.
+        if not meta.get("institucion"):
+            meta = {**self._extraer_mapa_encabezados(soup), **meta}
+        condiciones = (
+            self._texto_seccion_sin_heading(soup.select_one("#lblCondiciones"))
+            or clean_text(meta.get("condiciones"))
+            or None
+        )
         return {
             "cargo": clean_text(meta.get("convocatoria") or meta.get("cargo")) or None,
             "institucion_nombre": self._limpiar_jerarquia_institucion(
@@ -919,7 +929,9 @@ class EmpleosPublicosScraper(BaseScraper):
             if any(neg in text or neg in href_low for neg in self._BASES_NEGATIVE_TOKENS):
                 continue
             return urljoin(fallback_url, href)
-        return fallback_url
+        # Sin enlace real a bases: devolver None en vez de la URL de la oferta
+        # (que terminaba guardada como "...aspx#contenido", un enlace muerto).
+        return None
 
     def _extraer_mapa_encabezados(self, container: Tag | None) -> dict[str, str]:
         if not container:

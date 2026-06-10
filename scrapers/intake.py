@@ -230,6 +230,71 @@ def titulo_es_empleo(cargo: Any) -> bool:
     return bool(_JOB_SIGNAL_RE.search(str(cargo or "")))
 
 
+_MESES_ES = {
+    "enero": 1, "febrero": 2, "marzo": 3, "abril": 4, "mayo": 5, "junio": 6,
+    "julio": 7, "agosto": 8, "septiembre": 9, "setiembre": 9, "octubre": 10,
+    "noviembre": 11, "diciembre": 12,
+}
+_FECHA_LARGA_RE = re.compile(r"\b(\d{1,2})\s+de\s+([a-z]+)\s+(?:de(?:l)?\s+)?(\d{4})")
+_FECHA_NUM_RE = re.compile(r"\b(\d{1,2})[/-](\d{1,2})[/-](\d{4})\b")
+# Frases que anuncian explícitamente el cierre, seguidas de una fecha.
+_CIERRE_HINT_RE = re.compile(
+    r"(?:hasta el|durar[a]? hasta el|durar[a]? hasta|plazo[^.]{0,40}?\bal\b|"
+    r"postul\w*[^.]{0,40}?hasta el|recepci[o]n[^.]{0,40}?hasta el|"
+    r"cierre[^.]{0,25}?\bel\b|vence el|t[e]rmino[^.]{0,25}?\bel\b)\s*"
+    r"(\d{1,2})\s+de\s+([a-z]+)(?:\s+de(?:l)?\s+(\d{4}))?",
+)
+
+
+def _fecha_es(dia: str, mes: str, anio: str | None, ref_anio: int) -> "date | None":
+    m = _MESES_ES.get(mes)
+    if not m:
+        return None
+    try:
+        y = int(anio) if anio else ref_anio
+        return date(y, m, int(dia))
+    except (ValueError, TypeError):
+        return None
+
+
+def _todas_las_fechas(texto_norm: str, ref_anio: int) -> list[date]:
+    fechas: list[date] = []
+    for d, mes, y in _FECHA_LARGA_RE.findall(texto_norm):
+        f = _fecha_es(d, mes, y, ref_anio)
+        if f:
+            fechas.append(f)
+    for d, mo, y in _FECHA_NUM_RE.findall(texto_norm):
+        try:
+            fechas.append(date(int(y), int(mo), int(d)))
+        except ValueError:
+            continue
+    return fechas
+
+
+def fecha_cierre_desde_texto(texto: Any, *, today: "date | None" = None) -> "date | None":
+    """Extrae una fecha de cierre embebida en el texto del aviso.
+
+    1) Frase explícita de cierre ("...durará hasta el 19 de marzo del 2026",
+       "plazo de postulación ... al DD de MMMM", "postular hasta el ...").
+    2) Si no hay frase explícita pero TODAS las fechas del proceso ya pasaron,
+       devuelve la última (el proceso terminó → el aviso está vencido).
+    Devuelve None si no hay señal fiable.
+    """
+    t = _norm(texto)
+    if not t:
+        return None
+    today = today or _today()
+    m = _CIERRE_HINT_RE.search(t)
+    if m:
+        f = _fecha_es(m.group(1), m.group(2), m.group(3), today.year)
+        if f:
+            return f
+    fechas = _todas_las_fechas(t, today.year)
+    if fechas and max(fechas) < today:
+        return max(fechas)
+    return None
+
+
 # ─────────────────────────── Reglas individuales ──────────────────────
 
 def is_garbage_text(text: str | None) -> bool:
@@ -486,9 +551,27 @@ def intake_validate_offer(
         if is_wordpress_offer
         else "publicacion_excede_180_dias_sin_cierre"
     )
+    # Si no hay fecha_cierre estructurada, intentar extraerla del propio texto
+    # del aviso ("...durará hasta el 19 de marzo del 2026"). Muchos municipales
+    # la traen solo en la descripción y por eso nunca expiraban.
+    fecha_cierre_efectiva = offer.get("fecha_cierre")
+    _cc = _coerce_date(fecha_cierre_efectiva)
+    _hoy = today or _today()
+    # Re-derivar del texto si no hay cierre, o si el guardado es sospechosamente
+    # lejano (típico año mal parseado: "19 de marzo del 2026" guardado como 2027).
+    _cierre_sospechoso = _cc is not None and (_cc - _hoy).days > DIAS_CIERRE_FUTURO_MAX
+    if _cc is None or _cierre_sospechoso:
+        fc_txt = fecha_cierre_desde_texto(
+            " ".join(str(p) for p in (cargo, descripcion, requisitos) if p),
+            today=today,
+        )
+        if fc_txt is not None:
+            fecha_cierre_efectiva = fc_txt
+            offer.setdefault("fecha_cierre_desde_texto", fc_txt.isoformat())
+
     descartar, motivo_v, review_v = assess_vigencia(
         offer.get("fecha_publicacion") or fecha_desde_url(url),
-        offer.get("fecha_cierre"),
+        fecha_cierre_efectiva,
         today=today,
         motivo_cierre_vencido=motivo_cierre,
         motivo_publicacion_180_sin_cierre=motivo_180,

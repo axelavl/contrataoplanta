@@ -1033,6 +1033,19 @@ async def main(argv: list[str] | None = None) -> int:
         duration_seconds=duration_seconds,
         vencidas_cerradas=vencidas_cerradas,
     )
+
+    # Validación de URLs de ofertas (poblar url_oferta_valida / url_bases_valida,
+    # que el frontend usa para gatear "Ver bases"/"Postular"). Antes lo hacía
+    # run_scrapers.py. max_edad_h=24 → solo revalida lo nuevo o vencido, no todo
+    # cada corrida. Corre en thread (usa su propio asyncio.run) y nunca rompe.
+    if not args.evaluate_only and db_enabled:
+        try:
+            import validate_offer_urls
+            stats_urls = await asyncio.to_thread(validate_offer_urls.main, None, 20, 24)
+            log.info("Validación de URLs de ofertas: %s", stats_urls)
+        except Exception as exc:
+            log.warning("No se pudo validar URLs de ofertas: %s", exc)
+
     if db_enabled:
         cerrar_pool()
 
