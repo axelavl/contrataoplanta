@@ -41,7 +41,7 @@ def main() -> int:
     sql = """
         SELECT id, cargo, url_oferta, url_original, descripcion, requisitos,
                renta_texto, renta_bruta_min, renta_bruta_max,
-               fecha_publicacion, fecha_cierre, plataforma, institucion_nombre
+               fecha_publicacion, fecha_cierre, institucion_nombre
         FROM ofertas
         WHERE activa = TRUE
         ORDER BY id

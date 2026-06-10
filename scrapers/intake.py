@@ -129,6 +129,17 @@ _NON_JOB_TITLE_PATTERNS: tuple[str, ...] = (
 )
 _NON_JOB_TITLE_RE = re.compile("|".join(_NON_JOB_TITLE_PATTERNS), re.IGNORECASE)
 
+# Señales fuertes de que el título SÍ es un empleo. Sirven para anular el
+# descarte por ruta de URL (muchas municipalidades publican sus concursos bajo
+# /noticias/, que de otro modo se tomaría como contenido no laboral).
+_JOB_SIGNAL_PATTERNS: tuple[str, ...] = (
+    r"concurso p[uú]blico", r"llamado a concurso", r"oferta laboral",
+    r"\bvacante", r"\bconvocatoria", r"bases de(?:l)? concurso",
+    r"postular al cargo", r"\bcargo de\b", r"perfil de(?:l)? cargo",
+    r"se requiere", r"se necesita", r"proceso de selecci[oó]n",
+)
+_JOB_SIGNAL_RE = re.compile("|".join(_JOB_SIGNAL_PATTERNS), re.IGNORECASE)
+
 
 # ─────────────────────────── Resultado ────────────────────────────────
 
@@ -210,6 +221,13 @@ def titulo_es_no_laboral(cargo: Any) -> bool:
     if not sx:
         return False
     return bool(_NON_JOB_TITLE_RE.search(sx))
+
+
+def titulo_es_empleo(cargo: Any) -> bool:
+    """True si el título tiene señales fuertes de ser una oferta de empleo.
+    Se usa para no descartar por ruta de URL avisos reales publicados en
+    secciones tipo /noticias/."""
+    return bool(_JOB_SIGNAL_RE.search(str(cargo or "")))
 
 
 # ─────────────────────────── Reglas individuales ──────────────────────
@@ -435,8 +453,9 @@ def intake_validate_offer(
     if is_internal_only(cargo) or is_internal_only(blob):
         return decision.reject("solo_difusion_interna")
 
-    # 3. Basura por URL
-    if is_garbage_url(url):
+    # 3. Basura por URL — salvo que el título sea claramente un empleo
+    #    (muchas municipalidades publican concursos bajo /noticias/).
+    if is_garbage_url(url) and not titulo_es_empleo(cargo):
         return decision.reject("url_no_laboral")
 
     # 4. Basura por texto (combinación de frase + ausencia de señales pos.)
