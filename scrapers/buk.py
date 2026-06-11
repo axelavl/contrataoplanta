@@ -330,9 +330,16 @@ def construir_oferta(item: dict[str, Any], det: dict[str, Any],
 
     texto_total = f"{descripcion} {det.get('requisitos', '')}".lower()
     tipo = "Código del Trabajo"  # Buk lo usan empresas; régimen laboral común
-    if re.search(r"\bcontrata\b", texto_total):
+    # Solo menciones explícitas de calidad contractual: "se contrata" /
+    # "contratación" son verbo, no calidad jurídica.
+    if re.search(
+        r"\ba\s+contrata\b"
+        r"|\bcalidad\s+(?:jur[ií]dica|contractual)?\s*:?\s*(?:de\s+|a\s+|la\s+)?contrata\b"
+        r"|\b(?:v[ií]nculo|estamento|condici[oó]n)\s*:?\s*(?:a\s+|de\s+|la\s+)?contrata\b",
+        texto_total,
+    ):
         tipo = "Contrata"
-    elif "honorario" in texto_total:
+    elif re.search(r"\bhonorarios?\b", texto_total):
         tipo = "Honorarios"
 
     return {

@@ -386,7 +386,10 @@ class GenericSiteScraper(BaseScraper):
             institucion_nombre=str(self.institucion.get("nombre") or self.nombre_fuente),
             descripcion=content_text,
             sector=self.institucion.get("sector"),
-            tipo_cargo=normalize_tipo_contrato(f"{title} {content_text}"),
+            tipo_cargo=normalize_tipo_contrato(
+                f"{title} {content_text}",
+                categoria=self.institucion.get("categoria"),
+            ),
             region=normalize_region(self.institucion.get("region")),
             ciudad=self._infer_city(self.institucion.get("nombre")),
             renta_texto=None,

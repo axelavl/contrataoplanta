@@ -130,6 +130,8 @@ PERFILES: dict[int, dict[str, Any]] = {
         "sector": "Empresa del Estado",
         "region": "Nacional",
         "perfil_url": BASE + "/perfiles/empresa_efe-trenes-de-chile_12041027.html",
+        # Empresa del estado: régimen laboral por defecto
+        "tipo_cargo_default": "Código del Trabajo",
     },
 }
 
@@ -299,7 +301,7 @@ def construir_oferta(item: dict[str, Any], institucion_id: int,
         "institucion_nombre": nombre,
         "sector": empresa.get("sector"),
         "area_profesional": normalizar_area(cargo),
-        "tipo_cargo": None,
+        "tipo_cargo": empresa.get("tipo_cargo_default"),
         "nivel": None,
         "region": empresa.get("region"),
         "ciudad": None,

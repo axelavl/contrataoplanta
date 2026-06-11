@@ -344,17 +344,57 @@ def _parse_ubicacion(ubicacion: str | None) -> tuple[str | None, str | None]:
 
 
 _RENTA_BRUTA_RE = re.compile(
-    r"(?:renta|remuneraci[oó]n|sueldo)[^$]{0,40}brut[ao][^$]{0,40}\$\s*([\d.]{5,12})", re.I)
+    r"(?:renta|remuneraci[oó]n|sueldo)[^$\n]{0,40}brut[ao][^$\n]{0,40}\$\s*([\d.]{5,12})", re.I)
+_RENTA_LIQUIDA_RE = re.compile(
+    r"(?:renta|remuneraci[oó]n|sueldo)[^$\n]{0,40}l[ií]quid[ao][^$\n]{0,40}\$\s*([\d.]{5,12})", re.I)
+# "Renta: $1.200.000" / "sueldo de $950.000" sin calificativo: se asume bruta,
+# que es la convención de los avisos (ventana corta para evitar montos ajenos).
+_RENTA_SIMPLE_RE = re.compile(
+    r"(?:renta|remuneraci[oó]n|sueldo)(?:\s+(?:mensual|ofrecid[ao]|imponible))?"
+    r"\s*(?:de|:)?\s*\$\s*([\d.]{5,12})", re.I)
+
+
+def _monto_pesos(raw: Any) -> int | None:
+    """Limpia y valida un monto en CLP (cordura: 300 mil – 30 millones)."""
+    try:
+        valor = int(str(raw).replace(".", "").replace(",", "").strip())
+    except (TypeError, ValueError):
+        return None
+    if 300_000 <= valor <= 30_000_000:
+        return valor
+    return None
 
 
 def _extraer_renta_bruta(texto: str) -> int | None:
     m = _RENTA_BRUTA_RE.search(texto or "")
     if m:
-        try:
-            return int(m.group(1).replace(".", ""))
-        except ValueError:
-            return None
+        return _monto_pesos(m.group(1))
     return None
+
+
+def _extraer_renta(texto: str) -> tuple[int | None, str | None]:
+    """(renta_bruta, renta_texto) desde la descripción del aviso.
+
+    - Renta bruta explícita → renta_bruta.
+    - Renta líquida → solo renta_texto (no se reporta como bruta).
+    - Renta sin calificativo → renta_bruta (convención de avisos).
+    """
+    t = texto or ""
+    bruta = _extraer_renta_bruta(t)
+    if bruta:
+        return bruta, None
+    m = _RENTA_LIQUIDA_RE.search(t)
+    if m:
+        valor = _monto_pesos(m.group(1))
+        if valor:
+            texto_renta = f"Renta líquida ${valor:,.0f}".replace(",", ".")
+            return None, texto_renta
+    m = _RENTA_SIMPLE_RE.search(t)
+    if m:
+        valor = _monto_pesos(m.group(1))
+        if valor:
+            return valor, None
+    return None, None
 
 
 _NIVEL_API = {
@@ -390,7 +430,14 @@ def _construir_oferta_api(
             renta_texto = f"${detalle['sueldo']:,.0f}".replace(",", ".")
             if detalle.get("nombreMoneda"):
                 renta_texto += f" ({detalle['nombreMoneda']})"
-        renta_bruta = _extraer_renta_bruta(descripcion)
+            # El sueldo numérico de la API también es dato estructurado:
+            # poblar renta_bruta cuando la moneda es CLP (o no se indica).
+            moneda = (detalle.get("nombreMoneda") or "").strip().lower()
+            if moneda in ("", "peso", "pesos", "peso chileno", "pesos chilenos", "clp"):
+                renta_bruta = _monto_pesos(detalle["sueldo"])
+        if renta_bruta is None:
+            renta_bruta, renta_desc_texto = _extraer_renta(descripcion)
+            renta_texto = renta_texto or renta_desc_texto
         tipo_api = (detalle.get("nombreTipoCargo") or "").lower()
         nivel_api = next((v for k, v in _NIVEL_API.items() if k in tipo_api), None)
     if not descripcion:
@@ -634,16 +681,41 @@ def _construir_oferta_html(cargo: str, contexto: str, url: str, fuente: dict[str
     }
 
 
-# ── Heurísticas compartidas (idénticas a v1) ────────────────────────────────
+# ── Heurísticas compartidas ─────────────────────────────────────────────────
+# Calidad contractual: solo menciones EXPLÍCITAS. En trabajando.cl publican
+# principalmente empresas del estado (Código del Trabajo); sus avisos hablan
+# de "planta de revisión", "planta industrial" o "contratación", que NO son
+# calidades jurídicas. Sin matching por substring.
+_TIPO_CONTRATA_RE = re.compile(
+    r"\ba\s+contrata\b"
+    r"|\bcalidad\s+(?:jur[ií]dica|contractual)?\s*:?\s*(?:de\s+|a\s+|la\s+)?contrata\b"
+    r"|\b(?:v[ií]nculo|estamento|condici[oó]n)\s*:?\s*(?:a\s+|de\s+|la\s+)?contrata\b"
+    r"|\btipo\s+de\s+(?:contrato|cargo|vacante|v[ií]nculo)\s*:?\s*contrata\b"
+    r"|\bcontrata\s+(?:asimilad|grado)",
+    re.I,
+)
+_TIPO_PLANTA_RE = re.compile(
+    r"\b(?:cargos?|empleos?|titular)\s+(?:de\s+|a\s+|en\s+(?:la\s+)?)planta\b"
+    r"|\bcalidad\s+(?:jur[ií]dica|contractual)?\s*:?\s*(?:de\s+|la\s+)?planta\b"
+    r"|\b(?:v[ií]nculo|estamento|condici[oó]n)\s*:?\s*(?:de\s+|la\s+)?planta\b"
+    r"|\btipo\s+de\s+(?:contrato|cargo|vacante|v[ií]nculo)\s*:?\s*planta\b"
+    r"|\bplanta\s+(?:directiv|profesional|t[eé]cnic|administrativ|auxiliar|fiscalizador|municipal|titular)"
+    r"|\ba\s+planta\b",
+    re.I,
+)
+
+
 def _detectar_tipo_cargo(texto: str) -> str | None:
-    t = texto.lower()
-    if "planta" in t:
-        return "Planta"
-    if "contrata" in t:
-        return "Contrata"
-    if "honorario" in t:
+    t = texto or ""
+    if re.search(r"\bc[oó]d(?:igo|\.)?\s+(?:del\s+)?trabajo\b", t, re.I):
+        return "Código del Trabajo"
+    if re.search(r"\bhonorarios?\b", t, re.I):
         return "Honorarios"
-    if "reemplazo" in t:
+    if _TIPO_CONTRATA_RE.search(t):
+        return "Contrata"
+    if _TIPO_PLANTA_RE.search(t):
+        return "Planta"
+    if re.search(r"\b(?:reemplazo|suplencia)\b", t, re.I):
         return "Reemplazo"
     return None
 

@@ -309,7 +309,10 @@ class HiringRoomScraper(GenericSiteScraper):
             institucion_nombre=oferta.institucion_nombre,
             descripcion=description,
             sector=oferta.sector,
-            tipo_cargo=normalize_tipo_contrato(f"{oferta.tipo_cargo or ''} {modality_match.group(1) if modality_match else ''}"),
+            tipo_cargo=normalize_tipo_contrato(
+                f"{oferta.tipo_cargo or ''} {modality_match.group(1) if modality_match else ''}",
+                categoria=self.institucion.get("categoria"),
+            ),
             region=oferta.region or normalize_region(self.institucion.get("region")),
             ciudad=city,
             renta_texto=oferta.renta_texto,

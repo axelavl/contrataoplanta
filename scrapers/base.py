@@ -710,7 +710,7 @@ _RE_TIPO_REEMPLAZO = re.compile(r"\b(?:reemplazo|suplencia)\b")
 _RE_TIPO_CONTRATA = re.compile(
     r"(?:"
     r"\ba\s+contrata\b"                                            # "cargo a contrata"
-    r"|\bcalidad\s+(?:juridica\s+|contractual\s+)?(?:de\s+|a\s+)?contrata\b"
+    r"|\bcalidad\s+(?:juridica|contractual)?\s*:?\s*(?:de\s+|a\s+|la\s+)?contrata\b"
     r"|\b(?:vinculo|estamento|condicion)\s*:?\s*(?:a\s+|de\s+|la\s+)?contrata\b"
     r"|\btipo\s+de\s+(?:contrato|cargo|vacante|vinculo)\s*:?\s*contrata\b"
     r"|\bcontrata\s+asimilad"                                      # "contrata asimilada a grado"
@@ -720,7 +720,7 @@ _RE_TIPO_CONTRATA = re.compile(
 _RE_TIPO_PLANTA = re.compile(
     r"(?:"
     r"\b(?:cargos?|empleos?|titular)\s+(?:de\s+|a\s+|en\s+(?:la\s+)?)planta\b"
-    r"|\bcalidad\s+(?:juridica\s+|contractual\s+)?(?:de\s+)?planta\b"
+    r"|\bcalidad\s+(?:juridica|contractual)?\s*:?\s*(?:de\s+|la\s+)?planta\b"
     r"|\b(?:vinculo|estamento|condicion)\s*:?\s*(?:de\s+|la\s+)?planta\b"
     r"|\btipo\s+de\s+(?:contrato|cargo|vacante|vinculo)\s*:?\s*planta\b"
     r"|\bplanta\s+(?:directiv|profesional|tecnic|administrativ|auxiliar|fiscalizador|municipal|titular)"

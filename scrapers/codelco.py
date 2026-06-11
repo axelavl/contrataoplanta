@@ -1,0 +1,502 @@
+"""
+EmpleoEstado.cl — Scraper de empleos de Codelco
+(https://empleos.codelco.cl/search/). Patrón estándar de sesión.
+
+Plataforma SAP SuccessFactors (jobs2web), render en servidor, sin protección
+anti-bot (verificado 06/2026). A diferencia del SuccessFactors del Banco
+Central (vacío), este es el portal canónico y activo de Codelco.
+
+Estructura verificada:
+  Listado /search/?q=&startrow=N  (paginación de a 25):
+    li.job-tile
+      ├ data-url="/job/{slug}/{id_sf}/"  → URL canónica e id estable SF
+      ├ .tiletitle a                      → cargo
+      └ sub-section: "ID de proceso 89453 · Fecha 10 jun 2026 ·
+                      Región 3ra.Reg.Atacama · Código postal 1500000"
+  Detalle /job/...:
+    span[itemprop=description]  → aviso completo, del cual se extraen:
+        "Requisitos de Postulación: ..."           → requisitos_texto
+        "... Postulaciones: 17 de Junio de 2026"   → fecha_cierre
+        "División El Salvador" / "Vicepresidencia" → unidad (a descripción)
+
+VIGENCIA: SuccessFactors solo lista avisos publicados (los cerrados se
+despublican), por lo que todo lo recolectado está vigente; el cierre en BD
+ocurre cuando la oferta desaparece del listado (marcar_ofertas_cerradas).
+Codelco no publica renta. tipo_cargo = "Código del Trabajo" (empresa del
+Estado regida por ese régimen).
+
+Uso:
+    python scrapers/codelco.py --dry-run --verbose
+    python scrapers/codelco.py --dry-run --export ofertas_codelco
+    python scrapers/codelco.py --sin-detalle   # solo listado (rápido)
+"""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import logging
+import random
+import re
+import sys
+import time
+from datetime import date
+from pathlib import Path
+from typing import Any
+from urllib.parse import urljoin
+
+import requests
+from bs4 import BeautifulSoup
+
+# ── Integración con el proyecto (con fallback standalone) ───────────────────
+sys.path.insert(0, str(Path(__file__).parent.parent))
+try:
+    from config import config
+    from db.database import (
+        SessionLocal,
+        generar_id_estable,
+        limpiar_texto,
+        marcar_ofertas_cerradas,
+        normalizar_area,
+        normalizar_region,
+        registrar_log,
+        upsert_oferta,
+    )
+    STANDALONE = False
+except ImportError:
+    STANDALONE = True
+
+    class _Cfg:
+        LOG_DIR = "logs"
+        LOG_LEVEL = "INFO"
+        USER_AGENTS = [
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        ]
+
+    config = _Cfg()  # type: ignore[assignment]
+    SessionLocal = None  # type: ignore[assignment]
+
+    def generar_id_estable(*partes: Any) -> str:  # type: ignore[misc]
+        import hashlib
+        return hashlib.sha1("||".join(str(p) for p in partes).encode()).hexdigest()[:24]
+
+    def limpiar_texto(t: str | None) -> str:  # type: ignore[misc]
+        return re.sub(r"\s+", " ", t or "").strip()
+
+    def normalizar_area(cargo: str) -> str | None:  # type: ignore[misc]
+        return None
+
+    def normalizar_region(r: str) -> str | None:  # type: ignore[misc]
+        return (r or "").strip() or None
+
+    def marcar_ofertas_cerradas(*a: Any, **k: Any) -> int:  # type: ignore[misc]
+        return 0
+
+    def registrar_log(*a: Any, **k: Any) -> None:  # type: ignore[misc]
+        return None
+
+    def upsert_oferta(*a: Any, **k: Any) -> tuple[bool, bool]:  # type: ignore[misc]
+        return False, False
+
+LOG_DIR = Path(config.LOG_DIR)
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+logger = logging.getLogger("scraper.codelco")
+logger.setLevel(getattr(logging, config.LOG_LEVEL))
+if not logger.handlers:
+    fmt = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s - %(message)s")
+    sh = logging.StreamHandler()
+    sh.setFormatter(fmt)
+    fh = logging.FileHandler(LOG_DIR / "codelco.log", encoding="utf-8")
+    fh.setFormatter(fmt)
+    logger.addHandler(sh)
+    logger.addHandler(fh)
+logger.propagate = False
+
+BASE = "https://empleos.codelco.cl"
+SEARCH_PATH = "/search/?q="
+FUENTE = {
+    # id 275 = "CODELCO — Corporación Nacional del Cobre" en el catálogo.
+    # OJO: 166 es ENAER, NO Codelco.
+    "id": 275,
+    "nombre": "CODELCO — Corporación Nacional del Cobre",
+    "sigla": "CODELCO",
+    "sector": "Empresa del Estado",
+    "region": "Nacional",
+    "url_empleo": BASE + "/search/",
+}
+
+HTTP_TIMEOUT = 25
+MAX_RETRIES = 3
+DELAY_DEFAULT = 1.0
+PAGE_SIZE = 25
+MAX_PAGINAS = 20
+
+MESES = {"enero": 1, "febrero": 2, "marzo": 3, "abril": 4, "mayo": 5,
+         "junio": 6, "julio": 7, "agosto": 8, "septiembre": 9, "setiembre": 9,
+         "octubre": 10, "noviembre": 11, "diciembre": 12}
+MESES_ABREV = {"ene": 1, "feb": 2, "mar": 3, "abr": 4, "may": 5, "jun": 6,
+               "jul": 7, "ago": 8, "sep": 9, "set": 9, "oct": 10,
+               "nov": 11, "dic": 12}
+
+_RE_ID_PROCESO = re.compile(r"ID de proceso\s*:?\s*(\d{3,8})", re.I)
+_RE_FECHA_TILE = re.compile(r"Fecha\s*:?\s*(\d{1,2})\s+(\w{3})\.?\s+(\d{4})", re.I)
+_RE_REGION_TILE = re.compile(
+    r"Regi[oó]n\s*:?\s*([\w.°' ]{3,30}?)\s*(?:C[oó]digo|$)", re.I)
+_RE_CIERRE = re.compile(
+    r"(?:Cierre de |t[ée]rmino de )?Postulaci[oó]n(?:es)?\s*:?\s*"
+    r"(?:lunes|martes|mi[ée]rcoles|jueves|viernes|s[áa]bado|domingo)?\s*,?\s*"
+    r"(\d{1,2})\s+de\s+(\w+)\s+de(?:l)?\s+(\d{4})", re.I)
+_RE_VACANTES_DET = re.compile(r"N[úu]mero de vacantes\s*:?\s*(\d{1,3})", re.I)
+_RE_REQUISITOS = re.compile(
+    r"Requisitos de Postulaci[oó]n\s*:?\s*(.{30,2400})", re.I | re.S)
+_RE_DIVISION = re.compile(
+    r"\b(Divisi[oó]n [A-ZÁÉÍÓÚ][\wáéíóúñ ]{2,30}?|Vicepresidencia[\wáéíóúñ ]{0,40}?|Casa Matriz)\b(?=[,.;]|\s[a-z¿])")
+
+CAMPOS_EXPORT = ["id_externo", "fuente_id", "institucion_id", "institucion_nombre", "sector", "cargo",
+                 "area_profesional", "tipo_cargo", "nivel", "region", "ciudad",
+                 "renta_bruta_min", "renta_bruta_max", "renta_texto",
+                 "fecha_publicacion", "fecha_cierre", "url_original",
+                 "descripcion", "requisitos_texto"]
+
+
+# ── HTTP ─────────────────────────────────────────────────────────────────────
+def _session() -> requests.Session:
+    s = requests.Session()
+    s.headers.update({
+        "User-Agent": random.choice(config.USER_AGENTS),
+        "Accept": "text/html,application/xhtml+xml,*/*;q=0.8",
+        "Accept-Language": "es-CL,es;q=0.9,en;q=0.8",
+        "Referer": BASE + "/",
+    })
+    return s
+
+
+def _get(session: requests.Session, url: str) -> requests.Response | None:
+    for intento in range(1, MAX_RETRIES + 1):
+        try:
+            r = session.get(url, timeout=HTTP_TIMEOUT, allow_redirects=True)
+            if r.status_code >= 400:
+                logger.info("  HTTP %s en %s", r.status_code, url[:80])
+                return None
+            return r
+        except requests.RequestException as exc:
+            if intento == MAX_RETRIES:
+                logger.info("  Fallo definitivo %s: %s", url[:80], type(exc).__name__)
+                return None
+            time.sleep(2 ** intento)
+    return None
+
+
+# ── Parseo (puro, testeable sin red) ─────────────────────────────────────────
+def _region_desde_tile(crudo: str) -> str | None:
+    """'3ra.Reg.Atacama' / 'Reg. Metropolitana' -> nombre de región."""
+    s = limpiar_texto(crudo)
+    s = re.sub(r"^\d{1,2}(?:ra|da|ta|va|na|ma)?\s*\.?\s*", "", s, flags=re.I)
+    s = re.sub(r"^Reg(?:i[oó]n)?\.?\s*", "", s, flags=re.I)
+    s = s.strip(" .")
+    if not s:
+        return None
+    if "metropolitana" in s.lower():
+        s = "Metropolitana de Santiago"
+    return normalizar_region(s) or s
+
+
+def parsear_listado(html: str, base_url: str = BASE) -> list[dict[str, Any]]:
+    """Tiles li.job-tile del buscador SuccessFactors."""
+    soup = BeautifulSoup(html, "html.parser")
+    items: list[dict[str, Any]] = []
+    for tile in soup.select("li.job-tile"):
+        data_url = tile.get("data-url") or ""
+        a = tile.select_one(".tiletitle a[href], a.jobTitle-link[href]")
+        href = data_url or (a["href"] if a else "")
+        if not href:
+            continue
+        titulo = limpiar_texto(a.get_text(" ", strip=True)) if a else ""
+        if not titulo:
+            continue
+        texto = limpiar_texto(tile.get_text(" ", strip=True))
+
+        id_sf = None
+        if m := re.search(r"/(\d{6,12})/?$", href):
+            id_sf = m.group(1)
+        id_proceso = None
+        if m := _RE_ID_PROCESO.search(texto):
+            id_proceso = m.group(1)
+
+        fecha_pub = None
+        if m := _RE_FECHA_TILE.search(texto):
+            mes = MESES_ABREV.get(m.group(2).lower()[:3])
+            if mes:
+                try:
+                    fecha_pub = date(int(m.group(3)), mes, int(m.group(1)))
+                except ValueError:
+                    pass
+
+        region = None
+        if m := _RE_REGION_TILE.search(texto):
+            region = _region_desde_tile(m.group(1))
+
+        items.append({
+            "titulo": titulo[:500],
+            "url": urljoin(base_url, href),
+            "id_sf": id_sf,
+            "id_proceso": id_proceso,
+            "fecha_publicacion": fecha_pub,
+            "region": region,
+        })
+    return items
+
+
+def parsear_detalle(html: str) -> dict[str, Any]:
+    """Detalle SF: descripción (itemprop), requisitos, cierre, división."""
+    soup = BeautifulSoup(html, "html.parser")
+    d: dict[str, Any] = {}
+    desc_el = soup.select_one("span[itemprop=description], .jobdescription")
+    if not desc_el:
+        return d
+    texto = limpiar_texto(desc_el.get_text(" ", strip=True))
+    d["aviso"] = texto
+
+    if m := _RE_CIERRE.search(texto):
+        mes = MESES.get(m.group(2).lower())
+        if mes:
+            try:
+                d["fecha_cierre"] = date(int(m.group(3)), mes, int(m.group(1)))
+            except ValueError:
+                pass
+
+    if m := _RE_REQUISITOS.search(texto):
+        bloque = m.group(1)
+        corte = re.search(
+            r"(?:Postulan?do|En Codelco|Diversidad e Inclusi[oó]n|"
+            r"Fecha de t[ée]rmino|Hora de cierre|Si quieres|¿C[oó]mo postular)",
+            bloque, re.I)
+        if corte:
+            bloque = bloque[: corte.start()]
+        d["requisitos"] = limpiar_texto(bloque)[:2000]
+
+    if m := _RE_DIVISION.search(texto):
+        d["division"] = limpiar_texto(m.group(1))
+    if m := _RE_VACANTES_DET.search(texto):
+        d["vacantes"] = int(m.group(1))
+    return d
+
+
+def _nivel(cargo: str) -> str:
+    c = (cargo or "").lower()
+    if any(w in c for w in ("director", "gerente", "subgerente", "jefe", "jefa",
+                            "superintendente")):
+        return "Directivo"
+    if any(w in c for w in ("operador", "operadora", "mantenedor", "mecánico",
+                            "mecanico", "eléctrico de mantenimiento", "soldador",
+                            "técnico", "tecnico", "administrativo", "asistente",
+                            "rigger", "chofer", "conductor")):
+        return "Técnico"
+    return "Profesional"
+
+
+def construir_oferta(item: dict[str, Any], det: dict[str, Any]) -> dict:
+    fuente_id = int(FUENTE["id"])
+    nombre = FUENTE["nombre"]
+    cargo = item["titulo"]
+
+    desc_partes = []
+    if det.get("aviso"):
+        # primer tramo del aviso (sin el boilerplate de diversidad/beneficios)
+        aviso = det["aviso"]
+        corte = re.search(r"(?:Diversidad e Inclusi[oó]n|En Codelco estamos llamados)",
+                          aviso, re.I)
+        desc_partes.append(aviso[: corte.start()] if corte else aviso[:1200])
+    if det.get("division"):
+        desc_partes.append(f"Unidad: {det['division']}")
+    if det.get("vacantes"):
+        desc_partes.append(f"Vacantes: {det['vacantes']}")
+    if item.get("id_proceso"):
+        desc_partes.append(f"ID de proceso: {item['id_proceso']}")
+    descripcion = limpiar_texto(" | ".join(p for p in desc_partes if p))
+
+    id_estable = item.get("id_sf") or item.get("id_proceso") or item["url"]
+
+    return {
+        "id_externo": generar_id_estable(fuente_id, nombre, cargo, str(id_estable)),
+        # patrón "nuevo estándar" (igual que bcentral.py): institucion_id apunta al
+        # catálogo; fuente_id (FK a `fuentes`) no aplica. marcar_ofertas_cerradas
+        # cierra por WHERE institucion_id = :fid cuando un aviso desaparece del listado.
+        "institucion_id": fuente_id,
+        "fuente_id": None,
+        "url_original": item["url"],
+        "cargo": cargo,
+        "descripcion": descripcion[:2000] if len(descripcion) > 30 else None,
+        "institucion_nombre": nombre,
+        "sector": FUENTE["sector"],
+        "area_profesional": normalizar_area(cargo),
+        "tipo_cargo": "Código del Trabajo",  # régimen laboral de Codelco
+        "nivel": _nivel(cargo),
+        "region": item.get("region") or FUENTE["region"],
+        "ciudad": None,  # las faenas/divisiones no equivalen a comuna
+        "renta_bruta_min": None,   # Codelco no publica renta
+        "renta_bruta_max": None,
+        "renta_texto": None,
+        "fecha_publicacion": item.get("fecha_publicacion") or date.today(),
+        "fecha_cierre": det.get("fecha_cierre"),
+        "requisitos_texto": det.get("requisitos"),
+    }
+
+
+# ── Recolección ──────────────────────────────────────────────────────────────
+def recolectar(max_results: int | None, delay: float,
+               con_detalle: bool) -> list[dict]:
+    session = _session()
+    items: list[dict[str, Any]] = []
+    vistos: set[str] = set()
+
+    for pagina in range(MAX_PAGINAS):
+        startrow = pagina * PAGE_SIZE
+        url = f"{BASE}{SEARCH_PATH}" + (f"&startrow={startrow}" if startrow else "")
+        r = _get(session, url)
+        if r is None:
+            break
+        lote = parsear_listado(r.text, BASE)
+        nuevos = 0
+        for it in lote:
+            if it["url"] in vistos:
+                continue
+            vistos.add(it["url"])
+            items.append(it)
+            nuevos += 1
+        logger.info("  startrow=%d: %d ofertas nuevas", startrow, nuevos)
+        if nuevos == 0:
+            break
+        if max_results and len(items) >= max_results:
+            items = items[:max_results]
+            break
+        time.sleep(delay)
+
+    logger.info("  Listado: %d ofertas vigentes", len(items))
+
+    ofertas: list[dict] = []
+    for it in items:
+        det: dict[str, Any] = {}
+        if con_detalle:
+            time.sleep(delay)
+            rd = _get(session, it["url"])
+            if rd is not None:
+                det = parsear_detalle(rd.text)
+        ofertas.append(construir_oferta(it, det))
+    return ofertas
+
+
+# ── Persistencia / export ────────────────────────────────────────────────────
+def _exportar(ofertas: list[dict], prefijo: str) -> None:
+    ser = []
+    for o in ofertas:
+        f = {k: o.get(k) for k in CAMPOS_EXPORT}
+        for k in ("fecha_publicacion", "fecha_cierre"):
+            if isinstance(f[k], date):
+                f[k] = f[k].isoformat()
+        ser.append(f)
+    Path(prefijo + ".json").write_text(
+        json.dumps(ser, ensure_ascii=False, indent=2), encoding="utf-8")
+    with open(prefijo + ".csv", "w", encoding="utf-8-sig", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=CAMPOS_EXPORT)
+        w.writeheader()
+        w.writerows(ser)
+    logger.info("Exportado: %s.json / %s.csv (%d ofertas)", prefijo, prefijo, len(ser))
+
+
+def ejecutar(dry_run=False, verbose=False, max_results=None,
+             delay=DELAY_DEFAULT, con_detalle=True,
+             export=None) -> dict[str, Any]:
+    inicio = time.time()
+    logger.info("=" * 60)
+    logger.info("INICIO - Scraper Codelco%s", " (standalone)" if STANDALONE else "")
+    logger.info("=" * 60)
+    if STANDALONE and not dry_run:
+        logger.warning("Sin módulos del proyecto (config/db): forzando --dry-run")
+        dry_run = True
+
+    stats = {"nuevas": 0, "actualizadas": 0, "cerradas": 0, "errores": 0, "encontradas": 0}
+    fuente_id = int(FUENTE["id"])
+    db = SessionLocal() if (SessionLocal and not dry_run) else None
+    urls_activas: list[str] = []
+    ofertas: list[dict] = []
+
+    try:
+        ofertas = recolectar(max_results, delay, con_detalle)
+        stats["encontradas"] = len(ofertas)
+        logger.info("  → %d ofertas", len(ofertas))
+        for datos in ofertas:
+            urls_activas.append(datos["url_original"])
+            if verbose or dry_run:
+                print(f"  [CODELCO] {datos['cargo'][:50]:50} | "
+                      f"{(datos['region'] or '')[:22]:22} | {datos['nivel']:11} "
+                      f"| cierre: {datos['fecha_cierre']}")
+                if verbose:
+                    print(f"      {datos['url_original'][:105]}")
+            if dry_run or db is None:
+                continue
+            try:
+                nueva, actualizada = upsert_oferta(db, datos)
+                if nueva:
+                    stats["nuevas"] += 1
+                elif actualizada:
+                    stats["actualizadas"] += 1
+            except Exception as exc:
+                stats["errores"] += 1
+                db.rollback()
+                logger.exception("  Error upsert: %s", exc)
+        if db is not None and urls_activas:
+            stats["cerradas"] = marcar_ofertas_cerradas(db, fuente_id, sorted(urls_activas))
+    except Exception as exc:
+        if db is not None:
+            db.rollback()
+        stats["errores"] += 1
+        logger.exception("  Error fuente Codelco: %s", exc)
+    finally:
+        if db is not None:
+            try:
+                db.rollback()
+                registrar_log(db, fuente_id,
+                              "OK" if stats["errores"] == 0 else "PARCIAL",
+                              ofertas_nuevas=stats["nuevas"],
+                              ofertas_actualizadas=stats["actualizadas"],
+                              ofertas_cerradas=stats["cerradas"],
+                              paginas=0, duracion=time.time() - inicio)
+            except Exception:
+                logger.exception("  No se pudo registrar log")
+            db.close()
+
+    if export and ofertas:
+        _exportar(ofertas, export)
+
+    dur = time.time() - inicio
+    logger.info("RESUMEN Codelco: encontradas=%d nuevas=%d act=%d cerradas=%d err=%d (%.1fs)",
+                stats["encontradas"], stats["nuevas"], stats["actualizadas"],
+                stats["cerradas"], stats["errores"], dur)
+    stats["duracion_seg"] = round(dur, 2)
+    stats["status"] = "OK" if stats["errores"] == 0 else "PARCIAL"
+    return stats
+
+
+if __name__ == "__main__":
+    import os
+    os.makedirs(config.LOG_DIR, exist_ok=True)
+    p = argparse.ArgumentParser(
+        description="Scraper empleos Codelco (SuccessFactors)")
+    p.add_argument("--dry-run", action="store_true", help="No guarda en BD")
+    p.add_argument("--verbose", "-v", action="store_true")
+    p.add_argument("--max", type=int, default=None, help="Tope de ofertas")
+    p.add_argument("--delay", type=float, default=DELAY_DEFAULT,
+                   help=f"Pausa entre requests (default {DELAY_DEFAULT}s)")
+    p.add_argument("--sin-detalle", action="store_true",
+                   help="Solo listado (sin requisitos/cierre del aviso)")
+    p.add_argument("--export", default=None, metavar="PREFIJO",
+                   help="Exportar además a PREFIJO.json y PREFIJO.csv")
+    a = p.parse_args()
+    ejecutar(dry_run=a.dry_run, verbose=a.verbose, max_results=a.max,
+             delay=a.delay, con_detalle=not a.sin_detalle, export=a.export)

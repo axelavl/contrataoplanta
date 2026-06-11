@@ -101,6 +101,33 @@ class ContractExtractorTests(unittest.TestCase):
         c, _, _ = extract_contract_info("Sin información de vínculo")
         self.assertIsNone(c)
 
+    # ── Falsos positivos típicos de empresas del estado ──────────────────
+    def test_planta_fisica_no_es_calidad_contractual(self):
+        c, _, _ = extract_contract_info(
+            "Operador para la planta de tratamiento de aguas en la división norte"
+        )
+        self.assertIsNone(c)
+
+    def test_planta_industrial_no_es_calidad_contractual(self):
+        c, _, _ = extract_contract_info("Mantención de equipos en planta industrial de ENAP")
+        self.assertIsNone(c)
+
+    def test_contratacion_no_es_contrata(self):
+        c, _, _ = extract_contract_info("Proceso de contratación de personal para faena")
+        self.assertIsNone(c)
+
+    def test_verbo_contratar_no_es_contrata(self):
+        c, _, _ = extract_contract_info("La empresa contrata ingenieros para sus operaciones")
+        self.assertIsNone(c)
+
+    def test_calidad_juridica_contrata(self):
+        c, _, _ = extract_contract_info("Calidad jurídica: Contrata, grado 12 EUS")
+        self.assertEqual(c, "contrata")
+
+    def test_planta_municipal_explicita(self):
+        c, _, _ = extract_contract_info("Concurso público planta municipal")
+        self.assertEqual(c, "planta")
+
     def test_workday_completa(self):
         _, w, _ = extract_contract_info("Jornada completa de 44 horas")
         self.assertEqual(w, "completa")
