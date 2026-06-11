@@ -133,6 +133,8 @@ _NON_JOB_TITLE_PATTERNS: tuple[str, ...] = (
     r"\bpostulaciones escuela", r"^\s*oportunidades( laborales)?\s*$",
     r"^\s*vacantes\s*$", r"^\s*empleos\s*$", r"^\s*ofertas( laborales| de empleo)?\s*$",
     r"^\s*trabaja con nosotros\s*$", r"^\s*postula\s*$",
+    r"^\s*facebook\s*$", r"^\s*twitt?e?ar?\s*$", r"^\s*compartir\s*$",
+    r"^\s*whatsapp\s*$", r"^\s*x\s*$", r"^\s*linkedin\s*$",
 )
 _NON_JOB_TITLE_RE = re.compile("|".join(_NON_JOB_TITLE_PATTERNS), re.IGNORECASE)
 
@@ -530,6 +532,13 @@ def intake_validate_offer(
     url_low = str(url).lower()
     if any(p in url_low for p in ("oldweb", "web2010", "/web2009", "/archivo/")):
         return decision.reject("url_archivo_viejo")
+
+    # Botones de compartir en redes scrapeados como ofertas.
+    if any(p in url_low for p in (
+        "sharer.php", "facebook.com/sharer", "twitter.com/share",
+        "/intent/tweet", "wa.me/", "api.whatsapp.com", "linkedin.com/share",
+    )):
+        return decision.reject("url_boton_compartir")
 
     # 3b. Basura por URL — salvo que el título sea claramente un empleo
     #     (muchas municipalidades publican concursos bajo /noticias/).
