@@ -54,6 +54,7 @@ from scrapers import carabineros as carabineros_scraper
 from scrapers import trabajando as trabajando_scraper
 from scrapers import buk as buk_scraper
 from scrapers import pdi as pdi_scraper
+from scrapers import bcentral as bcentral_scraper
 from scrapers.runtime_inventory import (
     build_runtime_scraper,
     iter_legacy_rows,
@@ -106,6 +107,10 @@ _POLICIA_PROFILES = {
 # perfiles se excluyen del dispatch de CLASES en main() para que NO corran dos
 # veces; las atienden los batches sync _run_modulo_ejecutar_sync.
 _PERFILES_NUEVO_ESTANDAR: frozenset[str] = frozenset({"carabineros_pdf_first", "ats_trabajando", "ats_buk", "pdi_pdf_first"})
+# Fuentes migradas que NO tienen un perfil propio (el gatekeeper las trata como
+# genéricas): se excluyen del dispatch de clases por id de institución para que
+# generic_site no las scrapee en paralelo. Banco Central (145) = bcentral.py.
+_IDS_NUEVO_ESTANDAR: frozenset[int] = frozenset({145})
 
 
 @lru_cache(maxsize=1)
@@ -959,6 +964,7 @@ async def main(argv: list[str] | None = None) -> int:
         sources_para_clases = [
             it for it in runtime_sources
             if (getattr(it.evaluation, "profile_name", None) or "") not in _PERFILES_NUEVO_ESTANDAR
+            and it.institucion.get("id") not in _IDS_NUEVO_ESTANDAR
         ]
         assignments, run_empleos_publicos = _build_scrapers(sources_para_clases)
         log.info("Scrapers ejecutables en este runtime: %s", len(assignments))
@@ -1002,6 +1008,13 @@ async def main(argv: list[str] | None = None) -> int:
             reports.append(
                 await asyncio.to_thread(
                     _run_modulo_ejecutar_sync, "pdi (162)", pdi_scraper.ejecutar
+                )
+            )
+        hay_bcentral = any(s.get("id") == 145 for s in catalog_sources)
+        if hay_bcentral:
+            reports.append(
+                await asyncio.to_thread(
+                    _run_modulo_ejecutar_sync, "banco central (145)", bcentral_scraper.ejecutar
                 )
             )
 
