@@ -129,6 +129,10 @@ _NON_JOB_TITLE_PATTERNS: tuple[str, ...] = (
     r"^\s*inicio\s*$", r"^\s*acceder\s*$", r"\bdescargar\b", r"\bver llamado\b",
     r"\bver todos\b", r"^\s*bases\s*$", r"\breitera\b", r"\brecuerda\b",
     r"\binforma sobre\b", r"publicaci[o]n .{0,20}?en diario",
+    r"^\s*concursos?\s*$", r"\bbolsa de empleo", r"^\s*postulaciones( y concursos)?\s*$",
+    r"\bpostulaciones escuela", r"^\s*oportunidades( laborales)?\s*$",
+    r"^\s*vacantes\s*$", r"^\s*empleos\s*$", r"^\s*ofertas( laborales| de empleo)?\s*$",
+    r"^\s*trabaja con nosotros\s*$", r"^\s*postula\s*$",
 )
 _NON_JOB_TITLE_RE = re.compile("|".join(_NON_JOB_TITLE_PATTERNS), re.IGNORECASE)
 

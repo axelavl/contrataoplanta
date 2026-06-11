@@ -231,6 +231,15 @@ def marcar_ofertas_cerradas(db: Session, fuente_id: int, urls_activas: list[str]
         return 0
 
     hashes_activos = [url_a_hash(u) for u in urls_activas]
+    # Dominio común de las URLs vistas: el cierre se acota a ofertas de ESE
+    # dominio para no tocar ofertas de la misma institución que vinieron de otra
+    # fuente (p.ej. la misma muni publica en su sitio Y en empleospublicos.cl).
+    from urllib.parse import urlparse as _urlparse
+    _hosts = {
+        _urlparse(u).netloc.lower().removeprefix("www.")
+        for u in urls_activas if u
+    }
+    _dom = next(iter(_hosts)) if len(_hosts) == 1 else ""
 
     # Rollback defensivo previo: en sesión sana es no-op; en sesión con
     # transacción abortada por un upsert previo, evita que el UPDATE
@@ -246,10 +255,11 @@ def marcar_ofertas_cerradas(db: Session, fuente_id: int, urls_activas: list[str]
             SET activa                 = FALSE,
                 actualizada_en         = NOW(),
                 fecha_cierre_detectada = COALESCE(fecha_cierre_detectada, NOW())
-            WHERE fuente_id = :fid
+            WHERE institucion_id = :fid
               AND activa = TRUE
               AND url_hash != ALL(:hashes)
-        """), {"fid": fuente_id, "hashes": hashes_activos})
+              AND (:dom = '' OR url_oferta ILIKE :domlike)
+        """), {"fid": fuente_id, "hashes": hashes_activos, "dom": _dom, "domlike": f"%{_dom}%"})
         db.commit()
         return result.rowcount
     except Exception:

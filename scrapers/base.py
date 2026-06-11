@@ -1533,8 +1533,24 @@ class BaseScraper(abc.ABC):
                 pass
 
     def _cerrar_desaparecidas(self, conn) -> None:
-        """Cierra ofertas que venían activas de esta fuente y que no vimos hoy."""
+        """Cierra ofertas que venían activas de esta fuente y que no vimos hoy.
+
+        Se acota por institucion_id + dominio (fuente_id está sin poblar en la
+        BD). El dominio evita cerrar ofertas de la misma institución que llegaron
+        por otra fuente (p.ej. empleospublicos.cl). Conservador: sin id o sin
+        dominio claro, no cierra nada.
+        """
         if not self._hashes_vistos:
+            return
+        from urllib.parse import urlparse as _urlparse
+        inst = getattr(self, "institucion", None) or {}
+        iid = inst.get("id")
+        host = _urlparse(
+            str(inst.get("url_empleo") or inst.get("sitio_web") or "")
+        ).netloc.lower()
+        if host.startswith("www."):
+            host = host[4:]
+        if not iid or not host:
             return
         with conn.cursor() as cur:
             cur.execute(
@@ -1542,17 +1558,18 @@ class BaseScraper(abc.ABC):
                 UPDATE ofertas
                 SET activa = FALSE,
                     actualizada_en = NOW(),
-                    fecha_cierre_detectada = NOW()
-                WHERE fuente_id = %s
+                    fecha_cierre_detectada = COALESCE(fecha_cierre_detectada, NOW())
+                WHERE institucion_id = %s
                   AND activa = TRUE
                   AND url_hash IS NOT NULL
                   AND url_hash <> ALL(%s)
+                  AND url_oferta ILIKE %s
                 """,
-                (self.fuente_id, list(self._hashes_vistos)),
+                (iid, list(self._hashes_vistos), f"%{host}%"),
             )
             cerradas = cur.rowcount
         if cerradas > 0:
-            self.log.info("Cerradas %s ofertas desaparecidas", cerradas)
+            self.log.info("Cerradas %s ofertas desaparecidas (inst=%s dom=%s)", cerradas, iid, host)
 
 
 # ═══════════════════════════════════════════════════════════════════
