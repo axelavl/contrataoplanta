@@ -2094,7 +2094,15 @@ class LegacyBaseScraper(abc.ABC):
             return exact
 
         for candidate_key, candidate_id in self._institucion_lookup["exact"].items():
-            if key in candidate_key or candidate_key in key:
+            if candidate_key == key:
+                return candidate_id
+            # Substring solo si es SUSTANCIAL: evita que siglas o palabras cortas
+            # (p.ej. la sigla "sp" dentro de "hoSPital") produzcan matches espurios
+            # —era la causa de que ofertas de hospitales cayeran en otra institución.
+            shorter, longer = (
+                (candidate_key, key) if len(candidate_key) <= len(key) else (key, candidate_key)
+            )
+            if len(shorter) >= 6 and shorter in longer and len(shorter) / len(longer) >= 0.6:
                 return candidate_id
 
         choices = list(self._institucion_lookup["names"])

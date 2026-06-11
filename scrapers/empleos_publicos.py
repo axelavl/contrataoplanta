@@ -672,9 +672,12 @@ class EmpleosPublicosScraper(BaseScraper):
             resultado["fecha_cierre"] = fecha_cierre
 
         resultado["url_bases"] = self._extraer_url_bases(soup, resultado["url_oferta"])
-        resultado["institucion_id"] = resultado.get("institucion_id") or self.match_institucion_id(
-            resultado.get("institucion_nombre")
+        inst_id, inst_nombre = self._resolver_institucion(
+            metadata.get("institucion_jerarquia") or resultado.get("institucion_nombre")
         )
+        resultado["institucion_id"] = resultado.get("institucion_id") or inst_id
+        if inst_nombre:
+            resultado["institucion_nombre"] = truncate(inst_nombre, 300)
         return resultado
 
     def _detectar_siguiente_pagina(self, html: str, current_url: str) -> PageRequest | None:
@@ -777,6 +780,30 @@ class EmpleosPublicosScraper(BaseScraper):
         partes = [p.strip() for p in texto.split("/") if p.strip()]
         return partes[-1] if partes else None
 
+    def _resolver_institucion(self, jerarquia: str | None) -> tuple[int | None, str | None]:
+        """Resuelve (institucion_id, institucion_nombre) desde la jerarquía del
+        aviso ("Ministerio de Salud / Servicio de Salud X / Hospital Y").
+
+        Prueba los segmentos del más específico al más general y se queda con el
+        primero que matchee el catálogo (los hospitales/CRS no suelen estar, pero
+        el Servicio de Salud sí). Si nada matchea, devuelve como nombre el
+        segmento "Servicio de Salud" cuando existe, para no dejarlo sin organismo.
+        """
+        texto = clean_text(jerarquia)
+        if not texto:
+            return None, None
+        segmentos = [p.strip() for p in texto.split("/") if p.strip()]
+        if not segmentos:
+            return None, None
+        for seg in reversed(segmentos):
+            iid = self.match_institucion_id(seg)
+            if iid:
+                return iid, seg
+        servicio = next(
+            (sg for sg in segmentos if "servicio de salud" in normalize_key(sg)), None
+        )
+        return None, servicio or segmentos[-1]
+
     def _extraer_metadata_detalle(self, soup: BeautifulSoup) -> dict[str, Any]:
         meta_container = soup.select_one("#lblAvisoTrabajoDatos")
         meta = self._extraer_mapa_encabezados(meta_container)
@@ -795,6 +822,9 @@ class EmpleosPublicosScraper(BaseScraper):
             "cargo": clean_text(meta.get("convocatoria") or meta.get("cargo")) or None,
             "institucion_nombre": self._limpiar_jerarquia_institucion(
                 clean_text(meta.get("institucion") or meta.get("institucion / entidad"))
+            ) or None,
+            "institucion_jerarquia": clean_text(
+                meta.get("institucion") or meta.get("institucion / entidad")
             ) or None,
             "area_profesional": clean_text(meta.get("area de trabajo")) or None,
             "tipo_contrato": normalize_tipo_contrato(meta.get("tipo de vacante")),

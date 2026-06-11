@@ -126,6 +126,9 @@ _NON_JOB_TITLE_PATTERNS: tuple[str, ...] = (
     r"\banexos?\b", r"\bficha de postulaci", r"\bver decreto\b", r"\bver m[aá]s\b",
     r"\btrabaja con nosotros\b", r"\bpostula aqu[ií]\b", r"^\s*cargos?\s*$",
     r"\bbases administrativas\b", r"\bhomenaje", r"\bconmemora", r"\baniversario\b",
+    r"^\s*inicio\s*$", r"^\s*acceder\s*$", r"\bdescargar\b", r"\bver llamado\b",
+    r"\bver todos\b", r"^\s*bases\s*$", r"\breitera\b", r"\brecuerda\b",
+    r"\binforma sobre\b", r"publicaci[o]n .{0,20}?en diario",
 )
 _NON_JOB_TITLE_RE = re.compile("|".join(_NON_JOB_TITLE_PATTERNS), re.IGNORECASE)
 
@@ -518,8 +521,14 @@ def intake_validate_offer(
     if is_internal_only(cargo) or is_internal_only(blob):
         return decision.reject("solo_difusion_interna")
 
-    # 3. Basura por URL — salvo que el título sea claramente un empleo
-    #    (muchas municipalidades publican concursos bajo /noticias/).
+    # 3a. URLs de archivo histórico del sitio (concursos viejos rearchivados):
+    #     señal fuerte de contenido vencido, sin importar el título.
+    url_low = str(url).lower()
+    if any(p in url_low for p in ("oldweb", "web2010", "/web2009", "/archivo/")):
+        return decision.reject("url_archivo_viejo")
+
+    # 3b. Basura por URL — salvo que el título sea claramente un empleo
+    #     (muchas municipalidades publican concursos bajo /noticias/).
     if is_garbage_url(url) and not titulo_es_empleo(cargo):
         return decision.reject("url_no_laboral")
 
