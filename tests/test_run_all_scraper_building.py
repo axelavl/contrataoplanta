@@ -51,7 +51,8 @@ def test_build_scrapers_maps_pdf_first_and_custom_detail():
     names = [type(assignment.scraper).__name__ for assignment in assignments]
     # carabineros_pdf_first fue migrado a módulo ejecutar(): cae al genérico
     # aquí (en main() se filtra). pdi y ffaa siguen siendo clases dedicadas.
-    assert names == ["GenericSiteScraper", "PdiScraper", "FfaaScraper"]
+    # carabineros y pdi migrados a módulos ejecutar(): caen al genérico aquí.
+    assert names == ["GenericSiteScraper", "GenericSiteScraper", "FfaaScraper"]
     assert run_empleos_publicos is False
 
 

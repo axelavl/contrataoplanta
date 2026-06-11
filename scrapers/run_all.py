@@ -53,6 +53,7 @@ from scrapers.empleos_publicos import EmpleosPublicosScraper
 from scrapers import carabineros as carabineros_scraper
 from scrapers import trabajando as trabajando_scraper
 from scrapers import buk as buk_scraper
+from scrapers import pdi as pdi_scraper
 from scrapers.runtime_inventory import (
     build_runtime_scraper,
     iter_legacy_rows,
@@ -104,7 +105,7 @@ _POLICIA_PROFILES = {
 # en scrapers/carabineros.py y scrapers/trabajando.py. Las fuentes con estos
 # perfiles se excluyen del dispatch de CLASES en main() para que NO corran dos
 # veces; las atienden los batches sync _run_modulo_ejecutar_sync.
-_PERFILES_NUEVO_ESTANDAR: frozenset[str] = frozenset({"carabineros_pdf_first", "ats_trabajando", "ats_buk"})
+_PERFILES_NUEVO_ESTANDAR: frozenset[str] = frozenset({"carabineros_pdf_first", "ats_trabajando", "ats_buk", "pdi_pdf_first"})
 
 
 @lru_cache(maxsize=1)
@@ -994,6 +995,13 @@ async def main(argv: list[str] | None = None) -> int:
             reports.append(
                 await asyncio.to_thread(
                     _run_modulo_ejecutar_sync, "buk.cl", buk_scraper.ejecutar
+                )
+            )
+        hay_pdi = any(s.get("id") == 162 for s in catalog_sources)
+        if hay_pdi:
+            reports.append(
+                await asyncio.to_thread(
+                    _run_modulo_ejecutar_sync, "pdi (162)", pdi_scraper.ejecutar
                 )
             )
 

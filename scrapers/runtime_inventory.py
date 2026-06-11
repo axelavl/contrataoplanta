@@ -35,7 +35,6 @@ PRODUCTION_RUNTIME_MODULES: tuple[RuntimeModule, ...] = (
     RuntimeModule(ExtractorKind.SCRAPER_WORDPRESS_NEWS_FILTER, "*", "scrapers.plataformas.wordpress", "WordPressScraper"),
     RuntimeModule(ExtractorKind.SCRAPER_EXTERNAL_ATS, "ats_hiringroom", "scrapers.plataformas.hiringroom", "HiringRoomScraper"),
     RuntimeModule(ExtractorKind.SCRAPER_EXTERNAL_ATS, "*", "scrapers.plataformas.generic_site", "GenericSiteScraper"),
-    RuntimeModule(ExtractorKind.SCRAPER_PDF_JOBS, "pdi_pdf_first", "scrapers.plataformas.pdi", "PdiScraper"),
     RuntimeModule(ExtractorKind.SCRAPER_PDF_JOBS, "*", "scrapers.plataformas.generic_site", "GenericSiteScraper"),
     RuntimeModule(ExtractorKind.SCRAPER_CUSTOM_DETAIL, "ffaa_waf", "scrapers.plataformas.ffaa", "FfaaScraper"),
     RuntimeModule(ExtractorKind.SCRAPER_CUSTOM_DETAIL, "*", "scrapers.plataformas.generic_site", "GenericSiteScraper"),
