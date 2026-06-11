@@ -35,7 +35,7 @@ DATE_PATTERNS = [
     re.compile(
         r"\b(?:lunes|martes|miercoles|miércoles|jueves|viernes|sabado|sábado|domingo)?"
         r"\s*(?P<day>\d{1,2})\s+de\s+(?P<month_name>[a-zA-Záéíóúñ]+)"
-        r"(?:\s+de\s+(?P<year>\d{4}))?\b",
+        r"(?:\s+del?\s+(?P<year>\d{4}))?\b",
         re.IGNORECASE,
     ),
 ]
@@ -80,20 +80,28 @@ def _safe_date(year: int, month: int, day: int) -> date | None:
 
 
 def _infer_year(day: int, month: int, reference_date: date, *, prefer_future: bool) -> date | None:
+    """Infiere el año cuando el texto no lo trae.
+
+    - Deadline (prefer_future): solo se acepta un futuro CERCANO (<=150 días).
+      Si la fecha de este año ya pasó, NO se asume el año entrante (esos casos
+      casi siempre son avisos viejos, no del próximo año) → se devuelve None.
+    - Publicación/fecha genérica: la más cercana, con sesgo al pasado.
+    """
     candidates = [
         _safe_date(reference_date.year - 1, month, day),
         _safe_date(reference_date.year, month, day),
         _safe_date(reference_date.year + 1, month, day),
     ]
     valid = [item for item in candidates if item is not None]
-    windowed = [item for item in valid if -30 <= (item - reference_date).days <= 365]
-    if not windowed:
+    if not valid:
         return None
     if prefer_future:
-        future = [item for item in windowed if item >= reference_date]
-        if future:
-            return min(future)
-    return min(windowed, key=lambda item: abs((item - reference_date).days))
+        future = [c for c in valid if 0 <= (c - reference_date).days <= 150]
+        return min(future) if future else None
+    windowed = [c for c in valid if -400 <= (c - reference_date).days <= 60]
+    if not windowed:
+        return None
+    return min(windowed, key=lambda c: abs((c - reference_date).days))
 
 
 def parse_date_string(raw_text: str, *, reference_date: date | None = None, prefer_future: bool = False) -> date | None:
