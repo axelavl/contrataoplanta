@@ -19,9 +19,12 @@ Esta migración:
 Idempotente: correr `alembic upgrade head` sobre una DB ya migrada es no-op.
 `downgrade()` es no-op a propósito (no queremos perder el historial de logs).
 
-Revision ID: 20260611_0002_logs_scraping_sin_fk
+Revision ID: 20260611_0002_logs_sin_fk
 Revises: 20260420_0001_sync_api_schema
 Create Date: 2026-06-11
+
+Nota: el ID de revisión se mantiene corto (<=32 chars) porque
+`alembic_version.version_num` es VARCHAR(32).
 """
 from __future__ import annotations
 
@@ -30,7 +33,7 @@ from typing import Sequence, Union
 from alembic import op
 
 
-revision: str = "20260611_0002_logs_scraping_sin_fk"
+revision: str = "20260611_0002_logs_sin_fk"
 down_revision: Union[str, None] = "20260420_0001_sync_api_schema"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
