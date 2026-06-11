@@ -142,12 +142,48 @@ _NON_JOB_TITLE_RE = re.compile("|".join(_NON_JOB_TITLE_PATTERNS), re.IGNORECASE)
 # descarte por ruta de URL (muchas municipalidades publican sus concursos bajo
 # /noticias/, que de otro modo se tomaría como contenido no laboral).
 _JOB_SIGNAL_PATTERNS: tuple[str, ...] = (
-    r"concurso p[uú]blico", r"llamado a concurso", r"oferta laboral",
+    r"concurso p[uú]blico", r"llamado a concurso", r"llaman? a concurso",
+    r"concurso de personal", r"oferta laboral",
     r"\bvacante", r"\bconvocatoria", r"bases de(?:l)? concurso",
-    r"postular al cargo", r"\bcargo de\b", r"perfil de(?:l)? cargo",
+    # "(?<!a )" evita que la locución noticiosa "a cargo de" cuente como señal.
+    r"postular al cargo", r"(?<!a )\bcargo de\b", r"perfil de(?:l)? cargo",
     r"se requiere", r"se necesita", r"proceso de selecci[oó]n",
+    r"selecci[oó]n de personal", r"recepci[oó]n de antecedentes",
+    r"presentaci[oó]n de antecedentes",
 )
 _JOB_SIGNAL_RE = re.compile("|".join(_JOB_SIGNAL_PATTERNS), re.IGNORECASE)
+
+# Titulares de gestión municipal / noticias institucionales. Un post cuyo
+# título calza con estos patrones es casi siempre cobertura de prensa del
+# municipio (actividades del alcalde, reuniones, inauguraciones, campañas),
+# NO un aviso de empleo. A diferencia de _NON_JOB_TITLE_PATTERNS, estos
+# patrones son anulables por una señal laboral fuerte en el mismo título
+# (_JOB_SIGNAL_RE), porque algunos municipios titulan concursos reales como
+# "¡Participa! Concurso público ...".
+_NEWS_TITLE_PATTERNS: tuple[str, ...] = (
+    r"\balcaldes?a?\b",
+    r"\bse re[uú]n(?:e|en|i[oó])\b",
+    r"\breuni[oó]n\b",
+    r"\bparticip(?:a|an|aron|[oó])\b",
+    r"\binaugur",
+    r"\bencabez",
+    r"\bcelebr(?:a|an|[oó]|aci[oó]n)\b",
+    r"\bvisit(?:a|an|[oó]|aron)\b\s+(?:a|de|del|la|el|los|las)\b",
+    r"\bfirma de convenio\b",
+    r"\blanzamiento\b",
+    r"\basambleas?\b",
+    r"\bcampa[nñ]as?\b",
+    r"\bentrega de terreno\b",
+    r"\bya es una realidad\b",
+    r"\bte ayuda\b",
+    r"\belecciones?\b",
+    r"\bdirectorios\b",
+    r"\brevisaron\b",
+    r"\bcuenta p[uú]blica\b",
+    r"\bferia\b",
+    r"\boperativo (?:de|m[eé]dico|social|veterinario)\b",
+)
+_NEWS_TITLE_RE = re.compile("|".join(_NEWS_TITLE_PATTERNS), re.IGNORECASE)
 
 
 # ─────────────────────────── Resultado ────────────────────────────────
@@ -237,6 +273,17 @@ def titulo_es_empleo(cargo: Any) -> bool:
     Se usa para no descartar por ruta de URL avisos reales publicados en
     secciones tipo /noticias/."""
     return bool(_JOB_SIGNAL_RE.search(str(cargo or "")))
+
+
+def titulo_es_noticia(cargo: Any) -> bool:
+    """True si el título parece un titular de prensa municipal (actividades
+    del alcalde, reuniones, inauguraciones, campañas) SIN señal laboral
+    fuerte que lo respalde. Los scrapers de sitios municipales (WordPress)
+    deben usarlo como filtro previo."""
+    sx = str(cargo or "")
+    if not sx.strip():
+        return False
+    return bool(_NEWS_TITLE_RE.search(sx)) and not titulo_es_empleo(sx)
 
 
 _MESES_ES = {
@@ -552,6 +599,11 @@ def intake_validate_offer(
     if titulo_es_no_laboral(cargo):
         return decision.reject("cargo_no_laboral_acta_decreto_etiqueta")
 
+    # Titulares de prensa municipal (alcalde, reuniones, inauguraciones...)
+    # sin señal laboral fuerte en el título → no es una oferta.
+    if titulo_es_noticia(cargo):
+        return decision.reject("titulo_noticia_municipal")
+
     if is_garbage_text(blob):
         # El blob completo puede contener "noticias", "resultados", etc. por
         # contexto institucional, pero aún así corresponder a un cargo válido
@@ -647,4 +699,8 @@ __all__ = [
     "is_garbage_text",
     "is_garbage_url",
     "is_internal_only",
+    "titulo_es_empleo",
+    "titulo_es_no_laboral",
+    "titulo_es_noticia",
 ]
+# (fin del módulo)

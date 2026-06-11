@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 
 from scrapers.evaluation.models import QualityDecision
 from scrapers.evaluation.reason_codes import ReasonCode
@@ -128,7 +128,8 @@ def test_salary_unit_mixed_moves_to_review_with_trace():
             "institucion_nombre": "Servicio C",
             "cargo": "Profesional TI",
             "url_oferta": "https://servicio-c.cl/ofertas/ti",
-            "fecha_cierre": "2026-06-01",
+            # Fecha futura dinámica: una fecha fija expira y rompe el test.
+            "fecha_cierre": (date.today() + timedelta(days=30)).isoformat(),
             "renta_bruta_max": 2400000,
             "renta_texto": "Renta mensual referencial, monto anual total según convenio.",
         }

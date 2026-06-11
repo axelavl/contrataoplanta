@@ -24,6 +24,7 @@ from scrapers.base import (
     parse_date,
     parse_renta,
 )
+from scrapers.intake import titulo_es_noticia
 
 
 class WordPressScraper(BaseScraper):
@@ -107,7 +108,10 @@ class WordPressScraper(BaseScraper):
             "cargo": title,
             "descripcion": descripcion,
             "requisitos": requisitos,
-            "tipo_contrato": normalize_tipo_contrato(f"{title} {content_text}"),
+            "tipo_contrato": normalize_tipo_contrato(
+                f"{title} {content_text}",
+                categoria=self.institucion.get("categoria"),
+            ),
             "region": normalize_region(self.institucion.get("region")),
             "ciudad": self._inferir_ciudad(self.institucion.get("nombre")),
             "renta_bruta_min": renta_min,
@@ -547,62 +551,70 @@ class WordPressScraper(BaseScraper):
         text = re.sub(r"^Municipalidad de\s+", "", text, flags=re.IGNORECASE).strip()
         return text or None
 
-    # Palabras que en el TÍTULO indican fuertemente un aviso de empleo
-    _TITLE_JOB_KEYWORDS = (
-        "concurso publico",
-        "llamado a concurso",
-        "proceso de seleccion",
-        "cargo",
-        "vacante",
-        "honorario",
-        "contrata",
-        "planta",
-        "postulacion",
-        "seleccion de personal",
-        "reclutamiento",
-        "profesional",
-        "tecnico",
-        "auxiliar",
-        "administrativo",
-        "asistente",
-        "inspector",
-        "conductor",
-        "chofer",
-        "enfermero",
-        "enfermera",
-        "medico",
-        "medica",
-        "abogado",
-        "abogada",
-        "director",
-        "directora",
-        "jefe",
-        "jefa",
-        "coordinador",
-        "coordinadora",
-        "encargado",
-        "encargada",
+    # Señales FUERTES en el título: el post anuncia un proceso de contratación.
+    # Sobre texto ya normalizado (normalize_key: minúsculas, sin tildes).
+    _TITLE_STRONG_RE = re.compile(
+        r"concursos? publicos?"
+        r"|concursos? internos?"
+        r"|concursos? de personal"
+        r"|llamad[oa]s? a concurso"
+        r"|llaman? a concurso"
+        r"|llamad[oa]s? a postulacion"
+        r"|procesos? de seleccion"
+        r"|seleccion de personal"
+        r"|\breclutamiento\b"
+        r"|\bvacantes?\b"
+        r"|bases (?:de l?|del? )?concursos?"
+        r"|provision (?:de l|del? )?cargos?"
+        r"|proveer (?:el |los )?cargos?"
+        r"|presentacion de antecedentes"
+        r"|recepcion de antecedentes"
+        r"|\bsuplencias?\b"
+        r"|\breemplazos?\b"
+        r"|\bhonorarios?\b"
+        r"|\bcontratas?\b"
+        # "cargo" sólo con límites de palabra y no en la locución "a cargo de"
+        # (típica de noticias: "empresa a cargo de la obra").
+        r"|(?<!a )\bcargos?\b"
+        r"|\bpostulacion(?:es)?\b"
+        r"|\bconvocatorias?\b"
     )
-    # Palabras en el título que DESCARTAN el post aunque tenga otras señales
-    _TITLE_NEGATIVE_KEYWORDS = (
-        "resultado",
-        "ganador",
-        "ganadora",
-        "adjudicacion",
-        "licitacion",
-        "acta",
-        "resolucion exenta",
-        "decreto",
-        "acuerdo",
-        "nomina",
-        "lista de",
-        "informe",
-        "rendicion",
-        "invitacion a",
-        "taller",
-        "capacitacion",
-        "seminario",
-        "webinar",
+    # Roles/cargos genéricos: por sí solos NO bastan (los titulares de prensa
+    # municipal están llenos de "director", "encargado", etc.). Sólo cuentan
+    # si además hay contexto de contratación en título o contenido.
+    _TITLE_ROLE_RE = re.compile(
+        r"\b(?:director(?:a|es)?|jefe|jefa|coordinador(?:a|es)?|encargad[oa]s?"
+        r"|profesional(?:es)?|tecnicos?|administrativos?|auxiliar(?:es)?"
+        r"|asistentes?|inspector(?:a|es)?|conductor(?:a|es)?|chofer(?:es)?"
+        r"|enfermer[oa]s?|medic[oa]s?|abogad[oa]s?|psicolog[oa]s?|matron(?:a|es)?"
+        r"|trabajador(?:a|es)? social(?:es)?)\b"
+    )
+    _HIRING_CONTEXT_RE = re.compile(
+        r"\bconcursos?\b|\bpostulacion(?:es)?\b|\bpostular\b|\bpostulantes?\b"
+        r"|\bantecedentes\b|\brequisitos\b|\bvacantes?\b|\bllamado\b"
+        r"|\bcontratacion\b|se requiere|se necesita|\bcurriculum\b|\bcv\b"
+        r"|perfil del? cargo|\bremuneracion\b|\brenta\b|\bgrado\b"
+    )
+    # Señales en el contenido para el fallback (requiere >= 2 distintas).
+    _CONTENT_SIGNAL_RES = (
+        re.compile(r"\bconcursos?\b"),
+        re.compile(r"(?<!a )\bcargos?\b"),
+        re.compile(r"\bpostulacion(?:es)?\b|\bpostular\b"),
+        re.compile(r"\bseleccion\b"),
+        re.compile(r"\bcontratas?\b"),
+        re.compile(r"\bantecedentes\b"),
+    )
+    # Palabras en el título que DESCARTAN el post aunque tenga otras señales.
+    _TITLE_NEGATIVE_RE = re.compile(
+        r"\bresultados?\b|\bganador(?:a|es)?\b|\badjudicacion(?:es)?\b"
+        r"|\blicitacion(?:es)?\b|\bactas?\b|resolucion exenta|\bdecretos?\b"
+        r"|\bacuerdos?\b|\bnominas?\b|lista de|\binformes?\b|\brendicion(?:es)?\b"
+        r"|invitacion a|\btalleres?\b|\bcapacitacion(?:es)?\b|\bseminarios?\b"
+        r"|\bwebinar\b|\bsubvencion(?:es)?\b|\beleccion(?:es)?\b|\bbecas?\b"
+        r"|\bsubsidios?\b|fondos? concursables?|\bfondeve\b"
+        r"|concursos? (?:de )?(?:fotografia|literario|artistico|cultural|dibujo"
+        r"|pintura|cuentos?|poesia|musical|canto|video|vecinal|comunitario"
+        r"|escolar|estudiantil|juvenil)"
     )
 
     def _parece_oferta(self, title: str, content: str) -> bool:
@@ -610,17 +622,25 @@ class WordPressScraper(BaseScraper):
             return False
         key_title = normalize_key(title)
         # Descartar si el título tiene señales claras de no ser un aviso de empleo
-        if any(neg in key_title for neg in self._TITLE_NEGATIVE_KEYWORDS):
+        if self._TITLE_NEGATIVE_RE.search(key_title):
             return False
-        # Aceptar si el título menciona directamente un cargo o proceso de selección
-        if any(kw in key_title for kw in self._TITLE_JOB_KEYWORDS):
+        strong = bool(self._TITLE_STRONG_RE.search(key_title))
+        # Titulares de prensa municipal (alcalde, reuniones, inauguraciones...)
+        # se descartan salvo señal fuerte de contratación en el mismo título.
+        if titulo_es_noticia(title) and not strong:
+            return False
+        if strong:
             return True
-        # Fallback: el contenido tiene múltiples señales (más estricto que antes)
         key_content = normalize_key(content)
-        content_hits = sum(
-            1 for kw in ("concurso", "cargo", "postulacion", "seleccion", "contrata", "planta")
-            if kw in key_content
+        # Rol genérico o "concurso" a secas en el título sólo valen
+        # acompañados de contexto laboral en título o contenido.
+        titulo_ambiguo = bool(self._TITLE_ROLE_RE.search(key_title)) or bool(
+            re.search(r"\bconcursos?\b", key_title)
         )
+        if titulo_ambiguo and self._HIRING_CONTEXT_RE.search(f"{key_title} {key_content}"):
+            return True
+        # Fallback: el contenido tiene múltiples señales independientes.
+        content_hits = sum(1 for pat in self._CONTENT_SIGNAL_RES if pat.search(key_content))
         return content_hits >= 2
 
     def _recortar_cargo(self, text: str) -> str:

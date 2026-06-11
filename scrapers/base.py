@@ -642,13 +642,27 @@ def extraer_renta(texto: str) -> RentaExtraida:
             resultado.texto_libre = m.group(0)
             return resultado
 
-    # Monto único en pesos
-    m = _RE_RENTA_PESOS.search(texto)
-    if m:
+    # Monto único en pesos. En textos largos (descripción completa) se exige
+    # contexto de remuneración cerca del monto para no capturar cifras ajenas
+    # (presupuestos, tonelajes, códigos). En textos cortos (campo renta_texto)
+    # basta el monto.
+    es_texto_largo = len(texto) > 80
+    for m in _RE_RENTA_PESOS.finditer(texto):
         valor = _limpiar_numero_pesos(m.group(1))
-        if valor:
-            resultado.minimo = valor
-            resultado.texto_libre = m.group(0)
+        if not valor:
+            continue
+        if es_texto_largo:
+            ventana = normalizar_texto(
+                texto[max(0, m.start() - 80):min(len(texto), m.end() + 40)]
+            )
+            if not re.search(
+                r"renta|sueldo|remuneracion|honorario|haberes|salari|brut[ao]|liquid[ao]|imponible",
+                ventana,
+            ):
+                continue
+        resultado.minimo = valor
+        resultado.texto_libre = m.group(0)
+        break
 
     # Grado EUS
     m = _RE_GRADO_EUS.search(texto_norm)
@@ -678,17 +692,85 @@ TIPO_MAP: dict[str, str] = {
     "suplencia": "reemplazo",
 }
 
+# Categorías del catálogo cuyo régimen laboral es Código del Trabajo.
+# Si el aviso no declara calidad contractual explícita, se asume ese régimen.
+CATEGORIAS_CODIGO_TRABAJO: frozenset[str] = frozenset({
+    "empresa del estado",
+    "empresa ffaa",
+    "empresa",
+    "banco central",
+})
 
-def normalizar_tipo_cargo(raw: str | None) -> str | None:
-    """Normaliza texto libre a uno de: planta|contrata|honorarios|reemplazo|codigo_trabajo."""
-    if not raw:
-        return None
+# Patrones explícitos de calidad contractual sobre texto normalizado
+# (minúsculas, sin tildes). Alta precisión: evitan falsos positivos como
+# "planta industrial", "planta de tratamiento" o "contratación"/"se contrata".
+_RE_TIPO_CODIGO_TRABAJO = re.compile(r"\bcod(?:igo|\.)?\s+(?:del\s+)?trabajo\b")
+_RE_TIPO_HONORARIOS = re.compile(r"\bhonorarios?\b")
+_RE_TIPO_REEMPLAZO = re.compile(r"\b(?:reemplazo|suplencia)\b")
+_RE_TIPO_CONTRATA = re.compile(
+    r"(?:"
+    r"\ba\s+contrata\b"                                            # "cargo a contrata"
+    r"|\bcalidad\s+(?:juridica\s+|contractual\s+)?(?:de\s+|a\s+)?contrata\b"
+    r"|\b(?:vinculo|estamento|condicion)\s*:?\s*(?:a\s+|de\s+|la\s+)?contrata\b"
+    r"|\btipo\s+de\s+(?:contrato|cargo|vacante|vinculo)\s*:?\s*contrata\b"
+    r"|\bcontrata\s+asimilad"                                      # "contrata asimilada a grado"
+    r"|\bcontrata\s+grado\b"
+    r")"
+)
+_RE_TIPO_PLANTA = re.compile(
+    r"(?:"
+    r"\b(?:cargos?|empleos?|titular)\s+(?:de\s+|a\s+|en\s+(?:la\s+)?)planta\b"
+    r"|\bcalidad\s+(?:juridica\s+|contractual\s+)?(?:de\s+)?planta\b"
+    r"|\b(?:vinculo|estamento|condicion)\s*:?\s*(?:de\s+|la\s+)?planta\b"
+    r"|\btipo\s+de\s+(?:contrato|cargo|vacante|vinculo)\s*:?\s*planta\b"
+    r"|\bplanta\s+(?:directiv|profesional|tecnic|administrativ|auxiliar|fiscalizador|municipal|titular)"
+    r"|\ba\s+planta\b"
+    r")"
+)
+
+# Textos de hasta este largo se tratan como etiqueta literal ("Contrata",
+# "Planta titular"), no como descripción libre.
+_TIPO_LABEL_MAX = 60
+
+
+def normalizar_tipo_cargo(raw: str | None, categoria: str | None = None) -> str | None:
+    """Normaliza a uno de: planta|contrata|honorarios|reemplazo|codigo_trabajo.
+
+    - Sobre texto largo (título + descripción) solo acepta menciones
+      explícitas de calidad contractual: "a contrata", "cargo de planta",
+      "calidad jurídica: contrata", etc. Menciones incidentales como
+      "planta industrial" o "contratación de personal" NO califican.
+    - Sobre etiquetas cortas ("Contrata", "planta titular") basta la
+      palabra exacta con límites de palabra.
+    - `categoria`: categoría de la institución en el catálogo. Si no hay
+      mención explícita y la institución es una empresa (régimen Código
+      del Trabajo), devuelve "codigo_trabajo".
+    """
     limpio = normalizar_texto(raw)
-    # Orden más específicos primero
-    for clave in sorted(TIPO_MAP.keys(), key=len, reverse=True):
-        if clave in limpio:
-            return TIPO_MAP[clave]
-    return None
+    resultado: str | None = None
+    if limpio in {"planta", "contrata", "honorarios", "reemplazo", "codigo_trabajo"}:
+        # Ya viene normalizado (idempotencia)
+        resultado = limpio
+    elif limpio:
+        if _RE_TIPO_CODIGO_TRABAJO.search(limpio):
+            resultado = "codigo_trabajo"
+        elif _RE_TIPO_HONORARIOS.search(limpio):
+            resultado = "honorarios"
+        elif _RE_TIPO_CONTRATA.search(limpio):
+            resultado = "contrata"
+        elif _RE_TIPO_PLANTA.search(limpio):
+            resultado = "planta"
+        elif _RE_TIPO_REEMPLAZO.search(limpio):
+            resultado = "reemplazo"
+        elif len(limpio) <= _TIPO_LABEL_MAX:
+            # Etiqueta corta: matching exacto por palabra
+            if re.search(r"\bcontrata\b", limpio):
+                resultado = "contrata"
+            elif re.search(r"\bplanta\b", limpio):
+                resultado = "planta"
+    if resultado is None and categoria and normalizar_texto(categoria) in CATEGORIAS_CODIGO_TRABAJO:
+        return "codigo_trabajo"
+    return resultado
 
 
 REGION_MAP: dict[str, str] = {
@@ -1838,6 +1920,7 @@ class LegacyBaseScraper(abc.ABC):
             return stats
 
         seen_urls = sorted({offer["url_oferta"] for offer in ofertas if offer.get("url_oferta")})
+        urls_descartadas: set[str] = set()
         connection = self.get_connection()
         connection.autocommit = False
 
@@ -1859,6 +1942,11 @@ class LegacyBaseScraper(abc.ABC):
                         # No es un error: el intake transversal decidió descartarla.
                         cursor.execute("ROLLBACK TO SAVEPOINT oferta_sp")
                         stats["descartadas"] += 1
+                        # Una oferta rechazada NO debe contar como "vista":
+                        # si quedó una fila previa en BD para esa URL,
+                        # _mark_missing_offers_closed debe poder cerrarla.
+                        if offer.get("url_oferta"):
+                            urls_descartadas.add(offer["url_oferta"])
                         self.logger.info(
                             "evento=oferta_descartada scraper=%s url=%s motivo=%s",
                             self.nombre,
@@ -1875,7 +1963,8 @@ class LegacyBaseScraper(abc.ABC):
                             exc,
                         )
 
-                stats["cerradas"] = self._mark_missing_offers_closed(cursor, seen_urls)
+                urls_vigentes = sorted(set(seen_urls) - urls_descartadas)
+                stats["cerradas"] = self._mark_missing_offers_closed(cursor, urls_vigentes)
             connection.commit()
         except Exception:
             connection.rollback()

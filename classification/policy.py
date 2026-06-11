@@ -76,7 +76,7 @@ NEGATIVE_PATTERNS: tuple[str, ...] = (
     r"\blicitaci[oó]n\b",
     r"\bcompra p[uú]blica\b",
     r"\bmercado p[uú]blico\b",
-    r"\bsubvenci[oó]n\b",
+    r"\bsubvenci[oó]n(?:es)?\b",
     r"\bfondos? concursables?\b",
     r"\bconcurso art[ií]stico\b",
     r"\bconcurso escolar\b",
