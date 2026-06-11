@@ -59,6 +59,7 @@ from scrapers import armada as armada_scraper
 from scrapers import divsal as divsal_scraper
 from scrapers import famae as famae_scraper
 from scrapers import laborum as laborum_scraper
+from scrapers import codelco as codelco_scraper
 from scrapers.runtime_inventory import (
     build_runtime_scraper,
     iter_legacy_rows,
@@ -118,7 +119,7 @@ _PERFILES_NUEVO_ESTANDAR: frozenset[str] = frozenset({"carabineros_pdf_first", "
 # perfil ffaa_waf con Ejercito (157), que sigue usando el FfaaScraper generico).
 # DIVSAL (706) = divsal.py: institución FF.AA. nueva, scraper dedicado vía API REST;
 # excluida por id para que no la tome el FfaaScraper genérico ni se superponga.
-_IDS_NUEVO_ESTANDAR: frozenset[int] = frozenset({145, 158, 706, 165, 707, 279})
+_IDS_NUEVO_ESTANDAR: frozenset[int] = frozenset({145, 158, 706, 165, 707, 279, 275})
 
 
 @lru_cache(maxsize=1)
@@ -1055,6 +1056,13 @@ async def main(argv: list[str] | None = None) -> int:
             reports.append(
                 await asyncio.to_thread(
                     _run_modulo_ejecutar_sync, "laborum", laborum_scraper.ejecutar
+                )
+            )
+        hay_codelco = any(s.get("id") == 275 for s in catalog_sources)
+        if hay_codelco:
+            reports.append(
+                await asyncio.to_thread(
+                    _run_modulo_ejecutar_sync, "codelco (275)", codelco_scraper.ejecutar
                 )
             )
 

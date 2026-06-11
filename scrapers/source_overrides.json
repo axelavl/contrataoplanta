@@ -90,8 +90,8 @@
     {
       "id": 275,
       "status": "active",
-      "kind": "custom_playwright",
-      "reason": "CODELCO — empleos.codelco.cl requiere JS. Gran volumen de cargos",
+      "kind": "skip",
+      "reason": "Codelco - scraper dedicado scrapers/codelco.py (SuccessFactors server-render, sin JS); excluido del dispatch generico por id",
       "notes": "https://empleos.codelco.cl/search/"
     },
     {
