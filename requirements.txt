@@ -14,6 +14,11 @@ requests==2.33.1
 # pdfplumber 0.11.9 arrastra pdfminer.six con fix de CVE-2025-64512
 # y CVE-2025-70559.
 pdfplumber==0.11.9
+# Playwright: navegador headless para scrapers de sitios JS/anti-bot
+# (bcentral=Incapsula, laborum=SPA Navent). OJO: `pip install` instala sólo la
+# librería; el navegador hay que bajarlo aparte en el deploy con:
+#   python -m playwright install --with-deps chromium
+playwright==1.60.0
 
 # ── Base de datos ───────────────────────────────────────────
 psycopg2-binary==2.9.9

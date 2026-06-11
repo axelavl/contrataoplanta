@@ -384,7 +384,7 @@ CREATE INDEX IF NOT EXISTS idx_catalog_integrity_events_type ON catalog_integrit
 -- ──────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS logs_scraping (
     id                   SERIAL PRIMARY KEY,
-    fuente_id            INTEGER REFERENCES fuentes(id),
+    fuente_id            INTEGER,  -- sin FK: identifica la fuente/institución que corrió (puede ser institucion_id)
     iniciado_en          TIMESTAMPTZ DEFAULT NOW(),
     finalizado_en        TIMESTAMPTZ,
     duracion_seg         NUMERIC(8,2),

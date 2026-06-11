@@ -5026,9 +5026,9 @@
       "url_empleo": "https://empleos.codelco.cl/search/",
       "plataforma_empleo": "Sitio propio",
       "publica_en_empleospublicos": "No",
-      "dificultad_scraping": "Alta",
-      "requiere_js": "Sí",
-      "notas_tecnicas": "Gran volumen de cargos. Sitio propio con JS. Publica también en LinkedIn",
+      "dificultad_scraping": "Media",
+      "requiere_js": "No",
+      "notas_tecnicas": "SuccessFactors (jobs2web) con render servidor, sin anti-bot. Scraper dedicado scrapers/codelco.py",
       "poblacion_censo2024": null,
       "estado_verificacion": "Por verificar"
     },
@@ -12794,8 +12794,7 @@
       "notas_tecnicas": "Ofertas via API REST WordPress (categorias 6 postulaciones / 13 caducadas). Scraper dedicado scrapers/divsal.py",
       "poblacion_censo2024": null,
       "estado_verificacion": "Por verificar"
-    }
-,
+    },
     {
       "id": 707,
       "nombre": "Hospital Militar de Santiago",
