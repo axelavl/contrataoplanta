@@ -4,7 +4,7 @@
     "proyecto": "EmpleoEstado.cl",
     "version": "3.0",
     "fecha_generacion": "2026-04-15",
-    "total_instituciones": 705,
+    "total_instituciones": 706,
     "sectores_cubiertos": [
       "Autónomo/Regulador",
       "Ejecutivo Central",
@@ -12774,6 +12774,43 @@
       "dificultad_scraping": "Media",
       "requiere_js": "No",
       "notas_tecnicas": null,
+      "poblacion_censo2024": null,
+      "estado_verificacion": "Por verificar"
+    },
+    {
+      "id": 706,
+      "nombre": "Ejército de Chile — División de Salud (DIVSAL)",
+      "sigla": "DIVSAL",
+      "categoria": "FF.AA.",
+      "sector": "FF.AA. y Orden",
+      "dependencia": "Min. Defensa",
+      "region": "Nacional",
+      "sitio_web": "https://www.divsal.cl",
+      "url_empleo": "https://www.divsal.cl/ofertas-laborales/",
+      "plataforma_empleo": "Sitio propio",
+      "publica_en_empleospublicos": "No",
+      "dificultad_scraping": "Media",
+      "requiere_js": "No",
+      "notas_tecnicas": "Ofertas via API REST WordPress (categorias 6 postulaciones / 13 caducadas). Scraper dedicado scrapers/divsal.py",
+      "poblacion_censo2024": null,
+      "estado_verificacion": "Por verificar"
+    }
+,
+    {
+      "id": 707,
+      "nombre": "Hospital Militar de Santiago",
+      "sigla": "HMS",
+      "categoria": "FF.AA.",
+      "sector": "FF.AA. y Orden",
+      "dependencia": "Min. Defensa",
+      "region": "Metropolitana de Santiago",
+      "sitio_web": "https://www.hospitalmilitar.cl",
+      "url_empleo": "https://www.laborum.cl/perfiles/empresa_hospital-militar-de-santiago_12050996.html",
+      "plataforma_empleo": "Laborum",
+      "publica_en_empleospublicos": "No",
+      "dificultad_scraping": "Media",
+      "requiere_js": "Si",
+      "notas_tecnicas": "Publica en Laborum (SPA, requiere Playwright). Scraper dedicado scrapers/laborum.py (registro PERFILES id 707).",
       "poblacion_censo2024": null,
       "estado_verificacion": "Por verificar"
     }

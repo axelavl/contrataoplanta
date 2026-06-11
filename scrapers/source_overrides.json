@@ -1,8 +1,9 @@
 {
   "_doc": "Overrides manuales por institución. Tiene prioridad absoluta sobre la clasificación automática. Cada entrada: {id, status, kind, frequency_tier?, reason?, notes?}. status ∈ active|experimental|manual_review|js_required|blocked|broken|no_data|disabled. kind ∈ empleos_publicos|wordpress|generic|custom_trabajando|custom_hiringroom|custom_buk|custom_policia|custom_ffaa|skip. frequency_tier ∈ critical|high|medium|low|eventual|exploratory (ver scrapers/frequency_policy.py). Si no se declara, se infiere automáticamente.",
   "overrides": [
-    {"_comment": "=== FF.AA. y Orden ==="},
-
+    {
+      "_comment": "=== FF.AA. y Orden ==="
+    },
     {
       "id": 157,
       "status": "active",
@@ -16,6 +17,13 @@
       "kind": "custom_ffaa",
       "reason": "Armada de Chile — scraper dedicado con warmup de sesion y URLs especificas",
       "notes": "https://www.admisionarmada.cl/ + fallback transparencia armada.cl"
+    },
+    {
+      "id": 706,
+      "status": "active",
+      "kind": "custom_ffaa",
+      "reason": "Ejercito - Division de Salud (DIVSAL) - scraper dedicado via API REST WordPress",
+      "notes": "https://www.divsal.cl/ofertas-laborales/ (categorias 6 vigentes / 13 caducadas)"
     },
     {
       "id": 159,
@@ -59,9 +67,9 @@
       "reason": "ENAER — portal propio bolsa-de-trabajo. No publica en EP",
       "notes": "https://www.enaer.cl/bolsa-de-trabajo/"
     },
-
-    {"_comment": "=== Ejecutivo Central ==="},
-
+    {
+      "_comment": "=== Ejecutivo Central ==="
+    },
     {
       "id": 43,
       "status": "active",
@@ -76,9 +84,9 @@
       "reason": "Fundación Integra — portal propio integra.cl/trabaje-con-nosotros. No publica en EP",
       "notes": "https://www.integra.cl/trabaje-con-nosotros/ (trabajaconnosotros.integra.cl requiere JS)"
     },
-
-    {"_comment": "=== Empresas del Estado ==="},
-
+    {
+      "_comment": "=== Empresas del Estado ==="
+    },
     {
       "id": 275,
       "status": "active",
@@ -109,9 +117,9 @@
     },
     {
       "id": 279,
-      "status": "experimental",
-      "kind": "generic",
-      "reason": "EFE — portal en Laborum (sin módulo dedicado). GenericSiteScraper como fallback",
+      "status": "active",
+      "kind": "custom_playwright",
+      "reason": "EFE — publica en Laborum (SPA). Scraper dedicado scrapers/laborum.py (registro PERFILES id 279)",
       "notes": "https://www.laborum.cl/perfiles/empresa_efe-trenes-de-chile_12041027.html"
     },
     {
@@ -219,9 +227,9 @@
       "reason": "SASIPA — portal Buk, también publica en EP",
       "notes": "https://www.sasipa.cl/nosotros/ofertas-de-empleo/"
     },
-
-    {"_comment": "=== Autónomos / Reguladores ==="},
-
+    {
+      "_comment": "=== Autónomos / Reguladores ==="
+    },
     {
       "id": 46,
       "status": "active",
@@ -299,9 +307,9 @@
       "reason": "INDH — portal de selección propio verificado. No usa empleospublicos.cl",
       "notes": "https://seleccionpersonal.indh.cl/"
     },
-
-    {"_comment": "=== Universidades del Estado ==="},
-
+    {
+      "_comment": "=== Universidades del Estado ==="
+    },
     {
       "id": 242,
       "status": "active",
@@ -428,9 +436,9 @@
       "reason": "Universidad de Aysén — portal uaysen.cl/trabaja-con-nosotros propio",
       "notes": "https://uaysen.cl/trabaja-con-nosotros/"
     },
-
-    {"_comment": "=== CFTs Estatales ==="},
-
+    {
+      "_comment": "=== CFTs Estatales ==="
+    },
     {
       "id": 260,
       "status": "active",
@@ -508,9 +516,9 @@
       "reason": "CFT Estatal Magallanes — portal propio trabaja-con-nosotros, también publica en EP",
       "notes": "https://cftdemagallanes.cl/trabaja-con-nosotros/"
     },
-
-    {"_comment": "=== Municipios verificados — promovidos tras validación e2e 2026-04-18 ==="},
-
+    {
+      "_comment": "=== Municipios verificados — promovidos tras validación e2e 2026-04-18 ==="
+    },
     {
       "id": 562,
       "status": "active",
@@ -543,9 +551,9 @@
       "reason": "Municipalidad de Tucapel — página de transparencia PHP (?id_seccion=18) con listado genérico de documentos, no fichas de oferta parseable. Requiere scraper custom o URL diferente",
       "notes": "http://www.munitucapel.cl/transparencia/articulos.php?id_seccion=18&id_categoria=105&dominio=M — gatekeeper: listing_page scraper_generic_fallback, 30% confianza, unknown_status"
     },
-
-    {"_comment": "=== Gobiernos Regionales y Delegaciones Presidenciales ==="},
-
+    {
+      "_comment": "=== Gobiernos Regionales y Delegaciones Presidenciales ==="
+    },
     {
       "id": 169,
       "status": "active",
@@ -616,15 +624,25 @@
       "reason": "GORE Magallanes — portal propio trabaja-en-el-gore, también publica en EP",
       "notes": "https://www.goremagallanes.cl/trabaja-en-el-gore/"
     },
-
-    {"_comment": "=== Buk — municipios con portal propio ==="},
-
+    {
+      "_comment": "=== Buk — municipios con portal propio ==="
+    },
     {
       "id": 394,
       "status": "active",
       "kind": "custom_buk",
       "reason": "Municipalidad de Lo Barnechea — portal en Buk, renderizado server-side",
       "notes": "https://lobarnechea.buk.cl/trabaja-con-nosotros"
+    },
+    {
+      "_comment": "=== Laborum — instituciones con perfil de empresa (Playwright) ==="
+    },
+    {
+      "id": 707,
+      "status": "active",
+      "kind": "custom_playwright",
+      "reason": "Hospital Militar de Santiago — publica en Laborum (SPA). Scraper dedicado scrapers/laborum.py (registro PERFILES id 707)",
+      "notes": "https://www.laborum.cl/perfiles/empresa_hospital-militar-de-santiago_12050996.html"
     }
   ]
 }

@@ -48,12 +48,32 @@ import random
 import re
 import sys
 import time
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote, urljoin
 
 import requests
+
+try:
+    from zoneinfo import ZoneInfo
+    _TZ_CL = ZoneInfo("America/Santiago")
+except Exception:  # pragma: no cover - fallback si no hay tzdata
+    _TZ_CL = None
+
+
+def _hoy_cl() -> date:
+    """Fecha 'hoy' en horario de Chile (no UTC).
+
+    Crítico para el filtro de vencimiento: en producción (Railway, UTC) un
+    `date.today()` naive se adelanta hasta 4 h respecto de Chile, lo que haría
+    desaparecer un cargo que cierra "hoy" durante la franja 00:00–04:00 UTC
+    (= 20:00–24:00 de Chile del día anterior). Comparar siempre contra la
+    fecha local chilena evita ese cierre prematuro.
+    """
+    if _TZ_CL is not None:
+        return datetime.now(_TZ_CL).date()
+    return date.today()
 from bs4 import BeautifulSoup
 
 # ── Integración con el proyecto (con fallback standalone) ───────────────────
@@ -307,7 +327,7 @@ def construir_oferta_contrata(c: dict[str, Any], perfil: dict[str, Any]) -> dict
         "renta_bruta_min": perfil.get("renta"),
         "renta_bruta_max": None,
         "renta_texto": perfil.get("renta_texto"),
-        "fecha_publicacion": c["plazo_ini"] or date.today(),
+        "fecha_publicacion": c["plazo_ini"] or _hoy_cl(),
         "fecha_cierre": c["plazo_fin"],
         "requisitos_texto": perfil.get("requisitos"),
     }
@@ -524,7 +544,7 @@ def construir_oferta(s: dict[str, Any]) -> dict:
         "renta_bruta_min": None,   # bases en PDF escaneado (sin capa de texto)
         "renta_bruta_max": None,
         "renta_texto": None,
-        "fecha_publicacion": fecha_pub or date.today(),
+        "fecha_publicacion": fecha_pub or _hoy_cl(),
         "fecha_cierre": fecha_cierre,
         "requisitos_texto": None,  # ídem: requisitos viven en las bases escaneadas
     }
@@ -539,7 +559,7 @@ def recolectar(max_results: int | None, delay: float,
     ofertas: list[dict] = []
     vistos: set[str] = set()
     omitidas_cerradas = 0
-    hoy = date.today()
+    hoy = _hoy_cl()
 
     # ── Fuente 1: trabaja-con-nosotros (cargos contrata/jornal vigentes) ────
     r = _get(session, TRABAJA_URL)
@@ -588,7 +608,7 @@ def recolectar(max_results: int | None, delay: float,
                 omitidas_cerradas += 1
                 continue
             o = construir_oferta(s)
-            hoy = date.today()
+            hoy = _hoy_cl()
             vencida = (o["fecha_cierre"] and o["fecha_cierre"] < hoy)
             # Sin fecha de cierre pero con llamado de hace más de 8 meses:
             # tratar como vencida (los llamados PDI duran semanas, no años)

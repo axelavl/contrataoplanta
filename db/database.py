@@ -306,9 +306,16 @@ def registrar_log(
             WHERE id = :fid
         """), {"estado": estado, "fid": fuente_id})
         db.commit()
-    except Exception:
+    except Exception as exc:
+        # No es fatal: el scraping y el upsert ya ocurrieron. El registro de log
+        # es auxiliar y puede fallar por causas benignas en algunos despliegues
+        # (tabla logs_scraping ausente, o FK fuente_id→fuentes sin fila para los
+        # scrapers de nuevo estándar que pasan institucion_id). Se hace rollback
+        # para dejar la sesión limpia y se traga el error con un warning conciso,
+        # en vez de propagar un traceback que aborta/ensucia toda la corrida.
         db.rollback()
-        raise
+        logger.warning("registrar_log omitido (%s): %s",
+                       type(exc).__name__, str(exc).splitlines()[0][:160])
 
 
 def normalizar_region(texto: str) -> str:

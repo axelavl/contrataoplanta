@@ -55,6 +55,10 @@ from scrapers import trabajando as trabajando_scraper
 from scrapers import buk as buk_scraper
 from scrapers import pdi as pdi_scraper
 from scrapers import bcentral as bcentral_scraper
+from scrapers import armada as armada_scraper
+from scrapers import divsal as divsal_scraper
+from scrapers import famae as famae_scraper
+from scrapers import laborum as laborum_scraper
 from scrapers.runtime_inventory import (
     build_runtime_scraper,
     iter_legacy_rows,
@@ -109,8 +113,12 @@ _POLICIA_PROFILES = {
 _PERFILES_NUEVO_ESTANDAR: frozenset[str] = frozenset({"carabineros_pdf_first", "ats_trabajando", "ats_buk", "pdi_pdf_first"})
 # Fuentes migradas que NO tienen un perfil propio (el gatekeeper las trata como
 # genéricas): se excluyen del dispatch de clases por id de institución para que
-# generic_site no las scrapee en paralelo. Banco Central (145) = bcentral.py.
-_IDS_NUEVO_ESTANDAR: frozenset[int] = frozenset({145})
+# generic_site no las scrapee en paralelo. Banco Central (145) = bcentral.py;
+# Armada (158) = armada.py (excluida por id, NO por perfil, porque comparte el
+# perfil ffaa_waf con Ejercito (157), que sigue usando el FfaaScraper generico).
+# DIVSAL (706) = divsal.py: institución FF.AA. nueva, scraper dedicado vía API REST;
+# excluida por id para que no la tome el FfaaScraper genérico ni se superponga.
+_IDS_NUEVO_ESTANDAR: frozenset[int] = frozenset({145, 158, 706, 165, 707, 279})
 
 
 @lru_cache(maxsize=1)
@@ -1015,6 +1023,38 @@ async def main(argv: list[str] | None = None) -> int:
             reports.append(
                 await asyncio.to_thread(
                     _run_modulo_ejecutar_sync, "banco central (145)", bcentral_scraper.ejecutar
+                )
+            )
+        hay_armada = any(s.get("id") == 158 for s in catalog_sources)
+        if hay_armada:
+            reports.append(
+                await asyncio.to_thread(
+                    _run_modulo_ejecutar_sync, "armada (158)", armada_scraper.ejecutar
+                )
+            )
+        hay_divsal = any(s.get("id") == 706 for s in catalog_sources)
+        if hay_divsal:
+            reports.append(
+                await asyncio.to_thread(
+                    _run_modulo_ejecutar_sync, "divsal (706)", divsal_scraper.ejecutar
+                )
+            )
+        hay_famae = any(s.get("id") == 165 for s in catalog_sources)
+        if hay_famae:
+            reports.append(
+                await asyncio.to_thread(
+                    _run_modulo_ejecutar_sync, "famae (165)", famae_scraper.ejecutar
+                )
+            )
+        # Laborum es plataforma: corre si alguna fuente del catálogo es un perfil
+        # registrado en laborum.PERFILES (Hospital Militar 707, y futuras).
+        hay_laborum = any(
+            s.get("id") in laborum_scraper.PERFILES for s in catalog_sources
+        )
+        if hay_laborum:
+            reports.append(
+                await asyncio.to_thread(
+                    _run_modulo_ejecutar_sync, "laborum", laborum_scraper.ejecutar
                 )
             )
 
