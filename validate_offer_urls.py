@@ -28,9 +28,11 @@ from urllib.parse import urlparse
 
 import aiohttp
 
-# Importamos los helpers del API (conexión a Postgres, get_cursor, etc.).
+# Helper de cursor a Postgres. Lo importamos del módulo de DB (NO de api.main),
+# para no arrastrar la app FastAPI ni la auth de admin (ADMIN_PASSWORD), que no
+# existe en el runtime de scrapers y hacía fallar la validación de URLs.
 sys.path.insert(0, str((__import__("pathlib").Path(__file__).resolve().parent)))
-from api.main import get_cursor  # type: ignore  # noqa: E402
+from api.services.db import get_cursor  # type: ignore  # noqa: E402
 
 logger = logging.getLogger("validate_offer_urls")
 
