@@ -18,6 +18,22 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https:; connect-src 'self' https://contrataoplanta-production.up.railway.app; frame-ancestors 'self'; base-uri 'self'; form-action 'self' https://contrataoplanta-production.up.railway.app; object-src 'none'; upgrade-insecure-requests
 
+# El panel de gestión (gestion.html) todavía usa <script> inline y
+# handlers onclick= en el HTML, así que el `script-src 'self'` global lo
+# deja inoperante (el botón de login no hace nada). Excepción acotada a
+# esta ruta con 'unsafe-inline' hasta que se externalice su JS como se
+# hizo con index.html en PR #164. La página igual está protegida por el
+# prefijo secreto + JWT, y no se indexa.
+/gestion
+  ! Content-Security-Policy
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https:; connect-src 'self' https://contrataoplanta-production.up.railway.app; frame-ancestors 'self'; base-uri 'self'; form-action 'self' https://contrataoplanta-production.up.railway.app; object-src 'none'; upgrade-insecure-requests
+  X-Robots-Tag: noindex, nofollow
+
+/gestion.html
+  ! Content-Security-Policy
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https:; connect-src 'self' https://contrataoplanta-production.up.railway.app; frame-ancestors 'self'; base-uri 'self'; form-action 'self' https://contrataoplanta-production.up.railway.app; object-src 'none'; upgrade-insecure-requests
+  X-Robots-Tag: noindex, nofollow
+
 # Hash en nombres todavía no está implementado, así que los assets no
 # se cachean eternamente. Cuando se versionen (ej: index.abc123.css)
 # subir esto a `max-age=31536000, immutable`.
