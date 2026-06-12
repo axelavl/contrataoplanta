@@ -135,6 +135,33 @@ _NON_JOB_TITLE_PATTERNS: tuple[str, ...] = (
     r"^\s*trabaja con nosotros\s*$", r"^\s*postula\s*$",
     r"^\s*facebook\s*$", r"^\s*twitt?e?ar?\s*$", r"^\s*compartir\s*$",
     r"^\s*whatsapp\s*$", r"^\s*x\s*$", r"^\s*linkedin\s*$",
+    # — Navegación / secciones de sitio municipal (nunca un cargo) —
+    r"^\s*contacto\s*$", r"^\s*servicios?\s*$", r"^\s*mascotas\s*$",
+    r"^\s*farmacia\s*$", r"^\s*concejos?\s*$", r"^\s*municipio\s*$",
+    r"^\s*municipalidad\s*$", r"^\s*concejo municipal\s*$",
+    r"^\s*informaci[oó]n importante\s*$", r"^\s*resultados?\s*$",
+    r"^\s*nombre correo fono\s*$", r"^\s*acceso funcionarios?\s*$",
+    r"^\s*sucursales municipales\s*$", r"^\s*higiene ambiental\s*$",
+    r"^\s*patente profesional\s*$", r"^\s*elecci[oó]n de directorio\s*$",
+    r"^\s*descargos elecciones\s*$", r"^\s*organizaciones comunitarias\s*$",
+    r"\bdirectorio telef", r"\bdirectorio comercial\b",
+    r"\bdirectorio municipal\b", r"\bdirectorio de organizaciones\b",
+    r"\bparent directory\b", r"\bempleo y emprendimiento\b",
+    r"\bempleo por categor[ií]as\b", r"^\s*encuentra empleo\s*$",
+    r"\btrabajos sin experiencia\b", r"\bempleos mujeres stem\b",
+    r"^\s*publica un empleo\s*$",
+    # — Fragmentos de documentos / botones de descarga —
+    r"\bver documento\b", r"^\s*ordinario\s+\d+", r"\bformato cv\b",
+    r"^\s*descarga\s+aqu[ií]\s*$", r"^\s*presione aqu[ií]\b",
+    # — Programas/beneficios ciudadanos y eventos (no son empleo aunque digan
+    #   'postulación'/'concurso') —
+    r"\bfiesta\b", r"\bcarnaval\b", r"\bexpositor", r"\bconcurso del vino\b",
+    r"\bconcurso (?:de )?(?:cumbia|cueca|baile|canto|m[uú]sica|tango|danza)\b",
+    r"\bfondep\b", r"\bfodeco\b", r"\baporte econ[oó]mico\b",
+    r"\bmujer(?:es)? emprende\b", r"\bcenso\b", r"\bservicio militar\b",
+    r"\bd[ií]a del\b", r"\bd[ií]a de la\b", r"\breconocimiento municipal\b",
+    r"\bsubvenciones?\b", r"\bfondos? concursables?\b",
+    r"\botras funciones\b", r"\bencomiende\b", r"\bsu jefatura\b",
 )
 _NON_JOB_TITLE_RE = re.compile("|".join(_NON_JOB_TITLE_PATTERNS), re.IGNORECASE)
 
@@ -182,8 +209,67 @@ _NEWS_TITLE_PATTERNS: tuple[str, ...] = (
     r"\bcuenta p[uú]blica\b",
     r"\bferia\b",
     r"\boperativo (?:de|m[eé]dico|social|veterinario)\b",
+    r"\bmunicipio\b", r"\bpatrullajes?\b",
+    r"\bpersecuci[oó]n\b", r"\basumen?\b", r"\basumi[oó]\b",
+    r"\bresponde ante\b", r"\bbenefician?\b", r"\bexitoso\b",
+    r"\bemite\b", r"\balerta\b", r"\brecupera\b", r"\bdetenid",
+    r"\bsupervisa\b", r"\binspeccionan?\b", r"\bmejoramiento de\b",
+    r"\bsituaci[oó]n financiera\b", r"\bdeuda\b", r"\brecomendaciones\b",
+    r"\bapertura oficial\b", r"\bnueva directora\b", r"\bnuevo director\b",
+    r"\bnuevas? jefaturas?\b", r"\bcaptura\b", r"\bretiran?\b",
+    r"\bbienvenida\b", r"\b[eé]xito total\b", r"\bfue un [eé]xito\b",
+    r"\bse reun(?:e|en|i[oó])\b",
 )
 _NEWS_TITLE_RE = re.compile("|".join(_NEWS_TITLE_PATTERNS), re.IGNORECASE)
+
+# Títulos genéricos que son un encabezado de sección, no un cargo concreto: el
+# scraper tomó "Concurso Público" en vez del nombre del cargo. No aportan al
+# usuario. Se comparan contra el título canonizado (sin tildes, emojis ni
+# contadores tipo "9794 Vistas").
+_GENERIC_TITLE_EXACT: frozenset[str] = frozenset({
+    "concurso", "concursos", "concurso publico", "concursos publicos",
+    "concurso publico salud", "llamado a concurso", "llamado a concurso publico",
+    "llamado publico a concurso", "llamado a concurso publico de antecedentes",
+    "llamado a concurso publico prlac", "concurso prlac", "concurso prodesal publico",
+    "concurso interno", "concurso programa 4 a 7", "4 a 7",
+    "bases", "bases concurso publico", "bases de concurso publico",
+    "bases del concurso", "bases de postulacion", "bases concurso",
+    "personal a contrata", "se requiere contratar", "publica un empleo",
+    "concurso public", "llamado concurso publico",
+    "oportunidad laboral", "se requiere", "se necesita",
+})
+
+_EMOJI_PUNT_RE = re.compile(r"[^a-z0-9 ]+")
+_VISTAS_RE = re.compile(r"\b\d{2,6}\s*vistas?\b|\bvistas?\b|\bver m[aá]s\b|\bleer art[ií]culo\b")
+_ANIO_RE = re.compile(r"(?<!\d)(20[1-3]\d)(?!\d)")
+
+
+def _titulo_canon(cargo: Any) -> str:
+    """Canoniza el título para comparar genéricos: minúsculas, sin tildes,
+    sin emojis/puntuación, sin contadores de vistas."""
+    s = _norm(cargo)
+    s = _VISTAS_RE.sub(" ", s)
+    s = _EMOJI_PUNT_RE.sub(" ", s)
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
+
+
+def titulo_es_generico(cargo: Any) -> bool:
+    """True si el título es solo un encabezado genérico sin cargo concreto."""
+    return _titulo_canon(cargo) in _GENERIC_TITLE_EXACT
+
+
+def titulo_anio_pasado(cargo: Any, *, today: "date | None" = None) -> bool:
+    """True si el título menciona año(s) y el más reciente ya pasó (aviso viejo,
+    p.ej. 'Planta Municipal 2024', 'Monitor Vínculos 2024A'). Conservador: solo
+    aplica cuando hay algún año explícito y todos son < año actual."""
+    anios = [int(a) for a in _ANIO_RE.findall(str(cargo or ""))]
+    anios = [a for a in anios if 2015 <= a <= 2035]
+    if not anios:
+        return False
+    ref = (today or _today()).year
+    return max(anios) < ref
+
 
 
 # ─────────────────────────── Resultado ────────────────────────────────
@@ -604,6 +690,16 @@ def intake_validate_offer(
     if titulo_es_noticia(cargo):
         return decision.reject("titulo_noticia_municipal")
 
+    # Aviso viejo señalado por el año en el propio título (sin fecha estructurada).
+    if titulo_anio_pasado(cargo, today=today):
+        return decision.reject("titulo_anio_pasado")
+
+    # Título genérico sin cargo concreto ("Concurso Público", "Bases", "Se
+    # requiere contratar"): suele ser un concurso real con encabezado pobre.
+    # No se descarta; se conserva marcado para revisión manual.
+    if titulo_es_generico(cargo):
+        decision.add_review("titulo_generico_sin_cargo")
+
     if is_garbage_text(blob):
         # El blob completo puede contener "noticias", "resultados", etc. por
         # contexto institucional, pero aún así corresponder a un cargo válido
@@ -702,5 +798,7 @@ __all__ = [
     "titulo_es_empleo",
     "titulo_es_no_laboral",
     "titulo_es_noticia",
+    "titulo_es_generico",
+    "titulo_anio_pasado",
 ]
 # (fin del módulo)
