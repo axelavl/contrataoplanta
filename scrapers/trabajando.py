@@ -163,6 +163,12 @@ def _load_all_instituciones(path: Path = REPO_PATH) -> list[dict[str, Any]]:
     return payload.get("instituciones") if isinstance(payload, dict) else payload
 
 
+# Fuentes *.trabajando.cl que NO maneja este genérico porque usan la
+# generación ANTIGUA del portal (jQuery/AJAX) y van por scraper dedicado:
+#   146 = Ministerio Público / Fiscalía -> scrapers/fiscalia.py
+_IDS_EXCLUIDOS: frozenset[int] = frozenset({146})
+
+
 def _filter_trabajando(
     instituciones: list[dict[str, Any]],
     solo_id: int | None = None,
@@ -173,6 +179,8 @@ def _filter_trabajando(
     for fuente in list(instituciones) + _EXTRA_SOURCES:
         url = (fuente.get("url_empleo") or "").lower()
         if "trabajando.cl" not in url:
+            continue
+        if fuente.get("id") in _IDS_EXCLUIDOS:
             continue
         fid = fuente.get("id")
         if fid in seen_ids:

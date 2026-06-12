@@ -5,7 +5,7 @@ import unicodedata
 from dataclasses import dataclass
 from typing import Iterable
 
-RULESET_VERSION = "2026.05.01"
+RULESET_VERSION = "2026.06.11"
 
 POSITIVE_KEYWORDS: tuple[str, ...] = (
     "concurso",
@@ -30,8 +30,12 @@ POSITIVE_KEYWORDS: tuple[str, ...] = (
     "renta bruta mensual",
     "remuneracion mensual",
     "honorarios mensuales",
-    "contrata",
-    "planta",
+    # "contrata"/"planta" a secas generaban falsos positivos (páginas de
+    # transparencia "Personal Planta", verbo "contrata"). Solo formas con
+    # contexto contractual.
+    "a contrata",
+    "cargo de planta",
+    "planta municipal",
     "codigo del trabajo",
     "calidad juridica",
     "reemplazo",
@@ -99,6 +103,15 @@ NEGATIVE_PATTERNS: tuple[str, ...] = (
     r"\bconvocatoria de becas?\b",
     r"\bllamado a becas?\b",
     r"\bbeneficios?\s+sociales?\b",
+    # Secciones de Ley de Transparencia que nunca son ofertas (empresas del
+    # estado las publican junto a "Personal Planta" y confundían al scorer).
+    r"\bdirectorio y personal\b",
+    r"\bestados? financieros?\b",
+    r"\bestructura org[aá]nica\b",
+    r"\bmarco normativo\b",
+    r"\bmemorias? anuales?\b",
+    r"\bremuneraci[oó]n y antecedentes\b",
+    r"\bfiliales o coligadas\b",
 )
 
 NEGATIVE_URL_PARTS: tuple[str, ...] = (
@@ -131,6 +144,17 @@ NEGATIVE_URL_PARTS: tuple[str, ...] = (
     "/mercadopublico",
     "/subvenciones",
     "/fondos-concursables",
+    # Subsecciones de transparencia (NO se penaliza /transparencia completo:
+    # ahí también viven /transparencia/trabaje-con-nosotros y /concursos).
+    "/transparencia/directorio",
+    "/directorio-personal",
+    "/personal-planta",
+    "/dotacion",
+    "/estados-financieros",
+    "/marco-normativo",
+    "/estructura-organica",
+    "/memorias-anuales",
+    "/remuneracion-y-antecedentes",
 )
 
 INTERNAL_ONLY_PATTERNS: tuple[str, ...] = (

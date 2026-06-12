@@ -19,6 +19,7 @@ CONTRACT_PATTERNS = {
         r"|\btipo\s+de\s+(?:contrato|cargo|vacante|v[ií]nculo)\s*:?\s*contrata\b"
         r"|\bcontrata\s+asimilad"
         r"|\bcontrata\s+grado\b"
+        r"|\|\s*contrata\s*(?=\||\n|$)"  # celda de tabla: "... | contrata"
         r")"
     ),
     "planta": (
@@ -29,6 +30,7 @@ CONTRACT_PATTERNS = {
         r"|\btipo\s+de\s+(?:contrato|cargo|vacante|v[ií]nculo)\s*:?\s*planta\b"
         r"|\bplanta\s+(?:directiv|profesional|t[eé]cnic|administrativ|auxiliar|fiscalizador|municipal|titular)"
         r"|\ba\s+planta\b"
+        r"|\|\s*planta\s*(?=\||\n|$)"  # celda de tabla: "... | planta"
         r")"
     ),
     "plazo_fijo": r"\bplazo\s+fijo\b",

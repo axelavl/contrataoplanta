@@ -63,8 +63,8 @@
     {
       "id": 166,
       "status": "active",
-      "kind": "generic",
-      "reason": "ENAER — portal propio bolsa-de-trabajo. No publica en EP",
+      "kind": "skip",
+      "reason": "ENAER - scraper dedicado scrapers/puertos_empresas.py (pdf_links)",
       "notes": "https://www.enaer.cl/bolsa-de-trabajo/"
     },
     {
@@ -160,8 +160,8 @@
     {
       "id": 285,
       "status": "active",
-      "kind": "generic",
-      "reason": "Empresa Portuaria Iquique — portal propio epi.cl/postulaciones",
+      "kind": "skip",
+      "reason": "Empresa Portuaria Iquique - scraper dedicado scrapers/puertos_empresas.py (lista_o_vacio)",
       "notes": "https://epi.cl/postulaciones/"
     },
     {
@@ -195,29 +195,29 @@
     {
       "id": 290,
       "status": "active",
-      "kind": "generic",
-      "reason": "Empresa Portuaria Talcahuano — portal propio llamado-a-concurso",
+      "kind": "skip",
+      "reason": "Empresa Portuaria Talcahuano-San Vicente - scraper dedicado scrapers/puertos_empresas.py (secciones)",
       "notes": "https://www.puertotalcahuano.cl/llamado-a-concurso/"
     },
     {
       "id": 291,
       "status": "active",
-      "kind": "generic",
-      "reason": "Empresa Portuaria Puerto Montt — portal propio vacantes",
+      "kind": "skip",
+      "reason": "Empresa Portuaria Puerto Montt - scraper dedicado scrapers/puertos_empresas.py (pdf_links)",
       "notes": "https://www.empormontt.cl/vacantes"
     },
     {
       "id": 292,
       "status": "active",
-      "kind": "generic",
-      "reason": "Empresa Portuaria Chacabuco — portal propio trabaja-con-nosotros",
+      "kind": "skip",
+      "reason": "Empresa Portuaria Chacabuco - scraper dedicado scrapers/puertos_empresas.py (requiere IP chilena)",
       "notes": "https://chacabucoport.cl/index.php/trabaja-con-nosotros/"
     },
     {
       "id": 293,
       "status": "active",
-      "kind": "generic",
-      "reason": "Empresa Portuaria Austral — portal propio trabaje-con-nosotros",
+      "kind": "skip",
+      "reason": "Empresa Portuaria Austral - scraper dedicado scrapers/puertos_empresas.py (secciones)",
       "notes": "https://www.epustral.cl/trabaje-con-nosotros"
     },
     {
@@ -247,8 +247,8 @@
     {
       "id": 146,
       "status": "active",
-      "kind": "custom_trabajando",
-      "reason": "Fiscalía de Chile — portal institucional en Trabajando.cl",
+      "kind": "skip",
+      "reason": "Ministerio Publico/Fiscalia - portal Trabajando generacion antigua (jQuery/AJAX); scraper dedicado scrapers/fiscalia.py",
       "notes": "https://fiscaliadechile.trabajando.cl/trabajo-empleo (fallback informativo: https://www.fiscaliadechile.cl/trabaja-con-nosotros)"
     },
     {
@@ -643,6 +643,18 @@
       "kind": "custom_playwright",
       "reason": "Hospital Militar de Santiago — publica en Laborum (SPA). Scraper dedicado scrapers/laborum.py (registro PERFILES id 707)",
       "notes": "https://www.laborum.cl/perfiles/empresa_hospital-militar-de-santiago_12050996.html"
+    },
+    {
+      "id": 708,
+      "status": "active",
+      "kind": "skip",
+      "reason": "FOJI - scraper dedicado scrapers/puertos_empresas.py (pdf_links)"
+    },
+    {
+      "id": 709,
+      "status": "active",
+      "kind": "skip",
+      "reason": "PRODEMU - scraper dedicado scrapers/puertos_empresas.py (lista_o_vacio)"
     }
   ]
 }

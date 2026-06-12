@@ -102,6 +102,65 @@ logger = logging.getLogger("api.routers.admin")
 router = APIRouter(tags=["admin"])
 
 
+# ── Auditoría de acciones admin ──────────────────────────────────────────────
+
+def _auditar(
+    usuario: str,
+    accion: str,
+    entidad: str | None = None,
+    entidad_id: Any = None,
+    detalle: dict[str, Any] | None = None,
+) -> None:
+    """Registra una acción admin en `admin_audit_log` (best-effort).
+
+    Nunca interrumpe el endpoint: si la tabla no existe (migración
+    `20260612_0003_admin_audit` sin aplicar) sólo deja un warning en logs.
+    """
+    try:
+        with get_cursor() as (conn, cur):
+            cur.execute(
+                """INSERT INTO admin_audit_log (usuario, accion, entidad, entidad_id, detalle)
+                   VALUES (%s, %s, %s, %s, %s)""",
+                [
+                    usuario,
+                    accion,
+                    entidad,
+                    str(entidad_id) if entidad_id is not None else None,
+                    json.dumps(detalle, ensure_ascii=False, default=str) if detalle else None,
+                ],
+            )
+            conn.commit()
+    except Exception as exc:
+        logger.warning(f"[audit] no se pudo registrar '{accion}': {exc}")
+
+
+@router.get(f"/api/{ADMIN_PATH}/audit", tags=["admin"])
+def admin_audit(
+    limit: int = Query(100, ge=1, le=500),
+    accion: str | None = Query(None),
+    _user: str = Depends(_verify_admin_jwt),
+) -> dict[str, Any]:
+    """Registro de acciones realizadas desde el panel, más reciente primero."""
+    where = "WHERE accion = %s" if accion else ""
+    params: list[Any] = [accion] if accion else []
+    try:
+        rows = execute_fetch_all(
+            f"""SELECT id, ts, usuario, accion, entidad, entidad_id, detalle
+                FROM admin_audit_log
+                {where}
+                ORDER BY ts DESC
+                LIMIT %s""",
+            params + [limit],
+        )
+        return {"items": rows}
+    except Exception as exc:
+        logger.warning(f"[audit] no se pudo leer admin_audit_log: {exc}")
+        return {
+            "items": [],
+            "warning": "Tabla admin_audit_log no disponible — aplicar `alembic upgrade head`.",
+        }
+
+
 @router.post(f"/api/{ADMIN_PATH}/meilisearch/reindexar", tags=["admin"])
 def api_reindexar_meili(_user: str = Depends(_verify_admin_jwt)) -> dict[str, Any]:
     """Re-indexa todas las ofertas activas en Meilisearch.
@@ -205,6 +264,10 @@ def api_enviar_alertas_pendientes(
             else:
                 errores += 1
 
+    _auditar(_user, "enviar_alertas", "suscripciones", None, {
+        "total_suscripciones": len(suscripciones),
+        "enviados": enviados, "errores": errores,
+    })
     return {
         "ok": True,
         "total_suscripciones": len(suscripciones),
@@ -402,6 +465,7 @@ def admin_toggle_activa(
             [nuevo_estado, oferta_id],
         )
         conn.commit()
+    _auditar(_user, "toggle_activa", "oferta", oferta_id, {"activa": nuevo_estado})
     return {"id": oferta_id, "activa": nuevo_estado}
 
 
@@ -411,24 +475,54 @@ def admin_editar_oferta(
     payload: dict[str, Any],
     _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
-    """Edita campos básicos de una oferta (cargo, descripcion, fecha_cierre, activa)."""
-    CAMPOS_PERMITIDOS = {"cargo", "descripcion", "fecha_cierre", "activa", "estado", "region", "tipo_contrato"}
+    """Edita campos de una oferta.
+
+    Permitidos: cargo, descripcion, fecha_cierre, activa, estado, region,
+    tipo_contrato, renta_bruta_min, renta_bruta_max, url_oferta, url_bases.
+    Si cambia una URL, su flag de validez vuelve a NULL (sin validar) para
+    que el próximo pase de `validate_offer_urls.py` la chequee.
+    """
+    CAMPOS_PERMITIDOS = {
+        "cargo", "descripcion", "fecha_cierre", "activa", "estado", "region",
+        "tipo_contrato", "renta_bruta_min", "renta_bruta_max",
+        "url_oferta", "url_bases",
+    }
     updates = {k: v for k, v in payload.items() if k in CAMPOS_PERMITIDOS}
     if not updates:
         raise HTTPException(400, "Sin campos válidos para actualizar")
 
-    set_clause = ", ".join(f"{col} = %s" for col in updates)
+    for campo in ("renta_bruta_min", "renta_bruta_max"):
+        if campo in updates and updates[campo] not in (None, ""):
+            try:
+                updates[campo] = int(updates[campo])
+            except (TypeError, ValueError):
+                raise HTTPException(400, f"{campo} debe ser numérico") from None
+
+    for campo in ("url_oferta", "url_bases"):
+        if campo in updates:
+            valor = (str(updates[campo] or "")).strip()
+            if valor and not valor.startswith(("http://", "https://")):
+                raise HTTPException(400, f"{campo} debe ser una URL http(s)")
+            updates[campo] = valor or None
+
+    set_parts = [f"{col} = %s" for col in updates]
+    # Reset del flag de validez cuando cambia la URL correspondiente.
+    if "url_oferta" in updates:
+        set_parts.append("url_oferta_valida = NULL")
+    if "url_bases" in updates:
+        set_parts.append("url_bases_valida = NULL")
     vals = list(updates.values()) + [oferta_id]
 
     with get_cursor() as (conn, cur):
         cur.execute(
-            f"UPDATE ofertas SET {set_clause}, actualizada_en = NOW() WHERE id = %s",
+            f"UPDATE ofertas SET {', '.join(set_parts)}, actualizada_en = NOW() WHERE id = %s",
             vals,
         )
         if cur.rowcount == 0:
             raise HTTPException(404, "Oferta no encontrada")
         conn.commit()
 
+    _auditar(_user, "editar_oferta", "oferta", oferta_id, {"campos": sorted(updates)})
     return {"id": oferta_id, "updated": list(updates.keys())}
 
 
@@ -610,6 +704,166 @@ def admin_fuentes(
     """, params)
 
 
+# ── Admin: procesos en background (scrapers / revalidación) ─────────────────
+#
+# Cada proceso lanzado desde el panel escribe su salida a un archivo en
+# `logs/admin_runs/`. La metadata (pid, tipo, comando) va en la primera
+# línea del log con el prefijo `### ADMIN-RUN`, de modo que cualquier
+# worker de uvicorn pueda listar y consultar procesos aunque no los haya
+# lanzado él (el dict en memoria sólo agrega el returncode exacto).
+
+_ADMIN_RUNS_LOG_DIR = _PROJECT_ROOT / "logs" / "admin_runs"
+_LOG_FILENAME_RE = re.compile(r"^[\w.-]+\.log$")
+
+
+@dataclass
+class _ProcesoLanzado:
+    pid: int
+    tipo: str
+    cmd: list[str]
+    log_path: Path
+    started_at: datetime
+    proc: subprocess.Popen
+
+
+_PROCESOS: dict[int, _ProcesoLanzado] = {}  # pid → info (sólo este worker)
+
+
+def _lanzar_proceso(cmd: list[str], tipo: str) -> _ProcesoLanzado:
+    """Lanza un proceso en background con su stdout/stderr a un log propio.
+
+    Reemplaza el patrón anterior `stdout=subprocess.PIPE` que nadie leía:
+    si el hijo escribía más que el buffer del pipe, quedaba bloqueado.
+    """
+    _ADMIN_RUNS_LOG_DIR.mkdir(parents=True, exist_ok=True)
+    ahora = datetime.now(tz=timezone.utc)
+    log_path = _ADMIN_RUNS_LOG_DIR / f"{tipo}_{ahora.strftime('%Y%m%d_%H%M%S')}.log"
+    log_f = open(log_path, "a", encoding="utf-8")
+    proc = subprocess.Popen(
+        cmd,
+        stdout=log_f,
+        stderr=subprocess.STDOUT,
+        cwd=str(_PROJECT_ROOT),
+        text=True,
+    )
+    # Header con metadata para que otros workers puedan reconstruir estado.
+    cmd_vista = " ".join(cmd[1:])  # sin el path de python
+    log_f.write(
+        f"### ADMIN-RUN pid={proc.pid} tipo={tipo} "
+        f"started={ahora.isoformat()} cmd={cmd_vista}\n"
+    )
+    log_f.flush()
+    info = _ProcesoLanzado(
+        pid=proc.pid, tipo=tipo, cmd=cmd, log_path=log_path,
+        started_at=ahora, proc=proc,
+    )
+    _PROCESOS[proc.pid] = info
+    return info
+
+
+def _pid_vivo(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+        return True
+    except (ProcessLookupError, PermissionError, OSError):
+        return False
+
+
+def _parse_log_header(log_path: Path) -> dict[str, Any] | None:
+    """Lee la primera línea `### ADMIN-RUN ...` de un log y la parsea."""
+    try:
+        with open(log_path, encoding="utf-8", errors="replace") as f:
+            primera = f.readline().strip()
+    except OSError:
+        return None
+    if not primera.startswith("### ADMIN-RUN "):
+        return None
+    m = re.match(
+        r"### ADMIN-RUN pid=(\d+) tipo=(\S+) started=(\S+) cmd=(.*)$", primera
+    )
+    if not m:
+        return None
+    return {
+        "pid": int(m.group(1)),
+        "tipo": m.group(2),
+        "started_at": m.group(3),
+        "cmd": m.group(4),
+    }
+
+
+def _estado_proceso(pid: int) -> tuple[str, int | None]:
+    """(estado, returncode). returncode sólo si este worker lanzó el proceso."""
+    info = _PROCESOS.get(pid)
+    if info is not None:
+        rc = info.proc.poll()
+        if rc is None:
+            return "en_curso", None
+        return ("completado" if rc == 0 else "error"), rc
+    return ("en_curso", None) if _pid_vivo(pid) else ("finalizado", None)
+
+
+@router.get(f"/api/{ADMIN_PATH}/procesos", tags=["admin"])
+def admin_procesos(
+    limit: int = Query(20, ge=1, le=100),
+    _user: str = Depends(_verify_admin_jwt),
+) -> dict[str, Any]:
+    """Lista los procesos lanzados desde el panel (scrapers, revalidación).
+
+    Se reconstruye desde `logs/admin_runs/` para funcionar con múltiples
+    workers de uvicorn; el estado en vivo sale de `os.kill(pid, 0)`.
+    """
+    if not _ADMIN_RUNS_LOG_DIR.exists():
+        return {"procesos": []}
+    logs = sorted(
+        _ADMIN_RUNS_LOG_DIR.glob("*.log"),
+        key=lambda p: p.stat().st_mtime,
+        reverse=True,
+    )[:limit]
+    procesos = []
+    for log_path in logs:
+        header = _parse_log_header(log_path)
+        if not header:
+            continue
+        estado, rc = _estado_proceso(header["pid"])
+        procesos.append({
+            **header,
+            "estado": estado,
+            "returncode": rc,
+            "log": log_path.name,
+            "log_bytes": log_path.stat().st_size,
+        })
+    return {"procesos": procesos}
+
+
+@router.get(f"/api/{ADMIN_PATH}/procesos/log", tags=["admin"])
+def admin_proceso_log(
+    archivo: str = Query(..., description="Nombre del archivo en logs/admin_runs/"),
+    tail: int = Query(200, ge=1, le=2000),
+    _user: str = Depends(_verify_admin_jwt),
+) -> dict[str, Any]:
+    """Devuelve las últimas `tail` líneas del log de un proceso lanzado."""
+    if not _LOG_FILENAME_RE.match(archivo):
+        raise HTTPException(400, "Nombre de archivo inválido")
+    log_path = (_ADMIN_RUNS_LOG_DIR / archivo).resolve()
+    if log_path.parent != _ADMIN_RUNS_LOG_DIR.resolve() or not log_path.exists():
+        raise HTTPException(404, "Log no encontrado")
+    try:
+        lineas = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError as exc:
+        raise HTTPException(500, f"No se pudo leer el log: {exc}") from exc
+    header = _parse_log_header(log_path) or {}
+    estado, rc = _estado_proceso(int(header.get("pid") or 0))
+    return {
+        "archivo": archivo,
+        "pid": header.get("pid"),
+        "tipo": header.get("tipo"),
+        "estado": estado,
+        "returncode": rc,
+        "total_lineas": len(lineas),
+        "lineas": lineas[-tail:],
+    }
+
+
 # ── Admin: ejecución manual de scrapers ──────────────────────────────────────
 
 @router.get(f"/api/{ADMIN_PATH}/scraper/catalog", tags=["admin"])
@@ -697,15 +951,10 @@ async def admin_scraper_run(
 
     logger.info(f"[admin] scraper run: {shlex.join(cmd)}")
 
-    # Ejecutar en background (no bloquea la respuesta)
+    # Ejecutar en background (no bloquea la respuesta); output a logs/admin_runs/
     try:
-        proc = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            cwd=str(_PROJECT_ROOT),
-            text=True,
-        )
+        proceso = _lanzar_proceso(cmd, tipo=f"scraper-{mode}")
+        proc = proceso.proc
     except Exception as exc:
         raise HTTPException(500, f"No se pudo lanzar el proceso: {exc}") from exc
 
@@ -725,6 +974,10 @@ async def admin_scraper_run(
     except Exception:
         pass  # tabla puede no existir
 
+    _auditar(_user, "scraper_run", "proceso", proc.pid, {
+        "mode": mode, "dry_run": dry_run, "max": max_offers,
+        "run_id": run_id, "log": proceso.log_path.name,
+    })
     return {
         "ok": True,
         "pid": proc.pid,
@@ -732,6 +985,7 @@ async def admin_scraper_run(
         "cmd": cmd[2:],  # omitir python path
         "dry_run": dry_run,
         "mode": mode,
+        "log": proceso.log_path.name,
     }
 
 
@@ -810,6 +1064,7 @@ def admin_set_config(
         updated.append(clave)
     if not updated:
         raise HTTPException(400, f"Sin claves válidas. Permitidas: {sorted(CLAVES_PERMITIDAS)}")
+    _auditar(_user, "editar_config", "site_config", None, {"claves": updated})
     return {"updated": updated}
 
 
@@ -855,6 +1110,14 @@ def admin_bulk_desactivar(
         conn.commit()
 
     logger.info(f"[admin] bulk-desactivar: {count} ofertas por {_user}")
+    _auditar(_user, "bulk_desactivar", "ofertas", None, {
+        "desactivadas": count,
+        "criterio": (
+            "ids" if "ids" in payload
+            else "url_rota" if payload.get("url_rota")
+            else "fecha_cierre_vencida"
+        ),
+    })
     return {"desactivadas": count, "ids": ids[:50]}
 
 
@@ -885,11 +1148,18 @@ async def admin_revalidar_urls(
         "--limit", str(limit),
     ]
     logger.info(f"[admin] revalidar URLs: {cmd}")
-    proc = subprocess.Popen(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-        cwd=str(_PROJECT_ROOT), text=True,
-    )
-    return {"ok": True, "pid": proc.pid, "workers": workers, "limit": limit}
+    try:
+        proceso = _lanzar_proceso(cmd, tipo="revalidar-urls")
+    except Exception as exc:
+        raise HTTPException(500, f"No se pudo lanzar el proceso: {exc}") from exc
+    _auditar(_user, "revalidar_urls", "proceso", proceso.pid, {
+        "workers": workers, "max_edad_h": max_edad, "limit": limit,
+        "log": proceso.log_path.name,
+    })
+    return {
+        "ok": True, "pid": proceso.pid, "workers": workers,
+        "limit": limit, "log": proceso.log_path.name,
+    }
 
 
 # ── Admin: gestión de fuentes (instituciones) ────────────────────────────────
@@ -948,6 +1218,7 @@ def admin_editar_fuente(
         if cur.rowcount == 0:
             raise HTTPException(404, "Institución no encontrada")
         conn.commit()
+    _auditar(_user, "editar_fuente", "institucion", fuente_id, {"campos": sorted(updates)})
     return {"id": fuente_id, "updated": list(updates.keys())}
 
 
@@ -986,6 +1257,7 @@ def admin_crear_fuente(
         conn.commit()
 
     logger.info(f"[admin] nueva institución creada: {new_id} — {nombre}")
+    _auditar(_user, "crear_fuente", "institucion", new_id, {"nombre": nombre})
     return {"id": new_id, "nombre": nombre}
 
 
@@ -1027,6 +1299,7 @@ def admin_desactivar_fuente(
     except Exception as exc:
         logger.warning(f"[admin] no se pudo actualizar source_overrides.json: {exc}")
 
+    _auditar(_user, "desactivar_fuente", "institucion", fuente_id, {"ofertas_cerradas": n})
     return {"id": fuente_id, "ofertas_cerradas": n}
 
 
@@ -1116,6 +1389,33 @@ def admin_revision_queue(
         )
         categorias["texto_corto"] = {"total": len(rows), "items": rows}
 
+    # 6. Duplicados posibles: mismo cargo (normalizado) + misma institución,
+    #    ambas activas. `dup_grupo` = id mínimo del grupo para agruparlas en UI.
+    if not tipo or tipo == "duplicado_posible":
+        rows = execute_fetch_all(
+            """WITH grupos AS (
+                   SELECT LOWER(TRIM(cargo)) AS cargo_n,
+                          COALESCE(institucion_id::text, LOWER(TRIM(COALESCE(institucion_nombre,'')))) AS inst_n,
+                          COUNT(*) AS copias,
+                          MIN(id)  AS dup_grupo
+                   FROM ofertas
+                   WHERE activa = TRUE AND COALESCE(TRIM(cargo), '') <> ''
+                   GROUP BY 1, 2
+                   HAVING COUNT(*) > 1
+               )
+               SELECT o.id, o.cargo, o.institucion_nombre, o.fecha_cierre,
+                      o.url_oferta, o.activa, g.dup_grupo, g.copias
+               FROM ofertas o
+               JOIN grupos g
+                 ON LOWER(TRIM(o.cargo)) = g.cargo_n
+                AND COALESCE(o.institucion_id::text, LOWER(TRIM(COALESCE(o.institucion_nombre,'')))) = g.inst_n
+               WHERE o.activa = TRUE
+               ORDER BY g.dup_grupo, o.id
+               LIMIT %s""",
+            [limit],
+        )
+        categorias["duplicado_posible"] = {"total": len(rows), "items": rows}
+
     # Resumen de totales por categoría
     resumen = {k: v["total"] for k, v in categorias.items()}
     return {"resumen": resumen, "categorias": categorias}
@@ -1140,6 +1440,7 @@ def admin_marcar_revisada(
             raise HTTPException(404, "Oferta no encontrada")
         conn.commit()
     logger.info(f"[admin] oferta {oferta_id} marcada revisada por {_user}. Nota: {nota}")
+    _auditar(_user, "marcar_revisada", "oferta", oferta_id, {"nota": nota} if nota else None)
     return {"id": oferta_id, "revisada": True}
 
 
@@ -1285,6 +1586,7 @@ def admin_eliminar_suscripcion(
         if cur.rowcount == 0:
             raise HTTPException(404, "Suscripción no encontrada")
         conn.commit()
+    _auditar(_user, "desactivar_suscripcion", "suscripcion", sub_id)
     return {"id": sub_id, "desactivada": True}
 
 
@@ -1316,6 +1618,7 @@ def admin_test_email(
         raise HTTPException(404, "No hay ofertas activas para el email de prueba")
 
     result = _enviar(email=email, ofertas=ofertas, filtros={"_test": True})
+    _auditar(_user, "test_email", "email", email, {"ok": result.get("ok")})
     return {"ok": result.get("ok"), "email": email, "ofertas": len(ofertas), "resend_id": result.get("id"), "error": result.get("error")}
 
 
@@ -1392,3 +1695,6 @@ def admin_export_ofertas(
 
 
 # ── Fin endpoints admin ────────────────────────────────────────────────────
+��──
+
+

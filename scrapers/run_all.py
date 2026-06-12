@@ -60,6 +60,9 @@ from scrapers import divsal as divsal_scraper
 from scrapers import famae as famae_scraper
 from scrapers import laborum as laborum_scraper
 from scrapers import codelco as codelco_scraper
+from scrapers import fiscalia as fiscalia_scraper
+from scrapers import puertos_empresas as puertos_empresas_scraper
+from scrapers import linkedin_penalolen as linkedin_penalolen_scraper
 from scrapers.runtime_inventory import (
     build_runtime_scraper,
     iter_legacy_rows,
@@ -119,7 +122,13 @@ _PERFILES_NUEVO_ESTANDAR: frozenset[str] = frozenset({"carabineros_pdf_first", "
 # perfil ffaa_waf con Ejercito (157), que sigue usando el FfaaScraper generico).
 # DIVSAL (706) = divsal.py: institución FF.AA. nueva, scraper dedicado vía API REST;
 # excluida por id para que no la tome el FfaaScraper genérico ni se superponga.
-_IDS_NUEVO_ESTANDAR: frozenset[int] = frozenset({145, 158, 706, 165, 707, 279, 275})
+# + Fiscalía (146, fiscalia.py, sale de trabajando) y puertos/empresas
+# (166 ENAER, 285 EPI, 290 Talcahuano, 291 Pto Montt, 292 Chacabuco,
+#  293 Austral, 708 FOJI, 709 PRODEMU) por puertos_empresas.py.
+_IDS_NUEVO_ESTANDAR: frozenset[int] = frozenset({
+    145, 158, 706, 165, 707, 279, 275,
+    146, 166, 285, 290, 291, 292, 293, 708, 709,
+})
 
 
 @lru_cache(maxsize=1)
@@ -1063,6 +1072,30 @@ async def main(argv: list[str] | None = None) -> int:
             reports.append(
                 await asyncio.to_thread(
                     _run_modulo_ejecutar_sync, "codelco (275)", codelco_scraper.ejecutar
+                )
+            )
+        hay_fiscalia = any(s.get("id") == 146 for s in catalog_sources)
+        if hay_fiscalia:
+            reports.append(
+                await asyncio.to_thread(
+                    _run_modulo_ejecutar_sync, "fiscalia (146)", fiscalia_scraper.ejecutar
+                )
+            )
+        _IDS_PUERTOS_EMPRESAS = {166, 285, 290, 291, 292, 293, 708, 709}
+        hay_puertos = any(s.get("id") in _IDS_PUERTOS_EMPRESAS for s in catalog_sources)
+        if hay_puertos:
+            reports.append(
+                await asyncio.to_thread(
+                    _run_modulo_ejecutar_sync, "puertos/empresas", puertos_empresas_scraper.ejecutar
+                )
+            )
+        # LinkedIn Peñalolén (401): herramienta asistida; corre solo si existe el
+        # archivo curado de URLs junto al scraper (si no, no haría nada útil).
+        _linkedin_urls = Path(__file__).resolve().parent / "linkedin_urls.txt"
+        if _linkedin_urls.exists() and any(s.get("id") == 401 for s in catalog_sources):
+            reports.append(
+                await asyncio.to_thread(
+                    _run_modulo_ejecutar_sync, "linkedin_penalolen (401)", linkedin_penalolen_scraper.ejecutar
                 )
             )
 

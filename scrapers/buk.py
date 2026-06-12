@@ -130,7 +130,7 @@ _RE_FECHA_PROCESO = re.compile(r"Proceso iniciado el\s+(\d{1,2}/\d{1,2}/\d{4})",
 
 _EXTRA_SOURCES: list[dict[str, Any]] = [
     {
-        "id": 290,
+        "id": 294,
         "nombre": "SASIPA (Sociedad Agrícola y Servicios Isla de Pascua)",
         "sigla": "SASIPA",
         "sector": "Empresa Pública",
