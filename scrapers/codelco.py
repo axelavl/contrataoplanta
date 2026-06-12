@@ -157,6 +157,67 @@ _RE_REQUISITOS = re.compile(
 _RE_DIVISION = re.compile(
     r"\b(Divisi[oó]n [A-ZÁÉÍÓÚ][\wáéíóúñ ]{2,30}?|Vicepresidencia[\wáéíóúñ ]{0,40}?|Casa Matriz)\b(?=[,.;]|\s[a-z¿])")
 
+# ── Bloque "Condiciones Ofrecidas" (datos estructurados del aviso) ───
+_RE_CIERRE_STRICT = re.compile(
+    r"Cierre de Postulaci[oó]n(?:es)?\s*:?\s*"
+    r"(?:lunes|martes|mi[ée]rcoles|jueves|viernes|s[áa]bado|domingo)?\s*,?\s*"
+    r"(\d{1,2})\s+de\s+(\w+)\s+de(?:l)?\s+(\d{4})", re.I)
+_RE_LUGAR = re.compile(
+    r"Lugar de trabajo\s*:?\s*(.{2,60}?)\s*(?:\.|Jornada|N[úu]mero|Cierre|Hora)", re.I)
+_RE_JORNADA = re.compile(
+    r"Jornada laboral\s*:?\s*(.{2,60}?)\s*(?:\.|N[úu]mero|Cierre|Hora|Lugar)", re.I)
+_RE_CONTRATO = re.compile(
+    r"\bContrato\s*:?\s*(Indefinido|Plazo\s+Fijo|A\s+plazo\s+fijo|Reemplazo|"
+    r"Honorarios?|Faena)", re.I)
+_RE_PROPOSITO = re.compile(
+    r"Prop[óo]sito del Cargo\s*:?\s*(.*?)\s*(?:¡Porque|Funciones\s+Principales|"
+    r"Requisitos de Postulaci|Condiciones Ofrecidas)", re.I | re.S)
+_RE_FUNCIONES = re.compile(
+    r"Funciones\s+Principales\s*:?\s*(.*?)\s*(?:Requisitos de Postulaci|"
+    r"Aspectos Deseables|Condiciones Ofrecidas)", re.I | re.S)
+
+# Faena/división Codelco -> (ciudad, región).
+CODELCO_LUGAR_REGION: dict[str, tuple[str | None, str]] = {
+    "el salvador": ("El Salvador", "Atacama"),
+    "potrerillos": ("Potrerillos", "Atacama"),
+    "diego de almagro": ("Diego de Almagro", "Atacama"),
+    "salvador": ("El Salvador", "Atacama"),
+    "chuquicamata": ("Calama", "Antofagasta"),
+    "calama": ("Calama", "Antofagasta"),
+    "radomiro tomic": ("Calama", "Antofagasta"),
+    "ministro hales": ("Calama", "Antofagasta"),
+    "gabriela mistral": ("Calama", "Antofagasta"),
+    "gaby": ("Calama", "Antofagasta"),
+    "tocopilla": ("Tocopilla", "Antofagasta"),
+    "antofagasta": (None, "Antofagasta"),
+    "el teniente": ("Rancagua", "O'Higgins"),
+    "rancagua": ("Rancagua", "O'Higgins"),
+    "machalí": ("Machalí", "O'Higgins"), "machali": ("Machalí", "O'Higgins"),
+    "sewell": ("Machalí", "O'Higgins"), "coya": ("Machalí", "O'Higgins"),
+    "andina": ("Los Andes", "Valparaíso"),
+    "los andes": ("Los Andes", "Valparaíso"),
+    "saladillo": ("Los Andes", "Valparaíso"),
+    "río blanco": ("Los Andes", "Valparaíso"),
+    "rio blanco": ("Los Andes", "Valparaíso"),
+    "ventanas": ("Puchuncaví", "Valparaíso"),
+    "puchuncaví": ("Puchuncaví", "Valparaíso"),
+    "puchuncavi": ("Puchuncaví", "Valparaíso"),
+    "quintero": ("Quintero", "Valparaíso"),
+    "valparaíso": (None, "Valparaíso"), "valparaiso": (None, "Valparaíso"),
+    "casa matriz": ("Santiago", "Metropolitana de Santiago"),
+    "santiago": ("Santiago", "Metropolitana de Santiago"),
+}
+
+
+def _lugar_a_ciudad_region(lugar: str) -> tuple[str | None, str | None]:
+    """'El Salvador' -> ('El Salvador', 'Atacama'). Si no mapea, usa el texto
+    como ciudad y deja la región sin resolver (la define el tile)."""
+    l = (lugar or "").lower()
+    for clave, (ciudad, region) in CODELCO_LUGAR_REGION.items():
+        if clave in l:
+            return (ciudad or lugar.strip().title()), region
+    return (lugar.strip().title() or None), None
+
 CAMPOS_EXPORT = ["id_externo", "fuente_id", "institucion_id", "institucion_nombre", "sector", "cargo",
                  "area_profesional", "tipo_cargo", "nivel", "region", "ciudad",
                  "renta_bruta_min", "renta_bruta_max", "renta_texto",
@@ -253,7 +314,13 @@ def parsear_listado(html: str, base_url: str = BASE) -> list[dict[str, Any]]:
 
 
 def parsear_detalle(html: str) -> dict[str, Any]:
-    """Detalle SF: descripción (itemprop), requisitos, cierre, división."""
+    """Detalle SF (server-render en .jobdescription). Extrae propósito,
+    funciones, requisitos y el bloque 'Condiciones Ofrecidas' (contrato,
+    lugar->ciudad/región, jornada, vacantes, cierre real).
+
+    OJO: los itemprop/meta (jobLocation, datePosted, validThrough) los rellena
+    JavaScript en jobs2web -> llegan VACÍOS por HTTP; todo se saca del texto.
+    """
     soup = BeautifulSoup(html, "html.parser")
     d: dict[str, Any] = {}
     desc_el = soup.select_one("span[itemprop=description], .jobdescription")
@@ -262,28 +329,63 @@ def parsear_detalle(html: str) -> dict[str, Any]:
     texto = limpiar_texto(desc_el.get_text(" ", strip=True))
     d["aviso"] = texto
 
-    if m := _RE_CIERRE.search(texto):
+    m = _RE_CIERRE_STRICT.search(texto) or _RE_CIERRE.search(texto)
+    if m:
         mes = MESES.get(m.group(2).lower())
         if mes:
             try:
                 d["fecha_cierre"] = date(int(m.group(3)), mes, int(m.group(1)))
             except ValueError:
                 pass
+    # SuccessFactors solo lista avisos VIGENTES; si el cierre extraído ya
+    # venció (típico en "Convocatorias"/pools sin línea de cierre real), es un
+    # misparse -> mejor None que una fecha pasada que el front trataría como vencida.
+    if d.get("fecha_cierre") and d["fecha_cierre"] < date.today():
+        d.pop("fecha_cierre", None)
+
+    if m := _RE_CONTRATO.search(texto):
+        sub = limpiar_texto(m.group(1)).title()
+        d["contrato"] = sub
+        d["tipo"] = f"Código del Trabajo ({sub})"[:50]
+
+    if m := _RE_LUGAR.search(texto):
+        lugar = limpiar_texto(m.group(1)).strip(" .:-")
+        if lugar and len(lugar) <= 60:
+            d["lugar"] = lugar
+            ciudad, region = _lugar_a_ciudad_region(lugar)
+            if ciudad:
+                d["ciudad"] = ciudad
+            if region:
+                d["region"] = region
+
+    if m := _RE_JORNADA.search(texto):
+        jornada = limpiar_texto(m.group(1)).strip(" .:-")
+        if jornada and len(jornada) <= 60:
+            d["jornada"] = jornada
+
+    if m := _RE_VACANTES_DET.search(texto):
+        d["vacantes"] = int(m.group(1))
+
+    if m := _RE_DIVISION.search(texto):
+        d["division"] = limpiar_texto(m.group(1))
+
+    if m := _RE_PROPOSITO.search(texto):
+        prop = limpiar_texto(m.group(1))
+        if len(prop) > 20:
+            d["proposito"] = prop[:1200]
+    if m := _RE_FUNCIONES.search(texto):
+        d["funciones"] = limpiar_texto(m.group(1))[:1200]
 
     if m := _RE_REQUISITOS.search(texto):
         bloque = m.group(1)
         corte = re.search(
-            r"(?:Postulan?do|En Codelco|Diversidad e Inclusi[oó]n|"
-            r"Fecha de t[ée]rmino|Hora de cierre|Si quieres|¿C[oó]mo postular)",
+            r"(?:Aspectos Deseables|Condiciones Ofrecidas|Declaro en este acto|"
+            r"Postulan?do|En Codelco|Diversidad e Inclusi[oó]n|"
+            r"Fecha de t[ée]rmino|Hora de cierre|Si quieres|¿Cómo postular)",
             bloque, re.I)
         if corte:
             bloque = bloque[: corte.start()]
         d["requisitos"] = limpiar_texto(bloque)[:2000]
-
-    if m := _RE_DIVISION.search(texto):
-        d["division"] = limpiar_texto(m.group(1))
-    if m := _RE_VACANTES_DET.search(texto):
-        d["vacantes"] = int(m.group(1))
     return d
 
 
@@ -306,14 +408,23 @@ def construir_oferta(item: dict[str, Any], det: dict[str, Any]) -> dict:
     cargo = item["titulo"]
 
     desc_partes = []
-    if det.get("aviso"):
-        # primer tramo del aviso (sin el boilerplate de diversidad/beneficios)
+    if det.get("proposito"):
+        desc_partes.append(f"Propósito del cargo: {det['proposito']}")
+    if det.get("funciones"):
+        desc_partes.append(f"Funciones principales: {det['funciones']}")
+    if not det.get("proposito") and not det.get("funciones") and det.get("aviso"):
         aviso = det["aviso"]
         corte = re.search(r"(?:Diversidad e Inclusi[oó]n|En Codelco estamos llamados)",
                           aviso, re.I)
         desc_partes.append(aviso[: corte.start()] if corte else aviso[:1200])
     if det.get("division"):
         desc_partes.append(f"Unidad: {det['division']}")
+    if det.get("lugar"):
+        desc_partes.append(f"Lugar de trabajo: {det['lugar']}")
+    if det.get("jornada"):
+        desc_partes.append(f"Jornada: {det['jornada']}")
+    if det.get("contrato"):
+        desc_partes.append(f"Contrato: {det['contrato']}")
     if det.get("vacantes"):
         desc_partes.append(f"Vacantes: {det['vacantes']}")
     if item.get("id_proceso"):
@@ -335,10 +446,10 @@ def construir_oferta(item: dict[str, Any], det: dict[str, Any]) -> dict:
         "institucion_nombre": nombre,
         "sector": FUENTE["sector"],
         "area_profesional": normalizar_area(cargo),
-        "tipo_cargo": "Código del Trabajo",  # régimen laboral de Codelco
+        "tipo_cargo": det.get("tipo") or "Código del Trabajo",
         "nivel": _nivel(cargo),
-        "region": item.get("region") or FUENTE["region"],
-        "ciudad": None,  # las faenas/divisiones no equivalen a comuna
+        "region": det.get("region") or item.get("region") or FUENTE["region"],
+        "ciudad": det.get("ciudad"),  # del "Lugar de trabajo" del aviso
         "renta_bruta_min": None,   # Codelco no publica renta
         "renta_bruta_max": None,
         "renta_texto": None,

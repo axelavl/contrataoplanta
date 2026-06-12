@@ -194,34 +194,61 @@ def api_reindexar_meili(_user: str = Depends(_verify_admin_jwt)) -> dict[str, An
 
 @router.post(f"/api/{ADMIN_PATH}/alertas/enviar", tags=["admin"])
 def api_enviar_alertas_pendientes(
+    payload: dict[str, Any] | None = None,
     _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
     """
     Procesa y envía alertas pendientes a los suscriptores.
-    Busca ofertas nuevas (últimas 24h) que coincidan con los filtros
+    Busca ofertas nuevas (últimas `horas`) que coincidan con los filtros
     de cada suscriptor y les envía un email via Resend.
+
+    Body (JSON, opcional):
+      - email: str    — sólo a este suscriptor (match exacto, case-insensitive)
+      - horas: int    — ventana de ofertas nuevas (default 24, máx 168)
+      - dry_run: bool — simula: calcula coincidencias SIN enviar emails
 
     Movido bajo el prefijo admin: antes era público y permitía gatillar
     envío masivo de emails vía Resend sin autenticación (abuso de
     cuota + spam a toda la lista de suscriptores).
     """
-    suscripciones = execute_fetch_all(
-        "SELECT * FROM alertas_suscripciones WHERE activa = TRUE"
-    )
+    payload = payload or {}
+    email_filtro = (str(payload.get("email") or "")).strip().lower()
+    dry_run = bool(payload.get("dry_run", False))
+    try:
+        horas = max(1, min(int(payload.get("horas") or 24), 168))
+    except (TypeError, ValueError):
+        horas = 24
+
+    if email_filtro:
+        suscripciones = execute_fetch_all(
+            "SELECT * FROM alertas_suscripciones WHERE activa = TRUE AND LOWER(email) = %s",
+            [email_filtro],
+        )
+    else:
+        suscripciones = execute_fetch_all(
+            "SELECT * FROM alertas_suscripciones WHERE activa = TRUE"
+        )
     if not suscripciones:
-        return {"ok": True, "enviados": 0, "mensaje": "Sin suscripciones activas"}
+        return {
+            "ok": True, "enviados": 0, "errores": 0, "sin_coincidencias": 0,
+            "total_suscripciones": 0, "dry_run": dry_run, "detalles": [],
+            "mensaje": "Sin suscripciones activas que coincidan",
+        }
 
     enviados = 0
     errores = 0
+    sin_coincidencias = 0
+    detalles: list[dict[str, Any]] = []
 
     for sub in suscripciones:
         where_parts = [ACTIVE_OFFER_SQL]
         params: list[Any] = []
 
-        # Only offers from last 24h
+        # Sólo ofertas de la ventana solicitada
         where_parts.append(
-            "COALESCE(o.fecha_scraped, o.detectada_en, o.actualizada_en, o.creada_en) >= NOW() - INTERVAL '24 hours'"
+            "COALESCE(o.fecha_scraped, o.detectada_en, o.actualizada_en, o.creada_en) >= NOW() - make_interval(hours => %s)"
         )
+        params.append(horas)
 
         if sub.get("region"):
             where_parts.append("COALESCE(o.region, i.region, '') ILIKE %s")
@@ -248,31 +275,48 @@ def api_enviar_alertas_pendientes(
             params,
         )
 
-        if ofertas:
-            result = enviar_alerta_ofertas(
-                email=sub["email"],
-                ofertas=ofertas,
-                filtros={
-                    "region": sub.get("region"),
-                    "termino": sub.get("termino"),
-                    "tipo_contrato": sub.get("tipo_contrato"),
-                    "sector": sub.get("sector"),
-                },
-            )
-            if result.get("ok"):
-                enviados += 1
-            else:
-                errores += 1
+        if not ofertas:
+            sin_coincidencias += 1
+            detalles.append({"email": sub["email"], "resultado": "sin_coincidencias", "coincidencias": 0})
+            continue
 
-    _auditar(_user, "enviar_alertas", "suscripciones", None, {
-        "total_suscripciones": len(suscripciones),
-        "enviados": enviados, "errores": errores,
-    })
+        if dry_run:
+            enviados += 1  # "se enviaría"
+            detalles.append({"email": sub["email"], "resultado": "simulado", "coincidencias": len(ofertas)})
+            continue
+
+        result = enviar_alerta_ofertas(
+            email=sub["email"],
+            ofertas=ofertas,
+            filtros={
+                "region": sub.get("region"),
+                "termino": sub.get("termino"),
+                "tipo_contrato": sub.get("tipo_contrato"),
+                "sector": sub.get("sector"),
+            },
+        )
+        if result.get("ok"):
+            enviados += 1
+            detalles.append({"email": sub["email"], "resultado": "enviado", "coincidencias": len(ofertas)})
+        else:
+            errores += 1
+            detalles.append({"email": sub["email"], "resultado": "error", "coincidencias": len(ofertas)})
+
+    if not dry_run:
+        _auditar(_user, "enviar_alertas", "suscripciones", None, {
+            "total_suscripciones": len(suscripciones),
+            "enviados": enviados, "errores": errores, "horas": horas,
+            "email_filtro": email_filtro or None,
+        })
     return {
         "ok": True,
         "total_suscripciones": len(suscripciones),
         "enviados": enviados,
         "errores": errores,
+        "sin_coincidencias": sin_coincidencias,
+        "dry_run": dry_run,
+        "horas": horas,
+        "detalles": detalles,
     }
 
 
@@ -286,8 +330,10 @@ def admin_stats(_user: str = Depends(_verify_admin_jwt)) -> dict[str, Any]:
             COUNT(*) AS total,
             COUNT(*) FILTER (WHERE activa = TRUE)  AS activas,
             COUNT(*) FILTER (WHERE activa = FALSE) AS inactivas,
+            COUNT(*) FILTER (WHERE url_oferta_valida = TRUE AND activa = TRUE)  AS urls_validas,
             COUNT(*) FILTER (WHERE url_oferta_valida = FALSE) AS urls_rotas,
             COUNT(*) FILTER (WHERE url_oferta_valida IS NULL)  AS urls_sin_validar,
+            COUNT(*) FILTER (WHERE needs_review = TRUE AND activa = TRUE) AS needs_review,
             COUNT(*) FILTER (
                 WHERE COALESCE(fecha_scraped, detectada_en, actualizada_en, creada_en)
                       >= NOW() - INTERVAL '24 hours'
@@ -297,6 +343,11 @@ def admin_stats(_user: str = Depends(_verify_admin_jwt)) -> dict[str, Any]:
             ) AS activas_vencidas
         FROM ofertas
     """) or {}
+
+    inst_row = execute_fetch_one(
+        "SELECT COUNT(*) AS n FROM instituciones", []
+    ) or {}
+    totales["instituciones"] = int(inst_row.get("n") or 0)
 
     por_sector = execute_fetch_all(f"""
         SELECT COALESCE(i.sector, 'Sin sector') AS sector, COUNT(*) AS total
@@ -339,11 +390,17 @@ def admin_stats(_user: str = Depends(_verify_admin_jwt)) -> dict[str, Any]:
         FROM source_evaluations
     """) or {}
 
+    # Claves alineadas con renderUrlStats() del panel (gestion.js).
     url_validez = execute_fetch_one("""
         SELECT
-            COUNT(*) FILTER (WHERE url_oferta_valida = TRUE)  AS validas,
-            COUNT(*) FILTER (WHERE url_oferta_valida = FALSE) AS rotas,
-            COUNT(*) FILTER (WHERE url_oferta_valida IS NULL) AS sin_validar,
+            COUNT(*) FILTER (WHERE url_oferta_valida = TRUE)  AS url_oferta_validas,
+            COUNT(*) FILTER (WHERE url_oferta_valida = FALSE) AS url_oferta_rotas,
+            COUNT(*) FILTER (WHERE url_bases_valida = TRUE)   AS url_bases_validas,
+            COUNT(*) FILTER (WHERE url_bases_valida = FALSE)  AS url_bases_rotas,
+            COUNT(*) FILTER (
+                WHERE url_valida_chequeada_en IS NULL
+                   OR url_valida_chequeada_en < NOW() - INTERVAL '24 hours'
+            ) AS sin_chequear_hoy,
             MAX(url_valida_chequeada_en) AS ultimo_chequeo
         FROM ofertas WHERE activa = TRUE
     """) or {}
@@ -366,7 +423,14 @@ def admin_ofertas(
     sector: str | None = Query(None),
     region: str | None = Query(None),
     q: str | None = Query(None),
-    orden: str = Query("reciente", description="reciente|cierre|cargo"),
+    oferta_id: int | None = Query(None, description="ID exacto"),
+    institucion_id: int | None = Query(None),
+    estado: str | None = Query(None, description="activa|cerrada|vencida|suspendida"),
+    cierre_desde: date | None = Query(None),
+    cierre_hasta: date | None = Query(None),
+    needs_review: bool | None = Query(None),
+    sin_renta: bool | None = Query(None, description="true: sin renta_bruta_min ni max"),
+    orden: str = Query("reciente", description="reciente|cierre|cargo|renta"),
     _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
     """Lista paginada de ofertas con filtros para revisión."""
@@ -392,10 +456,45 @@ def admin_ofertas(
         params.append(f"%{region}%")
 
     if q:
-        conditions.append(
-            "(o.cargo ILIKE %s OR o.institucion_nombre ILIKE %s OR i.nombre ILIKE %s)"
-        )
-        params.extend([f"%{q}%", f"%{q}%", f"%{q}%"])
+        # Si el término es un número, también permitir match directo por ID.
+        if q.strip().isdigit():
+            conditions.append(
+                "(o.id = %s OR o.cargo ILIKE %s OR o.institucion_nombre ILIKE %s OR i.nombre ILIKE %s)"
+            )
+            params.extend([int(q.strip()), f"%{q}%", f"%{q}%", f"%{q}%"])
+        else:
+            conditions.append(
+                "(o.cargo ILIKE %s OR o.institucion_nombre ILIKE %s OR i.nombre ILIKE %s)"
+            )
+            params.extend([f"%{q}%", f"%{q}%", f"%{q}%"])
+
+    if oferta_id is not None:
+        conditions.append("o.id = %s")
+        params.append(oferta_id)
+
+    if institucion_id is not None:
+        conditions.append("o.institucion_id = %s")
+        params.append(institucion_id)
+
+    if estado:
+        conditions.append("COALESCE(NULLIF(o.estado, ''), CASE WHEN o.activa THEN 'activa' ELSE 'cerrada' END) = %s")
+        params.append(estado)
+
+    if cierre_desde is not None:
+        conditions.append("o.fecha_cierre >= %s")
+        params.append(cierre_desde)
+
+    if cierre_hasta is not None:
+        conditions.append("o.fecha_cierre <= %s")
+        params.append(cierre_hasta)
+
+    if needs_review is True:
+        conditions.append("o.needs_review = TRUE")
+    elif needs_review is False:
+        conditions.append("COALESCE(o.needs_review, FALSE) = FALSE")
+
+    if sin_renta is True:
+        conditions.append("o.renta_bruta_min IS NULL AND o.renta_bruta_max IS NULL")
 
     where_clause = ("WHERE " + " AND ".join(conditions)) if conditions else ""
 
@@ -403,6 +502,7 @@ def admin_ofertas(
         "reciente": "COALESCE(o.fecha_scraped, o.detectada_en, o.actualizada_en) DESC NULLS LAST",
         "cierre": "o.fecha_cierre ASC NULLS LAST",
         "cargo": "o.cargo ASC",
+        "renta": "GREATEST(COALESCE(o.renta_bruta_max, 0), COALESCE(o.renta_bruta_min, 0)) DESC",
     }.get(orden, "COALESCE(o.fecha_scraped, o.detectada_en, o.actualizada_en) DESC NULLS LAST")
 
     offset = (pagina - 1) * por_pagina
@@ -524,6 +624,96 @@ def admin_editar_oferta(
 
     _auditar(_user, "editar_oferta", "oferta", oferta_id, {"campos": sorted(updates)})
     return {"id": oferta_id, "updated": list(updates.keys())}
+
+
+@router.post(f"/api/{ADMIN_PATH}/ofertas", tags=["admin"])
+def admin_crear_oferta(
+    payload: dict[str, Any],
+    _user: str = Depends(_verify_admin_jwt),
+) -> dict[str, Any]:
+    """Crea una oferta manual desde el panel.
+
+    Requeridos: cargo, institucion_nombre. Opcionales: descripcion,
+    fecha_cierre, fecha_publicacion, region, sector, tipo_contrato,
+    renta_bruta_min/max, url_oferta, url_bases, institucion_id.
+    """
+    cargo = (payload.get("cargo") or "").strip()
+    institucion = (payload.get("institucion_nombre") or "").strip()
+    if not cargo or not institucion:
+        raise HTTPException(400, "cargo e institucion_nombre son requeridos")
+
+    def _int_o_none(v: Any) -> int | None:
+        if v in (None, ""):
+            return None
+        try:
+            return int(v)
+        except (TypeError, ValueError):
+            return None
+
+    url_oferta = (str(payload.get("url_oferta") or "")).strip() or None
+    url_bases = (str(payload.get("url_bases") or "")).strip() or None
+    for nombre_url, valor_url in (("url_oferta", url_oferta), ("url_bases", url_bases)):
+        if valor_url and not valor_url.startswith(("http://", "https://")):
+            raise HTTPException(400, f"{nombre_url} debe ser una URL http(s)")
+
+    cols = _table_columns("ofertas")
+    fila = {
+        "cargo": cargo[:500],
+        "institucion_nombre": institucion[:300],
+        "institucion_id": _int_o_none(payload.get("institucion_id")),
+        "descripcion": payload.get("descripcion") or None,
+        "fecha_cierre": payload.get("fecha_cierre") or None,
+        "fecha_publicacion": payload.get("fecha_publicacion") or date.today(),
+        "region": (payload.get("region") or None),
+        "sector": (payload.get("sector") or None),
+        "tipo_contrato": (payload.get("tipo_contrato") or None),
+        "renta_bruta_min": _int_o_none(payload.get("renta_bruta_min")),
+        "renta_bruta_max": _int_o_none(payload.get("renta_bruta_max")),
+        "url_oferta": url_oferta,
+        "url_bases": url_bases,
+        "activa": True,
+        "estado": "activa",
+    }
+    # Sólo columnas que existan en el schema actual (estado/tipo_contrato
+    # vienen de migraciones; en DBs viejas pueden faltar).
+    fila = {k: v for k, v in fila.items() if k in cols}
+
+    columnas = ", ".join(fila)
+    marcas = ", ".join(["%s"] * len(fila))
+    with get_cursor() as (conn, cur):
+        cur.execute(
+            f"INSERT INTO ofertas ({columnas}) VALUES ({marcas}) RETURNING id",
+            list(fila.values()),
+        )
+        row = cur.fetchone()
+        nuevo_id = (row["id"] if isinstance(row, dict) else row[0]) if row else None
+        conn.commit()
+
+    _auditar(_user, "crear_oferta", "oferta", nuevo_id, {"cargo": cargo[:80], "institucion": institucion[:80]})
+    return {"id": nuevo_id, "cargo": cargo}
+
+
+@router.post(f"/api/{ADMIN_PATH}/ofertas/bulk-marcar-revisadas", tags=["admin"])
+def admin_bulk_marcar_revisadas(
+    payload: dict[str, Any],
+    _user: str = Depends(_verify_admin_jwt),
+) -> dict[str, Any]:
+    """Marca en bloque ofertas como revisadas (needs_review=FALSE).
+
+    Body: { ids: list[int] }
+    """
+    ids = [int(i) for i in (payload.get("ids") or []) if str(i).isdigit()]
+    if not ids:
+        raise HTTPException(400, "ids es requerido")
+    with get_cursor() as (conn, cur):
+        cur.execute(
+            "UPDATE ofertas SET needs_review=FALSE, actualizada_en=NOW() WHERE id = ANY(%s)",
+            [ids],
+        )
+        count = cur.rowcount
+        conn.commit()
+    _auditar(_user, "bulk_marcar_revisadas", "ofertas", None, {"marcadas": count})
+    return {"marcadas": count}
 
 
 @router.get(f"/api/{ADMIN_PATH}/scraper-runs", tags=["admin"])
@@ -916,9 +1106,10 @@ async def admin_scraper_run(
     Dispara un scraper en background.
 
     Body (JSON):
-      - mode: "empleos_publicos" | "institucion" | "kind"
+      - mode: "all" | "empleos_publicos" | "institucion" | "kind"
       - institucion_id: int   (para mode=institucion)
       - kind: str             (para mode=kind, ej. "wordpress")
+      - include_experimental: bool (para mode=all, default false)
       - dry_run: bool         (default false)
       - max: int              (máx ofertas, default 50)
     """
@@ -936,7 +1127,12 @@ async def admin_scraper_run(
     if dry_run:
         cmd.append("--dry-run")
 
-    if mode == "empleos_publicos":
+    if mode == "all":
+        # Corrida completa: todos los kinds runnables + el batch de
+        # EmpleosPublicos, igual que el timer de systemd.
+        if payload.get("include_experimental"):
+            cmd.append("--include-experimental")
+    elif mode == "empleos_publicos":
         cmd += ["--only-kind", "empleos_publicos"]
     elif mode == "institucion":
         inst_id = payload.get("institucion_id")
@@ -1284,23 +1480,87 @@ def admin_desactivar_fuente(
         )
         conn.commit()
 
-    # Añadir override en source_overrides.json
-    try:
-        import json as _json
-        overrides_path = _PROJECT_ROOT / "scrapers" / "source_overrides.json"
-        if overrides_path.exists():
-            with open(overrides_path, encoding="utf-8") as f:
-                overrides = _json.load(f)
-        else:
-            overrides = {}
-        overrides[str(fuente_id)] = {"status": "disabled", "reason": f"desactivado via admin por {_user}"}
-        with open(overrides_path, "w", encoding="utf-8") as f:
-            _json.dump(overrides, f, ensure_ascii=False, indent=2)
-    except Exception as exc:
-        logger.warning(f"[admin] no se pudo actualizar source_overrides.json: {exc}")
+    # Override persistente en DB (sobrevive redeploys; el JSON del repo
+    # queda sólo como fallback versionado).
+    _set_override_db(fuente_id, status="disabled",
+                     reason=f"desactivado via admin por {_user}", usuario=_user)
 
     _auditar(_user, "desactivar_fuente", "institucion", fuente_id, {"ofertas_cerradas": n})
     return {"id": fuente_id, "ofertas_cerradas": n}
+
+
+def _set_override_db(
+    institucion_id: int,
+    status: str | None = None,
+    kind: str | None = None,
+    reason: str | None = None,
+    usuario: str = "ops",
+) -> None:
+    """Upsert en `source_overrides` + invalidación del cache en este proceso."""
+    with get_cursor() as (conn, cur):
+        cur.execute(
+            """INSERT INTO source_overrides
+               (institucion_id, status, kind, reason, actualizado_en, actualizado_por)
+               VALUES (%s, %s, %s, %s, NOW(), %s)
+               ON CONFLICT (institucion_id) DO UPDATE
+               SET status = EXCLUDED.status, kind = EXCLUDED.kind,
+                   reason = EXCLUDED.reason, actualizado_en = NOW(),
+                   actualizado_por = EXCLUDED.actualizado_por""",
+            [institucion_id, status, kind, reason, usuario],
+        )
+        conn.commit()
+    if _SOURCE_STATUS_AVAILABLE:
+        with suppress(Exception):
+            from scrapers.source_status import reset_overrides_cache
+            reset_overrides_cache()
+
+
+_OVERRIDE_STATUSES = {"active", "experimental", "manual_review", "js_required",
+                      "blocked", "broken", "no_data", "disabled"}
+
+
+@router.put(f"/api/{ADMIN_PATH}/fuentes/{{fuente_id}}/override", tags=["admin"])
+def admin_set_override(
+    fuente_id: int,
+    payload: dict[str, Any],
+    _user: str = Depends(_verify_admin_jwt),
+) -> dict[str, Any]:
+    """Fija un override de clasificación para una fuente (persistente en DB).
+
+    Body: { status?: str, kind?: str, reason?: str }. `status` debe ser
+    uno de los SourceStatus válidos; `kind` un ScraperKind válido.
+    """
+    status = (payload.get("status") or "").strip() or None
+    kind = (payload.get("kind") or "").strip() or None
+    reason = (payload.get("reason") or "").strip() or None
+    if not status and not kind:
+        raise HTTPException(400, "Se requiere status o kind")
+    if status and status not in _OVERRIDE_STATUSES:
+        raise HTTPException(400, f"status inválido. Válidos: {sorted(_OVERRIDE_STATUSES)}")
+    try:
+        _set_override_db(fuente_id, status=status, kind=kind, reason=reason, usuario=_user)
+    except Exception as exc:
+        raise HTTPException(500, f"No se pudo guardar el override (¿migración 0004 aplicada?): {exc}") from exc
+    _auditar(_user, "set_override", "institucion", fuente_id, {"status": status, "kind": kind})
+    return {"id": fuente_id, "status": status, "kind": kind}
+
+
+@router.delete(f"/api/{ADMIN_PATH}/fuentes/{{fuente_id}}/override", tags=["admin"])
+def admin_quitar_override(
+    fuente_id: int,
+    _user: str = Depends(_verify_admin_jwt),
+) -> dict[str, Any]:
+    """Elimina el override de una fuente — vuelve a la clasificación automática."""
+    with get_cursor() as (conn, cur):
+        cur.execute("DELETE FROM source_overrides WHERE institucion_id = %s", [fuente_id])
+        count = cur.rowcount
+        conn.commit()
+    if _SOURCE_STATUS_AVAILABLE:
+        with suppress(Exception):
+            from scrapers.source_status import reset_overrides_cache
+            reset_overrides_cache()
+    _auditar(_user, "quitar_override", "institucion", fuente_id)
+    return {"id": fuente_id, "eliminado": count > 0}
 
 
 # ── Admin: bandeja de revisión manual ────────────────────────────────────────
@@ -1622,6 +1882,55 @@ def admin_test_email(
     return {"ok": result.get("ok"), "email": email, "ofertas": len(ofertas), "resend_id": result.get("id"), "error": result.get("error")}
 
 
+@router.get(f"/api/{ADMIN_PATH}/alertas/eventos", tags=["admin"])
+def admin_email_eventos(
+    limit: int = Query(50, ge=1, le=500),
+    email: str | None = Query(None),
+    _user: str = Depends(_verify_admin_jwt),
+) -> dict[str, Any]:
+    """Métricas de entrega de emails (webhooks de Resend) + últimos eventos.
+
+    Requiere la migración 0004 (tabla email_eventos) y el webhook
+    configurado en Resend apuntando a `POST /api/webhooks/resend` con
+    `RESEND_WEBHOOK_SECRET` seteado.
+    """
+    try:
+        resumen = execute_fetch_one(
+            """SELECT
+                COUNT(*) FILTER (WHERE evento LIKE '%%sent%%')      AS enviados,
+                COUNT(*) FILTER (WHERE evento LIKE '%%delivered%%') AS entregados,
+                COUNT(*) FILTER (WHERE evento LIKE '%%bounce%%')    AS rebotes,
+                COUNT(*) FILTER (WHERE evento LIKE '%%open%%')      AS aperturas,
+                COUNT(*) FILTER (WHERE evento LIKE '%%click%%')     AS clics,
+                COUNT(*) FILTER (WHERE evento LIKE '%%complain%%')  AS quejas,
+                COUNT(*) AS total,
+                MIN(ts) AS desde,
+                MAX(ts) AS ultimo
+               FROM email_eventos
+               WHERE ts >= NOW() - INTERVAL '30 days'""",
+            [],
+        ) or {}
+        where = "WHERE email ILIKE %s" if email else ""
+        params: list[Any] = [f"%{email}%"] if email else []
+        eventos = execute_fetch_all(
+            f"""SELECT id, ts, evento, email, resend_id, asunto
+                FROM email_eventos
+                {where}
+                ORDER BY ts DESC
+                LIMIT %s""",
+            params + [limit],
+        )
+        webhook_listo = bool(os.getenv("RESEND_WEBHOOK_SECRET"))
+        return {"resumen": resumen, "eventos": eventos, "webhook_configurado": webhook_listo}
+    except Exception as exc:
+        logger.warning(f"[admin] email_eventos no disponible: {exc}")
+        return {
+            "resumen": {}, "eventos": [],
+            "webhook_configurado": bool(os.getenv("RESEND_WEBHOOK_SECRET")),
+            "warning": "Tabla email_eventos no disponible — aplicar `alembic upgrade head`.",
+        }
+
+
 @router.get(f"/api/{ADMIN_PATH}/suscripciones/export", tags=["admin"])
 def admin_export_suscripciones(
     _user: str = Depends(_verify_admin_jwt),
@@ -1694,6 +2003,6 @@ def admin_export_ofertas(
     )
 
 
-# ── Fin endpoints admin ─────────────────────────────────────────────────────
+# ── Fin endpoints admin ────────────────────────────────────────────────────
 
 

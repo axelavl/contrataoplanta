@@ -300,11 +300,12 @@
         <h2>Gestión de ofertas</h2>
         <div style="display:flex;gap:8px;align-items:center">
           <span id="ofertas-badge" class="pill gray"></span>
+          <button class="btn btn-primary btn-sm" data-action="nueva-oferta">+ Nueva oferta</button>
           <button class="btn btn-ghost btn-sm" data-action="export-ofertas">⬇ CSV</button>
         </div>
       </div>
       <div class="filters">
-        <input type="search" id="f-q" placeholder="🔍 Cargo / institución…" data-input="ofertas-q">
+        <input type="search" id="f-q" placeholder="🔍 Cargo / institución / ID…" data-input="ofertas-q">
         <select id="f-activa" data-change="ofertas">
           <option value="">Todas</option>
           <option value="true">Activas</option>
@@ -321,16 +322,44 @@
           <option value="reciente">Más recientes</option>
           <option value="cierre">Por cierre</option>
           <option value="cargo">Alfabético</option>
+          <option value="renta">Mayor renta</option>
         </select>
+      </div>
+      <div class="filters">
+        <input id="f-inst-id" type="number" placeholder="ID institución" style="width:130px" data-change="ofertas">
+        <select id="f-estado" data-change="ofertas">
+          <option value="">Cualquier estado</option>
+          <option value="activa">activa</option>
+          <option value="cerrada">cerrada</option>
+          <option value="vencida">vencida</option>
+          <option value="suspendida">suspendida</option>
+        </select>
+        <input id="f-cierre-desde" type="date" title="Cierre desde" data-change="ofertas">
+        <input id="f-cierre-hasta" type="date" title="Cierre hasta" data-change="ofertas">
+        <select id="f-needs-review" data-change="ofertas">
+          <option value="">Revisión: todas</option>
+          <option value="true">Pendientes de revisión</option>
+          <option value="false">Ya revisadas</option>
+        </select>
+        <label style="display:flex;align-items:center;gap:6px;color:var(--muted);cursor:pointer;font-size:13px">
+          <input id="f-sin-renta" type="checkbox" data-change="ofertas"> Sin renta
+        </label>
+      </div>
+      <div id="ofertas-bulkbar" style="display:none;align-items:center;gap:10px;margin-bottom:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:8px 14px">
+        <span id="sel-count" class="text-small" style="color:var(--accent);font-weight:600"></span>
+        <button class="btn btn-danger btn-sm" data-action="bulk-sel-desactivar">Desactivar seleccionadas</button>
+        <button class="btn btn-success btn-sm" data-action="bulk-sel-revisadas">Marcar revisadas</button>
+        <button class="btn btn-ghost btn-sm" data-action="bulk-sel-limpiar">Limpiar selección</button>
       </div>
       <div class="table-wrap">
         <table>
           <thead><tr>
+            <th style="width:30px"><input type="checkbox" id="sel-all-ofertas" title="Seleccionar página"></th>
             <th>ID</th><th>Cargo / Institución</th><th>Sector</th><th>Región</th>
             <th>Cierre</th><th>Estado</th><th>URL</th><th>Acciones</th>
           </tr></thead>
           <tbody id="ofertas-tbody">
-            <tr class="loading-row"><td colspan="8"><span class="spinner"></span></td></tr>
+            <tr class="loading-row"><td colspan="9"><span class="spinner"></span></td></tr>
           </tbody>
         </table>
         <div class="paginacion" id="ofertas-paginacion"></div>
@@ -426,6 +455,26 @@
         <div id="al-resultado" style="display:none;padding:12px;background:var(--bg);border-radius:var(--radius);border:1px solid var(--border);font-size:13px"></div>
       </div>
 
+      <!-- Métricas de entrega (webhooks Resend) -->
+      <div class="section-header">
+        <h2>Entrega de emails (últimos 30 días)</h2>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="ev-email-filtro" type="search" placeholder="Filtrar por email…" style="background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:var(--radius);padding:6px 10px;font-size:12px" data-change="eventos">
+          <button class="btn btn-ghost btn-sm" data-action="load-eventos">↻ Actualizar</button>
+        </div>
+      </div>
+      <div class="stats-grid" id="email-eventos-stats" style="margin-bottom:14px"></div>
+      <div class="table-wrap" style="margin-bottom:24px">
+        <table>
+          <thead><tr>
+            <th>Fecha</th><th>Evento</th><th>Email</th><th>Asunto</th>
+          </tr></thead>
+          <tbody id="email-eventos-tbody">
+            <tr class="loading-row"><td colspan="4"><span class="spinner"></span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
       <!-- Tabla de suscriptores -->
       <div class="section-header">
         <h2>Suscriptores activos</h2>
@@ -462,9 +511,13 @@
         <div class="filters" style="margin-bottom:14px">
           <select id="run-mode">
             <option value="empleos_publicos">EmpleosPublicos (portal central)</option>
+            <option value="all">🚀 Corrida completa (todos)</option>
             <option value="kind">Por tipo (kind)</option>
             <option value="institucion">Por institución ID</option>
           </select>
+          <label id="run-experimental-wrap" style="display:none;align-items:center;gap:6px;color:var(--muted);cursor:pointer">
+            <input id="run-experimental" type="checkbox"> Incluir experimentales
+          </label>
           <select id="run-kind" style="display:none">
             <option value="wordpress">WordPress</option>
             <option value="generic">Generic</option>
@@ -605,6 +658,10 @@
             <option value="test_email">test_email</option>
             <option value="desactivar_suscripcion">desactivar_suscripcion</option>
             <option value="editar_config">editar_config</option>
+            <option value="crear_oferta">crear_oferta</option>
+            <option value="bulk_marcar_revisadas">bulk_marcar_revisadas</option>
+            <option value="set_override">set_override</option>
+            <option value="quitar_override">quitar_override</option>
           </select>
           <button class="btn btn-ghost btn-sm" data-action="load-audit">↻ Actualizar</button>
         </div>
@@ -668,8 +725,9 @@
 <!-- Modal editar oferta -->
 <div class="modal-overlay" id="edit-modal">
   <div class="modal">
-    <h3>Editar oferta <span id="edit-id" style="color:var(--muted);font-weight:400"></span></h3>
+    <h3 id="edit-modal-title">Editar oferta <span id="edit-id" style="color:var(--muted);font-weight:400"></span></h3>
     <div class="form-group"><label>Cargo</label><input id="edit-cargo" type="text"></div>
+    <div class="form-group" id="edit-institucion-group" style="display:none"><label>Institución *</label><input id="edit-institucion" type="text" placeholder="Nombre de la institución"></div>
     <div class="form-group"><label>Descripción</label><textarea id="edit-descripcion" rows="3"></textarea></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="form-group"><label>Fecha cierre</label><input id="edit-fecha-cierre" type="date"></div>
@@ -692,7 +750,7 @@
     <div class="form-group"><label>URL bases</label><input id="edit-url-bases" type="url" placeholder="https://…"></div>
     <div class="modal-footer">
       <button class="btn btn-ghost" data-action="close-modal">Cancelar</button>
-      <button class="btn btn-primary" data-action="save-edit">Guardar</button>
+      <button class="btn btn-primary" id="edit-save-btn" data-action="save-edit">Guardar</button>
     </div>
   </div>
 </div>

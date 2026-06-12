@@ -40,25 +40,25 @@ WHERE activa = TRUE
       )
 ORDER BY institucion_id, id;
 
--- 2) Desactivación (descomenta tras revisar el SELECT).
--- UPDATE ofertas
--- SET activa = FALSE
--- WHERE activa = TRUE
---   AND (
---         id IN (5251, 5252)
---         OR (
---             (url_oferta ILIKE '%/transparencia/%'
---              OR url_oferta ILIKE '%directorio-personal%'
---              OR url_oferta ILIKE '%personal-planta%'
---              OR url_oferta ILIKE '%estados-financieros%'
---              OR url_oferta ILIKE '%marco-normativo%'
---              OR url_oferta ILIKE '%estructura-organica%'
---              OR url_oferta ILIKE '%memorias-anuales%')
---             AND url_oferta NOT ILIKE '%trabaje-con-nosotros%'
---             AND url_oferta NOT ILIKE '%trabaja-con-nosotros%'
---             AND url_oferta NOT ILIKE '%concurso%'
---         )
---       );
+-- 2) Desactivación (previsualización revisada 2026-06-11: ids 5251, 5252, 919).
+UPDATE ofertas
+SET activa = FALSE
+WHERE activa = TRUE
+  AND (
+        id IN (5251, 5252)
+        OR (
+            (url_oferta ILIKE '%/transparencia/%'
+             OR url_oferta ILIKE '%directorio-personal%'
+             OR url_oferta ILIKE '%personal-planta%'
+             OR url_oferta ILIKE '%estados-financieros%'
+             OR url_oferta ILIKE '%marco-normativo%'
+             OR url_oferta ILIKE '%estructura-organica%'
+             OR url_oferta ILIKE '%memorias-anuales%')
+            AND url_oferta NOT ILIKE '%trabaje-con-nosotros%'
+            AND url_oferta NOT ILIKE '%trabaja-con-nosotros%'
+            AND url_oferta NOT ILIKE '%concurso%'
+        )
+      );
 
 COMMIT;
 

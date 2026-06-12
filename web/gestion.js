@@ -2,6 +2,7 @@
 /*
   JS del panel de gestión interna (gestion.html).
 
+
   Externalizado desde el <script> inline para cumplir el CSP
   `script-src 'self'` de web/_headers (mismo patrón que PR #164 aplicó
   a index.html). Nada de handlers inline: los elementos estáticos usan
@@ -155,7 +156,7 @@ document.querySelectorAll('nav button').forEach(btn => {
     else if (tab === 'scrapers') loadScrapers();
     else if (tab === 'fuentes')  loadFuentes();
     else if (tab === 'revision') loadRevision();
-    else if (tab === 'alertas')  loadAlertas();
+    else if (tab === 'alertas')  { loadAlertas(); loadEventos(); }
     else if (tab === 'config')   loadConfig();
     else if (tab === 'acciones') loadProcesos();
   });
@@ -286,22 +287,74 @@ async function loadOfertas(pag=1) {
   if (a) p.set('activa', a);
   if (u) p.set('url_rota', u);
   if (s) p.set('sector', s);
+  // Filtros avanzados (segunda fila)
+  const instId = document.getElementById('f-inst-id').value.trim();
+  const estado = document.getElementById('f-estado').value;
+  const cDesde = document.getElementById('f-cierre-desde').value;
+  const cHasta = document.getElementById('f-cierre-hasta').value;
+  const nrev   = document.getElementById('f-needs-review').value;
+  const sinRenta = document.getElementById('f-sin-renta').checked;
+  if (instId) p.set('institucion_id', instId);
+  if (estado) p.set('estado', estado);
+  if (cDesde) p.set('cierre_desde', cDesde);
+  if (cHasta) p.set('cierre_hasta', cHasta);
+  if (nrev)   p.set('needs_review', nrev);
+  if (sinRenta) p.set('sin_renta', 'true');
 
+  _limpiarSeleccion();
   const tbody = document.getElementById('ofertas-tbody');
-  tbody.innerHTML = `<tr class="loading-row"><td colspan="8"><span class="spinner"></span></td></tr>`;
+  tbody.innerHTML = `<tr class="loading-row"><td colspan="9"><span class="spinner"></span></td></tr>`;
   try {
     const d = await api(`/ofertas?${p}`);
     renderOfertasTable(d.ofertas||[]);
     renderPaginacion(d, 'ofertas-paginacion');
     document.getElementById('ofertas-badge').textContent = `${(d.total||0).toLocaleString()} ofertas`;
   } catch(e) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="8" style="color:var(--red)">Error: ${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="9" style="color:var(--red)">Error: ${e.message}</td></tr>`;
+  }
+}
+
+// ── Selección múltiple de ofertas ──────────────────────────────
+function _seleccionadas() {
+  return [...document.querySelectorAll('.sel-oferta:checked')].map(c => parseInt(c.dataset.id));
+}
+
+function _limpiarSeleccion() {
+  document.querySelectorAll('.sel-oferta:checked').forEach(c => { c.checked = false; });
+  const selAll = document.getElementById('sel-all-ofertas');
+  if (selAll) selAll.checked = false;
+  _actualizarBulkBar();
+}
+
+function _actualizarBulkBar() {
+  const n = _seleccionadas().length;
+  const bar = document.getElementById('ofertas-bulkbar');
+  bar.style.display = n > 0 ? 'flex' : 'none';
+  document.getElementById('sel-count').textContent = `${n} seleccionada${n!==1?'s':''}`;
+}
+
+async function bulkSeleccionadas(accion) {
+  const ids = _seleccionadas();
+  if (!ids.length) return;
+  if (accion === 'desactivar') {
+    if (!confirm(`¿Desactivar ${ids.length} oferta(s) seleccionada(s)?`)) return;
+    try {
+      const r = await api('/ofertas/bulk-desactivar', { method:'POST', body: JSON.stringify({ ids }) });
+      toast(`${r.desactivadas} ofertas desactivadas ✓`);
+      loadOfertas(_ofertasPagina);
+    } catch(e) { toast('Error: '+e.message,'error'); }
+  } else if (accion === 'revisadas') {
+    try {
+      const r = await api('/ofertas/bulk-marcar-revisadas', { method:'POST', body: JSON.stringify({ ids }) });
+      toast(`${r.marcadas} ofertas marcadas como revisadas ✓`);
+      loadOfertas(_ofertasPagina);
+    } catch(e) { toast('Error: '+e.message,'error'); }
   }
 }
 
 function renderOfertasTable(ofertas) {
   const tbody = document.getElementById('ofertas-tbody');
-  if (!ofertas.length) { tbody.innerHTML='<tr class="empty-row"><td colspan="8">Sin resultados</td></tr>'; return; }
+  if (!ofertas.length) { tbody.innerHTML='<tr class="empty-row"><td colspan="9">Sin resultados</td></tr>'; return; }
   tbody.innerHTML = ofertas.map(o => {
     _itemCache[o.id] = o;
     const activa = o.activa !== false;
@@ -309,6 +362,7 @@ function renderOfertasTable(ofertas) {
     const urlIcon = o.url_oferta ? (urlOk===false?'🔴':urlOk===true?'🟢':'⚪') : '<span class="text-muted">—</span>';
     const inst = o.institucion_display || o.institucion_nombre || '<span class="text-muted">—</span>';
     return `<tr>
+      <td><input type="checkbox" class="sel-oferta" data-id="${o.id}"></td>
       <td class="text-muted text-small">${o.id}</td>
       <td style="max-width:220px">
         <div title="${escAttr(o.cargo)}" style="font-weight:500">${trunc(o.cargo,36)}</div>
@@ -355,9 +409,29 @@ async function toggleActiva(id) {
 }
 
 // ── EDIT MODAL ────────────────────────────────────────────────
+let _creandoOferta = false;
+
+function openCrearOferta() {
+  _creandoOferta = true;
+  _editingId = null;
+  document.getElementById('edit-modal-title').childNodes[0].textContent = 'Nueva oferta ';
+  document.getElementById('edit-id').textContent = '';
+  document.getElementById('edit-institucion-group').style.display = '';
+  document.getElementById('edit-save-btn').textContent = 'Crear';
+  ['edit-cargo','edit-institucion','edit-descripcion','edit-fecha-cierre','edit-region',
+   'edit-tipo-contrato','edit-renta-min','edit-renta-max','edit-url-oferta','edit-url-bases']
+    .forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('edit-estado').value = 'activa';
+  document.getElementById('edit-modal').classList.add('open');
+}
+
 function openEdit(id, o) {
+  _creandoOferta = false;
   _editingId = id;
   o = o || _itemCache[id] || {};
+  document.getElementById('edit-modal-title').childNodes[0].textContent = 'Editar oferta ';
+  document.getElementById('edit-institucion-group').style.display = 'none';
+  document.getElementById('edit-save-btn').textContent = 'Guardar';
   document.getElementById('edit-id').textContent = `#${id}`;
   document.getElementById('edit-cargo').value = o.cargo||'';
   document.getElementById('edit-descripcion').value = o.descripcion||'';
@@ -374,9 +448,10 @@ function openEdit(id, o) {
 function closeModal() {
   document.getElementById('edit-modal').classList.remove('open');
   _editingId = null;
+  _creandoOferta = false;
 }
 async function saveEdit() {
-  if (!_editingId) return;
+  if (!_editingId && !_creandoOferta) return;
   const raw = {
     cargo:         document.getElementById('edit-cargo').value,
     descripcion:   document.getElementById('edit-descripcion').value||null,
@@ -391,8 +466,18 @@ async function saveEdit() {
   };
   const payload = Object.fromEntries(Object.entries(raw).filter(([,v])=>v!=null&&v!==''));
   try {
-    await api(`/ofertas/${_editingId}`, { method:'PUT', body:JSON.stringify(payload) });
-    toast('Oferta actualizada ✓');
+    if (_creandoOferta) {
+      payload.institucion_nombre = document.getElementById('edit-institucion').value.trim();
+      if (!payload.cargo || !payload.institucion_nombre) {
+        toast('Cargo e institución son requeridos', 'error');
+        return;
+      }
+      const r = await api('/ofertas', { method:'POST', body:JSON.stringify(payload) });
+      toast(`Oferta creada — ID ${r.id} ✓`);
+    } else {
+      await api(`/ofertas/${_editingId}`, { method:'PUT', body:JSON.stringify(payload) });
+      toast('Oferta actualizada ✓');
+    }
     closeModal();
     loadOfertas(_ofertasPagina);
   } catch(e) { toast('Error: '+e.message,'error'); }
@@ -463,7 +548,7 @@ async function loadScrapers() {
 // ── FUENTES ───────────────────────────────────────────────────
 async function loadFuentes() {
   const tbody = document.getElementById('fuentes-tbody');
-  tbody.innerHTML = `<tr class="loading-row"><td colspan="10"><span class="spinner"></span></td></tr>`;
+  tbody.innerHTML = `<tr class="loading-row"><td colspan="11"><span class="spinner"></span></td></tr>`;
   const p = new URLSearchParams();
   const s = document.getElementById('f-fuente-sector').value;
   const c = document.getElementById('f-con-ofertas').value;
@@ -474,7 +559,7 @@ async function loadFuentes() {
     let fs = await api(`/fuentes?${p}`);
     if (dv) fs = fs.filter(f=>(f.ultima_decision||'sin_evaluar')===dv);
     document.getElementById('fuentes-badge').textContent = `${fs.length.toLocaleString()} instituciones`;
-    if (!fs.length) { tbody.innerHTML='<tr class="empty-row"><td colspan="10">Sin resultados</td></tr>'; return; }
+    if (!fs.length) { tbody.innerHTML='<tr class="empty-row"><td colspan="11">Sin resultados</td></tr>'; return; }
     const em = {wordpress:'blue',generic:'gray',custom_trabajando:'orange',custom_hiringroom:'orange',
                 custom_buk:'orange',empleos_publicos:'blue',custom_playwright:'yellow'};
     tbody.innerHTML = fs.map(f=>`<tr>
@@ -490,11 +575,12 @@ async function loadFuentes() {
       <td class="text-small text-muted">${f.ultima_evaluacion?fmtDate(f.ultima_evaluacion):'—'}</td>
       <td style="white-space:nowrap">
         <button class="btn btn-ghost btn-sm" data-action="editar-fuente" data-id="${f.id}">✏️</button>
+        <button class="btn btn-ghost btn-sm" style="margin-left:4px" title="Override de clasificación" data-action="override-fuente" data-id="${f.id}" data-nombre="${escAttr((f.nombre||'').slice(0,25))}">⚙️</button>
         <button class="btn btn-danger btn-sm" style="margin-left:4px" data-action="desactivar-fuente" data-id="${f.id}" data-nombre="${escAttr((f.nombre||'').slice(0,25))}">🗑️</button>
       </td>
     </tr>`).join('');
   } catch(e) {
-    tbody.innerHTML=`<tr class="empty-row"><td colspan="10" style="color:var(--red)">Error: ${e.message}</td></tr>`;
+    tbody.innerHTML=`<tr class="empty-row"><td colspan="11" style="color:var(--red)">Error: ${e.message}</td></tr>`;
   }
 }
 
@@ -636,6 +722,76 @@ async function desactivarSub(id, email) {
     await api(`/suscripciones/${id}`, { method:'DELETE' });
     toast(`Suscripción de ${email} desactivada ✓`);
     loadAlertas();
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+// ── Métricas de entrega (webhooks Resend) ─────────────────────
+async function loadEventos() {
+  const tbody = document.getElementById('email-eventos-tbody');
+  const statsEl = document.getElementById('email-eventos-stats');
+  tbody.innerHTML = `<tr class="loading-row"><td colspan="4"><span class="spinner"></span></td></tr>`;
+  try {
+    const filtro = document.getElementById('ev-email-filtro').value.trim();
+    const p = new URLSearchParams({ limit: '50' });
+    if (filtro) p.set('email', filtro);
+    const d = await api(`/alertas/eventos?${p}`);
+    if (d.warning) {
+      statsEl.innerHTML = '';
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="4" style="color:var(--yellow)">${d.warning}</td></tr>`;
+      return;
+    }
+    const r = d.resumen || {};
+    statsEl.innerHTML = `
+      <div class="stat-card blue"><div class="label">Enviados</div><div class="value">${r.enviados??0}</div></div>
+      <div class="stat-card green"><div class="label">Entregados</div><div class="value">${r.entregados??0}</div></div>
+      <div class="stat-card red"><div class="label">Rebotes</div><div class="value">${r.rebotes??0}</div></div>
+      <div class="stat-card"><div class="label">Aperturas</div><div class="value">${r.aperturas??0}</div></div>
+      <div class="stat-card"><div class="label">Clics</div><div class="value">${r.clics??0}</div></div>
+      <div class="stat-card yellow"><div class="label">Quejas</div><div class="value">${r.quejas??0}</div></div>
+    `;
+    const evs = d.eventos || [];
+    if (!evs.length) {
+      const hint = d.webhook_configurado
+        ? 'Sin eventos aún'
+        : 'Sin eventos — configura el webhook en Resend y la env var RESEND_WEBHOOK_SECRET';
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="4">${hint}</td></tr>`;
+      return;
+    }
+    const evPill = { delivered:'green', bounced:'red', opened:'blue', clicked:'blue', complained:'yellow', sent:'gray' };
+    tbody.innerHTML = evs.map(ev => {
+      const tipo = (ev.evento||'').replace('email.','');
+      return `<tr>
+        <td class="text-small">${fmtDt(ev.ts)}</td>
+        <td>${pill(tipo, evPill[tipo]||'gray')}</td>
+        <td class="text-small">${ev.email||'—'}</td>
+        <td class="text-small text-muted" style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escAttr(ev.asunto)}">${trunc(ev.asunto,46)}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    statsEl.innerHTML = '';
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="4" style="color:var(--red)">Error: ${e.message}</td></tr>`;
+  }
+}
+
+// ── Override de clasificación de fuentes ──────────────────────
+async function overrideFuente(id, nombre) {
+  const valido = 'active, experimental, manual_review, js_required, blocked, broken, no_data, disabled';
+  const status = prompt(
+    `Override de status para "${nombre}" (ID ${id}).\nValores: ${valido}\nDeja vacío y acepta para QUITAR el override.`
+  );
+  if (status === null) return; // canceló
+  try {
+    if (!status.trim()) {
+      const r = await api(`/fuentes/${id}/override`, { method:'DELETE' });
+      toast(r.eliminado ? `Override de ${id} eliminado ✓` : `Fuente ${id} no tenía override`);
+    } else {
+      await api(`/fuentes/${id}/override`, {
+        method:'PUT',
+        body: JSON.stringify({ status: status.trim(), reason: `manual desde panel` }),
+      });
+      toast(`Override de ${id} → ${status.trim()} ✓`);
+    }
+    loadFuentes();
   } catch(e) { toast('Error: '+e.message,'error'); }
 }
 
@@ -866,6 +1022,7 @@ document.getElementById('run-mode').addEventListener('change', function() {
   const v = this.value;
   document.getElementById('run-kind').style.display    = v==='kind'       ? '' : 'none';
   document.getElementById('run-inst-id').style.display = v==='institucion'? '' : 'none';
+  document.getElementById('run-experimental-wrap').style.display = v==='all' ? 'flex' : 'none';
 });
 
 async function runScraper() {
@@ -879,6 +1036,13 @@ async function runScraper() {
   const payload = { mode, dry_run: dryRun, max };
   if (mode==='kind')        payload.kind = kind;
   if (mode==='institucion') payload.institucion_id = parseInt(instId);
+  if (mode==='all') {
+    payload.include_experimental = document.getElementById('run-experimental').checked;
+    const aviso = payload.include_experimental
+      ? '¿Lanzar corrida COMPLETA incluyendo fuentes experimentales? Puede tardar bastante.'
+      : '¿Lanzar corrida completa de todos los scrapers activos? Puede tardar varios minutos.';
+    if (!dryRun && !confirm(aviso)) return;
+  }
 
   res.style.display='block';
   res.innerHTML='<span class="spinner"></span> Lanzando…';
@@ -1139,6 +1303,11 @@ document.addEventListener('click', e => {
     case 'save-config':        saveConfig(); break;
     case 'load-audit':         loadAudit(); break;
     case 'crear-fuente':       openCrearFuente(); break;
+    case 'nueva-oferta':       openCrearOferta(); break;
+    case 'load-eventos':       loadEventos(); break;
+    case 'bulk-sel-desactivar': bulkSeleccionadas('desactivar'); break;
+    case 'bulk-sel-revisadas':  bulkSeleccionadas('revisadas'); break;
+    case 'bulk-sel-limpiar':    _limpiarSeleccion(); break;
     case 'close-modal':        closeModal(); break;
     case 'save-edit':          saveEdit(); break;
     case 'close-fuente-modal': closeFuenteModal(); break;
@@ -1149,6 +1318,7 @@ document.addEventListener('click', e => {
     case 'open-edit':          openEdit(parseInt(d.id)); break;
     case 'marcar-revisada':    marcarRevisada(parseInt(d.id)); break;
     case 'editar-fuente':      openEditarFuente(parseInt(d.id)); break;
+    case 'override-fuente':    overrideFuente(parseInt(d.id), d.nombre||''); break;
     case 'desactivar-fuente':  desactivarFuente(parseInt(d.id), d.nombre||''); break;
     case 'test-email-sub':     testEmailSub(d.email); break;
     case 'desactivar-sub':     desactivarSub(parseInt(d.id), d.email); break;
@@ -1159,6 +1329,16 @@ document.addEventListener('click', e => {
 });
 
 document.addEventListener('change', e => {
+  // Selección múltiple de ofertas (checkboxes sin data-change)
+  if (e.target.id === 'sel-all-ofertas') {
+    document.querySelectorAll('.sel-oferta').forEach(c => { c.checked = e.target.checked; });
+    _actualizarBulkBar();
+    return;
+  }
+  if (e.target.classList && e.target.classList.contains('sel-oferta')) {
+    _actualizarBulkBar();
+    return;
+  }
   const el = e.target.closest('[data-change]');
   if (!el) return;
   switch (el.dataset.change) {
@@ -1168,6 +1348,7 @@ document.addEventListener('change', e => {
     case 'alertas':  loadAlertas(); break;
     case 'fuentes':  loadFuentes(); break;
     case 'audit':    loadAudit(); break;
+    case 'eventos':  loadEventos(); break;
   }
 });
 

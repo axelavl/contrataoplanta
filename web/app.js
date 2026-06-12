@@ -4010,10 +4010,59 @@ initMeilisearchAutocomplete();
   }
 })();
 
+// ── Configuración del sitio (banner / mantenimiento / footer extra) ──
+// Editable desde el panel de gestión; el backend la expone en
+// GET /api/site-config. Si el endpoint falla, el sitio sigue normal.
+async function cargarSiteConfig() {
+  let conf = {};
+  try {
+    const resp = await fetchApi('/api/site-config');
+    conf = (resp && resp.config) || {};
+  } catch (_) { return; }
+
+  // Banner de aviso (texto plano — textContent evita inyección)
+  if (conf.banner_activo === 'true' && (conf.banner_mensaje || '').trim()) {
+    let banner = document.getElementById('site-config-banner');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'site-config-banner';
+      banner.setAttribute('role', 'status');
+      banner.style.cssText = 'background:#1d4ed8;color:#fff;text-align:center;' +
+        'padding:8px 14px;font-size:14px;line-height:1.4';
+      document.body.insertBefore(banner, document.body.firstChild);
+    }
+    banner.textContent = conf.banner_mensaje.trim();
+  }
+
+  // Aviso de mantenimiento (no bloquea el sitio; avisa de forma visible)
+  if (conf.mantenimiento === 'true') {
+    const aviso = document.createElement('div');
+    aviso.id = 'site-config-mantenimiento';
+    aviso.setAttribute('role', 'alert');
+    aviso.style.cssText = 'background:#b45309;color:#fff;text-align:center;' +
+      'padding:8px 14px;font-size:14px;font-weight:600';
+    aviso.textContent = '⚠️ Sitio en mantención — algunos datos pueden estar desactualizados.';
+    document.body.insertBefore(aviso, document.body.firstChild);
+  }
+
+  // Footer extra (HTML simple, definido por el administrador del sitio)
+  if ((conf.footer_extra || '').trim()) {
+    const anchor = document.getElementById('site-footer');
+    if (anchor) {
+      const extra = document.createElement('div');
+      extra.id = 'site-config-footer-extra';
+      extra.style.cssText = 'text-align:center;padding:10px 14px;font-size:13px;color:#64748b';
+      extra.innerHTML = conf.footer_extra;
+      anchor.insertAdjacentElement('afterend', extra);
+    }
+  }
+}
+
 // Carga inicial
 initAutocompletarInstitucion();
 cargarOfertas();
 cargarEstadisticas();
 cargarResumenFuentes();
 mostrarUltimaActualizacion();
-setInterval(mostrarUltimaActualizacion, 5 * 60 * 1000); // refrescar cada 5 min
+cargarSiteConfig();
+setInterval(mostrarUltimaActualizacion, 5 * 60 * 1000); // refresco cada 5 min

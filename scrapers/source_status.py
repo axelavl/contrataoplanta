@@ -123,16 +123,47 @@ class _OverridesCache:
 _cache = _OverridesCache()
 
 
-def _load_overrides() -> dict[int, dict[str, Any]]:
-    if _cache.loaded:
-        return _cache.by_id
-    _cache.loaded = True
+def _load_overrides_db() -> dict[int, dict[str, Any]] | None:
+    """Lee overrides desde la tabla `source_overrides` (fuente de verdad).
+
+    Devuelve ``None`` si la DB no está disponible o la tabla no existe
+    (entornos de test / instalaciones sin la migración 0004), en cuyo
+    caso se cae al JSON local.
+    """
+    try:
+        import psycopg2  # import local: scrapers puros no lo necesitan
+        from db.config import DB_CONFIG
+
+        with psycopg2.connect(**DB_CONFIG) as conn, conn.cursor() as cur:
+            cur.execute(
+                """SELECT institucion_id, status, kind, reason, notes, frequency_tier
+                   FROM source_overrides"""
+            )
+            rows = cur.fetchall()
+    except Exception:
+        return None
+    result: dict[int, dict[str, Any]] = {}
+    for inst_id, status, kind, reason, notes, tier in rows:
+        result[int(inst_id)] = {
+            "id": int(inst_id),
+            "status": status,
+            "kind": kind,
+            "reason": reason,
+            "notes": notes,
+            "frequency_tier": tier,
+        }
+    return result
+
+
+def _load_overrides_json() -> dict[int, dict[str, Any]]:
+    """Fallback: lee `source_overrides.json` (formato lista o {overrides: []})."""
+    result: dict[int, dict[str, Any]] = {}
     if not _OVERRIDES_PATH.exists():
-        return _cache.by_id
+        return result
     try:
         payload = json.loads(_OVERRIDES_PATH.read_text(encoding="utf-8-sig"))
     except Exception:
-        return _cache.by_id
+        return result
     items = payload if isinstance(payload, list) else payload.get("overrides", [])
     for item in items:
         if not isinstance(item, dict):
@@ -141,8 +172,29 @@ def _load_overrides() -> dict[int, dict[str, Any]]:
             ident = int(item.get("id"))
         except (TypeError, ValueError):
             continue
-        _cache.by_id[ident] = item
+        result[ident] = item
+    return result
+
+
+def _load_overrides() -> dict[int, dict[str, Any]]:
+    if _cache.loaded:
+        return _cache.by_id
+    _cache.loaded = True
+    desde_db = _load_overrides_db()
+    if desde_db is not None:
+        # El JSON local complementa a la DB (la DB gana en conflicto):
+        # útil para overrides versionados en el repo + cambios en caliente
+        # hechos desde el panel admin.
+        _cache.by_id = {**_load_overrides_json(), **desde_db}
+    else:
+        _cache.by_id = _load_overrides_json()
     return _cache.by_id
+
+
+def reset_overrides_cache() -> None:
+    """Invalida el cache (p.ej. tras editar overrides desde el panel)."""
+    _cache.loaded = False
+    _cache.by_id = {}
 
 
 def _apply_override(inst_id: int, decision: SourceDecision) -> SourceDecision:

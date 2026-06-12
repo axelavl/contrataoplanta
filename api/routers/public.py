@@ -851,6 +851,131 @@ def root() -> dict[str, Any]:
             "POST /api/alertas",
             "POST /api/alertas/enviar",
             "POST /api/meilisearch/reindexar",
+            "GET /api/site-config",
             "GET /health",
         ],
     }
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  Configuración pública del sitio (editable desde el panel admin)
+# ═══════════════════════════════════════════════════════════════════════════
+
+#: Claves de `site_config` expuestas al frontend público. Todo lo demás
+#: (si algún día se guardan claves internas) queda fuera.
+_SITE_CONFIG_PUBLICA = {
+    "banner_mensaje", "banner_activo", "mantenimiento",
+    "max_resultados_pagina", "alertas_activas", "footer_extra",
+}
+
+
+@router.get("/api/site-config")
+def get_site_config() -> dict[str, Any]:
+    """Config editable del sitio (banner, mantenimiento, footer extra).
+
+    La edita el panel admin (`PUT /api/{ADMIN_PATH}/config`); el
+    frontend público la consulta al cargar para renderizar banner de
+    aviso, modo mantenimiento y footer extra. Si la tabla no existe,
+    devuelve config vacía (el sitio funciona igual).
+    """
+    try:
+        rows = execute_fetch_all(
+            "SELECT clave, valor FROM site_config ORDER BY clave", []
+        )
+        conf = {r["clave"]: r["valor"] for r in rows if r["clave"] in _SITE_CONFIG_PUBLICA}
+    except Exception:
+        conf = {}
+    return {"config": conf}
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  Webhook de Resend (eventos de entrega de email)
+# ═══════════════════════════════════════════════════════════════════════════
+
+def _verificar_firma_svix(secret: str, svix_id: str, svix_timestamp: str,
+                          svix_signature: str, body: bytes) -> bool:
+    """Verifica la firma svix que usa Resend en sus webhooks.
+
+    Esquema documentado: HMAC-SHA256 de ``{id}.{timestamp}.{body}`` con
+    el secreto base64 (tras el prefijo ``whsec_``). El header
+    ``svix-signature`` trae una lista separada por espacios de
+    ``v1,<firma_base64>``.
+    """
+    try:
+        secret_b = base64.b64decode(secret.removeprefix("whsec_"))
+        signed = f"{svix_id}.{svix_timestamp}.".encode() + body
+        esperado = base64.b64encode(
+            hmac.new(secret_b, signed, hashlib.sha256).digest()
+        ).decode()
+    except Exception:
+        return False
+    for parte in svix_signature.split(" "):
+        version, _, firma = parte.partition(",")
+        if version == "v1" and firma and hmac.compare_digest(firma, esperado):
+            return True
+    return False
+
+
+@router.post("/api/webhooks/resend")
+async def webhook_resend(request: Request) -> dict[str, Any]:
+    """Recibe eventos de Resend (delivered, bounced, opened, clicked, …).
+
+    Requiere `RESEND_WEBHOOK_SECRET` (el "Signing Secret" del webhook en
+    el dashboard de Resend). Sin esa env var el endpoint responde 503 y
+    no procesa nada. La firma se valida SIEMPRE — un webhook público sin
+    verificación permitiría inyectar eventos falsos.
+    """
+    secret = os.getenv("RESEND_WEBHOOK_SECRET", "").strip()
+    if not secret:
+        raise HTTPException(503, "Webhook no configurado (falta RESEND_WEBHOOK_SECRET)")
+
+    svix_id = request.headers.get("svix-id", "")
+    svix_ts = request.headers.get("svix-timestamp", "")
+    svix_sig = request.headers.get("svix-signature", "")
+    body = await request.body()
+    if not (svix_id and svix_ts and svix_sig):
+        raise HTTPException(401, "Headers de firma faltantes")
+
+    # Tolerancia de timestamp (5 min) contra replay.
+    try:
+        ts = int(svix_ts)
+        if abs(datetime.now(tz=timezone.utc).timestamp() - ts) > 300:
+            raise HTTPException(401, "Timestamp fuera de tolerancia")
+    except ValueError:
+        raise HTTPException(401, "Timestamp inválido") from None
+
+    if not _verificar_firma_svix(secret, svix_id, svix_ts, svix_sig, body):
+        raise HTTPException(401, "Firma inválida")
+
+    try:
+        payload = json.loads(body)
+    except Exception:
+        raise HTTPException(400, "Body no es JSON") from None
+
+    evento = str(payload.get("type") or "desconocido")[:40]
+    data = payload.get("data") or {}
+    destinatarios = data.get("to") or []
+    if isinstance(destinatarios, str):
+        destinatarios = [destinatarios]
+    email = (destinatarios[0] if destinatarios else None)
+    resend_id = (data.get("email_id") or data.get("id") or None)
+    asunto = (data.get("subject") or None)
+
+    try:
+        with get_cursor() as (conn, cur):
+            cur.execute(
+                """INSERT INTO email_eventos (evento, email, resend_id, asunto, payload)
+                   VALUES (%s, %s, %s, %s, %s)""",
+                [evento, email, resend_id, asunto, json.dumps(payload, ensure_ascii=False)],
+            )
+            conn.commit()
+    except Exception as exc:
+        # Tabla ausente (migración 0004 sin aplicar): 200 igual para que
+        # Resend no reintente eternamente, pero queda en logs.
+        import logging
+        logging.getLogger("api.routers.public").warning(
+            f"[webhook resend] no se pudo guardar evento: {exc}"
+        )
+
+    return {"ok": True}
+
