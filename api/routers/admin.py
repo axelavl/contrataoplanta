@@ -31,6 +31,7 @@ import csv
 import io
 import json
 import logging
+import math
 import os
 import re
 import subprocess
@@ -1390,6 +1391,4 @@ def admin_export_ofertas(
     )
 
 
-# ── Fin endpoints admin ───────────────────────────────────────────────────────
-
-
+# ── Fin endpoints admin ────────────────────────────────────────────────────
