@@ -80,8 +80,8 @@
     {
       "id": 132,
       "status": "active",
-      "kind": "generic",
-      "reason": "Fundación Integra — portal propio integra.cl/trabaje-con-nosotros. No publica en EP",
+      "kind": "skip",
+      "reason": "Fundacion Integra - 2 scrapers dedicados: trabajando.py (integra.trabajando.cl) + aira_integra.py (tableros Aira). Mismo institucion_id 132, dominios distintos (sin cierre mutuo). Excluida del generico por id.",
       "notes": "https://www.integra.cl/trabaje-con-nosotros/ (trabajaconnosotros.integra.cl requiere JS)"
     },
     {
@@ -655,6 +655,13 @@
       "status": "active",
       "kind": "skip",
       "reason": "PRODEMU - scraper dedicado scrapers/puertos_empresas.py (lista_o_vacio)"
+    },
+    {
+      "id": 710,
+      "status": "active",
+      "kind": "custom_trabajando",
+      "reason": "MIM (Museo Interactivo Mirador) - portal en Trabajando.cl (mim.trabajando.cl); lo maneja scrapers/trabajando.py",
+      "notes": "https://mim.trabajando.cl"
     }
   ]
 }

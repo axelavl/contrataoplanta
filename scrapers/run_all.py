@@ -63,6 +63,8 @@ from scrapers import codelco as codelco_scraper
 from scrapers import fiscalia as fiscalia_scraper
 from scrapers import puertos_empresas as puertos_empresas_scraper
 from scrapers import linkedin_penalolen as linkedin_penalolen_scraper
+from scrapers import aira_integra as aira_integra_scraper
+from scrapers import adp as adp_scraper
 from scrapers.runtime_inventory import (
     build_runtime_scraper,
     iter_legacy_rows,
@@ -128,6 +130,7 @@ _PERFILES_NUEVO_ESTANDAR: frozenset[str] = frozenset({"carabineros_pdf_first", "
 _IDS_NUEVO_ESTANDAR: frozenset[int] = frozenset({
     145, 158, 706, 165, 707, 279, 275,
     146, 166, 285, 290, 291, 292, 293, 708, 709,
+    132,  # Fundación Integra (aira_integra.py + trabajando.py _EXTRA)
 })
 
 
@@ -1096,6 +1099,26 @@ async def main(argv: list[str] | None = None) -> int:
             reports.append(
                 await asyncio.to_thread(
                     _run_modulo_ejecutar_sync, "linkedin_penalolen (401)", linkedin_penalolen_scraper.ejecutar
+                )
+            )
+        # Fundación Integra portal Aira (132). Su otra plataforma
+        # (integra.trabajando.cl) la cubre trabajando.py; mismo institucion_id
+        # pero dominios distintos, así que no se cierran ofertas entre sí.
+        hay_aira_integra = any(s.get("id") == 132 for s in catalog_sources)
+        if hay_aira_integra:
+            reports.append(
+                await asyncio.to_thread(
+                    _run_modulo_ejecutar_sync, "aira_integra (132)", aira_integra_scraper.ejecutar
+                )
+            )
+        # Alta Dirección Pública (Servicio Civil, id 130): fuente ADICIONAL a
+        # su publicación en empleospublicos.cl. Dominio adp.serviciocivil.cl,
+        # así que el cierre por dominio no toca las ofertas de empleospublicos.
+        hay_adp = any(s.get("id") == 130 for s in catalog_sources)
+        if hay_adp:
+            reports.append(
+                await asyncio.to_thread(
+                    _run_modulo_ejecutar_sync, "adp (130)", adp_scraper.ejecutar
                 )
             )
 

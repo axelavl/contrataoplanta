@@ -4,7 +4,7 @@
     "proyecto": "EmpleoEstado.cl",
     "version": "3.0",
     "fecha_generacion": "2026-04-15",
-    "total_instituciones": 709,
+    "total_instituciones": 710,
     "sectores_cubiertos": [
       "Autónomo/Regulador",
       "Ejecutivo Central",
@@ -12846,6 +12846,24 @@
       "dificultad_scraping": "Media",
       "requiere_js": "No",
       "notas_tecnicas": "Lista de concursos. Scraper dedicado scrapers/puertos_empresas.py (modo lista_o_vacio)",
+      "poblacion_censo2024": null,
+      "estado_verificacion": "Por verificar"
+    },
+    {
+      "id": 710,
+      "nombre": "MIM — Museo Interactivo Mirador",
+      "sigla": "MIM",
+      "categoria": "Fundación",
+      "sector": "Ejecutivo Central",
+      "dependencia": "Min. Educación",
+      "region": "Metropolitana de Santiago",
+      "sitio_web": "https://www.mim.cl",
+      "url_empleo": "https://mim.trabajando.cl",
+      "plataforma_empleo": "Trabajando.cl",
+      "publica_en_empleospublicos": "No",
+      "dificultad_scraping": "Media",
+      "requiere_js": "No",
+      "notas_tecnicas": "Portal en Trabajando.cl (mim.trabajando.cl); auto-descubierto por scrapers/trabajando.py",
       "poblacion_censo2024": null,
       "estado_verificacion": "Por verificar"
     }

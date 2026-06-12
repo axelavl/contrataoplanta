@@ -152,6 +152,18 @@ _EXTRA_SOURCES: list[dict[str, Any]] = [
         "region": "Nacional",
         "url_empleo": "https://externouchile.trabajando.cl/",
     },
+    {
+        # Fundación Integra (id real del catálogo). Su ficha apunta a integra.cl,
+        # pero también publica en integra.trabajando.cl. El portal Aira propio lo
+        # cubre aira_integra.py (mismo institucion_id 132, dominio distinto, así
+        # que marcar_ofertas_cerradas no los cierra mutuamente).
+        "id": 132,
+        "nombre": "Fundación Integra",
+        "sigla": "INTEGRA",
+        "sector": "Ejecutivo Central",
+        "region": "Nacional",
+        "url_empleo": "https://integra.trabajando.cl",
+    },
 ]
 
 
