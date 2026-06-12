@@ -1695,6 +1695,5 @@ def admin_export_ofertas(
 
 
 # ── Fin endpoints admin ─────────────────────────────────────────────────────
-��──
 
 
