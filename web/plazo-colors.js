@@ -99,6 +99,26 @@
     });
   }
 
+  function limpiarPersonalCivilTexto(s) {
+    return String(s || '')
+      .replace(/\s*[,;:/|—–-]?\s*personal\s+civil\s*/gi, ' ')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+  }
+
+  function scrubVisibleInstitutionNames(root) {
+    var selectors = [
+      '.oferta-institucion', '#modal-institucion', '.share-meta-kicker',
+      '[data-institucion]', '.institucion-nombre', '.autocomplete-item',
+      '#input-institucion option', 'option'
+    ].join(',');
+    (root || document).querySelectorAll(selectors).forEach(function (el) {
+      if (!/personal\s+civil/i.test(el.textContent || '')) return;
+      var limpio = limpiarPersonalCivilTexto(el.textContent);
+      if (limpio) el.textContent = limpio;
+    });
+  }
+
   // Sobrescribe el renderer si app.js ya lo definió; si aún no, queda disponible
   // como función global para el render posterior.
   window.renderBtnBases = function renderBtnBasesIssue241(oferta) {
@@ -161,11 +181,15 @@
     }
 
     hideBadBases(document);
+    scrubVisibleInstitutionNames(document);
     if (!window.__issue241BasesObserver && document.body) {
       window.__issue241BasesObserver = new MutationObserver(function (ms) {
         ms.forEach(function (m) {
           Array.prototype.forEach.call(m.addedNodes || [], function (n) {
-            if (n.nodeType === 1) hideBadBases(n);
+            if (n.nodeType === 1) {
+              hideBadBases(n);
+              scrubVisibleInstitutionNames(n);
+            }
           });
         });
       });
