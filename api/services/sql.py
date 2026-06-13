@@ -47,6 +47,23 @@ STATUS_LEGACY_MAP = {
     "unknown": "desconocido",
 }
 
+# Normalización sin extensiones: permite que búsquedas como "contraloria" o
+# "educacion" encuentren instituciones/cargos con tildes. Se usa translate()
+# para no depender de la extensión PostgreSQL unaccent en producción.
+_ACCENT_FROM = "ÁÀÂÄÃÅáàâäãåÉÈÊËéèêëÍÌÎÏíìîïÓÒÔÖÕóòôöõÚÙÛÜúùûüÑñÇç"
+_ACCENT_TO = "AAAAAAaaaaaaEEEEeeeeIIIIiiiiOOOOOoooooUUUUuuuuNnCc"
+
+
+def _norm_sql(expr: str) -> str:
+    """SQL expression lower/trim/sin tildes para comparaciones LIKE."""
+    return f"lower(translate(({expr})::text, '{_ACCENT_FROM}', '{_ACCENT_TO}'))"
+
+
+def _norm_like(value: str) -> str:
+    """Normaliza el término en Python para usarlo con _norm_sql(... ) LIKE %s."""
+    src = str.maketrans(_ACCENT_FROM, _ACCENT_TO)
+    return f"%{value.translate(src).lower()}%"
+
 
 def ofertas_base_sql() -> str:
     return """
@@ -108,7 +125,7 @@ def build_ofertas_filters(
     region: str | None = None,
     sector: str | None = None,
     tipo: str | None = None,
-    institucion_id: int | None = None,
+    institucion_id: int | str | None = None,
     area_profesional: str | None = None,
     renta_min: int | None = None,
     ciudad: str | None = None,
@@ -127,16 +144,20 @@ def build_ofertas_filters(
         where.append(f"{OFFER_STATUS_SQL} = 'closed'")
 
     if q:
+        norm_like = _norm_like(q)
         where.append(
             "("
             "to_tsvector('spanish', coalesce(o.cargo, '') || ' ' || coalesce(i.nombre, '') || ' ' || coalesce(o.descripcion, '')) @@ plainto_tsquery('spanish', %s) "
             "OR o.cargo ILIKE %s "
             "OR COALESCE(i.nombre, o.institucion_nombre, '') ILIKE %s "
-            "OR COALESCE(o.descripcion, '') ILIKE %s"
+            "OR COALESCE(o.descripcion, '') ILIKE %s "
+            f"OR {_norm_sql('COALESCE(o.cargo, \'\')')} LIKE %s "
+            f"OR {_norm_sql('COALESCE(i.nombre, o.institucion_nombre, \'\')')} LIKE %s "
+            f"OR {_norm_sql('COALESCE(i.sigla, i.nombre_corto, \'\')')} LIKE %s "
             ")"
         )
         like = f"%{q}%"
-        params.extend([q, like, like, like])
+        params.extend([q, like, like, like, norm_like, norm_like, norm_like])
 
     if region:
         where.append("COALESCE(o.region, i.region, '') ILIKE %s")
@@ -159,8 +180,15 @@ def build_ofertas_filters(
             where.append("(" + " OR ".join(clauses) + ")")
 
     if institucion_id is not None:
-        where.append("o.institucion_id = %s")
-        params.append(institucion_id)
+        ids = [item.strip() for item in str(institucion_id).split(",") if item.strip()]
+        ids_int = [int(item) for item in ids if item.isdigit()]
+        if len(ids_int) == 1:
+            where.append("o.institucion_id = %s")
+            params.append(ids_int[0])
+        elif ids_int:
+            placeholders = ",".join(["%s"] * len(ids_int))
+            where.append(f"o.institucion_id IN ({placeholders})")
+            params.extend(ids_int)
 
     if area_profesional:
         where.append("o.area_profesional ILIKE %s")
@@ -183,9 +211,11 @@ def build_ofertas_filters(
         params.append(f"%{ciudad}%")
 
     if cierra_pronto:
-        where.append("o.fecha_cierre BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '5 days'")
+        # Definición de producto: cierra hoy o mañana, no los próximos 5 días.
+        where.append("o.fecha_cierre BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '1 day'")
 
     if nuevas:
-        where.append("COALESCE(o.fecha_scraped, o.detectada_en, o.actualizada_en, o.creada_en) >= NOW() - INTERVAL '48 hours'")
+        # Definición de producto: ofertas añadidas en las últimas 24 horas.
+        where.append("COALESCE(o.fecha_scraped, o.detectada_en, o.actualizada_en, o.creada_en) >= NOW() - INTERVAL '24 hours'")
 
     return (" WHERE " + " AND ".join(where)) if where else "", params
