@@ -65,6 +65,23 @@ def _norm_like(value: str) -> str:
     return f"%{value.translate(src).lower()}%"
 
 
+def _clean_institution_sql(expr: str) -> str:
+    """Elimina sufijos/segmentos visibles tipo '— Personal Civil' del nombre.
+
+    Se aplica sólo al nombre mostrado/buscado; no cambia IDs ni datos persistidos.
+    Cubre variantes: 'Armada - Personal Civil', 'Armada, Personal Civil',
+    'Carabineros Personal Civil' y espacios duplicados resultantes.
+    """
+    without_marker = (
+        "regexp_replace("
+        f"({expr})::text, "
+        "'\\s*[,;:/|—–-]?\\s*personal\\s+civil\\s*', "
+        "' ', 'gi')"
+    )
+    collapsed = f"regexp_replace({without_marker}, '\\s{{2,}}', ' ', 'g')"
+    return f"NULLIF(TRIM({collapsed}), '')"
+
+
 def ofertas_base_sql() -> str:
     return """
     FROM ofertas o
@@ -73,18 +90,18 @@ def ofertas_base_sql() -> str:
 
 
 def ofertas_select_sql() -> str:
+    institucion_visible = _clean_institution_sql(
+        "COALESCE(NULLIF(TRIM(o.institucion_nombre), ''), i.nombre, 'Sin institución')"
+    )
     return f"""
     SELECT
         o.id,
         o.institucion_id,
         -- Prioridad: nombre tal como aparece en la oferta oficial (o.institucion_nombre)
-        -- sobre el match del catálogo (i.nombre). El match por institucion_id se
-        -- hace por heurística sobre nombres y puede asignar el portal madre o el
-        -- ministerio superior (ej. "Superintendencia de Salud") cuando la vacante
-        -- real pertenece a un hospital/servicio específico (ej. "Hospital Base
-        -- San José de Osorno"). El texto extraído por el scraper desde la oferta
-        -- es más fiel a lo que el usuario debe ver.
-        COALESCE(NULLIF(TRIM(o.institucion_nombre), ''), i.nombre, 'Sin institución') AS institucion,
+        -- sobre el match del catálogo (i.nombre). Antes de exponerlo se limpia
+        -- el marcador operacional 'Personal Civil' para que el usuario vea sólo
+        -- la institución: 'Armada de Chile', 'Carabineros de Chile', etc.
+        COALESCE({institucion_visible}, 'Sin institución') AS institucion,
         COALESCE(i.sigla, i.nombre_corto) AS sigla,
         COALESCE(o.cargo, 'Sin cargo') AS cargo,
         COALESCE(o.descripcion, '') AS descripcion,
@@ -146,7 +163,7 @@ def build_ofertas_filters(
     if q:
         norm_like = _norm_like(q)
         norm_cargo_sql = _norm_sql("COALESCE(o.cargo, '')")
-        norm_inst_sql = _norm_sql("COALESCE(i.nombre, o.institucion_nombre, '')")
+        norm_inst_sql = _norm_sql(_clean_institution_sql("COALESCE(i.nombre, o.institucion_nombre, '')"))
         norm_sigla_sql = _norm_sql("COALESCE(i.sigla, i.nombre_corto, '')")
         where.append(
             "("
