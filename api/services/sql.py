@@ -145,15 +145,18 @@ def build_ofertas_filters(
 
     if q:
         norm_like = _norm_like(q)
+        norm_cargo_sql = _norm_sql("COALESCE(o.cargo, '')")
+        norm_inst_sql = _norm_sql("COALESCE(i.nombre, o.institucion_nombre, '')")
+        norm_sigla_sql = _norm_sql("COALESCE(i.sigla, i.nombre_corto, '')")
         where.append(
             "("
             "to_tsvector('spanish', coalesce(o.cargo, '') || ' ' || coalesce(i.nombre, '') || ' ' || coalesce(o.descripcion, '')) @@ plainto_tsquery('spanish', %s) "
             "OR o.cargo ILIKE %s "
             "OR COALESCE(i.nombre, o.institucion_nombre, '') ILIKE %s "
             "OR COALESCE(o.descripcion, '') ILIKE %s "
-            f"OR {_norm_sql('COALESCE(o.cargo, \'\')')} LIKE %s "
-            f"OR {_norm_sql('COALESCE(i.nombre, o.institucion_nombre, \'\')')} LIKE %s "
-            f"OR {_norm_sql('COALESCE(i.sigla, i.nombre_corto, \'\')')} LIKE %s "
+            f"OR {norm_cargo_sql} LIKE %s "
+            f"OR {norm_inst_sql} LIKE %s "
+            f"OR {norm_sigla_sql} LIKE %s "
             ")"
         )
         like = f"%{q}%"
