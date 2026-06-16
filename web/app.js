@@ -694,19 +694,18 @@ const esUrlValida = (typeof isValidHttpUrl === 'function')
       }
     };
 
-// ── Botón "Bases oficiales": consulta primero el flag del backend ──────────
-// Si el backend marcó url_bases_valida === false → deshabilitar.
-// Si viene null/ausente → degradación a esUrlValida (validación client-side).
+// ── Botón "Bases oficiales": sólo se muestra si el backend COMPROBÓ el enlace ──
+// Regla (issue #242): si `url_bases_valida` no es exactamente true (es decir,
+// está sin comprobar=null o comprobada inválida=false), se OCULTA el botón en
+// lugar de mostrar uno deshabilitado/confuso.
+function basesComprobadas(oferta) {
+  return oferta.url_bases
+    && oferta.url_bases !== oferta.url_oferta
+    && oferta.url_bases_valida === true;
+}
+
 function renderBtnBases(oferta) {
-  const tieneBases = oferta.url_bases && oferta.url_bases !== oferta.url_oferta;
-  if (!tieneBases) return '';
-  const flag = oferta.url_bases_valida;
-  const valida = (flag === false) ? false
-              : (flag === true)  ? true
-              : esUrlValida(oferta.url_bases);
-  if (!valida) {
-    return `<span class="btn-ver btn-ver-off" title="Enlace de bases no disponible" data-action="noop" data-stop-propagation="true">Bases no disponibles</span>`;
-  }
+  if (!basesComprobadas(oferta)) return '';
   return `<button class="btn-ver" type="button" data-action="abrir-visor-bases" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}">Bases oficiales</button>`;
 }
 
@@ -1854,6 +1853,21 @@ function _isWeakSummaryValue(value) {
   return weakTokens.some((token) => normalized.includes(token));
 }
 
+// Filtra valores de formación/título que el sistema no reconoce como dato
+// real (placeholders, fragmentos genéricos o demasiado cortos), para no
+// presentarlos como campo estructurado (issue #242).
+function _esFormacionReconocida(value) {
+  const t = String(value == null ? '' : value).trim();
+  if (t.length < 6) return false;
+  if (_isWeakSummaryValue(t)) return false;
+  // Debe tener al menos una palabra alfabética de fondo (evita "N/A", "---", "•").
+  if (!/[a-záéíóúñA-ZÁÉÍÓÚÑ]{4,}/.test(t)) return false;
+  return true;
+}
+function _filtrarFormacionDudosa(values) {
+  return Array.isArray(values) ? values.filter(_esFormacionReconocida) : [];
+}
+
 function _setSummaryField(itemId, value, opts = {}) {
   const { allowWeak = false } = opts;
   const item = document.getElementById(itemId);
@@ -2224,11 +2238,13 @@ async function abrirModal(ofertaId) {
       _toggleSection('modal-funciones-wrap', countFunc > 0);
       const countCond = _renderListInto('modal-condiciones-list', semantic.condiciones, { max: 8, truncateAt: 5 });
       _toggleSection('modal-condiciones-wrap', countCond > 0);
+      // Formación: descartar valores no reconocidos antes de mostrarlos.
+      const formacionLimpia = _filtrarFormacionDudosa(semantic.requisitos.formacion);
       const countReq = [
         _renderListInto('modal-req-obligatorios', semantic.requisitos.obligatorios, { max: 8, truncateAt: 6 }),
         _renderListInto('modal-req-deseables', semantic.requisitos.deseables, { max: 6, truncateAt: 4 }),
         _renderListInto('modal-req-experiencia', semantic.requisitos.experiencia, { max: 6, truncateAt: 4 }),
-        _renderListInto('modal-req-formacion', semantic.requisitos.formacion, { max: 6, truncateAt: 4 }),
+        _renderListInto('modal-req-formacion', formacionLimpia, { max: 6, truncateAt: 4 }),
         _renderListInto('modal-req-especialidades', semantic.requisitos.especialidades, { max: 6, truncateAt: 4 }),
         _renderListInto('modal-req-competencias', semantic.requisitos.competencias, { max: 6, truncateAt: 4 }),
         _renderListInto('modal-req-documentos', semantic.requisitos.documentos, { max: 6, truncateAt: 4 }),
@@ -2236,7 +2252,7 @@ async function abrirModal(ofertaId) {
       _toggleSection('sec-req-obligatorios', semantic.requisitos.obligatorios.length > 0);
       _toggleSection('sec-req-deseables', semantic.requisitos.deseables.length > 0);
       _toggleSection('sec-req-experiencia', semantic.requisitos.experiencia.length > 0);
-      _toggleSection('sec-req-formacion', semantic.requisitos.formacion.length > 0);
+      _toggleSection('sec-req-formacion', formacionLimpia.length > 0);
       _toggleSection('sec-req-especialidades', semantic.requisitos.especialidades.length > 0);
       _toggleSection('sec-req-competencias', semantic.requisitos.competencias.length > 0);
       _toggleSection('sec-req-documentos', semantic.requisitos.documentos.length > 0);
@@ -2304,9 +2320,10 @@ async function abrirModal(ofertaId) {
       btnPostular.onclick = null;
     }
 
-    // Botón Bases oficiales (solo si es distinto y válido por backend o cliente)
+    // Botón Bases oficiales: sólo si el backend comprobó el enlace (issue #242).
+    // Sin comprobar (null) o inválido (false) → se oculta, no se muestra disabled.
     const btnBases = document.getElementById('modal-btn-bases');
-    if (o.url_bases && o.url_bases !== o.url_oferta && basesOk) {
+    if (basesComprobadas(o)) {
       btnBases.style.display = 'inline-flex';
       btnBases.textContent = UI.CTA_BASES || 'Ver bases oficiales';
       btnBases.onclick = () => abrirVisorBases(o);

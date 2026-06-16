@@ -176,6 +176,65 @@ _RE_FUNCIONES = re.compile(
     r"Funciones\s+Principales\s*:?\s*(.*?)\s*(?:Requisitos de Postulaci|"
     r"Aspectos Deseables|Condiciones Ofrecidas)", re.I | re.S)
 
+# Formación / título requerido. CODELCO suele redactarlo como
+# "Formación: Ingeniería Civil…", "Título profesional de…",
+# "Profesión: Técnico de nivel superior en…". Capturamos la frase para
+# exponerla como dato estructurado (no sólo enterrada en requisitos_texto).
+_RE_FORMACION = re.compile(
+    r"(?:Formaci[oó]n(?:\s+(?:Acad[ée]mica|requerida|m[ií]nima))?|"
+    r"T[ií]tulo(?:\s+profesional)?|Profesi[oó]n|Estudios)\s*:?\s*"
+    r"(.{6,180}?)\s*(?:\.|;|\n|Experiencia|Conocimiento|A[ñn]os de|"
+    r"Aspectos Deseables|Condiciones Ofrecidas|Requisitos)", re.I | re.S)
+
+# Palabras que delatan que el texto capturado NO es una formación real
+# (frases genéricas / placeholders que no deben presentarse como dato).
+_FORMACION_BASURA = (
+    "no informa", "no especifica", "por definir", "consultar bases",
+    "ver bases", "no aplica", "según bases", "a definir",
+)
+
+# Nivel educacional a partir de la formación (independiente del estamento).
+_RE_NIVEL_EDU = [
+    ("Profesional", re.compile(
+        r"t[ií]tulo profesional|ingenier|licenciatura|m[ée]dico|abogad|"
+        r"contador auditor|universitari", re.I)),
+    ("Técnico de nivel superior", re.compile(
+        r"t[ée]cnico de nivel superior|t[ée]cnico universitario|"
+        r"t[ée]cnico profesional", re.I)),
+    ("Técnico", re.compile(r"t[ée]cnico|cft|centro de formaci[oó]n t[ée]cnica", re.I)),
+    ("Enseñanza media", re.compile(
+        r"ense[ñn]anza media|educaci[oó]n media|cuarto medio|4[°º] medio|"
+        r"licencia de ense[ñn]anza media", re.I)),
+]
+
+
+def _formacion_valida(texto: str) -> str | None:
+    """Devuelve la formación limpia si parece un dato real; None si es basura.
+
+    Filtra placeholders y fragmentos demasiado cortos/genéricos para no
+    mostrar títulos dudosos como campo estructurado (issue #242)."""
+    if not texto:
+        return None
+    limpio = limpiar_texto(texto).strip(" .:-—")
+    bajo = limpio.lower()
+    if len(limpio) < 6:
+        return None
+    if any(b in bajo for b in _FORMACION_BASURA):
+        return None
+    # Debe contener al menos una palabra alfabética larga (evita "N/A", "---").
+    if not re.search(r"[a-záéíóúñ]{4,}", bajo):
+        return None
+    return limpio[:180]
+
+
+def _nivel_educacional(formacion: str | None) -> str | None:
+    if not formacion:
+        return None
+    for etiqueta, patron in _RE_NIVEL_EDU:
+        if patron.search(formacion):
+            return etiqueta
+    return None
+
 # Faena/división Codelco -> (ciudad, región).
 CODELCO_LUGAR_REGION: dict[str, tuple[str | None, str]] = {
     "el salvador": ("El Salvador", "Atacama"),
@@ -386,6 +445,16 @@ def parsear_detalle(html: str) -> dict[str, Any]:
         if corte:
             bloque = bloque[: corte.start()]
         d["requisitos"] = limpiar_texto(bloque)[:2000]
+
+    # Formación / título requerido como dato estructurado. Se busca primero
+    # dentro del bloque de requisitos (más preciso) y, si no, en el aviso.
+    fuente_formacion = d.get("requisitos") or texto
+    if m := _RE_FORMACION.search(fuente_formacion):
+        formacion = _formacion_valida(m.group(1))
+        if formacion:
+            d["formacion"] = formacion
+            if nivel_edu := _nivel_educacional(formacion):
+                d["nivel_educacional"] = nivel_edu
     return d
 
 
@@ -431,6 +500,20 @@ def construir_oferta(item: dict[str, Any], det: dict[str, Any]) -> dict:
         desc_partes.append(f"ID de proceso: {item['id_proceso']}")
     descripcion = limpiar_texto(" | ".join(p for p in desc_partes if p))
 
+    # Requisitos: si extrajimos formación/título, lo anteponemos con etiqueta
+    # explícita ("Formación requerida:") para que el parser semántico del
+    # frontend lo clasifique en su sección y no quede diluido en el texto.
+    requisitos_texto = det.get("requisitos")
+    if det.get("formacion"):
+        etiqueta = "Formación requerida: " + det["formacion"]
+        if det.get("nivel_educacional"):
+            etiqueta += f" (nivel: {det['nivel_educacional']})"
+        if not etiqueta.endswith("."):
+            etiqueta += "."
+        requisitos_texto = (
+            f"{etiqueta}\n{requisitos_texto}" if requisitos_texto else etiqueta
+        )
+
     id_estable = item.get("id_sf") or item.get("id_proceso") or item["url"]
 
     return {
@@ -455,7 +538,7 @@ def construir_oferta(item: dict[str, Any], det: dict[str, Any]) -> dict:
         "renta_texto": None,
         "fecha_publicacion": item.get("fecha_publicacion") or date.today(),
         "fecha_cierre": det.get("fecha_cierre"),
-        "requisitos_texto": det.get("requisitos"),
+        "requisitos_texto": requisitos_texto,
     }
 
 

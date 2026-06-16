@@ -3674,3 +3674,25 @@ button:focus-visible,
   border-color: rgba(245, 158, 11, 0.55);
   color: var(--alert-amber-text);
 }
+
+/* ═══ Consistencia de bordes en cuadros y tarjetas (issue #242) ═══════════
+   Unifica el grosor (1px), el color (--borde) y el radio (--r-l) de los
+   contenedores principales para que no se vean "flotando" ni mezclen
+   1px/1.5px. Aplica a ambos temas porque usa tokens. */
+.ofertas-lista.compacta,
+.info-section,
+.paso-card {
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--borde);
+  border-radius: var(--r-l);
+}
+/* Separadores internos de la lista compacta: mismo token de borde pero
+   atenuado, para que la cuadrícula se lea consistente sin pesar. */
+.oferta-row {
+  border-bottom-color: var(--borde);
+}
+.oferta-row:hover {
+  /* el hover no debe romper la rejilla: conserva el borde inferior */
+  border-bottom-color: var(--borde);
+}

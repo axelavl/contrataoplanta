@@ -103,14 +103,41 @@ def ofertas_select_sql() -> str:
     """
 
 
+def _normalizar_ids(valor: Any) -> list[int]:
+    """Acepta int, lista de ints o CSV ('12,34') y devuelve [12, 34].
+
+    Ignora valores no numéricos en silencio. Soporta el filtro
+    multi-institución sin romper el contrato anterior (un solo id).
+    """
+    if valor is None:
+        return []
+    crudos: list[Any]
+    if isinstance(valor, (list, tuple, set)):
+        crudos = list(valor)
+    elif isinstance(valor, str):
+        crudos = valor.split(",")
+    else:
+        crudos = [valor]
+    ids: list[int] = []
+    for item in crudos:
+        try:
+            ids.append(int(str(item).strip()))
+        except (TypeError, ValueError):
+            continue
+    # Dedup preservando orden.
+    return list(dict.fromkeys(ids))
+
+
 def build_ofertas_filters(
     q: str | None = None,
     region: str | None = None,
     sector: str | None = None,
     tipo: str | None = None,
-    institucion_id: int | None = None,
+    institucion_id: int | str | list | None = None,
     area_profesional: str | None = None,
+    nivel: str | None = None,
     renta_min: int | None = None,
+    renta_max: int | None = None,
     ciudad: str | None = None,
     comunas: str | None = None,
     cierra_pronto: bool = False,
@@ -127,12 +154,16 @@ def build_ofertas_filters(
         where.append(f"{OFFER_STATUS_SQL} = 'closed'")
 
     if q:
+        # Búsqueda tolerante a tildes: unaccent() en ambos lados para que
+        # "contraloria" encuentre "Contraloría". El índice GIN de schema.sql
+        # usa to_tsvector('spanish', unaccent(...)), así que el FTS lo aprovecha.
         where.append(
             "("
-            "to_tsvector('spanish', coalesce(o.cargo, '') || ' ' || coalesce(i.nombre, '') || ' ' || coalesce(o.descripcion, '')) @@ plainto_tsquery('spanish', %s) "
-            "OR o.cargo ILIKE %s "
-            "OR COALESCE(i.nombre, o.institucion_nombre, '') ILIKE %s "
-            "OR COALESCE(o.descripcion, '') ILIKE %s"
+            "to_tsvector('spanish', unaccent(coalesce(o.cargo, '') || ' ' || coalesce(i.nombre, '') || ' ' || coalesce(o.descripcion, ''))) "
+            "@@ plainto_tsquery('spanish', unaccent(%s)) "
+            "OR unaccent(o.cargo) ILIKE unaccent(%s) "
+            "OR unaccent(COALESCE(i.nombre, o.institucion_nombre, '')) ILIKE unaccent(%s) "
+            "OR unaccent(COALESCE(o.descripcion, '')) ILIKE unaccent(%s)"
             ")"
         )
         like = f"%{q}%"
@@ -158,17 +189,42 @@ def build_ofertas_filters(
                 params.append(f"%{item}%")
             where.append("(" + " OR ".join(clauses) + ")")
 
-    if institucion_id is not None:
+    ids_institucion = _normalizar_ids(institucion_id)
+    if len(ids_institucion) == 1:
         where.append("o.institucion_id = %s")
-        params.append(institucion_id)
+        params.append(ids_institucion[0])
+    elif ids_institucion:
+        placeholders = ", ".join(["%s"] * len(ids_institucion))
+        where.append(f"o.institucion_id IN ({placeholders})")
+        params.extend(ids_institucion)
 
     if area_profesional:
         where.append("o.area_profesional ILIKE %s")
         params.append(f"%{area_profesional}%")
 
+    if nivel:
+        # Nivel/estamento (Directivo, Profesional, Técnico, Administrativo...).
+        # Acepta varios separados por coma. Tolerante a tildes.
+        niveles = [item.strip() for item in nivel.split(",") if item.strip()]
+        if len(niveles) == 1:
+            where.append("unaccent(COALESCE(o.nivel, '')) ILIKE unaccent(%s)")
+            params.append(f"%{niveles[0]}%")
+        elif niveles:
+            clauses = []
+            for item in niveles:
+                clauses.append("unaccent(COALESCE(o.nivel, '')) ILIKE unaccent(%s)")
+                params.append(f"%{item}%")
+            where.append("(" + " OR ".join(clauses) + ")")
+
     if renta_min is not None:
         where.append("(o.renta_bruta_min >= %s OR o.renta_bruta_max >= %s)")
         params.extend([renta_min, renta_min])
+
+    if renta_max is not None:
+        # La oferta cae dentro del rango si su piso de renta no supera el tope
+        # pedido. Usamos COALESCE para no descartar ofertas que sólo publican máximo.
+        where.append("COALESCE(o.renta_bruta_min, o.renta_bruta_max) <= %s")
+        params.append(renta_max)
 
     if comunas:
         lista_comunas = [item.strip() for item in comunas.split(",") if item.strip()]
@@ -183,9 +239,11 @@ def build_ofertas_filters(
         params.append(f"%{ciudad}%")
 
     if cierra_pronto:
-        where.append("o.fecha_cierre BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '5 days'")
+        # "Cierra pronto" = cierra hoy o mañana (issue #242).
+        where.append("o.fecha_cierre BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '1 day'")
 
     if nuevas:
-        where.append("COALESCE(o.fecha_scraped, o.detectada_en, o.actualizada_en, o.creada_en) >= NOW() - INTERVAL '48 hours'")
+        # "Nuevas" = añadidas en las últimas 24 horas (issue #242).
+        where.append("COALESCE(o.fecha_scraped, o.detectada_en, o.actualizada_en, o.creada_en) >= NOW() - INTERVAL '24 hours'")
 
     return (" WHERE " + " AND ".join(where)) if where else "", params

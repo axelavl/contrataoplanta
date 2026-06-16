@@ -95,6 +95,13 @@
       "notes": "https://empleos.codelco.cl/search/"
     },
     {
+      "id": 139,
+      "status": "active",
+      "kind": "skip",
+      "reason": "Tribunal Constitucional - scraper dedicado scrapers/tribunal_constitucional.py (WP REST CPT pasantias-y-concurso + PDF de perfil); excluido del dispatch generico por id",
+      "notes": "https://www1.tribunalconstitucional.cl/pasantias-y-concurso/"
+    },
+    {
       "id": 276,
       "status": "active",
       "kind": "custom_trabajando",

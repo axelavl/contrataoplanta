@@ -60,6 +60,7 @@ from scrapers import divsal as divsal_scraper
 from scrapers import famae as famae_scraper
 from scrapers import laborum as laborum_scraper
 from scrapers import codelco as codelco_scraper
+from scrapers import tribunal_constitucional as tribunal_constitucional_scraper
 from scrapers import fiscalia as fiscalia_scraper
 from scrapers import puertos_empresas as puertos_empresas_scraper
 from scrapers import linkedin_penalolen as linkedin_penalolen_scraper
@@ -1075,6 +1076,14 @@ async def main(argv: list[str] | None = None) -> int:
             reports.append(
                 await asyncio.to_thread(
                     _run_modulo_ejecutar_sync, "codelco (275)", codelco_scraper.ejecutar
+                )
+            )
+        hay_tc = any(s.get("id") == 139 for s in catalog_sources)
+        if hay_tc:
+            reports.append(
+                await asyncio.to_thread(
+                    _run_modulo_ejecutar_sync, "tribunal_constitucional (139)",
+                    tribunal_constitucional_scraper.ejecutar
                 )
             )
         hay_fiscalia = any(s.get("id") == 146 for s in catalog_sources)
