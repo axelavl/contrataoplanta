@@ -100,8 +100,10 @@
     overlay.classList.add('is-open');
     document.body.style.overflow = 'hidden';
 
-    if (!sel.length) {
-      body.innerHTML = `<div class="cop-cmp-empty">Todavía no marcaste ofertas para comparar.<br>Tocá <b>“⇆ Comparar”</b> en las tarjetas o filas (hasta ${MAX}).</div>`;
+    if (sel.length < 2) {
+      body.innerHTML = `<div class="cop-cmp-empty">${sel.length === 0
+        ? 'Todavía no marcaste ofertas para comparar.'
+        : 'Marcá <b>al menos 2 ofertas</b> para compararlas — con una sola no hay con qué comparar.'}<br>Usá <b>“⇆ Comparar oferta”</b> en las tarjetas o filas (hasta ${MAX}).</div>`;
       return;
     }
     if (typeof opts.fetchOferta !== 'function' || typeof opts.normalizar !== 'function') {
@@ -128,19 +130,27 @@
       ['Plazo de cierre', (o) => plazoTxt(o)]
     ];
 
-    const labels = `<div class="cop-cmp-col cop-cmp-col--labels"><div class="cop-cmp-cellhead"></div>${filas.map((f) => `<div class="cop-cmp-cell cop-cmp-cell--label">${f[0]}</div>`).join('')}<div class="cop-cmp-cell"></div></div>`;
-    const cols = ofertas.map((o, i) => `
-      <div class="cop-cmp-col">
-        <div class="cop-cmp-cellhead">
-          <button class="cop-cmp-rm" type="button" data-rm="${sel[i]}" title="Quitar">✕</button>
-          <div class="cop-cmp-cargo">${escHtml(o.cargo)}</div>
-        </div>
-        ${filas.map((f) => `<div class="cop-cmp-cell">${f[1](o)}</div>`).join('')}
-        <div class="cop-cmp-cell cop-cmp-cell--act"><button class="cop-cmp-ver" type="button" data-ver="${sel[i]}">Ver detalles</button></div>
-      </div>`).join('');
+    // Grilla FILA POR FILA: cada celda es hija directa del grid, así las
+    // filas quedan alineadas entre columnas aunque los cargos midan distinto.
+    const N = ofertas.length;
+    const cell = (html, cls) => `<div class="cop-cmp-cell${cls ? ' ' + cls : ''}">${html}</div>`;
+    const parts = [];
+    // Cabecera: celda vacía (esquina) + cargo de cada oferta.
+    parts.push('<div class="cop-cmp-cellhead cop-cmp-cellhead--corner"></div>');
+    ofertas.forEach((o, i) => parts.push(
+      `<div class="cop-cmp-cellhead"><button class="cop-cmp-rm" type="button" data-rm="${sel[i]}" title="Quitar">✕</button><div class="cop-cmp-cargo">${escHtml(o.cargo)}</div></div>`
+    ));
+    // Métricas.
+    filas.forEach((f) => {
+      parts.push(cell(f[0], 'cop-cmp-cell--label'));
+      ofertas.forEach((o) => parts.push(cell(f[1](o))));
+    });
+    // Acción.
+    parts.push(cell('', 'cop-cmp-cell--label'));
+    ofertas.forEach((o, i) => parts.push(cell(`<button class="cop-cmp-ver" type="button" data-ver="${sel[i]}">Ver detalles</button>`, 'cop-cmp-cell--act')));
 
     body.innerHTML =
-      `<div class="cop-cmp-grid" style="grid-template-columns:120px repeat(${ofertas.length}, minmax(150px,1fr))">${labels}${cols}</div>
+      `<div class="cop-cmp-grid" style="grid-template-columns:130px repeat(${N}, minmax(170px,1fr))">${parts.join('')}</div>
        <div class="cop-cmp-foot"><button class="cop-cmp-clear" type="button">Vaciar comparador</button></div>`;
 
     body.querySelectorAll('[data-rm]').forEach((b) => b.addEventListener('click', () => { toggle(b.dataset.rm); abrir(opts); }));

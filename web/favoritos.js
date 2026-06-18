@@ -117,8 +117,7 @@ function renderFavs() {
       </div>
       <div class="fav-card-actions">
         <button class="btn-fav-detail" type="button" data-fav-detalle="${f.id}">Ver detalle</button>
-        <a class="btn-fav-postular" href="${f.url_oferta || '#'}" target="_blank" rel="noopener">Postular →</a>
-        <button class="cop-cmp-btn" type="button" data-fav-comparar="${f.id}" title="Comparar">⇆ Comparar</button>
+        <button class="cop-cmp-btn" type="button" data-fav-comparar="${f.id}" title="Comparar oferta">⇆ Comparar oferta</button>
         <button class="btn-fav-remove" type="button" title="Eliminar de favoritos" data-fav-remove="${f.id}">✕</button>
       </div>
     </div>`;
@@ -388,7 +387,7 @@ if (window.Comparador) {
     document.querySelectorAll('.cop-cmp-btn[data-fav-comparar]').forEach((b) => {
       const on = Comparador.has(b.getAttribute('data-fav-comparar'));
       b.classList.toggle('is-on', on);
-      b.textContent = on ? '⇆ Comparando' : '⇆ Comparar';
+      b.textContent = on ? '✓ Comparar oferta' : '⇆ Comparar oferta';
     });
   };
   Comparador.onChange(window.repintarComparar);
