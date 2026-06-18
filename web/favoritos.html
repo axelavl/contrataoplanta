@@ -238,11 +238,20 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 <!-- ══ JAVASCRIPT ════════════════════════════════════════════════════ -->
 <script src="rich-text.js"></script>
 <script>
-const API_BASE = (
+// El backend vive en Railway. Cloudflare Pages NO proxea /api/* a un origen
+// externo (las reglas 200 de _redirects solo aplican a rutas internas), así
+// que apuntamos directo a Railway en producción — igual que app.js. En local
+// usamos el uvicorn de :8000. Override con window.__API_BASE para staging/tests.
+const RAILWAY_BACKEND = 'https://contrataoplanta-production.up.railway.app';
+const _hostLocal = (
   window.location.hostname === 'localhost' ||
   window.location.hostname === '' ||
   window.location.hostname === '127.0.0.1'
-) ? 'http://localhost:8000' : '';
+);
+const _apiForzada = (typeof window.__API_BASE === 'string' ? window.__API_BASE.trim() : '');
+const API_BASE = _apiForzada
+  ? _apiForzada.replace(/\/+$/, '')
+  : (_hostLocal ? 'http://localhost:8000' : RAILWAY_BACKEND);
 
 const FAV_KEY = 'fav_contrataoplanta';
 
