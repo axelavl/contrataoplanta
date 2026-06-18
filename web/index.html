@@ -68,6 +68,7 @@
 </script>
 <link rel="stylesheet" href="styles/index.css">
 <link rel="stylesheet" href="styles/redesign-overrides.css">
+<link rel="stylesheet" href="styles/integracion/estilos.css">
 <script defer src="ui-strings.js"></script>
 <script defer src="shared-shell.js"></script>
 <script defer src="nav-mobile.js"></script>
@@ -206,6 +207,14 @@
         <button class="btn-buscar" type="button" data-action="buscar">Buscar</button>
       </div>
 
+      <!-- Chips de profesión (integracion/profesiones.js). Se rellenan en app.js. -->
+      <div class="filtros-rapidos">
+        <div class="filtros-bloque">
+          <span class="filtros-titulo">Profesión</span>
+          <div id="chips-profesion" class="cop-chips"></div>
+        </div>
+      </div>
+
       <div class="filtros-rapidos">
         <div class="filtros-bloque filtros-bloque-secundario">
           <span class="filtros-titulo">Atajos</span>
@@ -297,6 +306,14 @@
         <a class="share-btn share-btn--x"    id="psb-x"    target="_blank" rel="noopener" title="X"         aria-label="Compartir búsqueda en X"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
         <a class="share-btn share-btn--mail" id="psb-mail" title="Email" aria-label="Compartir búsqueda por email"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></a>
       </div>
+    </div>
+
+    <!-- Mapa de vacantes por región (integracion/mapa-chile.js). On-demand. -->
+    <div class="mapa-vacantes-toggle">
+      <button class="btn-mapa-toggle" id="btn-mapa-toggle" type="button" aria-expanded="false" aria-controls="mapa-chile-wrap">🗺 Ver mapa de vacantes por región</button>
+    </div>
+    <div class="mapa-chile-wrap" id="mapa-chile-wrap" hidden>
+      <div id="mapa-chile"></div>
     </div>
 
     <div class="ofertas-lista" id="lista-ofertas">
@@ -771,6 +788,13 @@
      único JS inline que queda es el JSON-LD (type=application/ld+json,
      que CSP no bloquea). Los onclick= del HTML se rutean via
      `data-action` al dispatcher en app.js. -->
+<!-- Componentes de integración (vanilla, exponen globals window.*).
+     Orden: chile-geo (datos) → profesiones → ficha-oferta → mapa-chile.
+     Deben cargar ANTES de app.js para que los globals existan en su init. -->
+<script src="integracion/chile-geo.js"></script>
+<script src="integracion/profesiones.js"></script>
+<script src="integracion/ficha-oferta.js"></script>
+<script src="integracion/mapa-chile.js"></script>
 <script src="app.js"></script>
 <script src="nav-mobile.js"></script>
 </body>

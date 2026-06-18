@@ -162,6 +162,28 @@ def _normalizar_ids(valor: Any) -> list[int]:
     return list(dict.fromkeys(ids))
 
 
+# Lexemas por familia profesional. Debe mantenerse en sintonía con
+# `FAMILIAS` de web/integracion/profesiones.js (mismas raíces, en ASCII;
+# el match usa unaccent() así que no hace falta duplicar variantes con tilde).
+FAMILIAS_ROOTS: dict[str, list[str]] = {
+    "salud": ["enfermer", "matron", "kinesi", "medic", "tens", "nutricion",
+              "clinic", "paramedic", "odontolog", "tecnologo medic", "salud"],
+    "educacion": ["profesor", "educador", "parvul", "docente", "pedag",
+                  "asistente de la educacion"],
+    "juridico": ["abogad", "fiscalizador", "procurador", "juridic", "litig",
+                 "legal", "derecho"],
+    "ingenieria": ["ingenier", "obra", "proyecto", "construccion"],
+    "admin": ["administrativ", "analista", "recursos humanos", "rrhh",
+              "secretari", "gestion", "vinculacion"],
+    "psicosocial": ["psicolog", "trabajador social", "trabajadora social",
+                    "asistente social", "psicosocial"],
+    "finanzas": ["contad", "auditor", "tributari", "financ", "finanz",
+                 "contabil", "presupuest"],
+    "ti": ["informatic", "desarrollador", "programador", "sistemas",
+           "soporte ti", "ciberseg", "datos"],
+}
+
+
 def build_ofertas_filters(
     q: str | None = None,
     region: str | None = None,
@@ -169,6 +191,7 @@ def build_ofertas_filters(
     tipo: str | None = None,
     institucion_id: int | str | list | None = None,
     area_profesional: str | None = None,
+    profesion: str | None = None,
     nivel: str | None = None,
     renta_min: int | None = None,
     renta_max: int | None = None,
@@ -238,6 +261,18 @@ def build_ofertas_filters(
     if area_profesional:
         where.append("o.area_profesional ILIKE %s")
         params.append(f"%{area_profesional}%")
+
+    # Familia profesional (chips del frontend). Expande a los lexemas de la
+    # familia y matchea contra el cargo (accent-insensitive). El campo
+    # o.area_profesional NO es confiable, por eso filtramos por cargo.
+    if profesion:
+        roots = FAMILIAS_ROOTS.get(profesion.strip().lower())
+        if roots:
+            clauses = []
+            for root in roots:
+                clauses.append("unaccent(COALESCE(o.cargo, '')) ILIKE unaccent(%s)")
+                params.append(f"%{root}%")
+            where.append("(" + " OR ".join(clauses) + ")")
 
     if nivel:
         # Nivel/estamento (Directivo, Profesional, Técnico, Administrativo...).

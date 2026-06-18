@@ -300,6 +300,7 @@ const estado = {
   pagina: 1,
   q: '',
   region: '',
+  profesion: '',
   sector: '',
   tipos: [...TIPOS_POR_DEFECTO],
   cierra_pronto: false,
@@ -1580,6 +1581,7 @@ async function cargarOfertas() {
 
   const params = new URLSearchParams({ pagina: estado.pagina, por_pagina: estado.por_pagina, orden: estado.orden });
   if (estado.q)              params.set('q', estado.q);
+  if (estado.profesion)      params.set('profesion', estado.profesion);
   if (estado.region && (!Array.isArray(estado.comunas) || estado.comunas.length === 0)) params.set('region', estado.region);
   if (estado.sector)         params.set('sector', estado.sector);
   if (estado.nivel)          params.set('nivel', estado.nivel);
@@ -2059,8 +2061,123 @@ function _instalarSwipeCierre() {
   };
 }
 
+// ── Región → nombre canónico para el mapa (claves de MapaChile.counts) ──
+const _REGIONES_CANON = [
+  'Arica y Parinacota','Tarapacá','Antofagasta','Atacama','Coquimbo','Valparaíso',
+  'Metropolitana',"O'Higgins",'Maule','Ñuble','Biobío','La Araucanía','Los Ríos',
+  'Los Lagos','Aysén','Magallanes',
+];
+function regionCanonica(region) {
+  const k = (region || '').toString().toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+  if (!k) return null;
+  if (k.includes('arica')) return 'Arica y Parinacota';
+  if (k.includes('tarapaca')) return 'Tarapacá';
+  if (k.includes('antofagasta')) return 'Antofagasta';
+  if (k.includes('atacama')) return 'Atacama';
+  if (k.includes('coquimbo')) return 'Coquimbo';
+  if (k.includes('valparaiso')) return 'Valparaíso';
+  if (k.includes('metropolitana') || k.includes('santiago')) return 'Metropolitana';
+  if (k.includes('higgins') || k.includes('ohiggins') || k.includes('libertador')) return "O'Higgins";
+  if (k.includes('maule')) return 'Maule';
+  if (k.includes('nuble')) return 'Ñuble';
+  if (k.includes('biobio') || k.includes('bio bio') || k.includes('bio-bio')) return 'Biobío';
+  if (k.includes('araucania')) return 'La Araucanía';
+  if (k.includes('los rios')) return 'Los Ríos';
+  if (k.includes('los lagos')) return 'Los Lagos';
+  if (k.includes('aysen') || k.includes('aisen')) return 'Aysén';
+  if (k.includes('magallanes') || k.includes('antartica')) return 'Magallanes';
+  return null;
+}
+
+// ── Adapta el objeto de la API al esquema que espera FichaOferta ──
+// Reusa el parser semántico (window.richText.buildSemanticSections) y los
+// helpers de formato existentes. Lo vacío queda null/[] y la ficha lo oculta.
+function normalizarOferta(o) {
+  const sem = window.richText?.buildSemanticSections
+    ? window.richText.buildSemanticSections({ descripcion: o.descripcion || '', requisitos: o.requisitos || '' })
+    : null;
+  const req = (sem && sem.requisitos) || {};
+
+  let portal = null;
+  try { if (o.url_oferta) portal = new URL(o.url_oferta).hostname.replace(/^www\./, ''); } catch (e) { /* noop */ }
+
+  // dias_restantes viene del backend; fallback a cálculo desde fecha_cierre.
+  let dias = (typeof o.dias_restantes === 'number') ? o.dias_restantes : null;
+  if (dias === null && o.fecha_cierre) {
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    dias = Math.round((new Date(o.fecha_cierre + 'T00:00:00') - hoy) / 86400000);
+  }
+
+  return {
+    cargo:        normalizarTituloOferta(o.cargo) || o.cargo || '',
+    institucion:  o.institucion || '',
+    verificada:   !!(getInstIcon(o) && getInstIcon(o).confiable),
+    sector:       o.sector || '',
+    tipo:         tipoEtiqueta(o.tipo_contrato) || '',
+    region:       nombreRegionCompleto(o.region) || o.region || '',
+    comuna:       ciudadValida(o.ciudad, o.institucion) || '',
+    jornada:      jornadaValida(o.jornada) || '',
+    renta:        formatRenta(o.renta_bruta_min, o.renta_bruta_max, o.grado_eus), // string|null
+    fechaPublicacion: frescuraTexto(o) || (o.fecha_publicacion ? formatFecha(o.fecha_publicacion) : null),
+    fechaCierre:  o.fecha_cierre ? formatFecha(o.fecha_cierre) : null,
+    diasRestantes: dias,
+    portal,
+    portalUrl:    ofertaPostulable(o) ? o.url_oferta : null,
+    basesUrl:     basesComprobadas(o) ? o.url_bases : null,
+    objetivo:     (sem && sem.objetivo) || null,
+    funciones:    (sem && sem.funciones) || [],
+    requisitos: {
+      obligatorios:   req.obligatorios   || [],
+      formacion:      _filtrarFormacionDudosa ? _filtrarFormacionDudosa(req.formacion || []) : (req.formacion || []),
+      experiencia:    req.experiencia    || [],
+      especialidades: req.especialidades || [],
+      competencias:   req.competencias   || [],
+      documentos:     req.documentos     || [],
+      deseables:      req.deseables      || [],
+    },
+    condiciones:  (sem && sem.condiciones) || [],
+    comoPostular: (sem && sem.postulacion) || [],
+  };
+}
+
+// Punto de entrada del detalle. Si el componente FichaOferta está cargado,
+// usa la ficha nueva; si no (o si falla), cae al modal legacy (#modal).
 async function abrirModal(ofertaId) {
   window.track?.('offer-view', { id: ofertaId });
+  if (window.FichaOferta) {
+    try { return await abrirFichaOferta(ofertaId); }
+    catch (e) { console.warn('[ficha] fallo, uso modal legacy', e); }
+  }
+  return _abrirModalLegacy(ofertaId);
+}
+
+// Abre la ficha nueva (integracion/ficha-oferta.js) con datos reales.
+// Reusa gating (ofertaPostulable/basesComprobadas), analytics
+// (registrarClicPostular), visor de bases y favoritos existentes.
+async function abrirFichaOferta(ofertaId) {
+  const resp = await fetchApi(`/api/ofertas/${ofertaId}`);
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  const o = await resp.json();
+  let favs = [];
+  try { favs = JSON.parse(localStorage.getItem('fav_contrataoplanta') || '[]'); } catch (e) { /* noop */ }
+  FichaOferta.abrir(normalizarOferta(o), {
+    query: estado.q || '',
+    profesion: estado.profesion || null,
+    region: estado.region || null,
+    guardada: favs.some((f) => f.id === o.id),
+    onPostular: () => {
+      const url = ofertaPostulable(o) ? o.url_oferta : (basesComprobadas(o) ? o.url_bases : null);
+      if (!url) return;
+      registrarClicPostular(o);
+      window.open(url, '_blank', 'noopener,noreferrer');
+    },
+    onBases: () => { if (basesComprobadas(o)) abrirVisorBases(o); },
+    onGuardar: () => toggleFavorito(o),
+  });
+}
+
+async function _abrirModalLegacy(ofertaId) {
   const overlay = document.getElementById('modal');
   _modalLastFocus = document.activeElement;
   overlay.classList.add('open');
@@ -4099,8 +4216,66 @@ async function cargarSiteConfig() {
   }
 }
 
+// ── Integración: chips de profesión + mapa de vacantes ──────────────
+function _filtrarPorRegionMapa(regionCanon) {
+  estado.region = regionCanon;
+  estado.pagina = 1;
+  // Intenta reflejar la selección en el <select> de región (cosmético).
+  const sel = document.getElementById('filtro-region');
+  if (sel) {
+    const opt = Array.from(sel.options).find((o) =>
+      regionCanonica(o.value) === regionCanon || regionCanonica(o.textContent) === regionCanon);
+    if (opt) { sel.value = opt.value; estado.region = opt.value; }
+  }
+  cargarOfertas();
+  document.getElementById('lista-ofertas')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function _renderMapaConteos() {
+  const host = document.getElementById('mapa-chile');
+  if (!host || !window.MapaChile) return;
+  // Render inmediato (contorno) y luego refresco con conteos reales.
+  MapaChile.render(host, { counts: {}, selected: regionCanonica(estado.region), onSelect: _filtrarPorRegionMapa });
+  const counts = {};
+  await Promise.all(_REGIONES_CANON.map(async (reg) => {
+    try {
+      const r = await fetchApi(`/api/ofertas?region=${encodeURIComponent(reg)}&por_pagina=1&vista=vigentes`);
+      if (r.ok) { const d = await r.json(); counts[reg] = d.total || 0; }
+    } catch (e) { /* noop */ }
+  }));
+  MapaChile.render(host, { counts, selected: regionCanonica(estado.region), onSelect: _filtrarPorRegionMapa });
+}
+
+function _initIntegracion() {
+  // Chips de profesión (sin counts: muestra todas las familias).
+  const chipsHost = document.getElementById('chips-profesion');
+  if (chipsHost && window.Profesiones) {
+    Profesiones.renderChips(chipsHost, {
+      selected: estado.profesion || 'all',
+      onSelect: (fam) => {
+        estado.profesion = fam || '';
+        estado.pagina = 1;
+        cargarOfertas();
+      },
+    });
+  }
+  // Mapa de vacantes (carga perezosa al abrir).
+  const btnMapa = document.getElementById('btn-mapa-toggle');
+  const wrapMapa = document.getElementById('mapa-chile-wrap');
+  if (btnMapa && wrapMapa && window.MapaChile) {
+    let cargado = false;
+    btnMapa.addEventListener('click', () => {
+      const abrir = wrapMapa.hidden;
+      wrapMapa.hidden = !abrir;
+      btnMapa.setAttribute('aria-expanded', String(abrir));
+      if (abrir && !cargado) { cargado = true; _renderMapaConteos(); }
+    });
+  }
+}
+
 // Carga inicial
 initAutocompletarInstitucion();
+_initIntegracion();
 cargarOfertas();
 cargarEstadisticas();
 cargarResumenFuentes();

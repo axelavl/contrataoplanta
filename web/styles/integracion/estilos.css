@@ -1,0 +1,149 @@
+/* ============================================================================
+ * estilos.css — Estilos de los componentes de integración (contrata o planta)
+ * ----------------------------------------------------------------------------
+ * Usa tus tokens de marca (design-tokens.css): --azul, --acento, --texto, etc.
+ * Cada variable trae un fallback con el valor real, así el componente también
+ * se ve bien si lo abrís suelto. Hereda automáticamente el modo oscuro.
+ * Prefijo de clases: .cop-  (contrata o planta)
+ * ========================================================================== */
+
+/* ---------- Chips de profesión ---------- */
+.cop-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.cop-chip {
+  font-family: var(--font-sans, 'Inter', system-ui, sans-serif);
+  font-size: 12.5px; font-weight: 600; cursor: pointer;
+  color: var(--texto2, #4B5167);
+  background: var(--bg, #FDFCF8);
+  border: 1.5px solid var(--borde, #E5E1D2);
+  border-radius: 999px; padding: 7px 13px;
+  display: inline-flex; align-items: center; gap: 7px; transition: .12s;
+}
+.cop-chip:hover { border-color: var(--azul-m, #254BA0); }
+.cop-chip.is-on { background: var(--azul, #142E6B); border-color: var(--azul, #142E6B); color: #fff; }
+.cop-chip-n {
+  font-size: 11px; font-weight: 700; color: var(--texto3, #747B91);
+  background: var(--blanco, #fff); border-radius: 999px; padding: 1px 7px; min-width: 16px; text-align: center;
+}
+.cop-chip.is-on .cop-chip-n { background: rgba(255,255,255,.22); color: #fff; }
+
+/* ---------- Resaltado de coincidencias ---------- */
+mark.cop-hl {
+  background: var(--acento-l, #FBE4C0); color: var(--gold-ink, #5C3A10);
+  border-radius: 3px; padding: 0 2px; font-weight: 600;
+}
+
+/* ---------- Ficha (modal) ---------- */
+.cop-modal-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(8,16,32,.5);
+  display: none; align-items: flex-start; justify-content: center;
+  padding: 32px 20px; overflow-y: auto;
+}
+.cop-modal-overlay.is-open { display: flex; }
+.cop-modal {
+  background: var(--bg, #FDFCF8); width: 100%; max-width: 680px;
+  border-radius: 18px; overflow: hidden;
+  box-shadow: 0 40px 80px -20px rgba(8,16,32,.55);
+  animation: copIn .22s ease;
+}
+@keyframes copIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+.cop-head { position: relative; padding: 24px 26px 22px; color: #fff;
+  background: linear-gradient(165deg, #15316f, #0f2452); }
+.cop-close { position: absolute; top: 16px; right: 16px; width: 34px; height: 34px;
+  border-radius: 9px; border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.08);
+  color: #fff; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.cop-close:hover { background: rgba(255,255,255,.16); }
+.cop-kicker { font-size: 10.5px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--gold-brilliant, #F2C26A); margin-bottom: 10px; }
+.cop-inst { font-size: 13px; font-weight: 600; color: rgba(255,255,255,.85);
+  display: flex; align-items: center; gap: 7px; margin-bottom: 6px; }
+.cop-vf { color: #86C28E; display: inline-flex; }
+.cop-cargo { font-family: var(--font-serif, 'Fraunces', Georgia, serif);
+  font-size: 25px; font-weight: 600; line-height: 1.15; letter-spacing: -.3px; margin: 0 0 13px; max-width: 32ch; }
+.cop-tags { display: flex; gap: 7px; flex-wrap: wrap; }
+.cop-tag { font-size: 11.5px; font-weight: 600; padding: 4px 11px; border-radius: 999px;
+  background: rgba(255,255,255,.12); color: #fff; }
+
+.cop-why { display: flex; align-items: flex-start; gap: 9px; line-height: 1.5;
+  background: var(--acento-l, #FBE4C0); border-bottom: 1px solid #EAD9B6;
+  padding: 13px 26px; font-size: 12.5px; color: var(--gold-ink, #5C3A10); }
+.cop-why svg { flex: none; margin-top: 1px; color: var(--gold-dim, #A66E1B); }
+.cop-qk { display: inline-block; background: #fff; border: 1px solid #EAD9B6; border-radius: 6px; padding: 1px 7px; font-weight: 700; }
+
+.cop-plazo { display: flex; align-items: center; gap: 11px; padding: 14px 26px;
+  background: var(--blanco, #fff); border-bottom: 1px solid var(--borde, #E5E1D2); }
+.cop-plazo-ic { width: 36px; height: 36px; border-radius: 10px; flex: none; color: #fff;
+  display: flex; align-items: center; justify-content: center; background: var(--texto3, #747B91); }
+.cop-plazo.is-urg .cop-plazo-ic { background: var(--rojo, #B23B24); }
+.cop-plazo.is-mid .cop-plazo-ic { background: var(--naran, #C87A0C); }
+.cop-plazo.is-ok  .cop-plazo-ic { background: var(--verde, #2F6E4E); }
+.cop-plazo-l { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--texto3, #747B91); }
+.cop-plazo-v { font-family: var(--font-serif, 'Fraunces', serif); font-size: 15px; font-weight: 600; color: var(--texto, #18202F); }
+.cop-plazo.is-urg .cop-plazo-v { color: var(--rojo, #B23B24); }
+
+.cop-body { padding: 20px 26px 8px; }
+.cop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin-bottom: 22px;
+  background: var(--borde, #E5E1D2); border: 1px solid var(--borde, #E5E1D2); border-radius: 12px; overflow: hidden; }
+.cop-kv { background: var(--blanco, #fff); padding: 12px 15px; }
+.cop-kv-k { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--texto3, #747B91); margin-bottom: 4px; }
+.cop-kv-v { font-size: 14px; font-weight: 600; color: var(--texto, #18202F); }
+.cop-kv-v.is-renta { font-family: var(--font-serif, 'Fraunces', serif); font-size: 17px; }
+
+.cop-sec { margin-bottom: 22px; }
+.cop-sec-t { font-family: var(--font-serif, 'Fraunces', serif); font-size: 15.5px; font-weight: 600;
+  color: var(--azul, #142E6B); margin: 0 0 12px; padding-bottom: 8px; border-bottom: 1.5px solid var(--borde, #E5E1D2); }
+.cop-sub { margin-bottom: 14px; }
+.cop-sub h6 { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--texto3, #747B91); margin: 0 0 8px; }
+.cop-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.cop-list li { position: relative; padding-left: 22px; font-size: 13.5px; line-height: 1.55; color: var(--texto2, #4B5167); }
+.cop-list li::before { content: ''; position: absolute; left: 5px; top: 8px; width: 6px; height: 6px; border-radius: 50%; background: var(--azul-m, #254BA0); }
+.cop-list.is-check li::before { content: ''; left: 4px; top: 6px; width: 7px; height: 4px; border-radius: 0; background: none;
+  border-left: 2px solid var(--verde, #2F6E4E); border-bottom: 2px solid var(--verde, #2F6E4E); transform: rotate(-45deg); }
+.cop-objetivo { font-size: 14px; line-height: 1.65; color: var(--texto2, #4B5167); margin: 0;
+  background: var(--blanco, #fff); border-left: 3px solid var(--acento, #C88724); border-radius: 0 8px 8px 0; padding: 13px 16px; }
+
+.cop-actions { position: sticky; bottom: 0; background: var(--bg, #FDFCF8);
+  border-top: 1px solid var(--borde, #E5E1D2); padding: 16px 26px; display: flex; flex-direction: column; gap: 10px; }
+.cop-apply { background: var(--azul, #142E6B); color: #fff; border: none; border-radius: 11px;
+  font-family: var(--font-sans, 'Inter', sans-serif); font-size: 14.5px; font-weight: 700; padding: 14px; cursor: pointer; }
+.cop-apply:hover { background: var(--azul-m, #254BA0); }
+.cop-actions-sec { display: flex; gap: 10px; }
+.cop-btn2 { flex: 1; background: var(--blanco, #fff); border: 1.5px solid var(--borde, #E5E1D2); color: var(--texto, #18202F);
+  border-radius: 10px; font-family: var(--font-sans, 'Inter', sans-serif); font-size: 13px; font-weight: 600; padding: 11px; cursor: pointer; }
+.cop-btn2:hover { border-color: var(--azul-m, #254BA0); color: var(--azul-m, #254BA0); }
+.cop-portal { font-size: 11.5px; color: var(--texto3, #747B91); text-align: center; margin: 2px 0 0; }
+
+/* ---------- Mapa de Chile ---------- */
+.cop-map-svg { width: 100%; height: auto; display: block; overflow: visible; }
+.cop-map-svg path { transition: fill .14s; }
+.cop-map-svg path:hover { fill: var(--navy-bright, #2E58B5) !important; }
+.cop-map-legend { display: flex; align-items: center; gap: 5px; margin-top: 14px;
+  font-size: 9.5px; color: var(--texto3, #747B91); font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
+.cop-map-legend i { width: 18px; height: 10px; border-radius: 2px; display: block; }
+.cop-map-empty { padding: 24px; text-align: center; color: var(--texto3, #747B91); font-size: 13px;
+  border: 1px dashed var(--borde, #E5E1D2); border-radius: 13px; }
+
+/* ---------- Móvil ---------- */
+@media (max-width: 640px) {
+  .cop-grid { grid-template-columns: 1fr; }
+  .cop-cargo { font-size: 21px; }
+  .cop-modal-overlay { padding: 0; }
+  .cop-modal { max-width: 100%; min-height: 100%; border-radius: 0; }
+}
+
+/* ---------- Toggle + contenedor del mapa de vacantes (integración app) ---- */
+.mapa-vacantes-toggle { margin: 8px 0 4px; }
+.btn-mapa-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--blanco, #fff); color: var(--azul, #142E6B);
+  border: 1.5px solid var(--borde, #E2E0D6); border-radius: var(--r, 10px);
+  padding: 9px 14px; font: 600 13px/1 'Inter', system-ui, sans-serif;
+  cursor: pointer; transition: border-color .15s, background .15s;
+}
+.btn-mapa-toggle:hover { border-color: var(--cielo, #1A6BCC); background: var(--bg2, #F4F2EA); }
+.btn-mapa-toggle[aria-expanded="true"] { background: var(--azul, #142E6B); color: #fff; border-color: var(--azul, #142E6B); }
+.mapa-chile-wrap {
+  display: flex; justify-content: center; padding: 16px 0 8px;
+}
+#mapa-chile { width: 100%; max-width: 340px; }

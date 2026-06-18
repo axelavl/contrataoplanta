@@ -54,7 +54,7 @@
     NOTE_SIN_FECHA_CIERRE: 'No hay fecha de cierre explícita; confirma vigencia en el portal oficial.',
 
     // Vista de listado
-    CTA_VER_DETALLE: 'Ver detalle →',
+    CTA_VER_DETALLE: 'Ver detalles',
   });
 
   window.UI_STRINGS = UI_STRINGS;
