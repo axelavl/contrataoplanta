@@ -174,8 +174,9 @@
       sub('Experiencia', rq.experiencia) + sub('Licencias y certificaciones', rq.especialidades) +
       sub('Competencias y habilidades', rq.competencias) + sub('Documentos exigidos', rq.documentos) +
       sub('Deseables', rq.deseables);
+    // Los subgrupos fluyen en 2 columnas (.cop-subgrid) para reducir la altura.
     const requisitos = reqInner
-      ? `<div class="cop-sec"><div class="cop-sec-t">Requisitos para postular</div>${reqInner}</div>` : '';
+      ? `<div class="cop-sec"><div class="cop-sec-t">Requisitos para postular</div><div class="cop-subgrid">${reqInner}</div></div>` : '';
 
     $('cop-body').innerHTML = grid + objetivo + requisitos +
       sec('Funciones principales', oferta.funciones) +

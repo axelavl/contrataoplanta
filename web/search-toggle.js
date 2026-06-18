@@ -34,22 +34,35 @@
     toggle.className = 'btn-filtros-mas';
     toggle.setAttribute('aria-expanded', 'false');
     toggle.innerHTML = '<span class="icon">+</span> Más filtros';
+    toggleWrap.appendChild(toggle);
+
+    var fila2 = wrap.querySelector('.buscador-fila2');
+
+    // Reubica el toggle según el estado:
+    //  - colapsado → antes de fila2 (queda al pie del buscador compacto).
+    //  - expandido → al final del buscador, DEBAJO de todos los filtros
+    //    (fila Institución/Renta + Profesión + Atajos), no entre medio.
+    function ubicarToggle(expanded) {
+      if (expanded) {
+        wrap.appendChild(toggleWrap);
+      } else if (fila2 && fila2.parentNode) {
+        fila2.parentNode.insertBefore(toggleWrap, fila2);
+      } else {
+        wrap.appendChild(toggleWrap);
+      }
+    }
+
     toggle.addEventListener('click', function () {
       var expanded = wrap.classList.toggle('is-expanded');
       toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
       toggle.innerHTML = expanded
         ? '<span class="icon">−</span> Menos filtros'
         : '<span class="icon">+</span> Más filtros';
+      ubicarToggle(expanded);
     });
-    toggleWrap.appendChild(toggle);
 
-    // Insertarlo entre buscador-form y fila2
-    var fila2 = wrap.querySelector('.buscador-fila2');
-    if (fila2) {
-      fila2.parentNode.insertBefore(toggleWrap, fila2);
-    } else {
-      wrap.appendChild(toggleWrap);
-    }
+    // Posición inicial según el estado actual del buscador.
+    ubicarToggle(wrap.classList.contains('is-expanded'));
   }
 
   document.addEventListener('DOMContentLoaded', init);

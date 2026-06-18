@@ -106,6 +106,12 @@
     '.nav-mobile-panel-close:active { background: rgba(255,255,255,0.18); }',
     '.nav-mobile-panel-close:focus-visible { outline: 2px solid var(--accent, #EAB858); outline-offset: 1px; }',
 
+    /* Baseline: en desktop la hamburguesa SIEMPRE oculta. Necesario porque
+       las páginas que cargan shared-layout.css (favoritos, faq, estadísticas,
+       ruta, historial) no definen `.hamburger { display:none }` como sí hace
+       index.css — sin esto el <button> aparecía en desktop. */
+    '.hamburger { display: none; }',
+
     /* En móvil forzamos hamburguesa visible y nav-links oculto. Esto
        duplica parte de redesign-overrides pero garantiza que el menú
        opere aunque ese stylesheet no haya cargado. */

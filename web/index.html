@@ -118,33 +118,9 @@
             <!-- Se carga dinámicamente desde API DPA -->
           </select>
         </div>
-        <div class="campo">
-          <!-- El "label" apunta al botón trigger vía aria-labelledby porque
-               <label for="..."> sólo asocia con inputs/selects/textareas. -->
-          <label id="lbl-filtro-comunas">Ciudad / Comuna</label>
-          <div class="comunas-selector" id="comunas-selector">
-            <button class="comunas-trigger" id="filtro-comunas-trigger" type="button" aria-expanded="false" aria-controls="comunas-panel" aria-labelledby="lbl-filtro-comunas filtro-comunas-resumen">
-              <span id="filtro-comunas-resumen">Seleccionar comunas</span>
-              <span class="comunas-trigger-meta" id="filtro-comunas-meta"></span>
-            </button>
-            <div class="comunas-panel" id="comunas-panel" hidden>
-              <div class="comunas-panel-header">
-                <h3>Seleccionar comunas</h3>
-                <button type="button" class="comunas-close" id="comunas-cerrar" aria-label="Cerrar selector">✕</button>
-              </div>
-              <div class="comunas-search-wrap">
-                <input type="search" id="filtro-comunas-busqueda" placeholder="Buscar comuna o región...">
-              </div>
-              <div class="comunas-seleccionadas" id="comunas-seleccionadas"></div>
-              <div class="comunas-lista" id="comunas-lista"></div>
-              <div class="comunas-acciones">
-                <button type="button" class="btn-comunas-limpiar" id="comunas-limpiar">Limpiar</button>
-                <button type="button" class="btn-comunas-aplicar" id="comunas-aplicar">Aplicar</button>
-              </div>
-            </div>
-          </div>
-          <input type="hidden" id="filtro-ciudad" value="">
-        </div>
+        <!-- Filtro Ciudad/Comuna retirado: dependía de la API DPA del Estado
+             (apis.digital.gob.cl/dpa), que dejó de entregar comunas (responde
+             []), por lo que el selector quedaba vacío e inservible. -->
         <div class="campo">
           <label for="filtro-sector">Sector</label>
           <select id="filtro-sector">
@@ -795,6 +771,7 @@
 <script src="integracion/profesiones.js"></script>
 <script src="integracion/ficha-oferta.js"></script>
 <script src="integracion/mapa-chile.js"></script>
+<script src="integracion/comparador.js"></script>
 <script src="app.js"></script>
 <script src="nav-mobile.js"></script>
 </body>

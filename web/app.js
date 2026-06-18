@@ -132,6 +132,15 @@ document.addEventListener('click', function (e) {
     case 'toggle-fav':
       if (typeof toggleFavCard === 'function') toggleFavCard(el);
       break;
+    case 'toggle-comparar': {
+      var cmpId = Number(el.getAttribute('data-oferta-id') || 0);
+      if (cmpId && window.Comparador) {
+        if (!window.Comparador.toggle(cmpId) && window.Comparador.count() >= window.Comparador.MAX) {
+          (window.mostrarToast || window.alert)('Podés comparar hasta ' + window.Comparador.MAX + ' ofertas');
+        }
+      }
+      break;
+    }
     case 'set-orden-header':
       if (typeof setOrdenDesdeHeader === 'function') {
         setOrdenDesdeHeader(el.getAttribute('data-orden') || '');
@@ -1220,6 +1229,7 @@ function renderCard(oferta) {
         ${oferta.fecha_cierre ? `<span class="oferta-plazo-fecha">· ${formatFecha(oferta.fecha_cierre)}</span>` : ''}
       </div>
       <div class="oferta-acciones">
+        <button class="cop-cmp-btn" type="button" data-action="toggle-comparar" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}">⇆ Comparar</button>
         <button class="btn-detalle" type="button" data-action="abrir-modal" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}">${UI.CTA_VER_DETALLE || 'Ver detalle →'}</button>
       </div>
     </div>
@@ -1289,16 +1299,19 @@ function renderRowCompacta(oferta) {
       <span style="color:${plazo.color}">${plazo.texto}</span>
     </div>
     <div class="row-renta">${rentaHtml || '<span style="color:var(--texto3)">—</span>'}</div>
-    <button class="btn-fav-row${esFav ? ' activo' : ''}"
-      data-id="${oferta.id}"
-      data-cargo="${escAttr(cargoDisplay)}"
-      data-inst="${escAttr(oferta.institucion)}"
-      data-region="${escAttr(oferta.region || '')}"
-      data-cierre="${escAttr(oferta.fecha_cierre || '')}"
-      data-url="${escAttr(oferta.url_oferta || '')}"
-      data-action="toggle-fav" data-stop-propagation="true"
-      title="${esFav ? 'Quitar de favoritos' : 'Guardar como favorito'}"
-    >${esFav ? '♥' : '♡'}</button>
+    <div class="row-acciones" style="display:flex;gap:6px;align-items:center;justify-content:flex-end">
+      <button class="cop-cmp-btn" type="button" data-action="toggle-comparar" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}" title="Comparar">⇆ Comparar</button>
+      <button class="btn-fav-row${esFav ? ' activo' : ''}"
+        data-id="${oferta.id}"
+        data-cargo="${escAttr(cargoDisplay)}"
+        data-inst="${escAttr(oferta.institucion)}"
+        data-region="${escAttr(oferta.region || '')}"
+        data-cierre="${escAttr(oferta.fecha_cierre || '')}"
+        data-url="${escAttr(oferta.url_oferta || '')}"
+        data-action="toggle-fav" data-stop-propagation="true"
+        title="${esFav ? 'Quitar de favoritos' : 'Guardar como favorito'}"
+      >${esFav ? '♥' : '♡'}</button>
+    </div>
     ${jobPosting.markup}
   </div>`;
 }
@@ -1653,6 +1666,7 @@ const itemsHtml = ofertasFiltradas.map((oferta, i) => {
 }).join('');
 
 lista.innerHTML = header + itemsHtml;
+    if (window.repintarComparar) window.repintarComparar();
     // Paginación
     renderPaginacion(data.total ?? ofertasFiltradas.length, data.paginas ?? 1);
 
@@ -3843,6 +3857,9 @@ async function cargarRegiones() {
 
 async function cargarCatalogoComunas() {
   try {
+    // El filtro Ciudad/Comuna fue retirado (API DPA del Estado dejó de
+    // entregar comunas). Si no está el selector en el DOM, no pedimos nada.
+    if (!document.getElementById('comunas-selector')) return;
     if (!Array.isArray(window._regionesDPA) || window._regionesDPA.length === 0) return;
     const peticiones = window._regionesDPA.map(async (r) => {
       const resp = await fetchApi(`/api/regiones/${r.codigo}/comunas`);
@@ -4217,33 +4234,41 @@ async function cargarSiteConfig() {
 }
 
 // ── Integración: chips de profesión + mapa de vacantes ──────────────
-function _filtrarPorRegionMapa(regionCanon) {
-  estado.region = regionCanon;
-  estado.pagina = 1;
-  // Intenta reflejar la selección en el <select> de región (cosmético).
-  const sel = document.getElementById('filtro-region');
-  if (sel) {
-    const opt = Array.from(sel.options).find((o) =>
-      regionCanonica(o.value) === regionCanon || regionCanonica(o.textContent) === regionCanon);
-    if (opt) { sel.value = opt.value; estado.region = opt.value; }
-  }
-  cargarOfertas();
-  document.getElementById('lista-ofertas')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+// Conteo de ofertas vigentes por región (cliente, sin endpoint de facetas).
+async function _contarOfertasRegion(region) {
+  try {
+    const r = await fetchApi(`/api/ofertas?region=${encodeURIComponent(region)}&por_pagina=1&vista=vigentes`);
+    if (r.ok) { const d = await r.json(); return d.total || 0; }
+  } catch (e) { /* noop */ }
+  return 0;
 }
 
+// Mapa 2 columnas: izquierda el mapa, derecha el panel con las ofertas de la
+// región tocada (MapaChile.render devuelve api.setPanel / api.cargando).
 async function _renderMapaConteos() {
   const host = document.getElementById('mapa-chile');
   if (!host || !window.MapaChile) return;
-  // Render inmediato (contorno) y luego refresco con conteos reales.
-  MapaChile.render(host, { counts: {}, selected: regionCanonica(estado.region), onSelect: _filtrarPorRegionMapa });
   const counts = {};
-  await Promise.all(_REGIONES_CANON.map(async (reg) => {
-    try {
-      const r = await fetchApi(`/api/ofertas?region=${encodeURIComponent(reg)}&por_pagina=1&vista=vigentes`);
-      if (r.ok) { const d = await r.json(); counts[reg] = d.total || 0; }
-    } catch (e) { /* noop */ }
-  }));
-  MapaChile.render(host, { counts, selected: regionCanonica(estado.region), onSelect: _filtrarPorRegionMapa });
+  await Promise.all(_REGIONES_CANON.map(async (reg) => { counts[reg] = await _contarOfertasRegion(reg); }));
+  const api = MapaChile.render(host, {
+    counts,
+    selected: regionCanonica(estado.region),
+    onSelect: async (region) => {
+      if (api.cargando) api.cargando();
+      try {
+        const r = await fetchApi(`/api/ofertas?region=${encodeURIComponent(region)}&vista=vigentes&por_pagina=20&orden=cierre`);
+        const d = await r.json();
+        const items = d.ofertas || [];
+        const filas = items.length
+          ? `<div class="ofertas-lista compacta">${items.map(renderRowCompacta).join('')}</div>`
+          : '<div class="cop-mapx-hint"><p>No hay ofertas vigentes en esta región.</p></div>';
+        api.setPanel(`<div class="cop-mapx-title">📍 ${region} <span class="n">· ${items.length} oferta${items.length === 1 ? '' : 's'}</span></div>${filas}`);
+        if (window.repintarComparar) window.repintarComparar();
+      } catch (e) {
+        api.setPanel('<div class="cop-mapx-hint"><p>No se pudieron cargar las ofertas.</p></div>');
+      }
+    },
+  });
 }
 
 function _initIntegracion() {
@@ -4270,7 +4295,53 @@ function _initIntegracion() {
       btnMapa.setAttribute('aria-expanded', String(abrir));
       if (abrir && !cargado) { cargado = true; _renderMapaConteos(); }
     });
+    // Click en una fila del panel del mapa → abre la ficha.
+    host_clickFichaDesdePanel(document.getElementById('mapa-chile'));
   }
+
+  // ── Comparador de ofertas ──────────────────────────────────────────
+  if (window.Comparador) {
+    const tray = document.createElement('div');
+    tray.className = 'cop-cmp-tray';
+    tray.innerHTML = '<span class="cop-cmp-tray-txt"><b id="cmp-tray-n">0</b> para comparar</span>'
+      + '<button class="cop-cmp-tray-go" type="button">Ver comparador →</button>'
+      + '<button class="cop-cmp-tray-clear" type="button">Quitar</button>';
+    document.body.appendChild(tray);
+    tray.querySelector('.cop-cmp-tray-go').onclick = () => Comparador.abrir();
+    tray.querySelector('.cop-cmp-tray-clear').onclick = () => Comparador.limpiar();
+
+    Comparador.config({
+      fetchOferta: async (id) => (await fetchApi(`/api/ofertas/${id}`)).json(),
+      normalizar: (raw) => normalizarOferta(raw),
+      onVerDetalles: (id) => abrirModal(id),
+    });
+
+    window.repintarComparar = () => {
+      const n = Comparador.count();
+      tray.classList.toggle('is-on', n > 0);
+      const nEl = tray.querySelector('#cmp-tray-n');
+      if (nEl) nEl.textContent = n;
+      document.querySelectorAll('.cop-cmp-btn[data-oferta-id]').forEach((b) => {
+        const on = Comparador.has(b.getAttribute('data-oferta-id'));
+        b.classList.toggle('is-on', on);
+        b.textContent = on ? '⇆ Comparando' : '⇆ Comparar';
+      });
+    };
+    Comparador.onChange(window.repintarComparar);
+  }
+}
+
+// Delegación: abrir la ficha al clickear una fila dentro de un contenedor
+// (p.ej. el panel del mapa). Ignora clicks en botones con data-action propio.
+function host_clickFichaDesdePanel(host) {
+  if (!host) return;
+  host.addEventListener('click', (e) => {
+    if (e.target.closest('[data-action]')) return; // fav / comparar tienen su lógica
+    const row = e.target.closest('[data-oferta-id]');
+    if (!row) return;
+    const id = parseInt(row.dataset.ofertaId, 10);
+    if (!isNaN(id)) abrirModal(id);
+  });
 }
 
 // Carga inicial

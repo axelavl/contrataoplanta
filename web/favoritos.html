@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="styles/fonts.css">
 <link rel="stylesheet" href="styles/shared-layout.css">
 <link rel="stylesheet" href="styles/redesign-overrides.css">
+<link rel="stylesheet" href="styles/integracion/estilos.css">
 <!-- Analytics deshabilitado: reactivar cuando haya subdominio propio de Umami. -->
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -195,10 +196,10 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 </div>
 
 <!-- ══ MODAL DETALLE OFERTA ══════════════════════════════════════════ -->
-<div class="modal-overlay" id="modal" onclick="cerrarModal(event)">
+<div class="modal-overlay" id="modal">
   <div class="modal">
     <div class="modal-header" style="position:relative">
-      <button class="modal-close" onclick="cerrarModal(null,true)">✕</button>
+      <button class="modal-close" id="modal-close-btn" type="button">✕</button>
       <div style="font-size:11px;color:rgba(255,255,255,0.4);font-family:'Inter',sans-serif;font-weight:600;letter-spacing:1px;margin-bottom:8px" id="modal-kicker"></div>
       <div style="font-family:'Lora',Georgia,serif;font-size:24px;color:white;margin-bottom:8px" id="modal-cargo">Cargando…</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap" id="modal-badges"></div>
@@ -237,294 +238,14 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 
 <!-- ══ JAVASCRIPT ════════════════════════════════════════════════════ -->
 <script src="rich-text.js"></script>
-<script>
-// El backend vive en Railway. Cloudflare Pages NO proxea /api/* a un origen
-// externo (las reglas 200 de _redirects solo aplican a rutas internas), así
-// que apuntamos directo a Railway en producción — igual que app.js. En local
-// usamos el uvicorn de :8000. Override con window.__API_BASE para staging/tests.
-const RAILWAY_BACKEND = 'https://contrataoplanta-production.up.railway.app';
-const _hostLocal = (
-  window.location.hostname === 'localhost' ||
-  window.location.hostname === '' ||
-  window.location.hostname === '127.0.0.1'
-);
-const _apiForzada = (typeof window.__API_BASE === 'string' ? window.__API_BASE.trim() : '');
-const API_BASE = _apiForzada
-  ? _apiForzada.replace(/\/+$/, '')
-  : (_hostLocal ? 'http://localhost:8000' : RAILWAY_BACKEND);
+<!-- Ficha de detalle compartida (integracion). profesiones.js es opcional
+     (resaltado por familia); ficha-oferta.js expone window.FichaOferta. -->
+<script src="integracion/profesiones.js"></script>
+<script src="integracion/ficha-oferta.js"></script>
+<script src="integracion/comparador.js"></script>
+<script src="favoritos.js"></script>
 
-const FAV_KEY = 'fav_contrataoplanta';
-
-// ── Normalización de tipo de vínculo (catálogo unificado) ─────────
-const TIPO_LABEL = {
-  planta:'Planta', contrata:'Contrata', honorarios:'Honorarios',
-  codigo_trabajo:'Código del Trabajo', reemplazo:'Reemplazo',
-  otro:'Otro', no_informa:'No informa', sin_datos:'Sin datos',
-};
-const TIPO_CSS = {
-  planta:'badge-planta', contrata:'badge-contrata', honorarios:'badge-honorarios',
-  codigo_trabajo:'badge-codigo', reemplazo:'badge-otro', otro:'badge-otro',
-  no_informa:'badge-sin-dato', sin_datos:'badge-sin-dato',
-};
-function tipoClaveNormalizada(v){
-  if(v==null) return 'sin_datos';
-  const s=String(v).trim(); if(!s) return 'sin_datos';
-  const k=s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-    .replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
-  if(!k) return 'sin_datos';
-  if(k.includes('planta')) return 'planta';
-  if(k.includes('contrata')) return 'contrata';
-  if(k.includes('honorario')) return 'honorarios';
-  if(k.includes('codigo') && k.includes('trabajo')) return 'codigo_trabajo';
-  if(k.includes('reemplazo')||k.includes('suplencia')) return 'reemplazo';
-  if(k.includes('no informa')||k.includes('no especifica')) return 'no_informa';
-  if(k.includes('otro')) return 'otro';
-  return 'otro';
-}
-function tipoEtiqueta(v){ return TIPO_LABEL[tipoClaveNormalizada(v)] || (v||'Sin datos'); }
-function tipoClase(v){ return TIPO_CSS[tipoClaveNormalizada(v)] || 'badge-otro'; }
-
-// ── Helpers ────────────────────────────────────────────────────────
-function getFavs() {
-  return JSON.parse(localStorage.getItem(FAV_KEY) || '[]');
-}
-function setFavs(favs) {
-  localStorage.setItem(FAV_KEY, JSON.stringify(favs));
-}
-
-function diasRestantes(fechaStr) {
-  if (!fechaStr) return null;
-  const hoy = new Date(); hoy.setHours(0,0,0,0);
-  const cierre = new Date(fechaStr + 'T00:00:00');
-  return Math.round((cierre - hoy) / 86400000);
-}
-
-function formatFecha(fechaStr) {
-  if (!fechaStr) return null;
-  const [y, m, d] = fechaStr.split('-');
-  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  return `${parseInt(d)} de ${meses[parseInt(m)-1]} de ${y}`;
-}
-
-function formatGuardado(isoStr) {
-  const d = new Date(isoStr);
-  return `Guardado el ${d.getDate()} de ${['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][d.getMonth()]}`;
-}
-
-function escHtml(s) {
-  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-// formatRichText vive en rich-text.js (window.formatRichText).
-
-// ── Renderizar grid ────────────────────────────────────────────────
-function renderFavs() {
-  const favs = getFavs();
-  document.getElementById('hero-count').textContent = favs.length;
-
-  if (favs.length === 0) {
-    document.getElementById('empty-state').style.display = 'block';
-    document.getElementById('favs-grid').innerHTML = '';
-    return;
-  }
-  document.getElementById('empty-state').style.display = 'none';
-
-  document.getElementById('favs-grid').innerHTML = favs.map(f => {
-    const dias = diasRestantes(f.fecha_cierre);
-    let cierreHtml = '';
-    if (dias === null) {
-      cierreHtml = `<span class="fav-cierre fav-cierre--sin">Sin fecha de cierre</span>`;
-    } else if (dias < 0) {
-      cierreHtml = `<span class="fav-cierre fav-cierre--urgente">✕ Proceso cerrado</span>`;
-    } else if (dias <= 2) {
-      cierreHtml = `<span class="fav-cierre fav-cierre--urgente">⚡ Cierra en ${dias === 0 ? 'hoy' : dias + (dias===1?' día':' días')}</span>`;
-    } else if (dias <= 7) {
-      cierreHtml = `<span class="fav-cierre fav-cierre--pronto">⏱ Cierra en ${dias} ${dias === 1 ? 'día' : 'días'}</span>`;
-    } else {
-      cierreHtml = `<span class="fav-cierre fav-cierre--ok">📅 ${formatFecha(f.fecha_cierre)}</span>`;
-    }
-
-    return `
-    <div class="fav-card" id="fav-card-${f.id}">
-      <div class="fav-card-body">
-        <div class="fav-card-kicker">${f.institucion || 'Institución pública'}</div>
-        <div class="fav-card-cargo">${f.cargo || 'Cargo'}</div>
-        <div class="fav-badges">
-          ${f.region ? `<span class="fav-badge fav-badge-region">🗺 ${f.region}</span>` : ''}
-        </div>
-        ${cierreHtml}
-        <div class="fav-guardado">${f.guardado_en ? formatGuardado(f.guardado_en) : ''}</div>
-      </div>
-      <div class="fav-card-actions">
-        <button class="btn-fav-detail" onclick="abrirModal(${f.id})">Ver detalle</button>
-        <a class="btn-fav-postular" href="${f.url_oferta || '#'}" target="_blank" rel="noopener">Postular →</a>
-        <button class="btn-fav-remove" title="Eliminar de favoritos" onclick="eliminarFav(${f.id})">✕</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function eliminarFav(id) {
-  let favs = getFavs().filter(f => f.id !== id);
-  setFavs(favs);
-  renderFavs();
-}
-
-// ── Modal ──────────────────────────────────────────────────────────
-async function abrirModal(ofertaId) {
-  const modal = document.getElementById('modal');
-  modal.classList.add('open');
-  document.body.style.overflow = 'hidden';
-
-  // Reset
-  document.getElementById('modal-kicker').textContent = '…';
-  document.getElementById('modal-cargo').textContent = 'Cargando…';
-  document.getElementById('modal-badges').innerHTML = '';
-  document.getElementById('modal-renta').textContent = '…';
-  document.getElementById('modal-tipo-contrato').textContent = '…';
-  document.getElementById('modal-jornada').textContent = '…';
-  document.getElementById('modal-cierre').textContent = '…';
-  document.getElementById('modal-requisitos').innerHTML = '';
-  document.getElementById('modal-descripcion').innerHTML = '';
-
-  try {
-    const res = await fetch(`${API_BASE}/api/ofertas/${ofertaId}`);
-    if (!res.ok) throw new Error(res.status);
-    const o = await res.json();
-
-    document.getElementById('modal-kicker').textContent =
-      [o.institucion, o.sector].filter(Boolean).join(' · ').toUpperCase();
-    document.getElementById('modal-cargo').textContent = o.cargo || '—';
-
-    // Badges (reutiliza normalización centralizada)
-    const tipoCls = tipoClase(o.tipo_contrato);
-    const tipoLbl = tipoEtiqueta(o.tipo_contrato);
-    const badgesHTML = [
-      `<span class="badge ${tipoCls}">${tipoLbl}</span>`,
-      o.region        ? `<span class="badge badge-region">🗺 ${o.region}${o.ciudad ? ' · ' + o.ciudad : ''}</span>` : '',
-    ].filter(Boolean).join('');
-    document.getElementById('modal-badges').innerHTML = badgesHTML;
-
-    // Info grid
-    const fmtRenta = (min, max) => {
-      if (!min && !max) return 'Ver bases';
-      const fmt = n => '$' + Number(n).toLocaleString('es-CL');
-      return max && max !== min ? `${fmt(min)} – ${fmt(max)}` : fmt(min || max);
-    };
-    document.getElementById('modal-renta').textContent = fmtRenta(o.renta_bruta_min, o.renta_bruta_max);
-    document.getElementById('modal-tipo-contrato').textContent = tipoLbl;
-    document.getElementById('modal-jornada').textContent = o.jornada || '—';
-
-    const diasR = diasRestantes(o.fecha_cierre);
-    const cierreEl = document.getElementById('modal-cierre');
-    if (!o.fecha_cierre) {
-      cierreEl.textContent = 'Sin fecha'; cierreEl.style.color = '';
-    } else if (diasR < 0) {
-      cierreEl.textContent = 'Proceso cerrado'; cierreEl.style.color = 'var(--rojo)';
-    } else if (diasR <= 2) {
-      cierreEl.textContent = `${formatFecha(o.fecha_cierre)} (¡${diasR === 0 ? 'hoy' : diasR + (diasR === 1 ? ' día' : ' días')}!)`;
-      cierreEl.style.color = 'var(--rojo)';
-    } else if (diasR <= 7) {
-      cierreEl.textContent = formatFecha(o.fecha_cierre);
-      cierreEl.style.color = 'var(--naran)';
-    } else {
-      cierreEl.textContent = formatFecha(o.fecha_cierre);
-      cierreEl.style.color = 'var(--verde)';
-    }
-
-    // Requisitos y descripción con formato enriquecido
-    const reqHtml = formatRichText(o.requisitos_texto || o.requisitos || '');
-    document.getElementById('modal-requisitos').innerHTML = reqHtml ||
-      '<p>Ver bases del concurso para requisitos completos.</p>';
-
-    const descHtml = formatRichText(o.descripcion || '');
-    document.getElementById('modal-descripcion').innerHTML = descHtml || '<p>—</p>';
-
-    // Botones
-    const urlPostular = o.url_oferta || o.url_bases || '#';
-    document.getElementById('modal-btn-postular').onclick = () => window.open(urlPostular, '_blank');
-
-    // Favorito — en esta página siempre está guardado, se puede eliminar
-    const btnFav = document.getElementById('modal-btn-favorito');
-    const favs = getFavs();
-    const yaGuardado = favs.some(f => f.id === o.id);
-    btnFav.textContent = yaGuardado ? '♥ Guardado' : '♡ Guardar';
-    btnFav.classList.toggle('btn-modal-sec--activo', yaGuardado);
-    btnFav.onclick = () => {
-      toggleFavorito(o);
-      // Actualizar la tarjeta si fue eliminada
-      if (!getFavs().some(f => f.id === o.id)) {
-        cerrarModal(null, true);
-        renderFavs();
-      }
-    };
-
-    document.getElementById('modal-btn-compartir').onclick = () => compartirOferta(o);
-
-  } catch (err) {
-    document.getElementById('modal-cargo').textContent = 'No se pudo cargar el detalle.';
-  }
-}
-
-function cerrarModal(e, force) {
-  if (force || e?.target === document.getElementById('modal')) {
-    document.getElementById('modal').classList.remove('open');
-    document.body.style.overflow = '';
-  }
-}
-
-function compartirOferta(oferta) {
-  const url  = oferta.url_oferta || window.location.href;
-  const titulo = oferta.cargo || 'Oferta laboral';
-  const texto  = `${titulo} — ${oferta.institucion || 'Institución pública'}`;
-  if (navigator.share) {
-    navigator.share({ title: titulo, text: texto, url }).catch(() => {});
-  } else {
-    navigator.clipboard.writeText(url).then(() => {
-      const btn = document.getElementById('modal-btn-compartir');
-      const orig = btn.textContent;
-      btn.textContent = '✓ Enlace copiado';
-      setTimeout(() => btn.textContent = orig, 2000);
-    }).catch(() => prompt('Copia este enlace:', url));
-  }
-}
-
-function toggleFavorito(oferta) {
-  let favs = getFavs();
-  const idx = favs.findIndex(f => f.id === oferta.id);
-  const btn = document.getElementById('modal-btn-favorito');
-  if (idx >= 0) {
-    favs.splice(idx, 1);
-    btn.textContent = '♡ Guardar';
-    btn.classList.remove('btn-modal-sec--activo');
-  } else {
-    favs.push({
-      id: oferta.id,
-      cargo: oferta.cargo,
-      institucion: oferta.institucion,
-      region: oferta.region,
-      fecha_cierre: oferta.fecha_cierre,
-      url_oferta: oferta.url_oferta,
-      guardado_en: new Date().toISOString(),
-    });
-    btn.textContent = '♥ Guardado';
-    btn.classList.add('btn-modal-sec--activo');
-  }
-  setFavs(favs);
-}
-
-// ── Init ───────────────────────────────────────────────────────────
-document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarModal(null, true); });
-renderFavs();
-</script>
-
-<script>
-(function(){
-  const favs = JSON.parse(localStorage.getItem('fav_contrataoplanta')||'[]');
-  const link = document.getElementById('nav-favoritos');
-  if(link && favs.length > 0){ link.textContent = '♥ Mis favoritos ('+favs.length+')'; link.style.color='white'; }
-})();
-</script>
+<!-- contador de favoritos en el nav: lo gestiona shared-shell.js -->
 <script src="nav-mobile.js"></script>
 </body>
 </html>
