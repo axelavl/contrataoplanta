@@ -159,8 +159,19 @@
             <option>Autónomo/Regulador</option>
           </select>
         </div>
+        <div class="campo">
+          <label for="filtro-nivel">Nivel / estamento</label>
+          <select id="filtro-nivel">
+            <option value="">Todos los niveles</option>
+            <option>Directivo</option>
+            <option>Profesional</option>
+            <option value="Técnico">Técnico</option>
+            <option>Administrativo</option>
+            <option>Auxiliar</option>
+          </select>
+        </div>
       </div>
-      <!-- Segunda fila de filtros: institución + ciudad + renta mínima -->
+      <!-- Segunda fila de filtros: institución + renta mínima + renta máxima -->
       <div class="buscador-fila2">
         <div class="campo">
           <label for="input-institucion">Institución</label>
@@ -181,6 +192,17 @@
             <button class="btn-renta-x" type="button" data-action="limpiar-renta" title="Limpiar renta">×</button>
           </div>
         </div>
+        <div class="campo">
+          <label for="filtro-renta-max">Renta máxima</label>
+          <div class="renta-wrap" id="renta-wrap-max">
+            <span class="renta-prefix">$</span>
+            <input type="text" id="filtro-renta-max" inputmode="numeric"
+              placeholder="Ej: 2.500.000" autocomplete="off"
+              oninput="formatearRentaInput(this)"
+              onkeydown="if(event.key==='Enter'){buscar();this.blur()}">
+            <button class="btn-renta-x" type="button" data-action="limpiar-renta-max" title="Limpiar renta máxima">×</button>
+          </div>
+        </div>
         <button class="btn-buscar" type="button" data-action="buscar">Buscar</button>
       </div>
 
@@ -189,7 +211,7 @@
           <span class="filtros-titulo">Atajos</span>
           <div class="filtros-tags-wrap">
             <button class="filtro-tag" type="button" data-action="toggle-filtro" data-filtro="cierra-hoy">⏰ Cierra pronto</button>
-            <button class="filtro-tag" type="button" data-action="toggle-filtro" data-filtro="nuevos">✨ Últimas 48 h</button>
+            <button class="filtro-tag" type="button" data-action="toggle-filtro" data-filtro="nuevos">✨ Últimas 24 h</button>
             <button class="filtro-tag" type="button" data-action="toggle-filtro" data-filtro="sin-experiencia">Sin experiencia</button>
           </div>
         </div>

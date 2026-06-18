@@ -78,6 +78,9 @@ document.addEventListener('click', function (e) {
     case 'limpiar-renta':
       if (typeof limpiarRenta === 'function') limpiarRenta();
       break;
+    case 'limpiar-renta-max':
+      if (typeof limpiarRentaMax === 'function') limpiarRentaMax();
+      break;
     case 'toggle-filtro':
       if (typeof toggleFiltro === 'function') {
         toggleFiltro(el, el.getAttribute('data-filtro') || '');
@@ -305,7 +308,9 @@ const estado = {
   por_pagina:   _prefs.por_pagina || POR_PAGINA_CONFIG[_prefs.vista || 'cards']?.porDefecto || 20,
   vista:        _prefs.vista      || 'cards',
   institucion_id: null,
+  nivel: '',
   renta_min: null,
+  renta_max: null,
   ciudad: '',
   comunas: [],
   vista_listado: 'vigentes',
@@ -1577,10 +1582,12 @@ async function cargarOfertas() {
   if (estado.q)              params.set('q', estado.q);
   if (estado.region && (!Array.isArray(estado.comunas) || estado.comunas.length === 0)) params.set('region', estado.region);
   if (estado.sector)         params.set('sector', estado.sector);
+  if (estado.nivel)          params.set('nivel', estado.nivel);
   if (estado.cierra_pronto && estado.vista_listado === 'vigentes')  params.set('cierra_pronto', 'true');
   if (estado.nuevas)         params.set('nuevas', 'true');
   if (estado.institucion_id) params.set('institucion', estado.institucion_id);
   if (estado.renta_min)      params.set('renta_min', estado.renta_min);
+  if (estado.renta_max)      params.set('renta_max', estado.renta_max);
   if (Array.isArray(estado.comunas) && estado.comunas.length > 0) {
     params.set('comunas', estado.comunas.join(','));
   } else if (estado.ciudad) {
@@ -2858,20 +2865,29 @@ function _seleccionarInstitucion(id, nombre) {
 // ── Renta libre ───────────────────────────────────────────────────────────
 function formatearRentaInput(inp) {
   const raw = inp.value.replace(/\D/g, '');
-  const wrap = document.getElementById('renta-wrap');
+  // El wrap se resuelve desde el propio input para soportar renta mínima y
+  // máxima (cada una en su .renta-wrap), sin hardcodear el id.
+  const wrap = inp.closest('.renta-wrap');
   if (!raw) {
     inp.value = '';
-    wrap.classList.remove('tiene-valor');
+    wrap?.classList.remove('tiene-valor');
     return;
   }
   inp.value = parseInt(raw).toLocaleString('es-CL');
-  wrap.classList.add('tiene-valor');
+  wrap?.classList.add('tiene-valor');
 }
 
 function limpiarRenta() {
   const inp = document.getElementById('filtro-renta-min');
   inp.value = '';
   document.getElementById('renta-wrap').classList.remove('tiene-valor');
+  buscar();
+}
+
+function limpiarRentaMax() {
+  const inp = document.getElementById('filtro-renta-max');
+  if (inp) inp.value = '';
+  document.getElementById('renta-wrap-max')?.classList.remove('tiene-valor');
   buscar();
 }
 
@@ -2889,6 +2905,7 @@ function buscar() {
   estado.q         = document.getElementById('input-cargo').value.trim();
   estado.region    = document.getElementById('filtro-region').value;
   estado.sector    = document.getElementById('filtro-sector').value;
+  estado.nivel     = document.getElementById('filtro-nivel')?.value || '';
   estado.comunas   = (document.getElementById('filtro-ciudad').value || '')
     .split(',')
     .map((c) => c.trim())
@@ -2896,6 +2913,8 @@ function buscar() {
   estado.ciudad    = estado.comunas[0] || '';
   const rawRenta = document.getElementById('filtro-renta-min').value.replace(/\D/g, '');
   estado.renta_min = rawRenta ? rawRenta : null;
+  const rawRentaMax = (document.getElementById('filtro-renta-max')?.value || '').replace(/\D/g, '');
+  estado.renta_max = rawRentaMax ? rawRentaMax : null;
   estado.pagina    = 1;
   actualizarVisibilidadCompartirBusqueda();
   // Trackeo de búsqueda: solo disparamos si hay algún filtro aplicado,
@@ -3339,10 +3358,13 @@ function limpiarTodosLosFiltros() {
   setInputValue('input-cargo', '');
   setInputValue('filtro-region', '');
   setInputValue('filtro-sector', '');
+  setInputValue('filtro-nivel', '');
   setInputValue('filtro-ciudad', '');
   setInputValue('filtro-renta-min', '');
+  setInputValue('filtro-renta-max', '');
   setInputValue('input-institucion', '');
   document.getElementById('renta-wrap')?.classList.remove('tiene-valor');
+  document.getElementById('renta-wrap-max')?.classList.remove('tiene-valor');
   const clearInst = document.getElementById('btn-clear-inst');
   if (clearInst) clearInst.style.display = 'none';
   const dropdown = document.getElementById('autocomplete-dropdown');
@@ -3357,7 +3379,9 @@ function limpiarTodosLosFiltros() {
   estado.sector = '';
   estado.ciudad = '';
   estado.comunas = [];
+  estado.nivel = '';
   estado.renta_min = null;
+  estado.renta_max = null;
   estado.institucion_id = null;
   estado.tipos = [...TIPOS_POR_DEFECTO];
   estado.cierra_pronto = false;
