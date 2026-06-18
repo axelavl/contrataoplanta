@@ -36,10 +36,10 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .page-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 80% at 100% 0%,rgba(26,107,204,0.3) 0%,transparent 60%);pointer-events:none}
 .page-hero-inner{max-width:1200px;margin:0 auto;position:relative;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap}
 .page-hero-kicker{font-size:11px;color:var(--acento);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;font-weight:600}
-.page-hero h1{font-family:'Lora',Georgia,serif;font-size:clamp(28px,4vw,44px);color:white;line-height:1.1;letter-spacing:-.5px}
+.page-hero h1{font-family:'Fraunces',Georgia,serif;font-size:clamp(28px,4vw,44px);color:white;line-height:1.1;letter-spacing:-.5px}
 .page-hero h1 em{color:var(--acento);font-style:italic}
 .fav-count{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15);border-radius:var(--r);padding:14px 20px;text-align:center;min-width:100px}
-.fav-count-num{font-family:'Lora',Georgia,serif;font-size:32px;color:white;font-weight:600;display:block}
+.fav-count-num{font-family:'Fraunces',Georgia,serif;font-size:32px;color:white;font-weight:600;display:block}
 .fav-count-label{font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:1px}
 
 /* ── CONTENIDO ────────────────────────────────────────────────────── */
@@ -48,7 +48,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 /* ── ESTADO VACÍO ─────────────────────────────────────────────────── */
 .empty-state{text-align:center;padding:80px 24px}
 .empty-icon{font-size:64px;margin-bottom:24px;opacity:.4}
-.empty-title{font-family:'Lora',Georgia,serif;font-size:26px;color:var(--texto);margin-bottom:12px}
+.empty-title{font-family:'Fraunces',Georgia,serif;font-size:26px;color:var(--texto);margin-bottom:12px}
 .empty-sub{color:var(--texto2);font-size:15px;line-height:1.6;max-width:400px;margin:0 auto 28px}
 .btn-primary{display:inline-block;padding:12px 24px;background:var(--azul);color:white;border-radius:var(--r);text-decoration:none;font-weight:600;font-size:14px;transition:background .15s}
 .btn-primary:hover{background:var(--azul-m)}
@@ -61,7 +61,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .fav-card:hover{box-shadow:0 6px 32px rgba(10,46,110,0.12);transform:translateY(-2px)}
 .fav-card-body{padding:20px;flex:1}
 .fav-card-kicker{font-size:11px;color:var(--texto3);font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px}
-.fav-card-cargo{font-family:'Lora',Georgia,serif;font-size:17px;color:var(--texto);line-height:1.3;margin-bottom:12px;font-weight:600}
+.fav-card-cargo{font-family:'Fraunces',Georgia,serif;font-size:17px;color:var(--texto);line-height:1.3;margin-bottom:12px;font-weight:600}
 .fav-badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
 .fav-badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap}
 .fav-badge-region{background:var(--bg2);color:var(--texto2)}
@@ -80,6 +80,8 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .btn-fav-postular:hover{background:var(--cielo);color:white}
 .btn-fav-remove{width:38px;height:38px;background:white;color:var(--texto3);border:1.5px solid var(--borde);border-radius:var(--r);font-size:16px;cursor:pointer;display:grid;place-items:center;transition:all .15s;flex-shrink:0}
 .btn-fav-remove:hover{background:var(--rojo-l);color:var(--rojo);border-color:var(--rojo)}
+/* Botón "Comparar" alineado con los demás de la tarjeta (misma altura/peso). */
+.fav-card-actions .cop-cmp-btn{height:38px;padding:0 14px;border-radius:var(--r);font-size:13px;font-weight:600;border-width:1.5px}
 
 /* ── MODAL DETALLE ────────────────────────────────────────────────── */
 .modal-overlay{position:fixed;inset:0;z-index:200;background:rgba(10,46,110,0.6);backdrop-filter:blur(4px);display:none;place-items:center;padding:24px}
@@ -201,7 +203,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
     <div class="modal-header" style="position:relative">
       <button class="modal-close" id="modal-close-btn" type="button">✕</button>
       <div style="font-size:11px;color:rgba(255,255,255,0.4);font-family:'Inter',sans-serif;font-weight:600;letter-spacing:1px;margin-bottom:8px" id="modal-kicker"></div>
-      <div style="font-family:'Lora',Georgia,serif;font-size:24px;color:white;margin-bottom:8px" id="modal-cargo">Cargando…</div>
+      <div style="font-family:'Fraunces',Georgia,serif;font-size:24px;color:white;margin-bottom:8px" id="modal-cargo">Cargando…</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap" id="modal-badges"></div>
     </div>
     <div class="modal-body">
