@@ -259,6 +259,8 @@
               </svg>
             </button>
           </div>
+          <div class="ctrl-sep"></div>
+          <button class="btn-mapa-toggle" id="btn-mapa-toggle" type="button" aria-expanded="false" aria-controls="mapa-chile-wrap">🗺 Mapa por región</button>
         </div>
       </div>
     </div>
@@ -276,10 +278,8 @@
       </div>
     </div>
 
-    <!-- Mapa de vacantes por región (integracion/mapa-chile.js). On-demand. -->
-    <div class="mapa-vacantes-toggle">
-      <button class="btn-mapa-toggle" id="btn-mapa-toggle" type="button" aria-expanded="false" aria-controls="mapa-chile-wrap">🗺 Ver mapa de vacantes por región</button>
-    </div>
+    <!-- Mapa de vacantes por región (integracion/mapa-chile.js). On-demand.
+         El botón "🗺 Mapa por región" vive ahora en la fila de controles. -->
     <div class="mapa-chile-wrap" id="mapa-chile-wrap" hidden>
       <div id="mapa-chile"></div>
     </div>

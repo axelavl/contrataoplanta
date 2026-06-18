@@ -53,7 +53,7 @@
 <div class="page-content">
   <div class="faq-grid">
 <section class="faq-bloque"><h2>Buscar ofertas y estados</h2>
-<div class="faq-item"><button class="faq-pregunta" aria-expanded="false">¿Cómo busco ofertas por cargo, institución o región?<span class="faq-icono">＋</span></button><div class="faq-respuesta"><p>Usa la búsqueda principal con términos de cargo (ej. “analista”), luego combina filtros de región, sector, tipo de contrato y comuna. Si quieres ampliar resultados, elimina filtros uno a uno y vuelve a buscar.</p></div></div>
+<div class="faq-item"><button class="faq-pregunta" aria-expanded="false">¿Cómo busco ofertas por cargo, institución o región?<span class="faq-icono">＋</span></button><div class="faq-respuesta"><p>Escribe el cargo o palabra clave (ej. “analista”) y combina los filtros de región, sector, tipo de contrato, nivel/estamento, institución, rango de renta y los chips de profesión (Salud, Jurídico, etc.). Si ves pocos resultados, quita filtros uno a uno y vuelve a buscar; también puedes abrir el mapa para explorar las vacantes por región.</p></div></div>
 <div class="faq-item"><button class="faq-pregunta" aria-expanded="false">¿Qué significa “Cierra hoy”?<span class="faq-icono">＋</span></button><div class="faq-respuesta"><p>Significa que la oferta sigue vigente durante el día actual y todavía puedes postular si cumples los requisitos. Se muestra con estilo de advertencia para priorizarla.</p></div></div>
 <div class="faq-item"><button class="faq-pregunta" aria-expanded="false">¿Qué significa “Finalizada” o “Cerrada”?<span class="faq-icono">＋</span></button><div class="faq-respuesta"><p>La fecha de cierre ya pasó o la institución cerró la convocatoria. No aparece en la vista principal para que te concentres en lo vigente, pero sigue disponible en la pestaña “Cerradas”.</p></div></div>
 <div class="faq-item"><button class="faq-pregunta" aria-expanded="false">¿Por qué algunas ofertas cerradas no aparecen al entrar?<span class="faq-icono">＋</span></button><div class="faq-respuesta"><p>Porque la portada prioriza la postulación activa. Las convocatorias históricas siguen disponibles en el filtro/pestaña de historial para consulta, trazabilidad y comparación de perfiles.</p></div></div>
@@ -71,13 +71,17 @@
 <div class="faq-item"><button class="faq-pregunta" aria-expanded="false">¿El portal publica ofertas o también gestiona postulaciones?<span class="faq-icono">＋</span></button><div class="faq-respuesta"><p>Este sitio agrega y ordena información. No recibe CV ni ejecuta etapas de selección. La postulación siempre la gestiona la institución en su canal oficial.</p></div></div>
 <div class="faq-item"><button class="faq-pregunta" aria-expanded="false">¿Qué pasa con convocatorias antiguas?<span class="faq-icono">＋</span></button><div class="faq-respuesta"><p>Se mantienen como historial consultable. Sirven para revisar perfiles solicitados, instituciones que publican con más frecuencia y niveles de renta observados.</p><div class="nota">Tip: usa historial para anticipar concursos que suelen repetirse cada año.</div></div></div>
 </section>
+
+<section class="faq-bloque"><h2>Herramientas del sitio</h2>
+<div class="faq-item"><button class="faq-pregunta" aria-expanded="false">¿Cómo guardo ofertas para revisarlas después?<span class="faq-icono">＋</span></button><div class="faq-respuesta"><p>Toca el corazón ♡ en cualquier tarjeta para guardarla. Tus ofertas quedan en <strong>Mis favoritos</strong> (en el menú superior), guardadas en este dispositivo aunque cierres el navegador.</p></div></div>
+<div class="faq-item"><button class="faq-pregunta" aria-expanded="false">¿Puedo comparar varias ofertas?<span class="faq-icono">＋</span></button><div class="faq-respuesta"><p>Sí. Usa <strong>“⇆ Comparar oferta”</strong> en las tarjetas o dentro de la ficha de detalle (hasta 3) y ábrelas lado a lado para contrastar institución, renta, jornada y plazo en una sola vista.</p></div></div>
+<div class="faq-item"><button class="faq-pregunta" aria-expanded="false">¿Cómo activo alertas por correo?<span class="faq-icono">＋</span></button><div class="faq-respuesta"><p>En el panel <strong>“Alertas de empleo”</strong> (columna derecha del buscador) ingresa tu correo y, si quieres, palabras clave, región o sector. Recibirás un aviso cuando aparezcan ofertas que coincidan, sin spam.</p></div></div>
+<div class="faq-item"><button class="faq-pregunta" aria-expanded="false">¿Qué es el mapa de vacantes por región?<span class="faq-icono">＋</span></button><div class="faq-respuesta"><p>Es una vista que colorea Chile según la cantidad de concursos vigentes por región. Al tocar una región ves sus ofertas al costado, sin perder el mapa de vista.</p></div></div>
+</section>
 </div></div>
 </main>
 <div id="site-footer"></div>
-<script>
-(function(){const favs=JSON.parse(localStorage.getItem('fav_contrataoplanta')||'[]');const link=document.getElementById('nav-favoritos');if(link&&favs.length>0){link.textContent='♥ Mis favoritos ('+favs.length+')';link.style.color='white';}})();
-document.querySelectorAll('.faq-pregunta').forEach((btn)=>{btn.addEventListener('click',()=>{const open=btn.getAttribute('aria-expanded')==='true';document.querySelectorAll('.faq-pregunta').forEach((x)=>{x.setAttribute('aria-expanded','false');x.nextElementSibling.style.display='none';x.querySelector('.faq-icono').textContent='＋';});if(!open){btn.setAttribute('aria-expanded','true');btn.nextElementSibling.style.display='block';btn.querySelector('.faq-icono').textContent='−';}})});
-</script>
+<script src="faq.js"></script>
 <script src="nav-mobile.js"></script>
 </body>
 </html>
