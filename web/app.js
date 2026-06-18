@@ -78,6 +78,9 @@ document.addEventListener('click', function (e) {
     case 'limpiar-renta':
       if (typeof limpiarRenta === 'function') limpiarRenta();
       break;
+    case 'limpiar-renta-max':
+      if (typeof limpiarRentaMax === 'function') limpiarRentaMax();
+      break;
     case 'toggle-filtro':
       if (typeof toggleFiltro === 'function') {
         toggleFiltro(el, el.getAttribute('data-filtro') || '');
@@ -305,7 +308,9 @@ const estado = {
   por_pagina:   _prefs.por_pagina || POR_PAGINA_CONFIG[_prefs.vista || 'cards']?.porDefecto || 20,
   vista:        _prefs.vista      || 'cards',
   institucion_id: null,
+  nivel: '',
   renta_min: null,
+  renta_max: null,
   ciudad: '',
   comunas: [],
   vista_listado: 'vigentes',
@@ -694,19 +699,18 @@ const esUrlValida = (typeof isValidHttpUrl === 'function')
       }
     };
 
-// ── Botón "Bases oficiales": consulta primero el flag del backend ──────────
-// Si el backend marcó url_bases_valida === false → deshabilitar.
-// Si viene null/ausente → degradación a esUrlValida (validación client-side).
+// ── Botón "Bases oficiales": sólo se muestra si el backend COMPROBÓ el enlace ──
+// Regla (issue #242): si `url_bases_valida` no es exactamente true (es decir,
+// está sin comprobar=null o comprobada inválida=false), se OCULTA el botón en
+// lugar de mostrar uno deshabilitado/confuso.
+function basesComprobadas(oferta) {
+  return oferta.url_bases
+    && oferta.url_bases !== oferta.url_oferta
+    && oferta.url_bases_valida === true;
+}
+
 function renderBtnBases(oferta) {
-  const tieneBases = oferta.url_bases && oferta.url_bases !== oferta.url_oferta;
-  if (!tieneBases) return '';
-  const flag = oferta.url_bases_valida;
-  const valida = (flag === false) ? false
-              : (flag === true)  ? true
-              : esUrlValida(oferta.url_bases);
-  if (!valida) {
-    return `<span class="btn-ver btn-ver-off" title="Enlace de bases no disponible" data-action="noop" data-stop-propagation="true">Bases no disponibles</span>`;
-  }
+  if (!basesComprobadas(oferta)) return '';
   return `<button class="btn-ver" type="button" data-action="abrir-visor-bases" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}">Bases oficiales</button>`;
 }
 
@@ -1578,10 +1582,12 @@ async function cargarOfertas() {
   if (estado.q)              params.set('q', estado.q);
   if (estado.region && (!Array.isArray(estado.comunas) || estado.comunas.length === 0)) params.set('region', estado.region);
   if (estado.sector)         params.set('sector', estado.sector);
+  if (estado.nivel)          params.set('nivel', estado.nivel);
   if (estado.cierra_pronto && estado.vista_listado === 'vigentes')  params.set('cierra_pronto', 'true');
   if (estado.nuevas)         params.set('nuevas', 'true');
   if (estado.institucion_id) params.set('institucion', estado.institucion_id);
   if (estado.renta_min)      params.set('renta_min', estado.renta_min);
+  if (estado.renta_max)      params.set('renta_max', estado.renta_max);
   if (Array.isArray(estado.comunas) && estado.comunas.length > 0) {
     params.set('comunas', estado.comunas.join(','));
   } else if (estado.ciudad) {
@@ -1852,6 +1858,21 @@ function _isWeakSummaryValue(value) {
   ];
   if (weakTokens.includes(normalized)) return true;
   return weakTokens.some((token) => normalized.includes(token));
+}
+
+// Filtra valores de formación/título que el sistema no reconoce como dato
+// real (placeholders, fragmentos genéricos o demasiado cortos), para no
+// presentarlos como campo estructurado (issue #242).
+function _esFormacionReconocida(value) {
+  const t = String(value == null ? '' : value).trim();
+  if (t.length < 6) return false;
+  if (_isWeakSummaryValue(t)) return false;
+  // Debe tener al menos una palabra alfabética de fondo (evita "N/A", "---", "•").
+  if (!/[a-záéíóúñA-ZÁÉÍÓÚÑ]{4,}/.test(t)) return false;
+  return true;
+}
+function _filtrarFormacionDudosa(values) {
+  return Array.isArray(values) ? values.filter(_esFormacionReconocida) : [];
 }
 
 function _setSummaryField(itemId, value, opts = {}) {
@@ -2224,11 +2245,13 @@ async function abrirModal(ofertaId) {
       _toggleSection('modal-funciones-wrap', countFunc > 0);
       const countCond = _renderListInto('modal-condiciones-list', semantic.condiciones, { max: 8, truncateAt: 5 });
       _toggleSection('modal-condiciones-wrap', countCond > 0);
+      // Formación: descartar valores no reconocidos antes de mostrarlos.
+      const formacionLimpia = _filtrarFormacionDudosa(semantic.requisitos.formacion);
       const countReq = [
         _renderListInto('modal-req-obligatorios', semantic.requisitos.obligatorios, { max: 8, truncateAt: 6 }),
         _renderListInto('modal-req-deseables', semantic.requisitos.deseables, { max: 6, truncateAt: 4 }),
         _renderListInto('modal-req-experiencia', semantic.requisitos.experiencia, { max: 6, truncateAt: 4 }),
-        _renderListInto('modal-req-formacion', semantic.requisitos.formacion, { max: 6, truncateAt: 4 }),
+        _renderListInto('modal-req-formacion', formacionLimpia, { max: 6, truncateAt: 4 }),
         _renderListInto('modal-req-especialidades', semantic.requisitos.especialidades, { max: 6, truncateAt: 4 }),
         _renderListInto('modal-req-competencias', semantic.requisitos.competencias, { max: 6, truncateAt: 4 }),
         _renderListInto('modal-req-documentos', semantic.requisitos.documentos, { max: 6, truncateAt: 4 }),
@@ -2236,7 +2259,7 @@ async function abrirModal(ofertaId) {
       _toggleSection('sec-req-obligatorios', semantic.requisitos.obligatorios.length > 0);
       _toggleSection('sec-req-deseables', semantic.requisitos.deseables.length > 0);
       _toggleSection('sec-req-experiencia', semantic.requisitos.experiencia.length > 0);
-      _toggleSection('sec-req-formacion', semantic.requisitos.formacion.length > 0);
+      _toggleSection('sec-req-formacion', formacionLimpia.length > 0);
       _toggleSection('sec-req-especialidades', semantic.requisitos.especialidades.length > 0);
       _toggleSection('sec-req-competencias', semantic.requisitos.competencias.length > 0);
       _toggleSection('sec-req-documentos', semantic.requisitos.documentos.length > 0);
@@ -2304,9 +2327,10 @@ async function abrirModal(ofertaId) {
       btnPostular.onclick = null;
     }
 
-    // Botón Bases oficiales (solo si es distinto y válido por backend o cliente)
+    // Botón Bases oficiales: sólo si el backend comprobó el enlace (issue #242).
+    // Sin comprobar (null) o inválido (false) → se oculta, no se muestra disabled.
     const btnBases = document.getElementById('modal-btn-bases');
-    if (o.url_bases && o.url_bases !== o.url_oferta && basesOk) {
+    if (basesComprobadas(o)) {
       btnBases.style.display = 'inline-flex';
       btnBases.textContent = UI.CTA_BASES || 'Ver bases oficiales';
       btnBases.onclick = () => abrirVisorBases(o);
@@ -2841,20 +2865,29 @@ function _seleccionarInstitucion(id, nombre) {
 // ── Renta libre ───────────────────────────────────────────────────────────
 function formatearRentaInput(inp) {
   const raw = inp.value.replace(/\D/g, '');
-  const wrap = document.getElementById('renta-wrap');
+  // El wrap se resuelve desde el propio input para soportar renta mínima y
+  // máxima (cada una en su .renta-wrap), sin hardcodear el id.
+  const wrap = inp.closest('.renta-wrap');
   if (!raw) {
     inp.value = '';
-    wrap.classList.remove('tiene-valor');
+    wrap?.classList.remove('tiene-valor');
     return;
   }
   inp.value = parseInt(raw).toLocaleString('es-CL');
-  wrap.classList.add('tiene-valor');
+  wrap?.classList.add('tiene-valor');
 }
 
 function limpiarRenta() {
   const inp = document.getElementById('filtro-renta-min');
   inp.value = '';
   document.getElementById('renta-wrap').classList.remove('tiene-valor');
+  buscar();
+}
+
+function limpiarRentaMax() {
+  const inp = document.getElementById('filtro-renta-max');
+  if (inp) inp.value = '';
+  document.getElementById('renta-wrap-max')?.classList.remove('tiene-valor');
   buscar();
 }
 
@@ -2872,6 +2905,7 @@ function buscar() {
   estado.q         = document.getElementById('input-cargo').value.trim();
   estado.region    = document.getElementById('filtro-region').value;
   estado.sector    = document.getElementById('filtro-sector').value;
+  estado.nivel     = document.getElementById('filtro-nivel')?.value || '';
   estado.comunas   = (document.getElementById('filtro-ciudad').value || '')
     .split(',')
     .map((c) => c.trim())
@@ -2879,6 +2913,8 @@ function buscar() {
   estado.ciudad    = estado.comunas[0] || '';
   const rawRenta = document.getElementById('filtro-renta-min').value.replace(/\D/g, '');
   estado.renta_min = rawRenta ? rawRenta : null;
+  const rawRentaMax = (document.getElementById('filtro-renta-max')?.value || '').replace(/\D/g, '');
+  estado.renta_max = rawRentaMax ? rawRentaMax : null;
   estado.pagina    = 1;
   actualizarVisibilidadCompartirBusqueda();
   // Trackeo de búsqueda: solo disparamos si hay algún filtro aplicado,
@@ -3322,10 +3358,13 @@ function limpiarTodosLosFiltros() {
   setInputValue('input-cargo', '');
   setInputValue('filtro-region', '');
   setInputValue('filtro-sector', '');
+  setInputValue('filtro-nivel', '');
   setInputValue('filtro-ciudad', '');
   setInputValue('filtro-renta-min', '');
+  setInputValue('filtro-renta-max', '');
   setInputValue('input-institucion', '');
   document.getElementById('renta-wrap')?.classList.remove('tiene-valor');
+  document.getElementById('renta-wrap-max')?.classList.remove('tiene-valor');
   const clearInst = document.getElementById('btn-clear-inst');
   if (clearInst) clearInst.style.display = 'none';
   const dropdown = document.getElementById('autocomplete-dropdown');
@@ -3340,7 +3379,9 @@ function limpiarTodosLosFiltros() {
   estado.sector = '';
   estado.ciudad = '';
   estado.comunas = [];
+  estado.nivel = '';
   estado.renta_min = null;
+  estado.renta_max = null;
   estado.institucion_id = null;
   estado.tipos = [...TIPOS_POR_DEFECTO];
   estado.cierra_pronto = false;
