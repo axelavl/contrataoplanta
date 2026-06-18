@@ -195,6 +195,15 @@ async function abrirFichaFav(ofertaId) {
         if (FichaOferta.cerrar) FichaOferta.cerrar();
       }
     },
+    comparando: window.Comparador ? Comparador.has(o.id) : false,
+    onComparar: () => {
+      if (!window.Comparador) return false;
+      const antes = Comparador.has(o.id);
+      const ahora = Comparador.toggle(o.id);
+      if (!antes && ahora === false) alert('Podés comparar hasta ' + Comparador.MAX + ' ofertas');
+      if (window.repintarComparar) window.repintarComparar();
+      return ahora;
+    },
   });
 }
 

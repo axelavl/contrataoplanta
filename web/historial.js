@@ -220,6 +220,14 @@ async function abrirFichaHist(id) {
     onPostular: () => { const u = o.url_oferta || o.url_bases; if (u) window.open(u, '_blank', 'noopener'); },
     onBases: () => { if (o.url_bases) window.open(o.url_bases, '_blank', 'noopener'); },
     onGuardar: () => _favToggleHist(o),
+    comparando: window.Comparador ? Comparador.has(o.id) : false,
+    onComparar: () => {
+      if (!window.Comparador) return false;
+      const antes = Comparador.has(o.id);
+      const ahora = Comparador.toggle(o.id);
+      if (!antes && ahora === false) alert('Podés comparar hasta ' + Comparador.MAX + ' ofertas');
+      return ahora;
+    },
   });
 }
 

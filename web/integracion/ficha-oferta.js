@@ -88,6 +88,7 @@
           <button class="cop-apply" id="cop-apply" type="button">Ir al portal de postulación →</button>
           <div class="cop-actions-sec">
             <button class="cop-btn2" id="cop-bases" type="button">Ver bases del concurso</button>
+            <button class="cop-btn2" id="cop-cmp" type="button" hidden>⇆ Comparar oferta</button>
             <button class="cop-btn2" id="cop-fav" type="button">♡ Guardar</button>
           </div>
           <p class="cop-portal" id="cop-portal"></p>
@@ -201,6 +202,25 @@
       _guardada = !_guardada;
       _pintarFav();
     };
+
+    // Botón comparar (solo si el host pasó onComparar): alterna agregar/quitar.
+    const _btnCmp = $('cop-cmp');
+    if (ctx.onComparar) {
+      _btnCmp.hidden = false;
+      let _cmp = !!ctx.comparando;
+      const _pintarCmp = () => {
+        _btnCmp.innerHTML = _cmp ? '✓ Comparar oferta' : '⇆ Comparar oferta';
+        _btnCmp.classList.toggle('is-activo', _cmp);
+      };
+      _pintarCmp();
+      _btnCmp.onclick = () => {
+        // onComparar devuelve el nuevo estado (true=en comparador, false=fuera).
+        _cmp = ctx.onComparar(oferta) === true;
+        _pintarCmp();
+      };
+    } else {
+      _btnCmp.hidden = true;
+    }
 
     overlay.classList.add('is-open');
     overlay.scrollTop = 0;

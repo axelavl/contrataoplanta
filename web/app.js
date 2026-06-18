@@ -316,7 +316,7 @@ const estado = {
   nuevas: false,
   orden:        ORDEN_POR_DEFECTO,
   por_pagina:   _prefs.por_pagina || POR_PAGINA_CONFIG[_prefs.vista || 'cards']?.porDefecto || 20,
-  vista:        _prefs.vista      || 'cards',
+  vista:        (_prefs.vista === 'grid' ? 'cards' : _prefs.vista) || 'cards',
   institucion_id: null,
   nivel: '',
   renta_min: null,
@@ -938,6 +938,71 @@ const DOMINIOS_INSTITUCIONALES_REFERENCIA = [
   ['municipalidad de iquique', 'municipioiquique.cl'],
   ['municipalidad de arica', 'municipalidadarica.cl'],
   ['hospital clinico', 'redsalud.gob.cl'],
+  ['servicio de salud', 'redsalud.gob.cl'],
+  // Empresas del Estado y autónomos
+  ['codelco', 'codelco.cl'],
+  ['corporacion nacional del cobre', 'codelco.cl'],
+  ['bancoestado', 'bancoestado.cl'],
+  ['banco estado', 'bancoestado.cl'],
+  ['banco del estado', 'bancoestado.cl'],
+  ['enap', 'enap.cl'],
+  ['empresa nacional del petroleo', 'enap.cl'],
+  ['metro de santiago', 'metro.cl'],
+  ['empresa de los ferrocarriles', 'efe.cl'],
+  ['ferrocarriles del estado', 'efe.cl'],
+  ['banco central', 'bcentral.cl'],
+  ['television nacional', 'tvn.cl'],
+  ['correos de chile', 'correos.cl'],
+  ['empresa de correos', 'correos.cl'],
+  ['fonasa', 'fonasa.cl'],
+  ['fondo nacional de salud', 'fonasa.cl'],
+  // Servicios y superintendencias
+  ['subtel', 'subtel.gob.cl'],
+  ['subsecretaria de telecomunicaciones', 'subtel.gob.cl'],
+  ['indap', 'indap.gob.cl'],
+  ['instituto de desarrollo agropecuario', 'indap.gob.cl'],
+  ['servel', 'servel.cl'],
+  ['servicio electoral', 'servel.cl'],
+  ['suseso', 'suseso.cl'],
+  ['superintendencia de seguridad social', 'suseso.cl'],
+  ['injuv', 'injuv.gob.cl'],
+  ['instituto nacional de la juventud', 'injuv.gob.cl'],
+  ['senama', 'senama.gob.cl'],
+  ['servicio nacional del adulto mayor', 'senama.gob.cl'],
+  ['senadis', 'senadis.gob.cl'],
+  ['servicio nacional de la discapacidad', 'senadis.gob.cl'],
+  ['senda', 'senda.gob.cl'],
+  ['sename', 'sename.cl'],
+  ['servicio nacional de menores', 'sename.cl'],
+  ['mejor ninez', 'mejorninez.cl'],
+  ['proteccion especializada a la ninez', 'mejorninez.cl'],
+  ['reinsercion social juvenil', 'reinsercionjuvenil.gob.cl'],
+  ['sernageomin', 'sernageomin.cl'],
+  ['dgac', 'dgac.gob.cl'],
+  ['direccion general de aeronautica', 'dgac.gob.cl'],
+  ['direccion general de aguas', 'dga.gob.cl'],
+  ['comision nacional de riego', 'cnr.gob.cl'],
+  ['serviu', 'minvu.cl'],
+  ['instituto nacional de deportes', 'ind.cl'],
+  // Universidades estatales
+  ['universidad de chile', 'uchile.cl'],
+  ['universidad de santiago', 'usach.cl'],
+  ['usach', 'usach.cl'],
+  ['universidad de valparaiso', 'uv.cl'],
+  ['universidad de concepcion', 'udec.cl'],
+  ['universidad tecnica federico santa maria', 'usm.cl'],
+  ['universidad de talca', 'utalca.cl'],
+  ['universidad de la frontera', 'ufro.cl'],
+  ['universidad austral', 'uach.cl'],
+  ['universidad de antofagasta', 'uantof.cl'],
+  ['universidad de la serena', 'userena.cl'],
+  ['universidad del bio-bio', 'ubiobio.cl'],
+  ['universidad de magallanes', 'umag.cl'],
+  ['universidad de tarapaca', 'uta.cl'],
+  ['universidad de atacama', 'uda.cl'],
+  ['universidad de playa ancha', 'upla.cl'],
+  ['universidad tecnologica metropolitana', 'utem.cl'],
+  ['universidad metropolitana de ciencias de la educacion', 'umce.cl'],
 ];
 
 // Cache de resolución para evitar recalcular en cada renderCard.
@@ -2169,6 +2234,19 @@ async function abrirModal(ofertaId) {
 // Abre la ficha nueva (integracion/ficha-oferta.js) con datos reales.
 // Reusa gating (ofertaPostulable/basesComprobadas), analytics
 // (registrarClicPostular), visor de bases y favoritos existentes.
+// Alterna una oferta en el comparador desde la ficha. Devuelve el nuevo
+// estado (true=en comparador). Avisa si se alcanzó el máximo.
+function _toggleCompararFicha(id) {
+  if (!window.Comparador) return false;
+  const estabaAntes = Comparador.has(id);
+  const ahora = Comparador.toggle(id);
+  if (!estabaAntes && ahora === false) {
+    (window.mostrarToast || window.alert)('Podés comparar hasta ' + Comparador.MAX + ' ofertas');
+  }
+  if (window.repintarComparar) window.repintarComparar();
+  return ahora;
+}
+
 async function abrirFichaOferta(ofertaId) {
   const resp = await fetchApi(`/api/ofertas/${ofertaId}`);
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
@@ -2188,6 +2266,8 @@ async function abrirFichaOferta(ofertaId) {
     },
     onBases: () => { if (basesComprobadas(o)) abrirVisorBases(o); },
     onGuardar: () => toggleFavorito(o),
+    comparando: window.Comparador ? Comparador.has(o.id) : false,
+    onComparar: () => _toggleCompararFicha(o.id),
   });
 }
 
@@ -4248,27 +4328,28 @@ async function _contarOfertasRegion(region) {
 async function _renderMapaConteos() {
   const host = document.getElementById('mapa-chile');
   if (!host || !window.MapaChile) return;
+  let api;
+  const onSel = async (region) => {
+    if (api && api.cargando) api.cargando();
+    try {
+      const r = await fetchApi(`/api/ofertas?region=${encodeURIComponent(region)}&vista=vigentes&por_pagina=20&orden=cierre`);
+      const d = await r.json();
+      const items = d.ofertas || [];
+      const filas = items.length
+        ? `<div class="ofertas-lista compacta">${items.map(renderRowCompacta).join('')}</div>`
+        : '<div class="cop-mapx-hint"><p>No hay ofertas vigentes en esta región.</p></div>';
+      if (api && api.setPanel) api.setPanel(`<div class="cop-mapx-title">📍 ${region} <span class="n">· ${items.length} oferta${items.length === 1 ? '' : 's'}</span></div>${filas}`);
+      if (window.repintarComparar) window.repintarComparar();
+    } catch (e) {
+      if (api && api.setPanel) api.setPanel('<div class="cop-mapx-hint"><p>No se pudieron cargar las ofertas.</p></div>');
+    }
+  };
+  // 1) Dibuja el mapa de inmediato (antes era invisible hasta terminar los 16
+  //    conteos). 2) Luego refresca con los números por región.
+  api = MapaChile.render(host, { counts: {}, selected: regionCanonica(estado.region), onSelect: onSel });
   const counts = {};
   await Promise.all(_REGIONES_CANON.map(async (reg) => { counts[reg] = await _contarOfertasRegion(reg); }));
-  const api = MapaChile.render(host, {
-    counts,
-    selected: regionCanonica(estado.region),
-    onSelect: async (region) => {
-      if (api.cargando) api.cargando();
-      try {
-        const r = await fetchApi(`/api/ofertas?region=${encodeURIComponent(region)}&vista=vigentes&por_pagina=20&orden=cierre`);
-        const d = await r.json();
-        const items = d.ofertas || [];
-        const filas = items.length
-          ? `<div class="ofertas-lista compacta">${items.map(renderRowCompacta).join('')}</div>`
-          : '<div class="cop-mapx-hint"><p>No hay ofertas vigentes en esta región.</p></div>';
-        api.setPanel(`<div class="cop-mapx-title">📍 ${region} <span class="n">· ${items.length} oferta${items.length === 1 ? '' : 's'}</span></div>${filas}`);
-        if (window.repintarComparar) window.repintarComparar();
-      } catch (e) {
-        api.setPanel('<div class="cop-mapx-hint"><p>No se pudieron cargar las ofertas.</p></div>');
-      }
-    },
-  });
+  api = MapaChile.render(host, { counts, selected: regionCanonica(estado.region), onSelect: onSel });
 }
 
 function _initIntegracion() {

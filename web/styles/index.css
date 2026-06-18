@@ -560,7 +560,9 @@ nav {
 }
 /* Previene que columnas de grid expandan el contenedor */
 .main > * { min-width: 0; }
-.sidebar { min-width: 0; overflow: hidden; }
+/* overflow:visible para que NO se recorten la sombra lateral ni el borde
+   superior de los widgets (p.ej. la tarjeta de "Alertas de empleo"). */
+.sidebar { min-width: 0; overflow: visible; }
 
 .data-update-global{
   max-width:1200px;margin:6px auto 0;padding:0 24px 10px;

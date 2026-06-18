@@ -168,7 +168,7 @@ mark.cop-hl {
 .cop-cmp-overlay { position: fixed; inset: 0; z-index: 1001; background: rgba(8,16,32,.5);
   display: none; align-items: flex-start; justify-content: center; padding: 32px 20px; overflow-y: auto; }
 .cop-cmp-overlay.is-open { display: flex; }
-.cop-cmp { background: var(--bg, #FDFCF8); width: 100%; max-width: 920px; border-radius: 18px; overflow: hidden;
+.cop-cmp { background: var(--bg, #FDFCF8); width: 100%; max-width: 960px; border-radius: 18px; overflow: hidden;
   box-shadow: 0 40px 80px -20px rgba(8,16,32,.55); animation: copIn .22s ease; }
 .cop-cmp-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px;
   background: linear-gradient(165deg, #15316f, #0f2452); color: #fff; }
@@ -325,6 +325,15 @@ mark.cop-hl {
 
 /* 6f — Botón "Ver mapa" coherente con los controles */
 .btn-mapa-toggle { height: 38px; border-width: 1px; border-radius: 9px; }
+
+/* "Ordenar por": label inline + select al ancho del contenido, sin el hueco
+   grande a la izquierda que dejaba el padding del label superpuesto. */
+.resultados-preferencias .sort-wrap { position: relative; display: inline-flex; align-items: center;
+  gap: 7px; min-width: 0 !important; }
+.sort-wrap .sort-wrap-label { position: static; transform: none; pointer-events: auto;
+  white-space: nowrap; font-size: 13px; color: var(--texto2, #4B5167); }
+.sort-wrap .ctrl-select--sort { width: auto !important; min-width: 132px !important;
+  padding: 0 30px 0 12px !important; }
 
 /* Texto redundante oculto: la línea "Mostrando concursos vigentes…" repite
    los tabs Vigentes/Cerradas, y "Última actualización de datos…" repite la
