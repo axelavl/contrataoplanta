@@ -3054,12 +3054,24 @@ button:focus-visible,
   border-right: none;
 }
 
-/* ── Contraste en modo oscuro: números KPI de /estadisticas ──────────
-   .kpi-valor usa color:var(--azul), que en dark es casi negro (#0A1426)
-   sobre la tarjeta oscura → quedaban invisibles. El selector con
-   :root[data-theme="dark"] tiene mayor especificidad que el .kpi-valor
-   inline de la página, así que gana sin !important. */
-:root[data-theme="dark"] .kpi-valor { color: var(--navy-ink, #E5EDF9); }
+/* ── Contraste en modo oscuro: títulos/cifras que usan var(--azul) ───
+   Varias páginas con estilos propios pintan títulos y cifras con
+   color:var(--azul); pero en dark --azul es casi negro (#0A1426) sobre
+   tarjetas/superficies oscuras → quedaban ilegibles. El selector con
+   :root[data-theme="dark"] gana en especificidad al estilo inline de la
+   página, así que corrige sin !important. Afecta: estadísticas (KPI,
+   títulos de panel, info), faq (títulos de bloque y chips) y ruta (pasos). */
+:root[data-theme="dark"] .kpi-valor,
+:root[data-theme="dark"] .stats-titulo,
+:root[data-theme="dark"] .info-title,
+:root[data-theme="dark"] .faq-bloque h2,
+:root[data-theme="dark"] .step h2 {
+  color: var(--navy-ink, #E5EDF9);
+}
+:root[data-theme="dark"] .quick-links a {
+  color: var(--navy-ink, #E5EDF9);
+  background: rgba(127, 169, 221, 0.16);
+}
 
 /* ══════════════════════════════════════════════════════════════════════
    UX MOBILE POLISH (abril 2026) — listado + detalle.
