@@ -1251,7 +1251,7 @@ function renderCard(oferta) {
   // cuando el dato no está; preferimos ocultar el span.
   const UI = window.UI_STRINGS || {};
   return `
-  <div class="oferta-card${esFav ? ' favorita' : ''}" data-oferta-id="${oferta.id}" role="button" tabindex="0" aria-label="Ver detalle: ${escAttr(cargoDisplay)}">
+  <div class="oferta-card${esFav ? ' favorita' : ''}${plazo.clase ? ' urg-' + plazo.clase : ''}" data-oferta-id="${oferta.id}" role="button" tabindex="0" aria-label="Ver detalle: ${escAttr(cargoDisplay)}">
     <button class="btn-fav-card${esFav ? ' activo' : ''}"
       data-id="${oferta.id}"
       data-cargo="${escAttr(cargoDisplay)}"
@@ -1294,8 +1294,8 @@ function renderCard(oferta) {
         ${oferta.fecha_cierre ? `<span class="oferta-plazo-fecha">· ${formatFecha(oferta.fecha_cierre)}</span>` : ''}
       </div>
       <div class="oferta-acciones">
-        <button class="cop-cmp-btn" type="button" data-action="toggle-comparar" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}">⇆ Comparar oferta</button>
         <button class="btn-detalle" type="button" data-action="abrir-modal" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}">${UI.CTA_VER_DETALLE || 'Ver detalle →'}</button>
+        <button class="cop-cmp-btn cop-cmp-btn--icon" type="button" data-action="toggle-comparar" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}" title="Comparar oferta" aria-label="Comparar oferta">⇆</button>
       </div>
     </div>
     ${jobPosting.markup}
@@ -1365,7 +1365,7 @@ function renderRowCompacta(oferta) {
     </div>
     <div class="row-renta">${rentaHtml || '<span style="color:var(--texto3)">—</span>'}</div>
     <div class="row-acciones" style="display:flex;gap:6px;align-items:center;justify-content:flex-end">
-      <button class="cop-cmp-btn" type="button" data-action="toggle-comparar" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}" title="Comparar oferta">⇆ Comparar oferta</button>
+      <button class="cop-cmp-btn cop-cmp-btn--icon" type="button" data-action="toggle-comparar" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}" title="Comparar oferta" aria-label="Comparar oferta">⇆</button>
       <button class="btn-fav-row${esFav ? ' activo' : ''}"
         data-id="${oferta.id}"
         data-cargo="${escAttr(cargoDisplay)}"
@@ -4405,7 +4405,9 @@ function _initIntegracion() {
       document.querySelectorAll('.cop-cmp-btn[data-oferta-id]').forEach((b) => {
         const on = Comparador.has(b.getAttribute('data-oferta-id'));
         b.classList.toggle('is-on', on);
-        b.textContent = on ? '✓ Comparar oferta' : '⇆ Comparar oferta';
+        // En tarjetas/filas el botón es sólo ícono (secundario).
+        b.textContent = on ? '✓' : '⇆';
+        b.title = on ? 'Quitar de comparar' : 'Comparar oferta';
       });
     };
     Comparador.onChange(window.repintarComparar);
