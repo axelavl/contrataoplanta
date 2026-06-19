@@ -198,7 +198,11 @@
       ${kv('Renta bruta', fmtRenta(oferta.renta), true)}
       ${kv('Jornada', oferta.jornada)}
       ${kv('Modalidad', oferta.tipo)}
+      ${kv('Calidad jurídica', oferta.calidadJuridica)}
+      ${kv('Estamento', oferta.estamento)}
+      ${kv('Vacantes', oferta.numeroVacantes != null ? String(oferta.numeroVacantes) : '')}
       ${kv('Ubicación', ubic)}
+      ${kv('Lugar de desempeño', oferta.lugarDesempenio)}
       ${kv('Publicación', oferta.fechaPublicacion)}
     </div>`;
 
@@ -207,7 +211,7 @@
 
     // Correo de contacto (reconocido del texto de la oferta).
     const contacto = oferta.email
-      ? `<div class="cop-sec cop-contacto"><div class="cop-sec-t">Contacto</div><p class="cop-contacto-p">${escHtml(oferta.emailLabel || 'Correo')}: <a class="cop-mail" href="mailto:${escHtml(oferta.email)}">${escHtml(oferta.email)}</a></p></div>` : '';
+      ? `<div class="cop-sec cop-contacto"><div class="cop-sec-t">Contacto</div><p class="cop-contacto-p">${escHtml(oferta.emailLabel || 'Correo')}: <a class="cop-mail" href="mailto:${escHtml(oferta.email)}">${escHtml(oferta.email)}</a></p>${oferta.emailConsultas ? `<p class="cop-contacto-p">Correo de consultas: <a class="cop-mail" href="mailto:${escHtml(oferta.emailConsultas)}">${escHtml(oferta.emailConsultas)}</a></p>` : ''}</div>` : '';
 
     const rq = oferta.requisitos || {};
     const reqInner = sub('Obligatorios', rq.obligatorios) + sub('Formación', rq.formacion) +

@@ -2222,8 +2222,18 @@ function normalizarOferta(o) {
     },
     condiciones:  (sem && sem.condiciones) || [],
     comoPostular: (sem && sem.postulacion) || [],
-    email: _correoOferta ? _correoOferta.email : null,
-    emailLabel: _correoOferta ? _correoOferta.label : null,
+    // Correo: prioriza el dato estructurado del backend (más confiable que el
+    // regex sobre la descripción); si no, cae al reconocido en el cliente.
+    email: o.email_postulacion || o.email_consultas || (_correoOferta ? _correoOferta.email : null),
+    emailLabel: o.email_postulacion ? 'Correo de postulación'
+              : (o.email_consultas ? 'Correo de consultas'
+              : (_correoOferta ? _correoOferta.label : null)),
+    emailConsultas: (o.email_consultas && o.email_consultas !== o.email_postulacion) ? o.email_consultas : null,
+    // Datos estructurados nuevos (empleospublicos). Null si no vienen.
+    numeroVacantes: (o.numero_vacantes != null ? o.numero_vacantes : null),
+    calidadJuridica: o.calidad_juridica || null,
+    estamento: o.estamento || null,
+    lugarDesempenio: o.lugar_desempenio || null,
     shareUrl: (o.id != null ? (location.origin + '/oferta/' + o.id) : (o.url_oferta || null)),
   };
 }
