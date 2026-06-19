@@ -4374,6 +4374,15 @@ function _initIntegracion() {
       const abrir = wrapMapa.hidden;
       wrapMapa.hidden = !abrir;
       btnMapa.setAttribute('aria-expanded', String(abrir));
+      // Con el mapa abierto, el listado general de abajo se oculta (las ofertas
+      // se exploran desde el panel del mapa por región). Al cerrarlo, vuelve.
+      const lista = document.getElementById('lista-ofertas');
+      const pag = document.getElementById('paginacion');
+      const hdr = document.querySelector('.oferta-row-header');
+      if (lista) lista.style.display = abrir ? 'none' : '';
+      if (pag) pag.style.display = abrir ? 'none' : '';
+      if (hdr) hdr.style.display = abrir ? 'none' : '';
+      btnMapa.classList.toggle('is-on', abrir);
       if (abrir && !cargado) { cargado = true; _renderMapaConteos(); }
     });
     // Click en una fila del panel del mapa → abre la ficha.

@@ -74,15 +74,16 @@ body.modal-open .back-to-top-btn,
 /* ═══ NAVBAR ══════════════════════════════════════════════════════════ */
 nav {
   position: sticky; top: 0; z-index: 100;
-  background: rgba(10,46,110,0.97);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  /* Fondo sólido (antes rgba 0.97 + blur dejaba ver el contenido de la web por
+     debajo, entre la cinta y el menú, y se veía sucio). */
+  background: #0A2E6E;
+  border-bottom: 1px solid rgba(255,255,255,0.10);
 }
 .nav-inner {
   max-width: 1200px; margin: 0 auto;
   padding: 0 24px;
   display: flex; align-items: center; gap: 32px;
-  height: 56px;
+  height: 64px;
 }
 .logo {
   display: inline-flex;
@@ -92,8 +93,8 @@ nav {
   white-space: nowrap;
 }
 .logo-mark {
-  width: 32px;
-  height: 32px;
+  width: 38px;
+  height: 38px;
   border-radius: 10px;
   box-shadow: 0 6px 16px rgba(0, 0, 0, .28);
   display: inline-flex;
@@ -111,12 +112,12 @@ nav {
 }
 .logo-name {
   font-family: 'Lora', Georgia, serif;
-  font-size: 17px;
+  font-size: 19.5px;
   letter-spacing: -0.25px;
 }
 .logo-tagline {
   font-family: 'Inter', sans-serif;
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 600;
   color: rgba(255,255,255,.68);
   letter-spacing: .42px;
@@ -128,8 +129,8 @@ nav {
   display: flex; gap: 4px; align-items: center; flex: 1;
 }
 .nav-links a {
-  font-size: 14px; color: rgba(255,255,255,0.70);
-  text-decoration: none; padding: 6px 12px;
+  font-size: 14.5px; color: rgba(255,255,255,0.78);
+  text-decoration: none; padding: 8px 13px;
   border-radius: 6px; transition: all .15s;
   font-weight: 500;
 }
@@ -166,7 +167,7 @@ nav {
 
 .nav-mobile-overlay {
   display: none;
-  position: fixed; inset: 0; top: 56px;
+  position: fixed; inset: 0; top: 64px;
   background: rgba(0,0,0,0.5);
   z-index: 98;
   opacity: 0;

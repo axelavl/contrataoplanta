@@ -453,3 +453,12 @@ mark.cop-hl {
   border-bottom: 1px solid rgba(234, 184, 88, 0.22);
   color: rgba(236, 232, 219, 0.85);
 }
+
+/* ── "Ordenar por": que la opción no se corte (ej. "⏰ Cierra antes") ──
+   El select tenía min-width chico y el texto se cortaba con ellipsis. Le
+   damos ancho suficiente y evitamos que el control se encoja en la fila.
+   Solo desktop: en móvil mantiene el comportamiento full-width existente. */
+@media (min-width: 601px) {
+  .resultados-preferencias .sort-wrap { flex: 0 0 auto; min-width: 244px; }
+  .sort-wrap .ctrl-select--sort { min-width: 150px !important; }
+}
