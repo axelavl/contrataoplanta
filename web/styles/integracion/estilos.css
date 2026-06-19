@@ -382,3 +382,8 @@ mark.cop-hl {
 
 /* #8 — Un poco más de aire entre tarjetas. */
 .ofertas-lista:not(.compacta) { gap: 14px; }
+
+/* Correo de contacto reconocido en la ficha. */
+.cop-contacto-p { font-size: 13.5px; color: var(--texto2, #4B5167); margin: 0; }
+.cop-mail { color: var(--azul-m, #254BA0); font-weight: 600; text-decoration: none; }
+.cop-mail:hover { text-decoration: underline; }

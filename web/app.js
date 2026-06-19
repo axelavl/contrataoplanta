@@ -2177,6 +2177,9 @@ function normalizarOferta(o) {
     ? window.richText.buildSemanticSections({ descripcion: o.descripcion || '', requisitos: o.requisitos || '' })
     : null;
   const req = (sem && sem.requisitos) || {};
+  const _correoOferta = window.extraerCorreoOferta
+    ? window.extraerCorreoOferta((o.descripcion || '') + '\n' + (o.requisitos || ''))
+    : null;
 
   let portal = null;
   try { if (o.url_oferta) portal = new URL(o.url_oferta).hostname.replace(/^www\./, ''); } catch (e) { /* noop */ }
@@ -2217,6 +2220,8 @@ function normalizarOferta(o) {
     },
     condiciones:  (sem && sem.condiciones) || [],
     comoPostular: (sem && sem.postulacion) || [],
+    email: _correoOferta ? _correoOferta.email : null,
+    emailLabel: _correoOferta ? _correoOferta.label : null,
   };
 }
 

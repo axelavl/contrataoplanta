@@ -45,6 +45,40 @@
     return isNaN(n) ? null : '$' + Number(n).toLocaleString('es-CL');
   };
 
+  // ── Reconocimiento de correo de contacto ──────────────────────────────
+  // Opera sobre el texto ya scrapeado (descripción + requisitos), así sirve
+  // para CUALQUIER fuente. Clasifica por contexto: postulación / consultas /
+  // contacto, y devuelve el más relevante.
+  const _EMAIL_RX = /[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}/ig;
+  const _HINTS_POST = ['enviar antecedentes', 'remitir postulac', 'recepc', 'postular', 'hacer llegar', 'enviar cv', 'enviar su cv', 'enviar documentos', 'curriculum a', 'cv a', 'antecedentes a'];
+  const _HINTS_CONS = ['consulta', 'duda', 'informaci', 'contacto', 'escribir a', 'comunicarse', 'mesa de ayuda'];
+  const _normTxt = (s) => (s || '').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  function extraerCorreoOferta(texto) {
+    const src = texto || '';
+    if (!src) return null;
+    const out = [];
+    let m;
+    _EMAIL_RX.lastIndex = 0;
+    while ((m = _EMAIL_RX.exec(src)) !== null) {
+      const email = m[0].toLowerCase();
+      if (out.some((e) => e.email === email)) continue;
+      const ctx = _normTxt(src.slice(Math.max(0, m.index - 90), m.index + email.length + 60));
+      let tipo = 'contacto';
+      if (_HINTS_POST.some((h) => ctx.indexOf(h) >= 0)) tipo = 'postulacion';
+      else if (_HINTS_CONS.some((h) => ctx.indexOf(h) >= 0)) tipo = 'consultas';
+      out.push({ email, tipo });
+    }
+    if (!out.length) return null;
+    const orden = { postulacion: 0, consultas: 1, contacto: 2 };
+    out.sort((a, b) => orden[a.tipo] - orden[b.tipo]);
+    const best = out[0];
+    const label = best.tipo === 'postulacion' ? 'Postular por correo'
+      : best.tipo === 'consultas' ? 'Consultas'
+        : 'Correo de contacto';
+    return { email: best.email, tipo: best.tipo, label };
+  }
+  global.extraerCorreoOferta = extraerCorreoOferta;
+
   let TERMS = [];
   function hl(text) {
     const out = escHtml(text);
@@ -170,6 +204,10 @@
     const objetivo = oferta.objetivo
       ? `<div class="cop-sec"><div class="cop-sec-t">Objetivo del cargo</div><p class="cop-objetivo">${hl(oferta.objetivo)}</p></div>` : '';
 
+    // Correo de contacto (reconocido del texto de la oferta).
+    const contacto = oferta.email
+      ? `<div class="cop-sec cop-contacto"><div class="cop-sec-t">Contacto</div><p class="cop-contacto-p">${escHtml(oferta.emailLabel || 'Correo')}: <a class="cop-mail" href="mailto:${escHtml(oferta.email)}">${escHtml(oferta.email)}</a></p></div>` : '';
+
     const rq = oferta.requisitos || {};
     const reqInner = sub('Obligatorios', rq.obligatorios) + sub('Formación', rq.formacion) +
       sub('Experiencia', rq.experiencia) + sub('Licencias y certificaciones', rq.especialidades) +
@@ -179,7 +217,7 @@
     const requisitos = reqInner
       ? `<div class="cop-sec"><div class="cop-sec-t">Requisitos para postular</div><div class="cop-subgrid">${reqInner}</div></div>` : '';
 
-    $('cop-body').innerHTML = grid + objetivo + requisitos +
+    $('cop-body').innerHTML = grid + contacto + objetivo + requisitos +
       sec('Funciones principales', oferta.funciones) +
       sec('Condiciones del cargo', oferta.condiciones) +
       sec('Cómo postular', oferta.comoPostular, true);

@@ -150,6 +150,9 @@ function normalizarOfertaFav(o) {
     ? window.richText.buildSemanticSections({ descripcion: o.descripcion || '', requisitos: o.requisitos_texto || o.requisitos || '' })
     : null;
   const req = (sem && sem.requisitos) || {};
+  const _correoOferta = window.extraerCorreoOferta
+    ? window.extraerCorreoOferta((o.descripcion || '') + '\n' + (o.requisitos_texto || o.requisitos || ''))
+    : null;
   const fmtRenta = (min, max, grado) => {
     if (min) { const f = (n) => '$' + Number(n).toLocaleString('es-CL'); return (max && max !== min) ? `${f(min)} – ${f(max)}` : f(min); }
     if (grado) return 'Grado ' + grado + ' EUS';
@@ -177,6 +180,8 @@ function normalizarOfertaFav(o) {
     },
     condiciones: (sem && sem.condiciones) || [],
     comoPostular: (sem && sem.postulacion) || [],
+    email: _correoOferta ? _correoOferta.email : null,
+    emailLabel: _correoOferta ? _correoOferta.label : null,
   };
 }
 
