@@ -78,8 +78,8 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .btn-fav-postular:hover{background:var(--cielo);color:white}
 .btn-fav-remove{width:38px;height:38px;background:white;color:var(--texto3);border:1.5px solid var(--borde);border-radius:var(--r);font-size:16px;cursor:pointer;display:grid;place-items:center;transition:all .15s;flex-shrink:0}
 .btn-fav-remove:hover{background:var(--rojo-l);color:var(--rojo);border-color:var(--rojo)}
-/* Botón "Comparar" alineado con los demás de la tarjeta (misma altura/peso). */
-.fav-card-actions .cop-cmp-btn{height:38px;padding:0 14px;border-radius:var(--r);font-size:13px;font-weight:600;border-width:1.5px}
+/* Botón "Comparar" como ícono cuadrado secundario (igual que en el index). */
+.fav-card-actions .cop-cmp-btn{height:38px;width:38px;min-width:38px;padding:0;border-radius:var(--r);font-size:15px;border-width:1.5px;justify-content:center}
 
 /* ── MODAL DETALLE ────────────────────────────────────────────────── */
 .modal-overlay{position:fixed;inset:0;z-index:200;background:rgba(10,46,110,0.6);backdrop-filter:blur(4px);display:none;place-items:center;padding:24px}
