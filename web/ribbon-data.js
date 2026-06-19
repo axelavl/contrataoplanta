@@ -41,6 +41,28 @@
 
   function getRibbonSlot(id) { return document.getElementById(id); }
 
+  // Caché en localStorage: pinta los últimos valores conocidos al instante para
+  // que la cinta no muestre "—" durante los ~2-3s que tarda el fetch a Railway.
+  var CACHE_KEY = 'cop_ribbon_cache';
+  function saveCache(d) {
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify(d)); } catch (e) {}
+  }
+  function fillFromCache() {
+    try {
+      var d = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+      if (!d) return;
+      if (d.ultima_actualizacion) { var a = timeAgoFromIso(d.ultima_actualizacion); if (a) setText('ribbon-actualizado', a); }
+      if (d.instituciones_activas != null) setText('ribbon-instituciones', fmt(d.instituciones_activas));
+      if (d.activas_hoy != null) setText('ribbon-vigentes', fmt(d.activas_hoy));
+      if (d.cierran_hoy != null) {
+        setText('ribbon-cierran', fmt(d.cierran_hoy));
+        var n = Number(d.cierran_hoy);
+        setText('ribbon-cierran-label', (Number.isFinite(n) && n === 1) ? 'cierra hoy' : 'cierran hoy');
+      }
+      log('filled from cache');
+    } catch (e) {}
+  }
+
   function isFilled(el) {
     if (!el) return false;
     var t = (el.textContent || '').trim();
@@ -83,6 +105,12 @@
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       var data = await resp.json();
       log('fetched data:', {
+        activas_hoy: data.activas_hoy,
+        instituciones_activas: data.instituciones_activas,
+        cierran_hoy: data.cierran_hoy,
+        ultima_actualizacion: data.ultima_actualizacion
+      });
+      saveCache({
         activas_hoy: data.activas_hoy,
         instituciones_activas: data.instituciones_activas,
         cierran_hoy: data.cierran_hoy,
@@ -143,7 +171,12 @@
       log('no .ribbon on page, skipping');
       return;
     }
-    log('init — poll + fetch');
+    if (window.__copRibbonInit) return;  // evita doble init (shell:ready + DOMContentLoaded disparaban 2 fetch)
+    window.__copRibbonInit = true;
+    log('init — cache + poll + fetch');
+
+    // Pinta de inmediato los últimos valores conocidos (sin "—" mientras carga)
+    fillFromCache();
 
     // Intento inmediato (por si ya está todo cargado)
     copyFromDom();

@@ -41,47 +41,10 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .skip-link{position:absolute;left:12px;top:-48px;z-index:1000;background:var(--azul, #0A2E6E);color:var(--blanco, #FAFAF8);padding:10px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;transition:top .2s}
 .skip-link:focus{top:10px}
 
-nav {
-  position: sticky; top: 0; z-index: 100;
-  background: rgba(10,46,110,0.97);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-}
-.nav-inner {
-  max-width: 1200px; margin: 0 auto;
-  padding: 0 24px;
-  display: flex; align-items: center; gap: 32px;
-  height: 56px;
-}
-.logo {
-  font-family: 'Lora', Georgia, serif;
-  font-size: 18px; color: white;
-  letter-spacing: -0.3px; white-space: nowrap;
-  text-decoration: none;
-}
-.logo em { color: #E8A820; font-style: italic; }
-.nav-links {
-  display: flex; gap: 4px; align-items: center; flex: 1;
-}
-.nav-links a {
-  font-size: 13px; color: rgba(255,255,255,0.55);
-  text-decoration: none; padding: 6px 12px;
-  border-radius: 6px; transition: all .15s;
-  font-weight: 500;
-}
-.nav-links a:hover, .nav-links a.active {
-  color: white; background: rgba(255,255,255,0.1);
-}
-.nav-link-favs { color: #E8A820 !important; }
-.nav-link-favs:hover, .nav-link-favs.active { background: rgba(232,168,32,0.15) !important; }
-.nav-alerta {
-  font-size: 12px; font-weight: 600;
-  background: #E8A820; color: #0A2E6E;
-  padding: 7px 16px; border-radius: 6px;
-  cursor: pointer; white-space: nowrap;
-  transition: opacity .15s; text-decoration: none;
-}
-.nav-alerta:hover { opacity: .9; }
+/* Nav estandarizado: hereda el de styles/shared-layout.css (64px, fondo
+   sólido, mismas tipografías que el resto del sitio). Antes esta página tenía
+   un nav inline propio (56px, fondo translúcido, letras más chicas) que la
+   hacía verse distinta a las demás. */
 
 /* PÁGINA */
 
