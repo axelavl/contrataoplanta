@@ -314,6 +314,7 @@ const estado = {
   tipos: [...TIPOS_POR_DEFECTO],
   cierra_pronto: false,
   nuevas: false,
+  solo_con_correo: false,
   orden:        ORDEN_POR_DEFECTO,
   por_pagina:   _prefs.por_pagina || POR_PAGINA_CONFIG[_prefs.vista || 'cards']?.porDefecto || 20,
   vista:        (_prefs.vista === 'grid' ? 'cards' : _prefs.vista) || 'cards',
@@ -1665,6 +1666,7 @@ async function cargarOfertas() {
   if (estado.nivel)          params.set('nivel', estado.nivel);
   if (estado.cierra_pronto && estado.vista_listado === 'vigentes')  params.set('cierra_pronto', 'true');
   if (estado.nuevas)         params.set('nuevas', 'true');
+  if (estado.solo_con_correo) params.set('solo_con_correo', 'true');
   if (estado.institucion_id) params.set('institucion', estado.institucion_id);
   if (estado.renta_min)      params.set('renta_min', estado.renta_min);
   if (estado.renta_max)      params.set('renta_max', estado.renta_max);
@@ -3163,6 +3165,8 @@ function toggleFiltro(btn, filtro) {
   } else if (filtro === 'sin-experiencia') {
     // Filtro de experiencia (no es un tipo de contrato)
     estado.sin_experiencia = btn.classList.contains('activo');
+  } else if (filtro === 'con-correo') {
+    estado.solo_con_correo = btn.classList.contains('activo');
   } else {
     // Filtro de tipo de contrato
     if (btn.classList.contains('activo')) {
@@ -3467,7 +3471,7 @@ document.getElementById('bases-viewer')?.addEventListener('click', (e) => {
 function construirUrlBusqueda() {
   const url = new URL(window.location.href);
   // Limpiar params previos
-  ['q','region','sector','tipos','pagina','ciudad','comunas','renta_min','institucion','orden','cierra_pronto','nuevas','vista'].forEach(k => url.searchParams.delete(k));
+  ['q','region','sector','tipos','pagina','ciudad','comunas','renta_min','institucion','orden','cierra_pronto','nuevas','solo_con_correo','vista'].forEach(k => url.searchParams.delete(k));
   const setOrDel = (k, v) => {
     if (v === null || v === undefined || v === '' || v === false ||
         (Array.isArray(v) && v.length === 0)) return;
@@ -3484,6 +3488,7 @@ function construirUrlBusqueda() {
   setOrDel('orden', estado.orden);
   setOrDel('cierra_pronto', estado.cierra_pronto && estado.vista_listado === 'vigentes' ? 'true' : '');
   setOrDel('nuevas', estado.nuevas ? 'true' : '');
+  setOrDel('solo_con_correo', estado.solo_con_correo ? 'true' : '');
   setOrDel('vista', estado.vista_listado !== 'vigentes' ? estado.vista_listado : '');
   setOrDel('pagina', estado.pagina > 1 ? estado.pagina : '');
   return url.toString();
@@ -3512,6 +3517,7 @@ function sincronizarURL() {
     setOrDel('orden', estado.orden);
     setOrDel('cierra_pronto', estado.cierra_pronto && estado.vista_listado === 'vigentes' ? 'true' : '');
     setOrDel('nuevas', estado.nuevas ? 'true' : '');
+    setOrDel('solo_con_correo', estado.solo_con_correo ? 'true' : '');
     setOrDel('vista', estado.vista_listado !== 'vigentes' ? estado.vista_listado : '');
     setOrDel('pagina', estado.pagina > 1 ? estado.pagina : '');
     window.history.replaceState(null, '', url.toString());
@@ -3530,7 +3536,7 @@ function hayFiltrosActivos() {
   const tiposFiltran = Array.isArray(estado.tipos) && !_tiposIguales(estado.tipos, TIPOS_POR_DEFECTO);
   return Boolean(
     estado.q?.trim() || estado.region || estado.sector || estado.ciudad || (estado.comunas || []).length ||
-    estado.renta_min || estado.institucion_id || estado.cierra_pronto || estado.nuevas ||
+    estado.renta_min || estado.institucion_id || estado.cierra_pronto || estado.nuevas || estado.solo_con_correo ||
     estado.vista_listado !== 'vigentes' || estado.orden !== ORDEN_POR_DEFECTO ||
     tiposFiltran
   );
@@ -3548,7 +3554,7 @@ function hayEstadoCompartibleReal() {
   return Boolean(
     estado.q || estado.region || estado.sector || estado.ciudad || (estado.comunas || []).length ||
     estado.renta_min || estado.institucion_id ||
-    estado.cierra_pronto || estado.nuevas || estado.sin_experiencia ||
+    estado.cierra_pronto || estado.nuevas || estado.sin_experiencia || estado.solo_con_correo ||
     tieneTiposPersonalizados
   );
 }
@@ -3607,6 +3613,7 @@ function limpiarTodosLosFiltros() {
   estado.cierra_pronto = false;
   estado.nuevas = false;
   estado.sin_experiencia = false;
+  estado.solo_con_correo = false;
   estado.pagina = 1;
 
   // Volvemos a la pestaña "Vigentes" — si el usuario estaba en "Cerradas",
@@ -3796,12 +3803,15 @@ function restaurarFiltrosDesdeURL() {
     }
     estado.cierra_pronto = params.get('cierra_pronto') === 'true';
     estado.nuevas = params.get('nuevas') === 'true';
+    estado.solo_con_correo = params.get('solo_con_correo') === 'true';
     if (params.has('vista')) {
       const vista = params.get('vista');
       if (vista === 'cerradas' || vista === 'vigentes') estado.vista_listado = vista;
     }
-    document.querySelector('.filtro-tag[onclick*="cierra-hoy"]')?.classList.toggle('activo', estado.cierra_pronto);
-    document.querySelector('.filtro-tag[onclick*="nuevos"]')?.classList.toggle('activo', estado.nuevas);
+    // Selectores por data-filtro (el markup usa data-action/data-filtro, no onclick).
+    document.querySelector('.filtro-tag[data-filtro="cierra-hoy"]')?.classList.toggle('activo', estado.cierra_pronto);
+    document.querySelector('.filtro-tag[data-filtro="nuevos"]')?.classList.toggle('activo', estado.nuevas);
+    document.querySelector('.filtro-tag[data-filtro="con-correo"]')?.classList.toggle('activo', estado.solo_con_correo);
     document.getElementById('estado-listado-tabs')?.setAttribute('data-estado', estado.vista_listado);
     document.getElementById('tab-vigentes')?.classList.toggle('activo', estado.vista_listado === 'vigentes');
     document.getElementById('tab-cerradas')?.classList.toggle('activo', estado.vista_listado === 'cerradas');
