@@ -403,12 +403,17 @@ mark.cop-hl {
 .resultados-count { display: none !important; }
 
 @media (min-width: 760px) {
-  .resultados-header { flex-wrap: nowrap; }
+  /* Header puede envolver: si al filtrar aparecen "Limpiar/Compartir" y no
+     cabe todo en una línea, los controles bajan limpios en vez de montarse
+     sobre las pestañas (bug reportado). */
+  .resultados-header { flex-wrap: wrap; }
   /* La columna de "acciones" suele ir oculta y reservaba ~210px en blanco;
      con flex no ocupa espacio cuando está vacía. */
-  .resultados-controles { display: flex; justify-content: flex-end; gap: 8px; }
-  /* Que ordenar / por página / vista / mapa no salten a otra línea. */
+  .resultados-controles { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+  /* Que ordenar / por página / vista / mapa no salten entre sí. */
   .resultados-preferencias { flex-wrap: nowrap; }
+  /* Acciones (Limpiar/Compartir) en su propia línea cuando aparecen, sin pisar. */
+  .resultados-acciones { flex-wrap: wrap; }
 }
 
 /* ── Alerta de empleo: borde visible + acento azul superior (#5) ──────

@@ -3123,7 +3123,10 @@ function buscar() {
   estado.region    = document.getElementById('filtro-region').value;
   estado.sector    = document.getElementById('filtro-sector').value;
   estado.nivel     = document.getElementById('filtro-nivel')?.value || '';
-  estado.comunas   = (document.getElementById('filtro-ciudad').value || '')
+  // El campo Ciudad/Comuna fue retirado (API DPA caída). Null-safe: sin él,
+  // estado.comunas queda vacío. Antes esto era `getElementById('filtro-ciudad').value`
+  // y, al no existir el elemento, lanzaba TypeError abortando toda la búsqueda.
+  estado.comunas   = (document.getElementById('filtro-ciudad')?.value || '')
     .split(',')
     .map((c) => c.trim())
     .filter(Boolean);

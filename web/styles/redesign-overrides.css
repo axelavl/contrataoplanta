@@ -2985,6 +2985,13 @@ button:focus-visible,
 .nav-inner .hamburger {
   margin-left: 6px;
 }
+/* Hamburguesa visible en móvil en TODAS las páginas. Todas cargan este
+   stylesheet + boot.js (que agrega .js-nav), pero antes solo algunas tenían
+   la regla que la muestra, por eso faltaba el menú en varias. Universaliza. */
+@media (max-width: 600px) {
+  .js-nav .hamburger { display: flex !important; }
+  .js-nav .nav-links { display: none !important; }
+}
 @media (max-width: 600px) {
   .theme-toggle {
     padding: 2px;
@@ -3184,6 +3191,11 @@ button:focus-visible,
     min-width: 0;
     font-size: 12.5px;
   }
+  /* En la columna angosta del footer, la fecha absoluta se apilaba palabra
+     por palabra ("· 25 / de / junio…"). En móvil basta el plazo relativo
+     ("7 días disponibles" / "Cierra mañana"); la fecha exacta sigue en el
+     detalle de la oferta. */
+  .oferta-plazo-fecha { display: none !important; }
   .oferta-acciones {
     width: auto !important;
     flex: 0 0 auto;
