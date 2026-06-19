@@ -268,24 +268,24 @@ def build_ofertas_filters(
     if profesion:
         roots = FAMILIAS_ROOTS.get(profesion.strip().lower())
         if roots:
+            # Sin unaccent (no está en producción): usamos translate() vía _norm_sql.
+            norm_cargo = _norm_sql("COALESCE(o.cargo, '')")
             clauses = []
             for root in roots:
-                clauses.append("unaccent(COALESCE(o.cargo, '')) ILIKE unaccent(%s)")
-                params.append(f"%{root}%")
+                clauses.append(f"{norm_cargo} LIKE %s")
+                params.append(_norm_like(root))
             where.append("(" + " OR ".join(clauses) + ")")
 
     if nivel:
         # Nivel/estamento (Directivo, Profesional, Técnico, Administrativo...).
-        # Acepta varios separados por coma. Tolerante a tildes.
+        # Acepta varios separados por coma. Tolerante a tildes SIN unaccent.
         niveles = [item.strip() for item in nivel.split(",") if item.strip()]
-        if len(niveles) == 1:
-            where.append("unaccent(COALESCE(o.nivel, '')) ILIKE unaccent(%s)")
-            params.append(f"%{niveles[0]}%")
-        elif niveles:
+        norm_nivel = _norm_sql("COALESCE(o.nivel, '')")
+        if niveles:
             clauses = []
             for item in niveles:
-                clauses.append("unaccent(COALESCE(o.nivel, '')) ILIKE unaccent(%s)")
-                params.append(f"%{item}%")
+                clauses.append(f"{norm_nivel} LIKE %s")
+                params.append(_norm_like(item))
             where.append("(" + " OR ".join(clauses) + ")")
 
     if renta_min is not None:
