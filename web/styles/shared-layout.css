@@ -111,8 +111,10 @@ header nav {
 
 .nav-links a:hover,
 .nav-links a.active {
-  color: var(--blanco);
-  background: rgba(255, 255, 255, 0.1);
+  /* Texto blanco fijo: NO usar var(--blanco), que en modo oscuro es un color
+     de superficie (#152847) y dejaba el ítem activo casi negro sobre el nav. */
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .nav-link-favs {

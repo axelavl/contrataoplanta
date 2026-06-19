@@ -2992,6 +2992,13 @@ button:focus-visible,
   .js-nav .hamburger { display: flex !important; }
   .js-nav .nav-links { display: none !important; }
 }
+
+/* Ítem de menú ACTIVO legible en modo oscuro: el texto debe ser blanco sobre
+   el nav navy. (Favoritos conserva su dorado.) Red de seguridad universal. */
+:root[data-theme="dark"] .nav-links a.active:not(.nav-link-favs),
+:root[data-theme="dark"] .nav-links a:hover:not(.nav-link-favs) {
+  color: #fff !important;
+}
 @media (max-width: 600px) {
   .theme-toggle {
     padding: 2px;
