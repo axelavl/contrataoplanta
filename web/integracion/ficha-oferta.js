@@ -121,8 +121,9 @@
         <div class="cop-actions">
           <button class="cop-apply" id="cop-apply" type="button">Ir al portal de postulación →</button>
           <div class="cop-actions-sec">
-            <button class="cop-btn2" id="cop-bases" type="button">Ver bases del concurso</button>
-            <button class="cop-btn2" id="cop-cmp" type="button" hidden>⇆ Comparar oferta</button>
+            <button class="cop-btn2" id="cop-bases" type="button">Ver bases</button>
+            <button class="cop-btn2" id="cop-cmp" type="button" hidden>⇆ Comparar</button>
+            <button class="cop-btn2" id="cop-share" type="button">↗ Compartir</button>
             <button class="cop-btn2" id="cop-fav" type="button">♡ Guardar</button>
           </div>
           <p class="cop-portal" id="cop-portal"></p>
@@ -259,6 +260,24 @@
     } else {
       _btnCmp.hidden = true;
     }
+
+    // Compartir: navigator.share nativo o copia el enlace al portapapeles.
+    const _btnShare = $('cop-share');
+    _btnShare.textContent = '↗ Compartir';
+    _btnShare.onclick = () => {
+      const url = oferta.shareUrl || oferta.portalUrl || (global.location && global.location.href) || '';
+      const titulo = oferta.cargo || 'Oferta de empleo público';
+      const texto = titulo + (oferta.institucion ? ' — ' + oferta.institucion : '');
+      if (ctx.onCompartir) { ctx.onCompartir(oferta); return; }
+      if (global.navigator && global.navigator.share) {
+        global.navigator.share({ title: titulo, text: texto, url: url }).catch(function () {});
+      } else if (global.navigator && global.navigator.clipboard && url) {
+        global.navigator.clipboard.writeText(url).then(function () {
+          _btnShare.textContent = '✓ Enlace copiado';
+          setTimeout(function () { _btnShare.textContent = '↗ Compartir'; }, 1800);
+        }).catch(function () {});
+      }
+    };
 
     overlay.classList.add('is-open');
     overlay.scrollTop = 0;

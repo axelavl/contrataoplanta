@@ -192,6 +192,7 @@ function normalizarOfertaHist(o) {
     comoPostular: (sem && sem.postulacion) || [],
     email: _correoOferta ? _correoOferta.email : null,
     emailLabel: _correoOferta ? _correoOferta.label : null,
+    shareUrl: (o.id != null ? (location.origin + '/oferta/' + o.id) : (o.url_oferta || null)),
   };
 }
 

@@ -387,3 +387,8 @@ mark.cop-hl {
 .cop-contacto-p { font-size: 13.5px; color: var(--texto2, #4B5167); margin: 0; }
 .cop-mail { color: var(--azul-m, #254BA0); font-weight: 600; text-decoration: none; }
 .cop-mail:hover { text-decoration: underline; }
+
+/* 4 acciones secundarias (Ver bases · Comparar · Compartir · Guardar): que
+   envuelvan en pantallas chicas en vez de apretarse. */
+.cop-actions-sec { flex-wrap: wrap; }
+.cop-actions-sec .cop-btn2 { min-width: 120px; }
