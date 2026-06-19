@@ -340,3 +340,12 @@ mark.cop-hl {
    cinta superior. Se ocultan por CSS (el JS sigue actualizándolos sin error). */
 .estado-listado-copy { display: none; }
 .data-update-global { display: none; }
+
+/* Cabecera de resultados en una sola fila: tabs Vigentes/Cerradas + contador
+   a la izquierda, controles a la derecha. */
+.resultados-head-left { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; min-width: 0; }
+.resultados-head-left .estado-listado-tabs { margin-bottom: 0; }
+/* Estilo segmented (6b): el activo se marca con fondo azul, así que el
+   "slider" ::before del CSS antiguo sobra y se desalineaba — lo desactivamos. */
+.estado-listado-tabs::before { display: none; }
+.estado-listado-tabs { max-width: none; }

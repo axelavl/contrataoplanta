@@ -210,15 +210,17 @@
 
   <!-- COLUMNA OFERTAS -->
   <div class="resultados-shell">
-    <div class="estado-listado-tabs" id="estado-listado-tabs" role="tablist" aria-label="Vista por estado" data-estado="vigentes">
-      <button class="estado-tab activo" id="tab-vigentes" type="button" data-action="set-vista-listado" data-listado="vigentes" role="tab" aria-selected="true">Vigentes</button>
-      <button class="estado-tab" id="tab-cerradas" type="button" data-action="set-vista-listado" data-listado="cerradas" role="tab" aria-selected="false">Cerradas</button>
-    </div>
-    <p class="estado-listado-copy" id="estado-listado-copy">Mostrando concursos vigentes. Revisa los cerrados en la pestaña <strong>Cerradas</strong>.</p>
+    <p class="estado-listado-copy" id="estado-listado-copy" hidden>Mostrando concursos vigentes. Revisa los cerrados en la pestaña <strong>Cerradas</strong>.</p>
     <div class="resultados-header">
-      <div class="resultados-count">
-        <strong id="count-num">—</strong> ofertas encontradas
-        <span class="count-sub" id="count-sub">· cargando...</span>
+      <div class="resultados-head-left">
+        <div class="estado-listado-tabs" id="estado-listado-tabs" role="tablist" aria-label="Vista por estado" data-estado="vigentes">
+          <button class="estado-tab activo" id="tab-vigentes" type="button" data-action="set-vista-listado" data-listado="vigentes" role="tab" aria-selected="true">Vigentes</button>
+          <button class="estado-tab" id="tab-cerradas" type="button" data-action="set-vista-listado" data-listado="cerradas" role="tab" aria-selected="false">Cerradas</button>
+        </div>
+        <div class="resultados-count">
+          <strong id="count-num">—</strong> ofertas encontradas
+          <span class="count-sub" id="count-sub">· cargando...</span>
+        </div>
       </div>
       <div class="resultados-controles">
         <div class="resultados-acciones">
