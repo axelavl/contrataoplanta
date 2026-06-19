@@ -3,7 +3,9 @@
 /* ═══ VARIABLES ══════════════════════════════════════════════════════ */
 /* ═══ RESET ═══════════════════════════════════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; font-size: 16px; overflow-x: hidden; }
+/* overflow-x: clip (no 'hidden') para no crear un contenedor de scroll que
+   rompa el position:sticky de la cinta superior; igual evita scroll horizontal. */
+html { scroll-behavior: smooth; font-size: 16px; overflow-x: clip; }
 body {
   font-family: 'Inter', system-ui, sans-serif;
   background: var(--bg);
@@ -11,7 +13,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 .back-to-top-btn {
@@ -1044,7 +1046,7 @@ nav {
 
 .widget {
   background: var(--blanco);
-  border: 1px solid #edf1f7;
+  border: 1px solid var(--borde, #D9D7CF);
   border-radius: var(--r-l);
   overflow: hidden;
   min-width: 0;

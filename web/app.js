@@ -3848,14 +3848,8 @@ async function mostrarUltimaActualizacion() {
     if (absoluta) {
       absoluta.textContent = fecha.toLocaleString('es-CL', { dateStyle: 'medium', timeStyle: 'short' });
     }
-    const ahora = new Date();
-    const minutos = Math.max(0, Math.floor((ahora - fecha) / 60000));
-    let txt;
-    if (minutos < 60) txt = `hace ${minutos} min`;
-    else if (minutos < 1440) txt = `hace ${Math.floor(minutos / 60)} h`;
-    else txt = `hace ${Math.floor(minutos / 1440)} d`;
-    const label = document.getElementById('count-sub');
-    if (label) label.textContent = `· última actualización ${txt}`;
+    // La "última actualización" ya se muestra en la cinta superior; no la
+    // repetimos en el contador de resultados (evita info duplicada).
   } catch {
     if (absoluta) absoluta.textContent = 'no disponible';
   }
