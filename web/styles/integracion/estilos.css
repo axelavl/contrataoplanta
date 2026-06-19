@@ -392,3 +392,28 @@ mark.cop-hl {
    envuelvan en pantallas chicas en vez de apretarse. */
 .cop-actions-sec { flex-wrap: wrap; }
 .cop-actions-sec .cop-btn2 { min-width: 120px; }
+
+/* ── Cabecera de resultados ──────────────────────────────────────────
+   El conteo de ofertas ya vive en la cinta superior ("N cargos vigentes").
+   Lo quitamos de aquí para no duplicar el dato, y dejamos pestañas +
+   controles + mapa en UNA sola fila. */
+.resultados-count { display: none !important; }
+
+@media (min-width: 760px) {
+  .resultados-header { flex-wrap: nowrap; }
+  /* La columna de "acciones" suele ir oculta y reservaba ~210px en blanco;
+     con flex no ocupa espacio cuando está vacía. */
+  .resultados-controles { display: flex; justify-content: flex-end; gap: 8px; }
+  /* Que ordenar / por página / vista / mapa no salten a otra línea. */
+  .resultados-preferencias { flex-wrap: nowrap; }
+}
+
+/* ── Alerta de empleo: borde visible + acento azul superior (#5) ──────
+   El borde estándar de los widgets es var(--border) = #E5E1D2, casi igual
+   al fondo crema (#F5F4EF), por eso no se percibía el borde superior.
+   #alertas (ID) gana en especificidad a .widget sin necesidad de !important. */
+#alertas {
+  border-color: var(--cielo, #1A6BCC);
+  border-top: 3px solid var(--cielo, #1A6BCC);
+  box-shadow: 0 2px 10px rgba(20, 46, 107, 0.08);
+}
