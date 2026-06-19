@@ -1996,6 +1996,29 @@ class LegacyBaseScraper(abc.ABC):
         fecha_cierre = parse_date(normalized.get("fecha_cierre"))
         estado = normalized.get("estado") or self._resolve_estado(fecha_cierre)
 
+        # ── Contacto: reconoce correos en la oferta (postulación / consultas).
+        # Se aplica a TODOS los scrapers legacy que pasan por aquí ("extrapolar
+        # a los demás scrapers"). Prefiere el dato estructurado si el scraper lo
+        # trae (p.ej. empleospublicos); si no, lo extrae de descripción/requisitos.
+        email_post = clean_text(offer.get("email_postulacion"))
+        email_cons = clean_text(offer.get("email_consultas"))
+        if not (email_post and email_cons):
+            try:
+                from extraction.email_extractor import extract_and_classify_emails
+                _texto = " ".join(filter(None, [offer.get("descripcion"), offer.get("requisitos")]))
+                if _texto:
+                    _ext = extract_and_classify_emails(_texto)
+                    for _ce in _ext.classified:
+                        _kinds = " ".join(_ce.kinds)
+                        if not email_post and "postulacion" in _kinds:
+                            email_post = _ce.email
+                        elif not email_cons and ("consulta" in _kinds or "contacto" in _kinds):
+                            email_cons = _ce.email
+                    if not email_post and not email_cons and _ext.classified:
+                        email_cons = _ext.classified[0].email
+            except Exception:
+                pass
+
         normalized = {
             "institucion_id": institucion_id,
             "institucion_nombre": truncate(institucion_nombre, 300),
@@ -2019,6 +2042,13 @@ class LegacyBaseScraper(abc.ABC):
             "url_bases": clean_text(normalized.get("url_bases")) or None,
             "plataforma_empleo": clean_text(normalized.get("plataforma_empleo")) or None,
             "estado": estado,
+            # Contacto + datos estructurados (empleospublicos y otros).
+            "email_postulacion": truncate(email_post, 200),
+            "email_consultas": truncate(email_cons, 200),
+            "numero_vacantes": self._to_int(offer.get("numero_vacantes")),
+            "calidad_juridica": truncate(clean_text(offer.get("calidad_juridica")), 60),
+            "estamento": truncate(clean_text(offer.get("estamento")), 60),
+            "lugar_desempenio": truncate(clean_text(offer.get("lugar_desempenio")), 200),
         }
 
         if not normalized["cargo"]:
@@ -2436,6 +2466,12 @@ class LegacyBaseScraper(abc.ABC):
             url_oferta,
             url_bases,
             estado,
+            email_postulacion,
+            email_consultas,
+            numero_vacantes,
+            calidad_juridica,
+            estamento,
+            lugar_desempenio,
             fecha_scraped,
             fecha_actualizado
         ) VALUES (
@@ -2456,6 +2492,12 @@ class LegacyBaseScraper(abc.ABC):
             %(url_oferta)s,
             %(url_bases)s,
             %(estado)s,
+            %(email_postulacion)s,
+            %(email_consultas)s,
+            %(numero_vacantes)s,
+            %(calidad_juridica)s,
+            %(estamento)s,
+            %(lugar_desempenio)s,
             NOW(),
             NOW()
         )
@@ -2476,12 +2518,29 @@ class LegacyBaseScraper(abc.ABC):
             fecha_cierre = COALESCE(EXCLUDED.fecha_cierre, ofertas.fecha_cierre),
             url_bases = COALESCE(EXCLUDED.url_bases, ofertas.url_bases),
             estado = EXCLUDED.estado,
+            email_postulacion = COALESCE(EXCLUDED.email_postulacion, ofertas.email_postulacion),
+            email_consultas = COALESCE(EXCLUDED.email_consultas, ofertas.email_consultas),
+            numero_vacantes = COALESCE(EXCLUDED.numero_vacantes, ofertas.numero_vacantes),
+            calidad_juridica = COALESCE(EXCLUDED.calidad_juridica, ofertas.calidad_juridica),
+            estamento = COALESCE(EXCLUDED.estamento, ofertas.estamento),
+            lugar_desempenio = COALESCE(EXCLUDED.lugar_desempenio, ofertas.lugar_desempenio),
             fecha_scraped = NOW(),
             fecha_actualizado = NOW()
         """
 
     def _offer_params(self, offer: dict[str, Any]) -> dict[str, Any]:
-        return offer
+        # Garantiza que las columnas nuevas (contacto + datos estructurados)
+        # SIEMPRE existan como claves nombradas, aunque el dict venga de un
+        # scraper que no las setea → evita KeyError en el INSERT con %(...)s.
+        defaults = {
+            "email_postulacion": None,
+            "email_consultas": None,
+            "numero_vacantes": None,
+            "calidad_juridica": None,
+            "estamento": None,
+            "lugar_desempenio": None,
+        }
+        return {**defaults, **offer}
 
     def _mark_missing_offers_closed(
         self,

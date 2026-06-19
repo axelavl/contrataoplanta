@@ -143,6 +143,7 @@ def get_ofertas(
     comunas: str | None = Query(None, description="Lista de comunas separadas por coma"),
     cierra_pronto: bool = Query(False),
     nuevas: bool = Query(False),
+    solo_con_correo: bool = Query(False, description="Solo ofertas con correo de postulación/contacto."),
     vista: str = Query("vigentes", pattern="^(vigentes|cerradas|todas)$"),
     orden: str = Query("recientes"),
     pagina: int = Query(1, ge=1),
@@ -166,6 +167,7 @@ def get_ofertas(
         comunas=comunas,
         cierra_pronto=cierra_pronto,
         nuevas=nuevas,
+        solo_con_correo=solo_con_correo,
         solo_activas=only_active,
         closed_only=only_closed,
     )

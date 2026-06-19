@@ -640,6 +640,11 @@ class EmpleosPublicosScraper(BaseScraper):
             or resultado.get("area_profesional")
             or self._inferir_area_profesional(resultado.get("cargo"))
         )
+        # Datos estructurados nuevos (empleospublicos los expone en la ficha).
+        resultado["numero_vacantes"] = metadata.get("numero_vacantes")
+        resultado["calidad_juridica"] = metadata.get("calidad_juridica")
+        resultado["estamento"] = metadata.get("estamento")
+        resultado["lugar_desempenio"] = metadata.get("lugar_desempenio")
 
         descripcion = self._componer_descripcion(soup)
         if descripcion:
@@ -804,6 +809,13 @@ class EmpleosPublicosScraper(BaseScraper):
         )
         return None, servicio or segmentos[-1]
 
+    @staticmethod
+    def _solo_entero(valor: Any) -> int | None:
+        """Extrae el primer entero de un texto ('2 vacantes' → 2)."""
+        txt = clean_text(valor) or ""
+        m = re.search(r"\d+", txt)
+        return int(m.group()) if m else None
+
     def _extraer_metadata_detalle(self, soup: BeautifulSoup) -> dict[str, Any]:
         meta_container = soup.select_one("#lblAvisoTrabajoDatos")
         meta = self._extraer_mapa_encabezados(meta_container)
@@ -832,6 +844,16 @@ class EmpleosPublicosScraper(BaseScraper):
             "ciudad": clean_text(meta.get("ciudad")) or None,
             "jornada": clean_text(meta.get("jornada")) or None,
             "condiciones": condiciones or None,
+            "numero_vacantes": self._solo_entero(
+                meta.get("numero de vacantes") or meta.get("n° de vacantes")
+                or meta.get("vacantes") or meta.get("cupos") or meta.get("numero de cupos")
+            ),
+            "calidad_juridica": clean_text(meta.get("calidad juridica") or meta.get("calidad")) or None,
+            "estamento": clean_text(meta.get("estamento")) or None,
+            "lugar_desempenio": clean_text(
+                meta.get("lugar de desempeno") or meta.get("lugar de desempeño")
+                or meta.get("lugar de trabajo") or meta.get("lugar")
+            ) or None,
         }
 
     def _componer_descripcion(self, soup: BeautifulSoup) -> str | None:

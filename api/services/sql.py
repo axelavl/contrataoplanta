@@ -129,6 +129,12 @@ def ofertas_select_sql() -> str:
         o.url_oferta_valida,
         o.url_bases_valida,
         o.url_valida_chequeada_en,
+        o.email_postulacion,
+        o.email_consultas,
+        o.numero_vacantes,
+        o.calidad_juridica,
+        o.estamento,
+        o.lugar_desempenio,
         {OFFER_STATUS_SQL} AS estado,
         COALESCE(o.fecha_scraped, o.detectada_en, o.actualizada_en, o.creada_en) AS fecha_scraped,
         COALESCE(o.fecha_actualizado, o.actualizada_en, o.creada_en) AS fecha_actualizado,
@@ -199,6 +205,7 @@ def build_ofertas_filters(
     comunas: str | None = None,
     cierra_pronto: bool = False,
     nuevas: bool = False,
+    solo_con_correo: bool = False,
     solo_activas: bool = True,
     closed_only: bool = False,
 ) -> tuple[str, list[Any]]:
@@ -209,6 +216,18 @@ def build_ofertas_filters(
         where.append(ACTIVE_OFFER_SQL)
     if closed_only:
         where.append(f"{OFFER_STATUS_SQL} = 'closed'")
+
+    if solo_con_correo:
+        # "Postular por correo": ofertas con email de contacto capturado en las
+        # columnas nuevas, o con un correo presente en descripción/requisitos
+        # (cubre filas anteriores a que el scraper repoblara las columnas).
+        _email_re = r'[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}'
+        where.append(
+            "(o.email_postulacion IS NOT NULL OR o.email_consultas IS NOT NULL "
+            "OR COALESCE(o.descripcion, '') ~* %s "
+            "OR COALESCE(o.requisitos, o.requisitos_texto, '') ~* %s)"
+        )
+        params.extend([_email_re, _email_re])
 
     if q:
         norm_like = _norm_like(q)
