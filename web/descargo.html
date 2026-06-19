@@ -185,13 +185,6 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
 
 <div id="site-footer"></div>
 
-<script>
-(function(){
-  const favs = JSON.parse(localStorage.getItem('fav_contrataoplanta')||'[]');
-  const link = document.getElementById('nav-favoritos');
-  if(link && favs.length > 0){ link.textContent = '♥ Mis favoritos ('+favs.length+')'; link.style.color='white'; }
-})();
-</script>
 <script src="nav-mobile.js"></script>
 
 </body>
