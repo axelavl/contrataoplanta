@@ -3054,6 +3054,13 @@ button:focus-visible,
   border-right: none;
 }
 
+/* ── Contraste en modo oscuro: números KPI de /estadisticas ──────────
+   .kpi-valor usa color:var(--azul), que en dark es casi negro (#0A1426)
+   sobre la tarjeta oscura → quedaban invisibles. El selector con
+   :root[data-theme="dark"] tiene mayor especificidad que el .kpi-valor
+   inline de la página, así que gana sin !important. */
+:root[data-theme="dark"] .kpi-valor { color: var(--navy-ink, #E5EDF9); }
+
 /* ══════════════════════════════════════════════════════════════════════
    UX MOBILE POLISH (abril 2026) — listado + detalle.
 

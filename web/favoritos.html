@@ -29,16 +29,12 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .badge-sin-dato     { background:transparent; color:var(--texto3); border:1px dashed var(--borde); padding:1px 8px; }
 .badge-region       { background:var(--bg2); color:var(--texto2); }
 
-/* ── HERO SECCIÓN ─────────────────────────────────────────────────── */
-.page-hero{background:var(--azul);padding:40px 24px 36px;position:relative;overflow:hidden}
-.page-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 80% at 100% 0%,rgba(26,107,204,0.3) 0%,transparent 60%);pointer-events:none}
-.page-hero-inner{max-width:1200px;margin:0 auto;position:relative;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap}
-.page-hero-kicker{font-size:11px;color:var(--acento);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;font-weight:600}
-.page-hero h1{font-family:'Fraunces',Georgia,serif;font-size:clamp(28px,4vw,44px);color:white;line-height:1.1;letter-spacing:-.5px}
-.page-hero h1 em{color:var(--acento);font-style:italic}
-.fav-count{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15);border-radius:var(--r);padding:14px 20px;text-align:center;min-width:100px}
-.fav-count-num{font-family:'Fraunces',Georgia,serif;font-size:32px;color:white;font-weight:600;display:block}
-.fav-count-label{font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:1px}
+/* ── HERO ──────────────────────────────────────────────────────────
+   Estandarizado: usa el patrón compartido .page-hero / .page-kicker /
+   .page-titulo / .page-sub de shared-layout.css (centrado, mismas
+   tipografías y tamaños que el resto de páginas). Antes tenía un hero
+   propio (flex con caja de contador a la derecha, kicker dorado y título
+   con clamp) que hacía ver Favoritos como un sitio aparte. */
 
 /* ── CONTENIDO ────────────────────────────────────────────────────── */
 .page-body{max-width:1200px;margin:0 auto;padding:32px 24px 64px}
@@ -170,14 +166,9 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 <!-- ══ HERO ══════════════════════════════════════════════════════════ -->
 <div class="page-hero">
   <div class="page-hero-inner">
-    <div>
-      <div class="page-hero-kicker">Tu lista prioritaria</div>
-      <h1>Ofertas que te <em>interesan</em></h1>
-    </div>
-    <div class="fav-count">
-      <span class="fav-count-num" id="hero-count">0</span>
-      <span class="fav-count-label">ofertas guardadas</span>
-    </div>
+    <div class="page-kicker">Tu lista prioritaria</div>
+    <h1 class="page-titulo">Ofertas que te interesan</h1>
+    <p class="page-sub"><span id="hero-count">0</span> ofertas guardadas · guarda las convocatorias que te calzan y vuelve para comparar requisitos y priorizar antes de que venza el plazo.</p>
   </div>
 </div>
 

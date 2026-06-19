@@ -354,16 +354,19 @@ mark.cop-hl {
  * Recomendaciones de diseño #4, #5, #6, #8
  * ========================================================================== */
 
-/* #4 — Barra de urgencia a la izquierda de cada tarjeta (color por estado). */
+/* #4 — Acento de urgencia a la izquierda de la tarjeta. Solo aparece cuando
+   aporta información: naranja si la oferta está por cerrar, gris si ya cerró.
+   Las ofertas con plazo holgado NO llevan barra, para que el listado no se vea
+   "todo marcado" (antes parecía un estado de error con todas las tarjetas
+   coloreadas e incluso con colores distintos para el mismo plazo). */
 .oferta-card { position: relative; overflow: hidden; }
 .oferta-card::before {
-  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; z-index: 2;
-  background: var(--borde, #E5E1D2);
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; z-index: 2;
+  background: transparent;
 }
 .oferta-card.urg-status-closing-today::before { background: var(--naran, #C87A0C); }
-.oferta-card.urg-status-active::before        { background: var(--verde, #2F6E4E); }
-.oferta-card.urg-status-upcoming::before      { background: var(--cielo, #1A6BCC); }
 .oferta-card.urg-status-closed::before        { background: var(--texto3, #9CA3AF); }
+/* active / upcoming: sin barra (plazo holgado o convocatoria futura). */
 
 /* #6 — "Comparar" en la tarjeta como ícono secundario (no compite con "Ver
    detalle", que es el único botón primario). */
@@ -416,4 +419,37 @@ mark.cop-hl {
   border-color: var(--cielo, #1A6BCC);
   border-top: 3px solid var(--cielo, #1A6BCC);
   box-shadow: 0 2px 10px rgba(20, 46, 107, 0.08);
+}
+
+/* ── Vista compacta (lista densa): alineación cabecera ↔ filas ────────
+   Cada fila tiene .row-acciones con 2 botones (comparar + favorito), pero la
+   cabecera reservaba 36px en la última columna → la columna Renta no calzaba.
+   Igualamos ambos a 72px. */
+.oferta-row-header > :nth-child(5) { flex: 0 0 72px; width: 72px; }
+.row-acciones { flex: 0 0 72px; width: 72px; }
+
+/* Tipo: "Código del Trabajo" se cortaba en 82px ("Código del Tra…"). Ampliamos
+   la columna y dejamos que el badge use dos líneas si hace falta. */
+.oferta-row-header > :nth-child(2) { flex: 0 0 108px; width: 108px; }
+.row-meta { flex: 0 0 108px; width: 108px; }
+.row-meta .badge { font-size: 10px !important; line-height: 1.25; white-space: normal !important; }
+
+/* Plazo: que no se parta en dos líneas. */
+.oferta-row-header > :nth-child(3) { flex: 0 0 124px; width: 124px; }
+.row-plazo { flex: 0 0 124px; width: 124px; font-size: 11.5px; white-space: nowrap; }
+.row-plazo > span { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+/* ── "Ordenar por" a la misma altura que el resto de controles (38px) ── */
+.resultados-preferencias .ctrl-select,
+.resultados-preferencias .ctrl-select--sort { height: 38px; }
+.resultados-preferencias .sort-wrap { height: 38px; align-items: center; }
+
+/* ── Cinta superior en modo oscuro: que destaque como banda propia ────
+   El fondo #050C1A quedaba casi igual al fondo de la página en dark
+   (#0A1426), así que la cinta se "perdía". La subimos a una banda más clara
+   con borde dorado tenue, tan protagonista como en modo claro. */
+:root[data-theme="dark"] .ribbon {
+  background: #16284A;
+  border-bottom: 1px solid rgba(234, 184, 88, 0.22);
+  color: rgba(236, 232, 219, 0.85);
 }

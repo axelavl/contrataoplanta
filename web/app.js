@@ -835,7 +835,7 @@ function plazoInfo(oferta) {
   if (estadoOferta.key === 'closing_today') return { clase: 'status-closing-today', texto: 'Cierra hoy', color: 'var(--naran)' };
   if (estadoOferta.key === 'upcoming') return { clase: 'status-upcoming', texto: 'Próximamente', color: 'var(--cielo)' };
   if (dias === null || dias === undefined) return { clase: 'status-active', texto: 'Disponible', color: 'var(--verde)' };
-  if (dias === 1) return { clase: 'status-active', texto: 'Cierra mañana', color: 'var(--verde)' };
+  if (dias === 1) return { clase: 'status-closing-today', texto: 'Cierra mañana', color: 'var(--naran)' };
   if (dias <= 5) return { clase: 'status-closing-today', texto: `Cierra en ${dias} ${dias === 1 ? 'día' : 'días'}`, color: 'var(--naran)' };
   return { clase: 'status-active', texto: `${dias} ${dias === 1 ? 'día disponible' : 'días disponibles'}`, color: 'var(--verde)' };
 }
