@@ -1222,6 +1222,11 @@ function nombreRegionCompleto(region) {
   return `Región de ${limpio}`;
 }
 
+// Iconos del botón "Comparar" como SVG: el glifo "⇆" no existe en Inter y caía
+// a una fuente de sistema que lo dibujaba más ancho, saliéndose del botón.
+const CMP_SVG_SWAP = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="17 1 21 5 17 9"/><path d="M21 5H9a4 4 0 0 0-4 4"/><polyline points="7 23 3 19 7 15"/><path d="M3 19h12a4 4 0 0 0 4-4"/></svg>';
+const CMP_SVG_CHECK = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
+
 // ── Renderizar tarjeta de oferta ───────────────────────────────────────────
 function renderCard(oferta) {
   const cargoDisplay = normalizarTituloOferta(oferta.cargo);
@@ -1296,7 +1301,7 @@ function renderCard(oferta) {
       </div>
       <div class="oferta-acciones">
         <button class="btn-detalle" type="button" data-action="abrir-modal" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}">${UI.CTA_VER_DETALLE || 'Ver detalle →'}</button>
-        <button class="cop-cmp-btn cop-cmp-btn--icon" type="button" data-action="toggle-comparar" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}" title="Comparar oferta" aria-label="Comparar oferta">⇆</button>
+        <button class="cop-cmp-btn cop-cmp-btn--icon" type="button" data-action="toggle-comparar" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}" title="Comparar oferta" aria-label="Comparar oferta">${CMP_SVG_SWAP}</button>
       </div>
     </div>
     ${jobPosting.markup}
@@ -1366,7 +1371,7 @@ function renderRowCompacta(oferta) {
     </div>
     <div class="row-renta">${rentaHtml || '<span style="color:var(--texto3)">—</span>'}</div>
     <div class="row-acciones" style="display:flex;gap:6px;align-items:center;justify-content:flex-end">
-      <button class="cop-cmp-btn cop-cmp-btn--icon" type="button" data-action="toggle-comparar" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}" title="Comparar oferta" aria-label="Comparar oferta">⇆</button>
+      <button class="cop-cmp-btn cop-cmp-btn--icon" type="button" data-action="toggle-comparar" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}" title="Comparar oferta" aria-label="Comparar oferta">${CMP_SVG_SWAP}</button>
       <button class="btn-fav-row${esFav ? ' activo' : ''}"
         data-id="${oferta.id}"
         data-cargo="${escAttr(cargoDisplay)}"
@@ -2183,6 +2188,14 @@ function normalizarOferta(o) {
     ? window.extraerCorreoOferta((o.descripcion || '') + '\n' + (o.requisitos || ''))
     : null;
 
+  const _icon = (typeof getInstIcon === 'function') ? getInstIcon(o) : null;
+  // Resumen breve (comparador): objetivo del cargo o el inicio de la descripción.
+  let _resumen = (sem && sem.objetivo) || '';
+  if (!_resumen && o.descripcion) {
+    _resumen = String(o.descripcion).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+  if (_resumen.length > 180) _resumen = _resumen.slice(0, 177).trimEnd() + '…';
+
   let portal = null;
   try { if (o.url_oferta) portal = new URL(o.url_oferta).hostname.replace(/^www\./, ''); } catch (e) { /* noop */ }
 
@@ -2196,7 +2209,9 @@ function normalizarOferta(o) {
   return {
     cargo:        normalizarTituloOferta(o.cargo) || o.cargo || '',
     institucion:  o.institucion || '',
-    verificada:   !!(getInstIcon(o) && getInstIcon(o).confiable),
+    verificada:   !!(_icon && _icon.confiable),
+    logoHtml:     _icon ? _icon.html : '',
+    resumen:      _resumen || null,
     sector:       o.sector || '',
     tipo:         tipoEtiqueta(o.tipo_contrato) || '',
     region:       nombreRegionCompleto(o.region) || o.region || '',
@@ -4417,7 +4432,7 @@ function _initIntegracion() {
     const tray = document.createElement('div');
     tray.className = 'cop-cmp-tray';
     tray.innerHTML = '<span class="cop-cmp-tray-txt"><b id="cmp-tray-n">0</b> para comparar</span>'
-      + '<button class="cop-cmp-tray-go" type="button">Ver comparador →</button>'
+      + '<button class="cop-cmp-tray-go" type="button">Comparar empleos</button>'
       + '<button class="cop-cmp-tray-clear" type="button">Quitar</button>';
     document.body.appendChild(tray);
     tray.querySelector('.cop-cmp-tray-go').onclick = () => Comparador.abrir();
@@ -4438,7 +4453,7 @@ function _initIntegracion() {
         const on = Comparador.has(b.getAttribute('data-oferta-id'));
         b.classList.toggle('is-on', on);
         // En tarjetas/filas el botón es sólo ícono (secundario).
-        b.textContent = on ? '✓' : '⇆';
+        b.innerHTML = on ? CMP_SVG_CHECK : CMP_SVG_SWAP;
         b.title = on ? 'Quitar de comparar' : 'Comparar oferta';
       });
     };

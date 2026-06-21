@@ -3,6 +3,9 @@
 // que apuntamos directo a Railway en producción — igual que app.js. En local
 // usamos el uvicorn de :8000. Override con window.__API_BASE para staging/tests.
 const RAILWAY_BACKEND = 'https://contrataoplanta-production.up.railway.app';
+// Iconos SVG del botón "Comparar" (el glifo "⇆" no existe en Inter y se salía).
+const CMP_SVG_SWAP = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="17 1 21 5 17 9"/><path d="M21 5H9a4 4 0 0 0-4 4"/><polyline points="7 23 3 19 7 15"/><path d="M3 19h12a4 4 0 0 0 4-4"/></svg>';
+const CMP_SVG_CHECK = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
 const _hostLocal = (
   window.location.hostname === 'localhost' ||
   window.location.hostname === '' ||
@@ -117,7 +120,7 @@ function renderFavs() {
       </div>
       <div class="fav-card-actions">
         <button class="btn-fav-detail" type="button" data-fav-detalle="${f.id}">Ver detalle</button>
-        <button class="cop-cmp-btn cop-cmp-btn--icon" type="button" data-fav-comparar="${f.id}" title="Comparar oferta" aria-label="Comparar oferta">⇆</button>
+        <button class="cop-cmp-btn cop-cmp-btn--icon" type="button" data-fav-comparar="${f.id}" title="Comparar oferta" aria-label="Comparar oferta">${CMP_SVG_SWAP}</button>
         <button class="btn-fav-remove" type="button" title="Eliminar de favoritos" data-fav-remove="${f.id}">✕</button>
       </div>
     </div>`;
@@ -402,7 +405,7 @@ if (window.Comparador) {
     document.querySelectorAll('.cop-cmp-btn[data-fav-comparar]').forEach((b) => {
       const on = Comparador.has(b.getAttribute('data-fav-comparar'));
       b.classList.toggle('is-on', on);
-      b.textContent = on ? '✓' : '⇆';
+      b.innerHTML = on ? CMP_SVG_CHECK : CMP_SVG_SWAP;
       b.title = on ? 'Quitar de comparar' : 'Comparar oferta';
     });
   };

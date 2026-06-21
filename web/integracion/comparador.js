@@ -127,7 +127,8 @@
       ['Región', (o) => escHtml([o.region, o.comuna].filter(Boolean).join(' · ')) || '—'],
       ['Renta bruta', (o) => { const v = fmtRenta(o.renta); const best = rentaNum(o.renta) && rentaNum(o.renta) === maxRenta; return v ? `<span class="cop-cmp-renta${best ? ' is-best' : ''}">${escHtml(v)}</span>` : '—'; }],
       ['Jornada', (o) => escHtml(o.jornada) || '—'],
-      ['Plazo de cierre', (o) => plazoTxt(o)]
+      ['Plazo de cierre', (o) => plazoTxt(o)],
+      ['Descripción', (o) => o.resumen ? `<span class="cop-cmp-resumen">${escHtml(o.resumen)}</span>` : '—']
     ];
 
     // Grilla FILA POR FILA: cada celda es hija directa del grid, así las
@@ -138,7 +139,7 @@
     // Cabecera: celda vacía (esquina) + cargo de cada oferta.
     parts.push('<div class="cop-cmp-cellhead cop-cmp-cellhead--corner"></div>');
     ofertas.forEach((o, i) => parts.push(
-      `<div class="cop-cmp-cellhead"><button class="cop-cmp-rm" type="button" data-rm="${sel[i]}" title="Quitar">✕</button><div class="cop-cmp-cargo">${escHtml(o.cargo)}</div></div>`
+      `<div class="cop-cmp-cellhead"><button class="cop-cmp-rm" type="button" data-rm="${sel[i]}" title="Quitar">✕</button><div class="cop-cmp-logo">${o.logoHtml || ''}</div><div class="cop-cmp-cargo">${escHtml(o.cargo)}</div></div>`
     ));
     // Métricas.
     filas.forEach((f) => {
