@@ -942,7 +942,7 @@ class EmpleosPublicosScraper(BaseScraper):
 
     @staticmethod
     def _solo_entero(valor: Any) -> int | None:
-        """Extrae el primer entero de un texto ('2 vacantes' → 2)."""
+        """Extrae el primer entero de un texto, p.ej. '2 vacantes' → 2."""
         txt = clean_text(valor) or ""
         m = re.search(r"\d+", txt)
         return int(m.group()) if m else None
