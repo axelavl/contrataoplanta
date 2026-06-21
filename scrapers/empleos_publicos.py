@@ -23,18 +23,27 @@ trabajando.py v2 y carabineros.py v3 de esta sesión):
   5. renta_texto: se conserva el texto original de la renta además de los
      montos parseados.
 
-La lógica de scraping (cards div.caja.row, detalle vía iframe
-avisopizarronficha.aspx, paginación ASP.NET __doPostBack) se mantiene; fue
-verificada vigente contra el sitio en producción.
+FUENTE DE DATOS (actualizado jun-2026): el portal se reescribió como SPA y el
+listado HTML en /pub/convocatorias/convocatorias.aspx dejó de existir (ahora ese
+.aspx responde error y redirige al home). Las convocatorias se obtienen desde la
+API JSON interna que consume el front nuevo: GET {API_URL}?page&pageSize, que
+devuelve {"total": N, "data": [...]}. La ficha por aviso (convpostularavisoTrabajo
+.aspx?i=) se sigue visitando para descripción/correo; OJO: esa ficha también se
+rediseñó, por lo que los selectores de _parsear_detalle requieren actualización
+(la oferta igual se persiste completa con los datos estructurados de la API).
+Los métodos de parsing HTML del listado viejo (_parsear_listado, _parsear_tarjeta,
+_detectar_siguiente_pagina, paginación __doPostBack) quedan sin uso.
 """
 
 import argparse
 import asyncio
+import json
 import re
 import sys
 import time
 from collections.abc import Iterable
 from dataclasses import dataclass
+from html import unescape as html_unescape
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
@@ -180,6 +189,15 @@ except ImportError:
 BASE_URL = "https://www.empleospublicos.cl"
 LIST_URL = f"{BASE_URL}/pub/convocatorias/convocatorias.aspx"
 LIST_CARD_SELECTOR = "div.caja.row.primerEmpleo, div.caja.row"
+# El portal se reescribió (jun-2026): el listado HTML en convocatorias.aspx dejó
+# de existir (ese .aspx ahora devuelve error y redirige al home SPA). Las
+# convocatorias se sirven desde esta API JSON interna que consume el front nuevo.
+# Formato: {"total": N, "data": [ {Cargo, Institución / Entidad, Ministerio,
+# Región, Ciudad, Renta Bruta, Fecha Inicio, Fecha Cierre Convocatoria,
+# Tipo de Vacante, Cargo Profesional, Nº de Vacantes, url, EstadoInferencia} ]}.
+API_BASE = "https://empleospublicos.cl"
+API_URL = f"{API_BASE}/apiConvocatorias.ashx"
+API_PAGE_SIZE = 200
 DETAIL_LINK_SELECTOR = (
     'a.btnverficha[href], '
     'a[href*="convpostularavisoTrabajo"][href], '
@@ -362,44 +380,49 @@ class EmpleosPublicosScraper(BaseScraper):
             ssl=None if self.verify_ssl else False,
         )
         headers = {
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept": "application/json, text/javascript, */*; q=0.9",
             "Accept-Language": "es-CL,es;q=0.9,en;q=0.8",
-            "Referer": BASE_URL,
+            "Referer": f"{API_BASE}/",
         }
 
         ofertas: list[dict[str, Any]] = []
         urls_vistas: set[str] = set()
-        firmas_paginas: set[tuple[str, ...]] = set()
-        requests_visitados: set[tuple[str, str, tuple[tuple[str, str], ...]]] = set()
-        page_request: PageRequest | None = PageRequest(method="GET", url=LIST_URL)
-        pagina = 1
 
         async with aiohttp.ClientSession(timeout=timeout, connector=connector, headers=headers) as session:
-            while page_request:
+            pagina = 1
+            total_api: int | None = None
+            while True:
                 if self.max_results and len(ofertas) >= self.max_results:
                     break
 
-                firma_request = page_request.signature()
-                if firma_request in requests_visitados:
-                    self.logger.warning(
-                        "evento=paginacion_repetida scraper=%s pagina=%s url=%s",
-                        self.nombre,
-                        pagina,
-                        page_request.url,
-                    )
-                    break
-
+                page_url = f"{API_URL}?page={pagina}&pageSize={API_PAGE_SIZE}"
                 self.logger.info(
                     "evento=pagina_inicio scraper=%s pagina=%s url=%s",
                     self.nombre,
                     pagina,
-                    page_request.url,
+                    API_URL,
                 )
-                html = await self._request_text(session, page_request)
-                requests_visitados.add(firma_request)
+                texto = await self._request_text(
+                    session, PageRequest(method="GET", url=page_url)
+                )
+                try:
+                    payload = json.loads(texto)
+                except (json.JSONDecodeError, ValueError) as exc:
+                    # La API dejó de responder JSON (probable cambio del portal).
+                    # Cortamos; el resumen found=0 dispara la alerta de fuente caída.
+                    self.logger.warning(
+                        "evento=api_respuesta_no_json scraper=%s pagina=%s len=%s error=%s",
+                        self.nombre,
+                        pagina,
+                        len(texto or ""),
+                        exc,
+                    )
+                    break
 
-                ofertas_pagina = self._parsear_listado(html)
-                if not ofertas_pagina:
+                registros = payload.get("data") or []
+                if total_api is None:
+                    total_api = payload.get("total")
+                if not registros:
                     self.logger.info(
                         "evento=pagina_vacia scraper=%s pagina=%s",
                         self.nombre,
@@ -407,42 +430,133 @@ class EmpleosPublicosScraper(BaseScraper):
                     )
                     break
 
-                firma_pagina = tuple(
-                    sorted(item.get("id_externo") or item["url_oferta"] for item in ofertas_pagina)
-                )
-                if firma_pagina in firmas_paginas:
-                    self.logger.warning(
-                        "evento=fin_paginacion scraper=%s pagina=%s motivo=pagina_repetida",
-                        self.nombre,
-                        pagina,
-                    )
-                    break
-                firmas_paginas.add(firma_pagina)
-
-                for oferta in ofertas_pagina:
+                nuevos_en_pagina = 0
+                for registro in registros:
+                    oferta = self._oferta_desde_api(registro)
+                    if not oferta:
+                        continue
                     if oferta["url_oferta"] in urls_vistas:
                         continue
                     urls_vistas.add(oferta["url_oferta"])
                     ofertas.append(oferta)
+                    nuevos_en_pagina += 1
                     if self.max_results and len(ofertas) >= self.max_results:
                         break
 
-                siguiente = self._detectar_siguiente_pagina(html, page_request.url)
-                if siguiente is None:
+                # Cortes de paginación: página incompleta, total cubierto, o sin
+                # avances (defensa anti-bucle si la API ignora el parámetro page).
+                if len(registros) < API_PAGE_SIZE:
                     break
-                page_request = siguiente
+                if total_api and len(ofertas) >= total_api:
+                    break
+                if nuevos_en_pagina == 0:
+                    break
                 pagina += 1
 
             self.logger.info(
-                "evento=listado_completo scraper=%s paginas=%s ofertas=%s",
+                "evento=listado_completo scraper=%s paginas=%s ofertas=%s total_api=%s",
                 self.nombre,
                 pagina,
                 len(ofertas),
+                total_api,
             )
 
             ofertas = ofertas[: self.max_results] if self.max_results else ofertas
             enriched = await self._enriquecer_ofertas(session, ofertas)
             return enriched
+
+    def _oferta_desde_api(self, registro: dict[str, Any]) -> dict[str, Any] | None:
+        """Mapea un registro de ``apiConvocatorias.ashx`` al esquema interno.
+
+        La API entrega datos estructurados (cargo, institución, región, renta,
+        fechas, tipo de vacante, estamento, vacantes) que antes había que extraer
+        de la ficha. La descripción y el correo NO vienen en la API: se completan
+        después en ``_enriquecer_con_detalle`` desde la ficha del aviso (``url``).
+        """
+        estado = normalize_key(registro.get("EstadoInferencia"))
+        if estado and estado not in {"abierta", "vigente", "publicada"}:
+            return None
+
+        url = clean_text(registro.get("url"))
+        if not url:
+            return None
+        url = urljoin(API_BASE, url)
+
+        cargo = truncate(html_unescape(clean_text(registro.get("Cargo"))), 500)
+        if not cargo:
+            return None
+
+        jerarquia = self._jerarquia_institucion_api(registro)
+        inst_id, inst_nombre = self._resolver_institucion(jerarquia)
+        tipo = normalize_tipo_contrato(registro.get("Tipo de Vacante"))
+        renta_min = self._parse_renta_api(registro.get("Renta Bruta"))
+        area = truncate(html_unescape(clean_text(registro.get("Área de Trabajo"))), 200)
+
+        return {
+            "id_externo": self._extraer_id_externo(url),
+            "cargo": cargo,
+            "institucion_nombre": truncate(inst_nombre or jerarquia, 300),
+            "institucion_id": inst_id,
+            "descripcion": None,
+            "requisitos": None,
+            "tipo_contrato": tipo,
+            "region": normalize_region(registro.get("Región")),
+            "ciudad": truncate(html_unescape(clean_text(registro.get("Ciudad"))), 120),
+            "renta_bruta_min": renta_min,
+            "renta_bruta_max": None,
+            "renta_texto": self._renta_texto_api(renta_min),
+            "grado_eus": None,
+            "jornada": None,
+            "area_profesional": area or self._inferir_area_profesional(cargo),
+            "fecha_publicacion": self._parse_fecha_api(registro.get("Fecha Inicio")),
+            "fecha_cierre": self._parse_fecha_api(registro.get("Fecha Cierre Convocatoria")),
+            "url_oferta": url,
+            "url_bases": url,
+            "estado": "activo",
+            "numero_vacantes": self._solo_entero(registro.get("Nº de Vacantes")),
+            "calidad_juridica": tipo,
+            "estamento": truncate(
+                html_unescape(clean_text(registro.get("Cargo Profesional"))), 60
+            ),
+            "lugar_desempenio": None,
+        }
+
+    @staticmethod
+    def _jerarquia_institucion_api(registro: dict[str, Any]) -> str | None:
+        """Arma 'Ministerio / Institución / Entidad' para resolver el organismo
+        empleador contra el catálogo (``_resolver_institucion``)."""
+        partes = [
+            clean_text(html_unescape(str(registro.get("Ministerio") or ""))),
+            clean_text(html_unescape(str(registro.get("Institución / Entidad") or ""))),
+        ]
+        partes = [p for p in partes if p]
+        return " / ".join(partes) or None
+
+    @staticmethod
+    def _parse_fecha_api(valor: Any) -> date | None:
+        """'12/06/2026 0:00:00' → date(2026, 6, 12)."""
+        s = clean_text(valor)
+        if not s:
+            return None
+        return parse_date(s.split(" ")[0])
+
+    @staticmethod
+    def _parse_renta_api(valor: Any) -> int | None:
+        """'1.872.393,00' o '1872393,00' → 1872393 (ignora decimales/separadores)."""
+        s = clean_text(valor)
+        if not s:
+            return None
+        entero = re.sub(r"[^\d]", "", s.split(",")[0])
+        if not entero:
+            return None
+        monto = int(entero)
+        return monto if monto > 0 else None
+
+    @staticmethod
+    def _renta_texto_api(monto: int | None) -> str | None:
+        if not monto:
+            return None
+        return "$" + f"{monto:,}".replace(",", ".")
 
     async def _enriquecer_ofertas(
         self,
@@ -641,18 +755,32 @@ class EmpleosPublicosScraper(BaseScraper):
             or self._inferir_area_profesional(resultado.get("cargo"))
         )
         # Datos estructurados nuevos (empleospublicos los expone en la ficha).
-        resultado["numero_vacantes"] = metadata.get("numero_vacantes")
-        resultado["calidad_juridica"] = metadata.get("calidad_juridica")
-        resultado["estamento"] = metadata.get("estamento")
-        resultado["lugar_desempenio"] = metadata.get("lugar_desempenio")
+        # La ficha tiene prioridad, pero conservamos el dato de la API como
+        # fallback cuando la ficha no lo trae (antes se sobreescribía con None).
+        resultado["numero_vacantes"] = metadata.get("numero_vacantes") or resultado.get("numero_vacantes")
+        resultado["calidad_juridica"] = metadata.get("calidad_juridica") or resultado.get("calidad_juridica")
+        resultado["estamento"] = metadata.get("estamento") or resultado.get("estamento")
+        resultado["lugar_desempenio"] = metadata.get("lugar_desempenio") or resultado.get("lugar_desempenio")
 
-        descripcion = self._componer_descripcion(soup)
+        descripcion = self._componer_descripcion(soup) or self._texto_modulos_ficha(
+            soup, ("descripcion del cargo", "perfil de la funcion", "objetivo")
+        )
         if descripcion:
             resultado["descripcion"] = descripcion
 
-        requisitos = self._componer_requisitos(soup)
+        requisitos = self._componer_requisitos(soup) or self._texto_modulos_ficha(
+            soup, ("vacantes/requisitos", "requisitos", "perfil de la funcion")
+        )
         if requisitos:
             resultado["requisitos"] = requisitos
+
+        # Correo de contacto de la ficha nueva (#lblCorreoPostulaZonaAzul:
+        # "Mail de contacto: x@y"). Habilita el filtro "Postular por correo"
+        # sin depender del extractor downstream sobre la descripción.
+        correo = self._correo_ficha(soup)
+        if correo:
+            resultado["email_postulacion"] = resultado.get("email_postulacion") or correo
+            resultado["email_consultas"] = resultado.get("email_consultas") or correo
 
         renta_texto = self._extraer_renta_texto(soup, metadata)
         renta_min, renta_max, grado_eus = parse_renta(renta_texto)
@@ -676,7 +804,10 @@ class EmpleosPublicosScraper(BaseScraper):
         if fecha_cierre:
             resultado["fecha_cierre"] = fecha_cierre
 
-        resultado["url_bases"] = self._extraer_url_bases(soup, resultado["url_oferta"])
+        resultado["url_bases"] = (
+            self._extraer_url_bases(soup, resultado["url_oferta"])
+            or resultado.get("url_bases")
+        )
         inst_id, inst_nombre = self._resolver_institucion(
             metadata.get("institucion_jerarquia") or resultado.get("institucion_nombre")
         )
@@ -855,6 +986,42 @@ class EmpleosPublicosScraper(BaseScraper):
                 or meta.get("lugar de trabajo") or meta.get("lugar")
             ) or None,
         }
+
+    def _texto_modulos_ficha(
+        self, soup: BeautifulSoup, claves: tuple[str, ...]
+    ) -> str | None:
+        """Texto de los módulos de la ficha reescrita (jun-2026) cuyo encabezado
+        coincide con alguna clave. El portal nuevo organiza la ficha en bloques
+        ``.detail-template__module`` (un ``.detail-template__module-head`` + uno o
+        más ``.detail-template__subsection``) en vez de los ``#lbl*`` antiguos."""
+        partes: list[str] = []
+        for modulo in soup.select(".detail-template__module"):
+            head_el = modulo.select_one(".detail-template__module-head")
+            head = normalize_key(head_el.get_text(" ", strip=True) if head_el else "")
+            if not head or not any(clave in head for clave in claves):
+                continue
+            for sub in modulo.select(".detail-template__subsection"):
+                texto = clean_text(sub.get_text(" ", strip=True))
+                if texto and normalize_key(texto) != head:
+                    partes.append(texto)
+        # Dedup conservando orden (subsections a veces repiten el encabezado).
+        texto = "\n\n".join(dict.fromkeys(partes))
+        return texto or None
+
+    def _correo_ficha(self, soup: BeautifulSoup) -> str | None:
+        """Correo de contacto de la ficha nueva (``#lblCorreoPostulaZonaAzul``:
+        'Mail de contacto: correo@dominio')."""
+        for sel in ("#lblCorreoPostulaZonaAzul", "[id*='Correo']", "[id*='correo']"):
+            el = soup.select_one(sel)
+            if not el:
+                continue
+            m = re.search(
+                r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}",
+                el.get_text(" ", strip=True),
+            )
+            if m:
+                return truncate(m.group(0), 200)
+        return None
 
     def _componer_descripcion(self, soup: BeautifulSoup) -> str | None:
         funciones = self._extraer_mapa_encabezados(soup.select_one("#lblFunciones"))

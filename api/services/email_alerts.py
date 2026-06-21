@@ -15,6 +15,8 @@ logger = logging.getLogger("api.email_alerts")
 _RESEND_API_KEY = os.getenv("RESEND_API_KEY", os.getenv("EMAIL_API_KEY", ""))
 _EMAIL_FROM = os.getenv("EMAIL_FROM", "alertas@contrataoplanta.cl")
 _SITE_URL = os.getenv("SITE_URL", "https://contrataoplanta.cl")
+# Destinatario de alertas OPERACIONALES (caídas de scraping). Cae a EMAIL_FROM.
+_ALERT_EMAIL = os.getenv("ALERT_EMAIL", os.getenv("ADMIN_EMAIL", ""))
 
 
 def _get_resend():
@@ -22,6 +24,55 @@ def _get_resend():
     import resend
     resend.api_key = _RESEND_API_KEY
     return resend
+
+
+def enviar_alerta_operacional(
+    asunto: str,
+    mensaje: str,
+    destino: str | None = None,
+) -> dict[str, Any]:
+    """Alerta OPERACIONAL al administrador (no a usuarios suscritos).
+
+    Avisa caídas de scraping —p.ej. el portal central devolviendo 0 ofertas—.
+    Destinatario: ``destino`` → env ``ALERT_EMAIL``/``ADMIN_EMAIL`` → ``EMAIL_FROM``.
+    No-op silencioso si falta ``RESEND_API_KEY`` o no hay destinatario.
+    """
+    destinatario = destino or _ALERT_EMAIL or _EMAIL_FROM
+    if not _RESEND_API_KEY:
+        logger.warning(
+            "RESEND_API_KEY no configurada; alerta operacional NO enviada: %s", asunto
+        )
+        return {"ok": False, "error": "API key no configurada"}
+    if not destinatario:
+        logger.warning("Sin destinatario para alerta operacional: %s", asunto)
+        return {"ok": False, "error": "sin destinatario"}
+
+    cuerpo = str(mensaje or "").replace("\n", "<br>")
+    html = (
+        '<div style="font-family:system-ui,Arial,sans-serif;max-width:560px;'
+        'margin:auto;padding:16px;color:#111">'
+        f'<h2 style="color:#B91C1C;margin:0 0 8px">⚠ {asunto}</h2>'
+        f'<div style="font-size:14px;line-height:1.5">{cuerpo}</div>'
+        '<p style="margin-top:16px;font-size:11px;color:#9CA3AF">'
+        'Alerta automática del orquestador de scrapers (contrata o planta).</p>'
+        "</div>"
+    )
+    try:
+        resend = _get_resend()
+        result = resend.Emails.send({
+            "from": f"contrata o planta <{_EMAIL_FROM}>",
+            "to": [destinatario],
+            "subject": f"[scrapers] {asunto}",
+            "html": html,
+        })
+        logger.info(
+            "Alerta operacional enviada a %s (id=%s): %s",
+            destinatario, result.get("id"), asunto,
+        )
+        return {"ok": True, "id": result.get("id")}
+    except Exception as exc:
+        logger.error("Error enviando alerta operacional a %s: %s", destinatario, exc)
+        return {"ok": False, "error": str(exc)}
 
 
 def enviar_alerta_ofertas(

@@ -550,6 +550,41 @@ def _build_scrapers(
     return assignments, empleos_publicos_pendiente
 
 
+def _alertar_portal_central_caido(found: int) -> None:
+    """Si el portal central (empleospublicos.cl) devuelve 0 ofertas, avisa por
+    email al administrador. Aplica cooldown (env ``ALERT_COOLDOWN_H``, default 6h)
+    para no spamear cada 2h mientras dura la caída. Falla en silencio: una alerta
+    nunca debe romper la corrida del scraper."""
+    if found and found > 0:
+        return
+    try:
+        import os
+
+        cooldown_h = float(os.getenv("ALERT_COOLDOWN_H", "6"))
+        log_dir = Path(os.getenv("LOG_DIR", "logs"))
+        log_dir.mkdir(parents=True, exist_ok=True)
+        marker = log_dir / ".alerta_empleospublicos_cero"
+        if marker.exists() and (time.time() - marker.stat().st_mtime) < cooldown_h * 3600:
+            log.warning(
+                "Portal central con 0 ofertas; alerta en cooldown (<%sh), no se reenvía.",
+                cooldown_h,
+            )
+            return
+
+        from api.services.email_alerts import enviar_alerta_operacional
+
+        mensaje = (
+            "EmpleosPublicosScraper (empleospublicos.cl) devolvió 0 ofertas en esta "
+            "corrida. Es la fuente principal del sitio: 0 ofertas suele indicar que "
+            "la API o el markup del portal cambió, o que la fuente está caída.\n\n"
+            "Revisar el endpoint apiConvocatorias.ashx y el log de la corrida en Railway."
+        )
+        if enviar_alerta_operacional("Portal central sin ofertas (0)", mensaje).get("ok"):
+            marker.touch()
+    except Exception as exc:  # nunca romper el run por una alerta
+        log.warning("No se pudo enviar alerta de portal central caído: %s", exc)
+
+
 def _run_empleos_publicos_sync(
     instituciones: list[dict[str, Any]],
 ) -> PrecisionReport:
@@ -578,6 +613,7 @@ def _run_empleos_publicos_sync(
         stats.get("errores"),
         stats.get("duracion_seg"),
     )
+    _alertar_portal_central_caido(report.total_encontradas)
     return report
 
 
