@@ -352,14 +352,48 @@ class WordPressScraper(BaseScraper):
                 return self._deduplicate(ofertas)
         return []
 
+    # Encabezado que separa los concursos vigentes del archivo histórico.
+    # Muchos municipios listan "Concursos Públicos en Curso" y luego
+    # "Concursos Públicos Anteriores" en la MISMA página; el scraper ingería
+    # todo el archivo como vigente. Requiere "anteriores/históricos/…" + una
+    # palabra de concurso para no gatillar con un "anterior" suelto.
+    _SECCION_ARCHIVO_RE = re.compile(
+        r"(?:anterior(?:es)?|historic[oa]s?|cerrad[oa]s?|finalizad[oa]s?"
+        r"|pasad[oa]s?|no vigentes?|\barchivo\b|antiguos?)"
+    )
+    _SECCION_ARCHIVO_TEMA_RE = re.compile(
+        r"concurso|proceso|llamado|convocatoria|oferta|cargo|postulacion|empleo"
+    )
+
+    def _marcador_archivo(self, soup: BeautifulSoup) -> Any | None:
+        """Primer encabezado que abre la sección de concursos pasados, si existe."""
+        for el in soup.find_all(["h1", "h2", "h3", "h4", "h5", "strong", "b"]):
+            txt = normalize_key(el.get_text(" ", strip=True))
+            if self._SECCION_ARCHIVO_RE.search(txt) and self._SECCION_ARCHIVO_TEMA_RE.search(txt):
+                return el
+        return None
+
+    @staticmethod
+    def _antes_del_archivo(node: Any, marcador: Any | None) -> bool:
+        """True si ``node`` aparece antes del marcador de archivo (o no hay marcador)."""
+        if marcador is None:
+            return True
+        for previo in node.find_all_previous():
+            if previo is marcador:
+                return False
+        return True
+
     def _parse_html_listing(self, html: str, source_url: str) -> list[dict[str, Any]]:
         soup = BeautifulSoup(html, "html.parser")
+        marcador_archivo = self._marcador_archivo(soup)
         containers = soup.select(
             "article, div.post, div.type-post, div.entry, li.post, div.blog-item"
         )
         ofertas: list[dict[str, Any]] = []
 
         for node in containers:
+            if not self._antes_del_archivo(node, marcador_archivo):
+                continue
             title_el = node.select_one("h1 a, h2 a, h3 a, .entry-title a, a[href]")
             title = clean_text(title_el.get_text(" ", strip=True) if title_el else "")
             href = clean_text(title_el.get("href") if title_el else "")
@@ -388,6 +422,8 @@ class WordPressScraper(BaseScraper):
 
         # Fallback final: enlaces sueltos a concursos o bases.
         for anchor in soup.select("a[href]"):
+            if not self._antes_del_archivo(anchor, marcador_archivo):
+                continue
             href = anchor.get("href", "")
             title = clean_text(anchor.get_text(" ", strip=True))
             parent = anchor.find_parent(["li", "p", "div", "article", "section"])
@@ -615,6 +651,12 @@ class WordPressScraper(BaseScraper):
         r"|concursos? (?:de )?(?:fotografia|literario|artistico|cultural|dibujo"
         r"|pintura|cuentos?|poesia|musical|canto|video|vecinal|comunitario"
         r"|escolar|estudiantil|juvenil)"
+        # Avisos de elecciones de organizaciones comunitarias (Ley 19.418):
+        # "Oficio Conductor Junta de Vecinos…". El rol "conductor" hacía que el
+        # clasificador los tomara por empleo; NO son ofertas de trabajo.
+        r"|oficio conductor|juntas? de vecinos|uniones? comunales"
+        r"|organizaciones? (?:comunitarias?|territoriales?|funcionales?)"
+        r"|centro general de padres|ley 19\.?\s?418"
     )
 
     def _parece_oferta(self, title: str, content: str) -> bool:

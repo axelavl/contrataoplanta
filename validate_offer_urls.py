@@ -24,7 +24,7 @@ import sys
 import time
 from datetime import datetime
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import urldefrag, urlparse
 
 import aiohttp
 
@@ -60,13 +60,31 @@ def _is_http_url(value: Any) -> bool:
 
 
 async def _verificar_url(session: aiohttp.ClientSession, url: str,
-                         semaforo: asyncio.Semaphore) -> bool | None:
+                         semaforo: asyncio.Semaphore,
+                         cache: dict[str, bool | None] | None = None) -> bool | None:
     """
     Devuelve True si la URL responde 2xx/3xx, False si 4xx/5xx o falla,
     None si la URL no es válida en formato (no se chequea, queda en NULL).
+
+    El fragmento (#ancla) NO viaja al servidor, así que muchas ofertas de un
+    mismo listado WordPress comparten la misma URL real (p.ej. `?page_id=89#a`,
+    `?page_id=89#b`). Se normaliza quitando el fragmento y se cachea el
+    resultado por URL real: así una página de 50 concursos se chequea UNA vez
+    en lugar de 50 (evita el rate-limit que marcaba como "muerta" una URL viva).
     """
     if not _is_http_url(url):
         return None
+    clave = urldefrag(url).url
+    if cache is not None and clave in cache:
+        return cache[clave]
+    resultado = await _consultar_red(session, clave, semaforo)
+    if cache is not None:
+        cache[clave] = resultado
+    return resultado
+
+
+async def _consultar_red(session: aiohttp.ClientSession, url: str,
+                         semaforo: asyncio.Semaphore) -> bool:
     headers = {"User-Agent": random.choice(USER_AGENTS),
                "Accept": "text/html,application/xhtml+xml,*/*;q=0.8"}
     async with semaforo:
@@ -80,14 +98,19 @@ async def _verificar_url(session: aiohttp.ClientSession, url: str,
                     return False
         except (aiohttp.ClientError, asyncio.TimeoutError):
             pass
-        # Fallback: GET (algunos servidores rechazan HEAD).
-        try:
-            async with session.get(url, headers=headers, allow_redirects=True,
-                                   timeout=aiohttp.ClientTimeout(total=TIMEOUT_SEG)) as resp:
-                return resp.status < 400
-        except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
-            logger.debug("URL caída %s — %s", url, exc)
-            return False
+        # Fallback: GET (algunos servidores rechazan HEAD). Un reintento para no
+        # marcar como caída una URL viva por un timeout/corte transitorio.
+        for intento in (1, 2):
+            try:
+                async with session.get(url, headers=headers, allow_redirects=True,
+                                       timeout=aiohttp.ClientTimeout(total=TIMEOUT_SEG)) as resp:
+                    return resp.status < 400
+            except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
+                if intento == 2:
+                    logger.debug("URL caída %s — %s", url, exc)
+                    return False
+                await asyncio.sleep(1.0)
+        return False
 
 
 def _ofertas_a_validar(limit: int | None, max_edad_h: int) -> list[dict[str, Any]]:
@@ -124,15 +147,17 @@ def _actualizar_resultado(oferta_id: int,
 
 
 async def _procesar_oferta(session: aiohttp.ClientSession, oferta: dict[str, Any],
-                           semaforo: asyncio.Semaphore) -> tuple[int, bool | None, bool | None]:
+                           semaforo: asyncio.Semaphore,
+                           cache: dict[str, bool | None] | None = None,
+                           ) -> tuple[int, bool | None, bool | None]:
     url_oferta = oferta.get("url_oferta")
     url_bases  = oferta.get("url_bases")
     # url_bases idéntica a url_oferta: chequear una sola vez y reutilizar.
     if url_bases and url_oferta and url_bases == url_oferta:
-        v = await _verificar_url(session, url_oferta, semaforo)
+        v = await _verificar_url(session, url_oferta, semaforo, cache)
         return oferta["id"], v, v
-    v_of = await _verificar_url(session, url_oferta, semaforo)
-    v_ba = await _verificar_url(session, url_bases,  semaforo) if url_bases else None
+    v_of = await _verificar_url(session, url_oferta, semaforo, cache)
+    v_ba = await _verificar_url(session, url_bases,  semaforo, cache) if url_bases else None
     return oferta["id"], v_of, v_ba
 
 
@@ -146,9 +171,12 @@ async def _main_async(limit: int | None, workers: int, max_edad_h: int) -> dict[
     semaforo = asyncio.Semaphore(workers)
     inicio = time.time()
     contadores = {"total": len(ofertas), "ok": 0, "rotas": 0, "sin_url": 0}
+    # Cache de resultados por URL real (sin fragmento), compartido en toda la
+    # corrida: ofertas que comparten página se chequean una sola vez.
+    cache: dict[str, bool | None] = {}
 
     async with aiohttp.ClientSession() as session:
-        tareas = [_procesar_oferta(session, o, semaforo) for o in ofertas]
+        tareas = [_procesar_oferta(session, o, semaforo, cache) for o in ofertas]
         for completada in asyncio.as_completed(tareas):
             oferta_id, v_of, v_ba = await completada
             _actualizar_resultado(oferta_id, v_of, v_ba)
