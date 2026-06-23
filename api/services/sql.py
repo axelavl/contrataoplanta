@@ -265,45 +265,30 @@ def build_ofertas_filters(
         params.extend([_email_re, _email_re])
 
     if q:
-        norm_like = _norm_like(q)
-        norm_cargo_sql = _norm_sql("COALESCE(o.cargo, '')")
-        norm_inst_sql = _norm_sql(_clean_institution_sql("COALESCE(i.nombre, o.institucion_nombre, '')"))
-        norm_sigla_sql = _norm_sql("COALESCE(i.sigla, i.nombre_corto, '')")
-        # Texto plegado (sin tildes) de título + institución, para la cláusula
-        # morfológica accent-insensitive de abajo.
+        # Búsqueda SIN TILDES y POR RAÍZ sobre TÍTULO + INSTITUCIÓN. Cada palabra
+        # se pliega (quita tildes) y se recorta a su raíz; TODAS deben aparecer en
+        # el título o la institución. Con esto:
+        #   - "administracion" rinde IGUAL que "administración" (tilde-insensible);
+        #   - se abre la morfología: ingeniero/ingeniera/ingeniería, administrador/
+        #     administración;
+        #   - queda PRECISO: NO se busca en la descripción (incluirla devolvía
+        #     cientos de avisos que solo mencionan el término como requisito, y
+        #     rompía la simetría con/sin tilde porque la descripción matcheaba
+        #     literal y acentuado).
+        # El orden por relevancia (build_cargo_relevance) sube primero los avisos
+        # cuyo cargo contiene la frase exacta.
         norm_titulo_inst = _norm_sql(
             "COALESCE(o.cargo, '') || ' ' || COALESCE(i.nombre, o.institucion_nombre, '') || ' ' || COALESCE(i.sigla, i.nombre_corto, '')"
         )
-        like = f"%{q}%"
-
-        # Bloque OR de búsqueda sobre TÍTULO + INSTITUCIÓN. La descripción NO
-        # entra al tsvector (incluirla hacía que "administradora" matcheara 345
-        # avisos que solo la mencionan como requisito); sigue buscándose solo por
-        # substring literal, que es preciso.
-        bloques = [
-            # Frase + morfología vía stemmer 'spanish' (sensible a tildes).
-            "to_tsvector('spanish', coalesce(o.cargo, '') || ' ' || coalesce(i.nombre, '')) @@ phraseto_tsquery('spanish', %s)",
-            "o.cargo ILIKE %s",
-            "COALESCE(i.nombre, o.institucion_nombre, '') ILIKE %s",
-            "COALESCE(o.descripcion, '') ILIKE %s",
-            f"{norm_cargo_sql} LIKE %s",
-            f"{norm_inst_sql} LIKE %s",
-            f"{norm_sigla_sql} LIKE %s",
-        ]
-        bloque_params: list[Any] = [q, like, like, like, norm_like, norm_like, norm_like]
-
-        # SIN TILDES + POR RAÍZ: cada palabra (plegada y recortada a su raíz)
-        # debe aparecer en título o institución. Esto iguala "administracion" con
-        # "administración" y abre ingeniero/ingeniera/ingeniería, sin depender del
-        # stemmer —que necesita la tilde para reconocer sufijos como -ción—.
         roots = _query_roots(q)
         if roots:
-            sub = " AND ".join(f"{norm_titulo_inst} LIKE %s" for _ in roots)
-            bloques.append("(" + sub + ")")
-            bloque_params.extend(f"%{r}%" for r in roots)
-
-        where.append("(" + " OR ".join(bloques) + ")")
-        params.extend(bloque_params)
+            clauses = " AND ".join(f"{norm_titulo_inst} LIKE %s" for _ in roots)
+            where.append("(" + clauses + ")")
+            params.extend(f"%{r}%" for r in roots)
+        else:
+            # Query muy corto o solo stopwords: substring plegado simple.
+            where.append(f"{norm_titulo_inst} LIKE %s")
+            params.append(_norm_like(q))
 
     if region:
         where.append("COALESCE(o.region, i.region, '') ILIKE %s")
