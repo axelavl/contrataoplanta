@@ -55,6 +55,19 @@
     return null;
   };
 
+  // Limpia el resumen para el comparador: quita los títulos de sección que
+  // arrastra la descripción cruda ("Objetivo del cargo", "Funciones del cargo",
+  // "Tareas:", numeración inicial), para mostrar solo el contenido útil.
+  const _RE_HEADER = /^(funciones?(\s+del\s+cargo|\s+principales)?|objetivos?(\s+del\s+cargo)?|misi[oó]n(\s+del\s+cargo)?|descripci[oó]n(\s+del\s+cargo)?|tareas?(\s+principales)?|perfil(\s+del\s+cargo)?|cl[ií]nicas?)\s*[:.\-–]?\s*/i;
+  function limpiarResumen(s) {
+    let t = String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
+    for (let i = 0; i < 4 && _RE_HEADER.test(t); i++) t = t.replace(_RE_HEADER, '');
+    t = t.replace(/^\d{1,2}\s*[.\)\-]+\s*/, '');           // "1." / "1)" / "1.-" iniciales
+    for (let i = 0; i < 2 && _RE_HEADER.test(t); i++) t = t.replace(_RE_HEADER, '');
+    t = t.replace(/^[\s:;.\-–]+/, '').trim();
+    return t ? t.charAt(0).toUpperCase() + t.slice(1) : '';
+  }
+
   function notify() { listeners.forEach((fn) => { try { fn(sel.slice()); } catch (e) { /* noop */ } }); }
 
   function toggle(id) {
@@ -121,14 +134,25 @@
     }
 
     const maxRenta = Math.max.apply(null, ofertas.map((o) => rentaNum(o.renta) || 0));
+    // Solo hay "ganador" de renta si alguna es MENOR que la máxima. Si todas son
+    // iguales no se marca ninguna con ▲; en su lugar se indica "= igual".
+    const _rentas = ofertas.map((o) => rentaNum(o.renta)).filter((v) => v != null);
+    const hayGanadorRenta = maxRenta > 0 && ofertas.some((o) => (rentaNum(o.renta) || 0) < maxRenta);
+    const rentasIguales = _rentas.length >= 2 && _rentas.every((v) => v === _rentas[0]);
     const filas = [
       ['Institución', (o) => escHtml(o.institucion)],
       ['Modalidad', (o) => o.tipo ? `<span class="cop-cmp-badge">${escHtml(o.tipo)}</span>` : '—'],
       ['Región', (o) => escHtml([o.region, o.comuna].filter(Boolean).join(' · ')) || '—'],
-      ['Renta bruta', (o) => { const v = fmtRenta(o.renta); const best = rentaNum(o.renta) && rentaNum(o.renta) === maxRenta; return v ? `<span class="cop-cmp-renta${best ? ' is-best' : ''}">${escHtml(v)}</span>` : '—'; }],
+      ['Renta bruta', (o) => {
+        const v = fmtRenta(o.renta);
+        if (!v) return '—';
+        const best = hayGanadorRenta && rentaNum(o.renta) === maxRenta;
+        const igual = rentasIguales ? ' <span class="cop-cmp-igual" title="Misma renta en ambas ofertas">= igual</span>' : '';
+        return `<span class="cop-cmp-renta${best ? ' is-best' : ''}">${escHtml(v)}</span>${igual}`;
+      }],
       ['Jornada', (o) => escHtml(o.jornada) || '—'],
       ['Plazo de cierre', (o) => plazoTxt(o)],
-      ['Descripción', (o) => o.resumen ? `<span class="cop-cmp-resumen">${escHtml(o.resumen)}</span>` : '—']
+      ['Descripción', (o) => { const r = limpiarResumen(o.resumen); return r ? `<span class="cop-cmp-resumen">${escHtml(r)}</span>` : '—'; }]
     ];
 
     // Grilla FILA POR FILA: cada celda es hija directa del grid, así las
