@@ -9,7 +9,7 @@
   if (!contLista) return;
 
   var filtroActivo = 'todas';
-  var busqueda = { q: '', fpago: '', inst: '' };
+  var busqueda = { q: '', fpago: '', inst: '', tipo: '' };
 
   function _fold(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
 
@@ -36,6 +36,8 @@
     if (fp) fp.addEventListener('change', function () { busqueda.fpago = fp.value; pintarLista(); });
     var ins = document.getElementById('cursos-inst');
     if (ins) ins.addEventListener('change', function () { busqueda.inst = ins.value; pintarLista(); });
+    var tp = document.getElementById('cursos-tipo');
+    if (tp) tp.addEventListener('change', function () { busqueda.tipo = tp.value; pintarLista(); });
   }
 
   // Deep-link: ?cat=<slug> o ?area=<area_profesional de la API>
@@ -129,6 +131,7 @@
       if (busqueda.fpago === 'gratis' && !a.gratuito) return false;
       if (busqueda.fpago === 'pagado' && a.gratuito) return false;
       if (busqueda.inst && a.proveedor !== busqueda.inst) return false;
+      if (busqueda.tipo && (a.tipo || 'curso') !== busqueda.tipo) return false;
       if (q) {
         var heno = _fold((a.titulo || '') + ' ' + (a.proveedor || '') + ' ' + (a.descripcion || '') + ' ' + etiquetaCat(a.categoria));
         if (heno.indexOf(q) === -1) return false;

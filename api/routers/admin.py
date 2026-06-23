@@ -573,7 +573,7 @@ def admin_toggle_activa(
 
 _CURSO_CAMPOS = (
     "curso_id", "titulo", "proveedor", "categoria", "modalidad", "duracion",
-    "nivel", "url", "descripcion", "gratuito", "demo", "orden", "activo",
+    "nivel", "tipo", "url", "descripcion", "gratuito", "demo", "orden", "activo",
 )
 
 
@@ -583,7 +583,7 @@ def admin_listar_cursos(_user: str = Depends(_verify_admin_jwt)) -> dict[str, An
     rows = execute_fetch_all(
         """
         SELECT id, curso_id, titulo, proveedor, categoria, modalidad, duracion,
-               nivel, url, descripcion, gratuito, demo, orden, activo
+               nivel, tipo, url, descripcion, gratuito, demo, orden, activo
         FROM cursos ORDER BY orden ASC, id ASC
         """,
         [],
@@ -608,6 +608,7 @@ def admin_crear_curso(
         "modalidad": (payload.get("modalidad") or "")[:80] or None,
         "duracion": (payload.get("duracion") or "")[:60] or None,
         "nivel": "destacado" if payload.get("nivel") == "destacado" else "estandar",
+        "tipo": (payload.get("tipo") or "curso")[:30],
         "url": (str(payload.get("url") or "").strip()) or None,
         "descripcion": (payload.get("descripcion") or "") or None,
         "gratuito": bool(payload.get("gratuito", True)),
@@ -619,9 +620,9 @@ def admin_crear_curso(
         cur.execute(
             """
             INSERT INTO cursos (curso_id, titulo, proveedor, categoria, modalidad,
-                duracion, nivel, url, descripcion, gratuito, demo, orden, activo)
+                duracion, nivel, tipo, url, descripcion, gratuito, demo, orden, activo)
             VALUES (%(curso_id)s, %(titulo)s, %(proveedor)s, %(categoria)s, %(modalidad)s,
-                %(duracion)s, %(nivel)s, %(url)s, %(descripcion)s, %(gratuito)s,
+                %(duracion)s, %(nivel)s, %(tipo)s, %(url)s, %(descripcion)s, %(gratuito)s,
                 %(demo)s, %(orden)s, %(activo)s)
             ON CONFLICT (curso_id) DO NOTHING
             RETURNING id

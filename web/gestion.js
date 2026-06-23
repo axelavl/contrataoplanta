@@ -188,6 +188,7 @@ function _cfSet(v) {
   _cfEl('cf-categoria').value = v.categoria || 'admin-publica';
   _cfEl('cf-modalidad').value = v.modalidad || '';
   _cfEl('cf-duracion').value = v.duracion || '';
+  _cfEl('cf-tipo').value = v.tipo || 'curso';
   _cfEl('cf-url').value = v.url || '';
   _cfEl('cf-descripcion').value = v.descripcion || '';
   _cfEl('cf-orden').value = (v.orden != null ? v.orden : '');
@@ -210,6 +211,7 @@ async function _guardarCurso() {
     categoria: _cfEl('cf-categoria').value,
     modalidad: _cfEl('cf-modalidad').value.trim(),
     duracion: _cfEl('cf-duracion').value.trim(),
+    tipo: _cfEl('cf-tipo').value,
     url: _cfEl('cf-url').value.trim(),
     descripcion: _cfEl('cf-descripcion').value.trim(),
     orden: parseInt(_cfEl('cf-orden').value, 10) || 100,

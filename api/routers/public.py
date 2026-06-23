@@ -247,7 +247,7 @@ def get_cursos() -> dict[str, Any]:
         rows = execute_fetch_all(
             """
             SELECT curso_id AS id, titulo, proveedor, categoria, modalidad,
-                   duracion, nivel, url, descripcion, gratuito, demo
+                   duracion, nivel, tipo, url, descripcion, gratuito, demo
             FROM cursos
             WHERE activo = TRUE
             ORDER BY orden ASC, id ASC
