@@ -20,6 +20,7 @@ Contenido:
 """
 from __future__ import annotations
 
+import re
 from typing import Any
 
 
@@ -63,6 +64,27 @@ def _norm_like(value: str) -> str:
     """Normaliza el término en Python para usarlo con _norm_sql(... ) LIKE %s."""
     src = str.maketrans(_ACCENT_FROM, _ACCENT_TO)
     return f"%{value.translate(src).lower()}%"
+
+
+_SEARCH_STOPWORDS = {
+    "de", "del", "la", "el", "los", "las", "y", "e", "o", "u", "en", "para",
+    "por", "con", "a", "un", "una", "al", "que",
+}
+
+
+def _query_roots(q: str) -> list[str]:
+    """Raíces SIN TILDES de cada palabra de la búsqueda, para matching
+    accent-insensitive y morfológico: "administracion"≈"administración",
+    "ingeniero"≈"ingeniera"≈"ingeniería". Recorta ~1/4 de la cola (flexión de
+    género/derivación) con mínimo de 4 caracteres. Ignora palabras vacías."""
+    src = str.maketrans(_ACCENT_FROM, _ACCENT_TO)
+    out: list[str] = []
+    for w in q.split():
+        fw = re.sub(r"[^a-z0-9]", "", w.translate(src).lower())
+        if len(fw) < 3 or fw in _SEARCH_STOPWORDS:
+            continue
+        out.append(fw if len(fw) <= 4 else fw[: max(4, len(fw) - (len(fw) // 4 + 1))])
+    return out
 
 
 def _clean_institution_sql(expr: str) -> str:
@@ -247,29 +269,41 @@ def build_ofertas_filters(
         norm_cargo_sql = _norm_sql("COALESCE(o.cargo, '')")
         norm_inst_sql = _norm_sql(_clean_institution_sql("COALESCE(i.nombre, o.institucion_nombre, '')"))
         norm_sigla_sql = _norm_sql("COALESCE(i.sigla, i.nombre_corto, '')")
-        where.append(
-            "("
-            # Búsqueda por FRASE y morfológica sobre TÍTULO + INSTITUCIÓN.
-            # - phraseto_tsquery exige lexemas ADYACENTES (frase), no sueltos: así
-            #   "administrador público" matchea el cargo "Administrador Público" y
-            #   no avisos con "administrador" por un lado y "público" por otro.
-            # - El stemmer 'spanish' abre la morfología: "ingeniero" matchea
-            #   "ingeniera"/"ingeniería"; "administrador" matchea "administración".
-            # - La descripción se SACA del tsvector a propósito: incluirla hacía
-            #   que "administradora" matcheara 345 avisos que solo la mencionan
-            #   como requisito en el cuerpo. La descripción sigue buscándose, pero
-            #   solo por substring literal (ILIKE de abajo), que es preciso.
-            "to_tsvector('spanish', coalesce(o.cargo, '') || ' ' || coalesce(i.nombre, '')) @@ phraseto_tsquery('spanish', %s) "
-            "OR o.cargo ILIKE %s "
-            "OR COALESCE(i.nombre, o.institucion_nombre, '') ILIKE %s "
-            "OR COALESCE(o.descripcion, '') ILIKE %s "
-            f"OR {norm_cargo_sql} LIKE %s "
-            f"OR {norm_inst_sql} LIKE %s "
-            f"OR {norm_sigla_sql} LIKE %s "
-            ")"
+        # Texto plegado (sin tildes) de título + institución, para la cláusula
+        # morfológica accent-insensitive de abajo.
+        norm_titulo_inst = _norm_sql(
+            "COALESCE(o.cargo, '') || ' ' || COALESCE(i.nombre, o.institucion_nombre, '') || ' ' || COALESCE(i.sigla, i.nombre_corto, '')"
         )
         like = f"%{q}%"
-        params.extend([q, like, like, like, norm_like, norm_like, norm_like])
+
+        # Bloque OR de búsqueda sobre TÍTULO + INSTITUCIÓN. La descripción NO
+        # entra al tsvector (incluirla hacía que "administradora" matcheara 345
+        # avisos que solo la mencionan como requisito); sigue buscándose solo por
+        # substring literal, que es preciso.
+        bloques = [
+            # Frase + morfología vía stemmer 'spanish' (sensible a tildes).
+            "to_tsvector('spanish', coalesce(o.cargo, '') || ' ' || coalesce(i.nombre, '')) @@ phraseto_tsquery('spanish', %s)",
+            "o.cargo ILIKE %s",
+            "COALESCE(i.nombre, o.institucion_nombre, '') ILIKE %s",
+            "COALESCE(o.descripcion, '') ILIKE %s",
+            f"{norm_cargo_sql} LIKE %s",
+            f"{norm_inst_sql} LIKE %s",
+            f"{norm_sigla_sql} LIKE %s",
+        ]
+        bloque_params: list[Any] = [q, like, like, like, norm_like, norm_like, norm_like]
+
+        # SIN TILDES + POR RAÍZ: cada palabra (plegada y recortada a su raíz)
+        # debe aparecer en título o institución. Esto iguala "administracion" con
+        # "administración" y abre ingeniero/ingeniera/ingeniería, sin depender del
+        # stemmer —que necesita la tilde para reconocer sufijos como -ción—.
+        roots = _query_roots(q)
+        if roots:
+            sub = " AND ".join(f"{norm_titulo_inst} LIKE %s" for _ in roots)
+            bloques.append("(" + sub + ")")
+            bloque_params.extend(f"%{r}%" for r in roots)
+
+        where.append("(" + " OR ".join(bloques) + ")")
+        params.extend(bloque_params)
 
     if region:
         where.append("COALESCE(o.region, i.region, '') ILIKE %s")

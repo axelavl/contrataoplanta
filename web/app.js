@@ -1759,6 +1759,9 @@ async function cargarOfertas() {
     const sub = document.getElementById('count-sub');
     if (sub) sub.textContent = totalContador === 1 ? '· 1 resultado' : '';
 
+    // Parte 10 — fija la línea base para detectar ofertas nuevas (sin F5).
+    _nuevasBaseline(totalContador, params.toString());
+
     if (!ofertasFiltradas.length) {
       renderVacio();
       return;
@@ -4556,3 +4559,73 @@ cargarResumenFuentes();
 mostrarUltimaActualizacion();
 cargarSiteConfig();
 setInterval(mostrarUltimaActualizacion, 5 * 60 * 1000); // refresco cada 5 min
+
+// ── Parte 10 — Aviso de nuevas ofertas sin F5 ─────────────────────────────
+// Polling liviano (90 s + al recuperar el foco) comparando el `total` del
+// listado actual contra la línea base capturada al cargar. Si aparecen ofertas
+// nuevas, muestra una píldora OPT-IN; nunca inserta solo. Al tocarla, recarga
+// la primera página (conservando filtros) y reinicia la base. Falla en silencio.
+const _nuevas = { baseline: null, params: '', timer: null };
+
+function _nuevasBaseline(total, paramsStr) {
+  // Solo en la 1ª página de "vigentes": ahí tiene sentido avisar de nuevas.
+  if (estado.pagina !== 1 || estado.vista_listado === 'cerradas') return;
+  _nuevas.baseline = total;
+  _nuevas.params = paramsStr;
+  _ocultarAvisoNuevas();
+  if (!_nuevas.timer) {
+    _nuevas.timer = setInterval(_pollNuevas, 90000);
+    window.addEventListener('focus', _pollNuevas);
+  }
+}
+
+async function _pollNuevas() {
+  if (_nuevas.baseline == null || document.hidden) return;
+  try {
+    const p = new URLSearchParams(_nuevas.params);
+    p.set('pagina', '1');
+    p.set('por_pagina', '1');
+    const r = await fetchApi('/api/ofertas?' + p.toString());
+    if (!r.ok) return;
+    const d = await r.json();
+    const total = d.total ?? 0;
+    if (total > _nuevas.baseline) {
+      _mostrarAvisoNuevas(total - _nuevas.baseline);
+    } else if (total < _nuevas.baseline) {
+      // Bajó (cierres): re-anclamos sin avisar para no falsear el conteo.
+      _nuevas.baseline = total;
+      _ocultarAvisoNuevas();
+    }
+  } catch (e) { /* sin conexión / error: se reintenta al próximo tick */ }
+}
+
+function _avisoNuevasEl() {
+  let el = document.getElementById('aviso-nuevas');
+  if (!el) {
+    el = document.createElement('button');
+    el.id = 'aviso-nuevas';
+    el.type = 'button';
+    el.className = 'aviso-nuevas';
+    el.setAttribute('aria-live', 'polite');
+    el.hidden = true;
+    el.addEventListener('click', () => {
+      _ocultarAvisoNuevas();
+      estado.pagina = 1;
+      cargarOfertas();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    document.body.appendChild(el);
+  }
+  return el;
+}
+
+function _mostrarAvisoNuevas(n) {
+  const el = _avisoNuevasEl();
+  el.textContent = '▲ ' + n + (n === 1 ? ' nueva oferta · Actualizar' : ' nuevas ofertas · Actualizar');
+  el.hidden = false;
+}
+
+function _ocultarAvisoNuevas() {
+  const el = document.getElementById('aviso-nuevas');
+  if (el) el.hidden = true;
+}
