@@ -32,10 +32,22 @@ from db.config import get_database_config
 
 config = context.config
 
-# Setea la URL dinámicamente desde las env vars.
-config.set_main_option(
-    "sqlalchemy.url", get_database_config().to_sqlalchemy_url()
-)
+# Setea la URL dinámicamente desde las env vars (única fuente de verdad).
+# `to_sqlalchemy_url()` arma el DSN con driver psycopg2 — el que usa
+# producción. Pero en algunos entornos locales (p.ej. Windows con un
+# Python sin wheel de psycopg2) ese driver no se puede instalar sin
+# compilador. En ese caso caemos a pg8000, un driver Postgres puro-Python
+# que instala sin compilar, para poder correr las migraciones igual.
+# Producción no cambia: si psycopg2 está, se usa psycopg2.
+_db_url = get_database_config().to_sqlalchemy_url()
+try:
+    import psycopg2  # noqa: F401
+except ImportError:
+    _db_url = _db_url.replace(
+        "postgresql+psycopg2://", "postgresql+pg8000://", 1
+    )
+
+config.set_main_option("sqlalchemy.url", _db_url)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)

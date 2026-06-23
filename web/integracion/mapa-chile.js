@@ -98,7 +98,7 @@
         if (mapEl) mapEl.scrollIntoView({ block: 'nearest' });
       });
     }
-    const placeholder = () => { panel.innerHTML = `<div class="cop-mapx-hint"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg><p>Tocá una región del mapa para ver sus ofertas aquí, sin perder el mapa de vista.</p></div>`; };
+    const placeholder = () => { panel.innerHTML = `<div class="cop-mapx-hint"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg><p>Toca una región del mapa para ver sus ofertas aquí, sin perder el mapa de vista.</p></div>`; };
     if (selected && (counts[selected] || 0) >= 0) {/* el host inyectará */} else placeholder();
 
     function fire(el) {

@@ -143,7 +143,7 @@
       return (y.nivel === 'destacado' ? 1 : 0) - (x.nivel === 'destacado' ? 1 : 0);
     });
     if (!lista.length) {
-      contLista.innerHTML = '<p style="grid-column:1/-1;color:var(--texto3);padding:24px 4px">No encontramos cursos con esos criterios. Probá con otras palabras o quitá un filtro.</p>';
+      contLista.innerHTML = '<p style="grid-column:1/-1;color:var(--texto3);padding:24px 4px">No encontramos cursos con esos criterios. Prueba con otras palabras o quita un filtro.</p>';
       return;
     }
     contLista.innerHTML = lista.map(tarjeta).join('') + slotLibre();

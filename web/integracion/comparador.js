@@ -27,7 +27,7 @@
  *     onVerDetalles: (id) => abrirModal(id)
  *   });
  *
- * También podés configurar una sola vez:
+ * También puedes configurar una sola vez:
  *   Comparador.config({ fetchOferta, normalizar, onVerDetalles });
  *   …y luego Comparador.abrir() sin argumentos.
  * ========================================================================== */
@@ -116,7 +116,7 @@
     if (sel.length < 2) {
       body.innerHTML = `<div class="cop-cmp-empty">${sel.length === 0
         ? 'Todavía no marcaste ofertas para comparar.'
-        : 'Marcá <b>al menos 2 ofertas</b> para compararlas — con una sola no hay con qué comparar.'}<br>Usá <b>“⇆ Comparar oferta”</b> en las tarjetas o filas (hasta ${MAX}).</div>`;
+        : 'Marca <b>al menos 2 ofertas</b> para compararlas — con una sola no hay con qué comparar.'}<br>Usa <b>“⇆ Comparar oferta”</b> en las tarjetas o filas (hasta ${MAX}).</div>`;
       return;
     }
     if (typeof opts.fetchOferta !== 'function' || typeof opts.normalizar !== 'function') {
@@ -129,7 +129,7 @@
     try {
       ofertas = await Promise.all(sel.map(async (id) => opts.normalizar(await opts.fetchOferta(id))));
     } catch (e) {
-      body.innerHTML = `<div class="cop-cmp-empty">No pudimos cargar las ofertas. Reintentá.</div>`;
+      body.innerHTML = `<div class="cop-cmp-empty">No pudimos cargar las ofertas. Reinténtalo.</div>`;
       return;
     }
 

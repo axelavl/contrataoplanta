@@ -240,7 +240,7 @@ async function loadCursos() {
   try {
     const d = await api('/cursos');
     const cursos = d.cursos || [];
-    if (!cursos.length) { cont.innerHTML = '<p class="text-muted">Sin cursos. Agregá el primero arriba.</p>'; return; }
+    if (!cursos.length) { cont.innerHTML = '<p class="text-muted">Sin cursos. Agrega el primero arriba.</p>'; return; }
     cont.innerHTML = '<table class="data-table" style="width:100%;border-collapse:collapse"><thead><tr>'
       + '<th style="text-align:left;padding:6px">Orden</th><th style="text-align:left;padding:6px">Título</th>'
       + '<th style="text-align:left;padding:6px">Proveedor</th><th style="text-align:left;padding:6px">Categoría</th>'
@@ -277,7 +277,7 @@ function _escAttrC(s) { return _escCurso(s).replace(/"/g, '&quot;'); }
 
 async function _agregarCategoria() {
   const et = document.getElementById('cc-etiqueta').value.trim();
-  if (!et) { toast('Escribí una etiqueta', 'error'); return; }
+  if (!et) { toast('Escribe una etiqueta', 'error'); return; }
   const ord = parseInt(document.getElementById('cc-orden').value, 10) || 100;
   try {
     await api('/cursos/categorias', { method: 'POST', body: JSON.stringify({ etiqueta: et, orden: ord }) });
