@@ -33,7 +33,12 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .skip-link:focus{top:10px}
 .page-content{max-width:1100px;margin:0 auto;padding:40px 24px 80px}
 
-/* FILTROS */
+/* BUSCADOR + FILTROS */
+.cursos-buscador{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.cursos-buscador input,.cursos-buscador select{font-family:inherit;font-size:14px;padding:11px 14px;border:1px solid var(--borde);border-radius:12px;background:var(--blanco);color:var(--texto)}
+.cursos-buscador input{flex:1 1 280px;min-width:0}
+.cursos-buscador select{flex:0 0 auto;cursor:pointer}
+.cursos-buscador input:focus,.cursos-buscador select:focus{outline:2px solid var(--cielo);outline-offset:1px;border-color:var(--cielo)}
 .cursos-filtros{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:26px}
 .curso-chip{background:var(--blanco);border:1px solid var(--borde);border-radius:20px;padding:8px 14px;font-size:13px;font-family:inherit;color:var(--texto2);cursor:pointer;transition:all .15s}
 .curso-chip:hover{border-color:var(--cielo)}
@@ -41,7 +46,12 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 
 /* GRID */
 .cursos-lista{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.curso-card{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--r-l);padding:20px;box-shadow:var(--sombra);display:flex;flex-direction:column}
+.curso-card{position:relative;background:var(--blanco);border:1px solid var(--borde);border-radius:var(--r-l);padding:20px;box-shadow:var(--sombra);display:flex;flex-direction:column;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+.curso-card:hover{transform:translateY(-3px);box-shadow:0 16px 34px rgba(14,32,70,.13);border-color:var(--cielo-l,#E1E8F6)}
+/* Acento lateral sutil: verde para gratis, dorado para destacado. */
+.curso-card::before{content:"";position:absolute;left:0;top:18px;bottom:18px;width:3px;border-radius:3px;background:transparent}
+.curso-card--gratis::before{background:#8FCDA5}
+.curso-card--top::before{background:var(--acento,#C88724)}
 .curso-card--top{border-color:#F2C26A;box-shadow:0 6px 20px rgba(242,194,106,.25)}
 .curso-card-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
 .curso-sello{background:#F2C26A;color:#3a2a00;font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:3px 8px;border-radius:12px}
@@ -122,6 +132,15 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
     💡 ¿No sabes qué especialización conviene? Mira la <a href="panel-mercado.html">demanda real del mercado público</a> para ver qué áreas concentran más vacantes hoy.
   </div>
 
+  <div class="cursos-buscador">
+    <input type="search" id="cursos-q" placeholder="Buscar por curso, tema o institución…" aria-label="Buscar cursos">
+    <select id="cursos-fpago" aria-label="Gratis o pagado">
+      <option value="">Gratis y pagados</option>
+      <option value="gratis">Solo gratis</option>
+      <option value="pagado">Solo pagados</option>
+    </select>
+    <select id="cursos-inst" aria-label="Institución"><option value="">Todas las instituciones</option></select>
+  </div>
   <div class="cursos-filtros" id="cursos-filtros"></div>
   <div class="cursos-lista" id="cursos-lista"></div>
 

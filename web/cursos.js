@@ -9,6 +9,34 @@
   if (!contLista) return;
 
   var filtroActivo = 'todas';
+  var busqueda = { q: '', fpago: '', inst: '' };
+
+  function _fold(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+
+  // Buscador + filtros (texto, gratis/pagado, institución). Wire una sola vez;
+  // el <select> de instituciones se repuebla cada vez (los datos pueden venir
+  // de la API después).
+  var _buscadorWired = false;
+  function pintarBuscador() {
+    var sel = document.getElementById('cursos-inst');
+    if (sel) {
+      var provs = [];
+      D.avisos.forEach(function (a) { if (a.proveedor && provs.indexOf(a.proveedor) === -1) provs.push(a.proveedor); });
+      provs.sort();
+      var actual = sel.value;
+      sel.innerHTML = '<option value="">Todas las instituciones</option>'
+        + provs.map(function (p) { return '<option value="' + p.replace(/"/g, '&quot;') + '">' + p + '</option>'; }).join('');
+      sel.value = actual;
+    }
+    if (_buscadorWired) return;
+    _buscadorWired = true;
+    var q = document.getElementById('cursos-q');
+    if (q) q.addEventListener('input', function () { busqueda.q = q.value.trim(); pintarLista(); });
+    var fp = document.getElementById('cursos-fpago');
+    if (fp) fp.addEventListener('change', function () { busqueda.fpago = fp.value; pintarLista(); });
+    var ins = document.getElementById('cursos-inst');
+    if (ins) ins.addEventListener('change', function () { busqueda.inst = ins.value; pintarLista(); });
+  }
 
   // Deep-link: ?cat=<slug> o ?area=<area_profesional de la API>
   (function aplicarParam() {
@@ -95,19 +123,31 @@
   }
 
   function pintarLista() {
+    var q = _fold(busqueda.q);
     var lista = D.avisos.filter(function (a) {
-      return filtroActivo === 'todas' || a.categoria === filtroActivo;
+      if (filtroActivo !== 'todas' && a.categoria !== filtroActivo) return false;
+      if (busqueda.fpago === 'gratis' && !a.gratuito) return false;
+      if (busqueda.fpago === 'pagado' && a.gratuito) return false;
+      if (busqueda.inst && a.proveedor !== busqueda.inst) return false;
+      if (q) {
+        var heno = _fold((a.titulo || '') + ' ' + (a.proveedor || '') + ' ' + (a.descripcion || '') + ' ' + etiquetaCat(a.categoria));
+        if (heno.indexOf(q) === -1) return false;
+      }
+      return true;
     });
     // destacados primero
     lista.sort(function (x, y) {
       return (y.nivel === 'destacado' ? 1 : 0) - (x.nivel === 'destacado' ? 1 : 0);
     });
-    var html = lista.map(tarjeta).join('');
-    html += slotLibre();
-    contLista.innerHTML = html;
+    if (!lista.length) {
+      contLista.innerHTML = '<p style="grid-column:1/-1;color:var(--texto3);padding:24px 4px">No encontramos cursos con esos criterios. Probá con otras palabras o quitá un filtro.</p>';
+      return;
+    }
+    contLista.innerHTML = lista.map(tarjeta).join('') + slotLibre();
   }
 
   pintarFiltros();
+  pintarBuscador();
   pintarLista();
   pintarPlanes();
   wireMailto();
@@ -125,6 +165,7 @@
       .then(function (d) {
         if (d && Array.isArray(d.cursos) && d.cursos.length) {
           D.avisos = d.cursos;
+          pintarBuscador();
           pintarLista();
         }
       })

@@ -1,25 +1,21 @@
 /* ──────────────────────────────────────────────────────────────────────────
    cursos-data.js · Directorio de cursos y especializaciones para el sector público
    ──────────────────────────────────────────────────────────────────────────
-   Contiene DOS tipos de entrada:
+   Es el FALLBACK del directorio: si la API (`GET /api/cursos`) no responde,
+   `cursos.js` usa esta lista. La fuente de verdad en producción es la tabla
+   `cursos` (gestionable desde el panel admin).
+
+   Entradas:
      1. Cursos GRATUITOS oficiales del Estado (gratuito:true). Capacitación real
-        y sin costo de organismos públicos (AcademiaCEA/Contraloría, ChileCompra,
-        Servicio Civil, SUBDERE). Las URLs apuntan a la plataforma del organismo;
-        casi todas requieren Clave Única.
-     2. Avisos pagados (modelo de monetización): empresas de capacitación que
-        pagan por aparecer. Niveles: destacado (sello, arriba) / estandar.
-
-   Las CATEGORÍAS están alineadas con las áreas que más demanda el sector
-   público (ver panel-mercado.html).
-
-   NOTA: para administrar este listado desde el panel admin se requiere mover
-   estos datos a una tabla en la DB + endpoints CRUD (ver docs). Mientras tanto,
-   esta es la fuente de verdad y se edita acá.
+        de organismos públicos. Casi todas requieren Clave Única, y el enlace
+        apunta al catálogo del organismo (los cursos puntuales se abren tras
+        iniciar sesión).
+     2. Avisos pagados (monetización): empresas que pagan por aparecer.
+        Niveles: destacado (sello, arriba) / estandar.
    ────────────────────────────────────────────────────────────────────────── */
 (function () {
   'use strict';
 
-  // Categorías de especialización (slug → etiqueta + áreas de demanda que cubren).
   var categorias = [
     { slug: 'admin-publica',   etiqueta: 'Administración y gestión pública' },
     { slug: 'finanzas',        etiqueta: 'Finanzas y presupuesto público (SIGFE)' },
@@ -30,15 +26,14 @@
     { slug: 'educacion',       etiqueta: 'Educación y párvulos' },
     { slug: 'ti',              etiqueta: 'TI y transformación digital del Estado' },
     { slug: 'prevencion',      etiqueta: 'Prevención de riesgos' },
-    { slug: 'atencion',        etiqueta: 'Atención ciudadana' }
+    { slug: 'atencion',        etiqueta: 'Atención ciudadana' },
+    { slug: 'otros',           etiqueta: 'Otros' }
   ];
 
-  // Estructura de un aviso:
   //   { id, titulo, proveedor, categoria, modalidad, duracion, nivel, url,
   //     descripcion, gratuito, demo }
   var avisos = [
     // ── AcademiaCEA · Contraloría General de la República (CGR) ──────────────
-    // Aula virtual gratuita, 100% online, requiere Clave Única.
     {
       id: 'cea-induccion-estado',
       titulo: 'Inducción General a la Administración del Estado',
@@ -47,8 +42,8 @@
       modalidad: 'Online · Clave Única',
       duracion: 'A tu ritmo',
       nivel: 'estandar',
-      url: 'https://www.ceacgr.cl/aulavirtual/',
-      descripcion: 'Curso base sobre el Estado, sus instituciones, principios y el rol del funcionario público. Punto de partida ideal para quien recién ingresa.',
+      url: 'https://www.ceacgr.cl/aulavirtual/course/index.php',
+      descripcion: 'Si recién entras al Estado, parte por acá: cómo se organiza la administración pública y qué se espera de un funcionario. Es el curso con el que la propia Contraloría pone a todos en la misma página.',
       gratuito: true,
       demo: false
     },
@@ -60,8 +55,8 @@
       modalidad: 'Online · Clave Única',
       duracion: 'A tu ritmo',
       nivel: 'estandar',
-      url: 'https://www.ceacgr.cl/aulavirtual/',
-      descripcion: 'Derechos, deberes, carrera funcionaria, calidades jurídicas (planta, contrata) y régimen disciplinario del personal del Estado.',
+      url: 'https://www.ceacgr.cl/aulavirtual/course/index.php',
+      descripcion: 'El reglamento que rige tu día a día en el Estado: ingreso, deberes y derechos, permisos, calificaciones y la carrera funcionaria. Casi obligado si eres planta o contrata.',
       gratuito: true,
       demo: false
     },
@@ -73,8 +68,8 @@
       modalidad: 'Online · Clave Única',
       duracion: 'A tu ritmo',
       nivel: 'estandar',
-      url: 'https://www.ceacgr.cl/aulavirtual/',
-      descripcion: 'Acto administrativo, procedimiento (Ley 19.880), plazos, notificaciones y control de la legalidad.',
+      url: 'https://www.ceacgr.cl/aulavirtual/course/index.php',
+      descripcion: 'Cómo actúa legalmente el Estado: el acto administrativo, los plazos de la Ley 19.880, las notificaciones y el control de Contraloría. Te ahorra tropezar con la forma.',
       gratuito: true,
       demo: false
     },
@@ -86,8 +81,8 @@
       modalidad: 'Online · Clave Única',
       duracion: 'A tu ritmo',
       nivel: 'estandar',
-      url: 'https://www.ceacgr.cl/aulavirtual/',
-      descripcion: 'Probidad administrativa, conflictos de interés, transparencia activa y Ley del Lobby. Anticorrupción en el ejercicio del cargo.',
+      url: 'https://www.ceacgr.cl/aulavirtual/course/index.php',
+      descripcion: 'Dónde está la raya: probidad, conflictos de interés, qué se publica por transparencia y cómo se registran las reuniones de lobby. La base para cuidar tu cargo.',
       gratuito: true,
       demo: false
     },
@@ -99,8 +94,8 @@
       modalidad: 'Online · Clave Única',
       duracion: 'A tu ritmo',
       nivel: 'estandar',
-      url: 'https://www.ceacgr.cl/aulavirtual/',
-      descripcion: 'Marco de la Ley Karin, prevención del acoso y la violencia en el trabajo, y procedimientos de denuncia en el Estado.',
+      url: 'https://www.ceacgr.cl/aulavirtual/course/index.php',
+      descripcion: 'Qué cambió con la Ley Karin y qué hacer frente al acoso o la violencia en el trabajo público: prevención, canales de denuncia y el rol de cada quien.',
       gratuito: true,
       demo: false
     },
@@ -112,8 +107,8 @@
       modalidad: 'Online · Clave Única',
       duracion: 'A tu ritmo',
       nivel: 'estandar',
-      url: 'https://www.ceacgr.cl/aulavirtual/',
-      descripcion: 'Buenas prácticas de seguridad de la información, gestión de riesgos y protección de datos en instituciones del Estado.',
+      url: 'https://www.ceacgr.cl/aulavirtual/course/index.php',
+      descripcion: 'Para no ser el eslabón débil: contraseñas, phishing, manejo de datos y resguardo de la información en un servicio público. Sin tecnicismos innecesarios.',
       gratuito: true,
       demo: false
     },
@@ -125,8 +120,8 @@
       modalidad: 'Online · Clave Única',
       duracion: 'A tu ritmo',
       nivel: 'estandar',
-      url: 'https://www.ceacgr.cl/aulavirtual/',
-      descripcion: 'Presupuesto público, contabilidad gubernamental (NICSP) y rendición de cuentas en el sector público.',
+      url: 'https://www.ceacgr.cl/aulavirtual/course/index.php',
+      descripcion: 'Cómo se mueve la plata del Estado: presupuesto, contabilidad gubernamental (NICSP) y rendición de cuentas. Para quien trabaja en finanzas o quiere entenderlas de una vez.',
       gratuito: true,
       demo: false
     },
@@ -138,14 +133,13 @@
       modalidad: 'Online · Clave Única',
       duracion: 'A tu ritmo',
       nivel: 'estandar',
-      url: 'https://www.ceacgr.cl/aulavirtual/',
-      descripcion: 'Funcionamiento municipal, competencias del municipio y particularidades del régimen aplicable a su personal.',
+      url: 'https://www.ceacgr.cl/aulavirtual/course/index.php',
+      descripcion: 'La versión municipal de la inducción: cómo funciona un municipio, qué puede y qué no, y las reglas propias del personal municipal.',
       gratuito: true,
       demo: false
     },
 
     // ── ChileCompra · Mercado Público ───────────────────────────────────────
-    // Certificación de competencias 100% online y gratuita, con Clave Única.
     {
       id: 'chilecompra-cert-basico',
       titulo: 'Certificación en Compras Públicas — Nivel Básico',
@@ -155,7 +149,7 @@
       duracion: '36 h',
       nivel: 'estandar',
       url: 'https://www.chilecompra.cl/certificacion/',
-      descripcion: 'Normativa (Ley 19.886), uso de la plataforma Mercado Público y ética en las compras. Para operar tareas diarias de abastecimiento.',
+      descripcion: 'El primer escalón para trabajar con Mercado Público: la Ley 19.886, cómo se usa la plataforma y la ética en las compras. Si recién partes en abastecimiento, este es el tuyo.',
       gratuito: true,
       demo: false
     },
@@ -168,7 +162,7 @@
       duracion: '44 h',
       nivel: 'estandar',
       url: 'https://www.chilecompra.cl/certificacion/',
-      descripcion: 'Evaluación de ofertas y gestión de contratos, para supervisores y gestores de contratos del Estado.',
+      descripcion: 'Para quien ya opera y quiere subir de nivel: evaluación de ofertas y administración de contratos. Pensado para supervisores y gestores de contrato.',
       gratuito: true,
       demo: false
     },
@@ -181,20 +175,20 @@
       duracion: '59 h',
       nivel: 'estandar',
       url: 'https://www.chilecompra.cl/certificacion/',
-      descripcion: 'Abastecimiento estratégico y análisis de datos para compras de alta complejidad. Para abogados, auditores y administradores.',
+      descripcion: 'El nivel experto: abastecimiento estratégico y análisis de datos para compras complejas. Apunta a abogados, auditores y administradores de contrato.',
       gratuito: true,
       demo: false
     },
     {
       id: 'chilecompra-capacitacion',
-      titulo: 'Cursos gratuitos para compradores y proveedores del Estado',
+      titulo: 'Cursos y charlas gratis sobre Mercado Público',
       proveedor: 'ChileCompra · Mercado Público',
       categoria: 'compras',
       modalidad: 'Online · Clave Única',
       duracion: 'Todo el año',
       nivel: 'estandar',
       url: 'https://capacitacion.chilecompra.cl/',
-      descripcion: 'Catálogo permanente de cursos y charlas online y gratuitas sobre la operación de Mercado Público.',
+      descripcion: 'Aparte de la certificación, ChileCompra dicta charlas y cursos cortos online durante todo el año sobre cómo comprar y vender al Estado. Conviene mirarlo seguido.',
       gratuito: true,
       demo: false
     },
@@ -209,7 +203,7 @@
       duracion: 'A tu ritmo',
       nivel: 'estandar',
       url: 'https://campus.serviciocivil.cl/',
-      descripcion: 'Formación transversal para servidores públicos en gestión y desarrollo de personas, con mirada de Estado.',
+      descripcion: 'Gestión de personas con mirada de Estado: liderazgo, clima y desarrollo de equipos en el sector público. Transversal, sirvas donde sirvas.',
       gratuito: true,
       demo: false
     },
@@ -222,7 +216,7 @@
       duracion: 'A tu ritmo',
       nivel: 'estandar',
       url: 'https://campus.serviciocivil.cl/',
-      descripcion: 'Inclusión de personas con discapacidad y gestión inclusiva de la diversidad en los servicios públicos.',
+      descripcion: 'Cómo hacer del servicio público un lugar más inclusivo: discapacidad, diversidad y los ajustes que la ley exige. Muy útil para jefaturas y RR.HH.',
       gratuito: true,
       demo: false
     },
@@ -235,7 +229,7 @@
       duracion: 'A tu ritmo',
       nivel: 'estandar',
       url: 'https://campus.serviciocivil.cl/',
-      descripcion: 'Cómo planificar, ejecutar y evaluar la capacitación en un servicio público.',
+      descripcion: 'El cómo detrás de la capacitación: detectar necesidades, armar el plan y evaluar si de verdad sirvió. Para quienes gestionan formación en su servicio.',
       gratuito: true,
       demo: false
     },
@@ -249,15 +243,14 @@
       modalidad: 'Online',
       duracion: '20–40 h',
       nivel: 'estandar',
-      url: 'https://academia.subdere.gov.cl/',
-      descripcion: 'Diplomados y cursos gratuitos para personal de municipios y gobiernos regionales, dictados por universidades acreditadas.',
+      url: 'https://academia.subdere.gov.cl/?page_id=1880',
+      descripcion: 'Diplomados y cursos gratis para funcionarios de municipios y gobiernos regionales, dictados por universidades acreditadas. Las becas salen por convocatoria; conviene estar atento al calendario del año.',
       gratuito: true,
       demo: false
     }
   ];
 
   // Mapa: valor de `area_profesional` que entrega la API → categoría de curso.
-  // Permite deep-link desde el panel de mercado (?area=salud) al directorio.
   var mapaAreas = {
     'salud': 'salud',
     'educacion': 'educacion',
@@ -279,7 +272,6 @@
   };
 
   // Planes de aviso (precios REFERENCIALES en CLP/mes — ajustar al vender).
-  // Pensados como punto de partida para negociar, no como tarifa publicada.
   var planes = [
     {
       id: 'destacado',

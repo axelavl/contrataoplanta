@@ -175,6 +175,7 @@ const _CURSO_CATS = [
   ['ti', 'TI y transformación digital'],
   ['prevencion', 'Prevención de riesgos'],
   ['atencion', 'Atención ciudadana'],
+  ['otros', 'Otros'],
 ];
 let _cursoEditId = null;
 function _escCurso(s) {
@@ -192,6 +193,7 @@ function _cfSet(v) {
   _cfEl('cf-orden').value = (v.orden != null ? v.orden : '');
   _cfEl('cf-gratuito').checked = v.gratuito !== false;
   _cfEl('cf-activo').checked = v.activo !== false;
+  _cfEl('cf-destacado').checked = (v.nivel === 'destacado');
 }
 function _cfReset() {
   _cursoEditId = null;
@@ -213,6 +215,7 @@ async function _guardarCurso() {
     orden: parseInt(_cfEl('cf-orden').value, 10) || 100,
     gratuito: _cfEl('cf-gratuito').checked,
     activo: _cfEl('cf-activo').checked,
+    nivel: _cfEl('cf-destacado').checked ? 'destacado' : 'estandar',
   };
   try {
     if (_cursoEditId) await api('/cursos/' + _cursoEditId, { method: 'PUT', body: JSON.stringify(body) });
@@ -244,7 +247,9 @@ async function loadCursos() {
       + '<th style="text-align:left;padding:6px">Estado</th><th></th></tr></thead><tbody>'
       + cursos.map(c => '<tr style="border-top:1px solid var(--borde,#e5e5e5)">'
         + '<td style="padding:6px">' + (c.orden != null ? c.orden : '') + '</td>'
-        + '<td style="padding:6px">' + _escCurso(c.titulo) + (c.gratuito ? ' <span class="pill green">Gratis</span>' : '') + '</td>'
+        + '<td style="padding:6px">' + _escCurso(c.titulo)
+          + (c.nivel === 'destacado' ? ' <span class="pill" style="background:#F2C26A;color:#3a2a00">★ Destacado</span>' : '')
+          + (c.gratuito ? ' <span class="pill green">Gratis</span>' : '') + '</td>'
         + '<td style="padding:6px">' + _escCurso(c.proveedor || '') + '</td>'
         + '<td style="padding:6px">' + _escCurso(c.categoria || '') + '</td>'
         + '<td style="padding:6px">' + (c.activo ? '<span class="pill green">Activo</span>' : '<span class="pill gray">Oculto</span>') + '</td>'

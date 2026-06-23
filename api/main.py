@@ -325,7 +325,10 @@ app.add_middleware(
         r")$"
     ),
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    # Incluye PUT y DELETE: sin ellos, el preflight CORS bloqueaba editar config
+    # (banner/mantenimiento), editar ofertas y editar/borrar cursos desde el
+    # panel admin → el navegador reportaba "Failed to fetch".
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     # allow_headers explícito — evita la combinación peligrosa
     # `allow_headers=["*"] + allow_credentials=True`, que expande la
     # superficie de CSRF desde subdominios permitidos.
