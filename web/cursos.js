@@ -95,6 +95,25 @@
     return c ? c.etiqueta : slug;
   }
 
+  // Dominio del curso → logo institucional. Usamos el favicon del PROPIO sitio
+  // que dicta el curso (primera parte, sin terceros): la marca real de CEA,
+  // ChileCompra, Servicio Civil, SUBDERE, etc. Si el curso trae `logo`
+  // explícito (futuro campo del admin) tiene prioridad. Si nada carga, queda
+  // el monograma de respaldo (ver _monoDe + wireLogos).
+  function _hostDe(url) { try { return new URL(url).hostname.replace(/^www\./, ''); } catch (e) { return ''; } }
+  function _logoDe(a) {
+    if (a.logo) return a.logo;
+    var h = _hostDe(a.url);
+    return h ? 'https://' + h + '/favicon.ico' : '';
+  }
+  function _monoDe(a) {
+    var base = String(a.proveedor || a.titulo || '?').split('·')[0].trim();
+    var caps = (base.match(/[A-ZÁÉÍÓÚÑ]/g) || []).join('');
+    if (caps.length >= 2) return caps.slice(0, 3);
+    var palabras = base.split(/\s+/).filter(Boolean);
+    return (palabras.slice(0, 2).map(function (p) { return p.charAt(0); }).join('') || base.slice(0, 2)).toUpperCase();
+  }
+
   function tarjeta(a) {
     var destacado = a.nivel === 'destacado';
     var sello = destacado ? '<span class="curso-sello">Destacado</span>' : '';
@@ -106,15 +125,28 @@
     var cta = a.url && a.url !== '#'
       ? '<a class="curso-cta" href="' + a.url + '" target="_blank" rel="' + rel + '">' + (a.gratuito ? 'Ir al curso →' : 'Ver curso →') + '</a>'
       : '<span class="curso-cta curso-cta--off">Próximamente</span>';
+    var logoUrl = _logoDe(a);
+    var logo = '<span class="curso-logo-wrap" aria-hidden="true">' + _monoDe(a) +
+      (logoUrl ? '<img class="curso-logo" src="' + logoUrl + '" alt="" loading="lazy">' : '') + '</span>';
     return '<article class="curso-card' + (destacado ? ' curso-card--top' : '') + (a.gratuito ? ' curso-card--gratis' : '') + '">' +
-      '<div class="curso-card-head">' + sello + grat + demo +
-        '<span class="curso-cat">' + etiquetaCat(a.categoria) + '</span></div>' +
-      '<h3 class="curso-titulo">' + a.titulo + '</h3>' +
-      '<div class="curso-prov">' + a.proveedor + '</div>' +
-      '<p class="curso-desc">' + a.descripcion + '</p>' +
-      '<div class="curso-meta"><span>📋 ' + a.modalidad + '</span><span>⏱ ' + a.duracion + '</span></div>' +
-      cta +
+      '<div class="curso-band"><span class="curso-cat">' + etiquetaCat(a.categoria) + '</span>' +
+        '<span class="curso-flags">' + sello + grat + demo + '</span></div>' +
+      '<div class="curso-body">' +
+        '<div class="curso-head">' + logo +
+          '<div class="curso-headtxt"><h3 class="curso-titulo">' + a.titulo + '</h3>' +
+          '<div class="curso-prov">' + a.proveedor + '</div></div></div>' +
+        '<p class="curso-desc">' + a.descripcion + '</p>' +
+        '<div class="curso-meta"><span>📋 ' + a.modalidad + '</span><span>⏱ ' + a.duracion + '</span></div>' +
+        cta +
+      '</div>' +
     '</article>';
+  }
+
+  // Si un favicon no carga, lo quitamos para que se vea el monograma de respaldo.
+  function wireLogos() {
+    contLista.querySelectorAll('.curso-logo').forEach(function (img) {
+      img.addEventListener('error', function () { img.remove(); }, { once: true });
+    });
   }
 
   function slotLibre() {
@@ -159,6 +191,7 @@
       return;
     }
     contLista.innerHTML = lista.map(tarjeta).join('') + slotLibre();
+    wireLogos();
     if (animar) {
       contLista.classList.remove('is-animando');
       void contLista.offsetWidth; // fuerza reflow para reiniciar la animación
