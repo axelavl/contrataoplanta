@@ -60,6 +60,7 @@ from api.services.sql import (
     ACTIVE_OFFER_SQL,
     OFFER_STATUS_SQL,
     STATUS_LEGACY_MAP,
+    build_cargo_relevance,
     build_ofertas_filters,
     ofertas_base_sql,
     ofertas_select_sql,
@@ -184,6 +185,14 @@ def get_ofertas(
         "az":         f"{sin_fechas}, cargo ASC NULLS LAST, id ASC",
     }.get(orden, f"{sin_fechas}, fecha_scraped DESC NULLS LAST, id DESC")
 
+    # Cuando hay búsqueda, anteponemos relevancia por cargo: los avisos cuyo
+    # TÍTULO contiene la frase aparecen primero; los que solo la mencionan en la
+    # descripción quedan después, sin perder el orden elegido dentro de cada grupo.
+    rel_sql = ""
+    rel_params: list[Any] = []
+    if q:
+        rel_sql, rel_params = build_cargo_relevance(q)
+
     select_sql = f"""
     WITH base AS (
         {ofertas_select_sql()}
@@ -191,7 +200,7 @@ def get_ofertas(
         {where_sql}
     )
     SELECT * FROM base
-    ORDER BY {order_sql}
+    ORDER BY {rel_sql}{order_sql}
     LIMIT %s OFFSET %s
     """
     count_sql = f"""
@@ -199,7 +208,7 @@ def get_ofertas(
     {ofertas_base_sql()}
     {where_sql}
     """
-    rows = execute_fetch_all(select_sql, [*params, pag.por_pagina, pag.offset])
+    rows = execute_fetch_all(select_sql, [*params, *rel_params, pag.por_pagina, pag.offset])
     total_row = execute_fetch_one(count_sql, params)
     total = int(total_row["total"]) if total_row else 0
     paginas = math.ceil(total / pag.por_pagina) if total else 0

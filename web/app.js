@@ -1238,6 +1238,38 @@ const CMP_SVG_SWAP = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none
 const CMP_SVG_CHECK = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
 
 // ── Renderizar tarjeta de oferta ───────────────────────────────────────────
+// Resalta en amarillo (mark.cop-hl) las palabras del texto relacionadas con la
+// búsqueda activa. Apertura morfológica por raíz: "ingeniero" resalta también
+// "ingeniera"/"ingeniería"; "administrador" resalta "administración". Compara
+// sin tildes, palabra por palabra, y devuelve HTML escapado (seguro).
+function resaltarBusqueda(texto, q) {
+  const safe = escHtml(texto || '');
+  const query = (q || '').trim();
+  if (!texto || query.length < 2) return safe;
+  const fold = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const STOP = new Set(['de', 'del', 'la', 'el', 'los', 'las', 'y', 'e', 'o', 'u', 'en', 'para', 'por', 'con', 'a', 'un', 'una', 'al']);
+  const raices = query.split(/\s+/).map(fold)
+    .filter((t) => t.length >= 3 && !STOP.has(t))
+    .map((t) => {
+      if (t.length <= 4) return t;
+      // raíz = quita hasta ~1/4 de la cola (flexión de género/derivación),
+      // mínimo 4 chars: "ingeniero"→"ingeni", "administrador"→"administr".
+      const cut = Math.max(4, t.length - (Math.floor(t.length / 4) + 1));
+      return t.slice(0, cut);
+    });
+  if (!raices.length) return safe;
+  // Tokeniza el original en palabras/separadores y escapa cada parte.
+  return String(texto).split(/([\p{L}\p{N}]+)/gu).map((seg, i) => {
+    if (i % 2 === 1) {
+      const fw = fold(seg);
+      return raices.some((r) => fw.startsWith(r))
+        ? '<mark class="cop-hl">' + escHtml(seg) + '</mark>'
+        : escHtml(seg);
+    }
+    return escHtml(seg);
+  }).join('');
+}
+
 function renderCard(oferta) {
   const cargoDisplay = normalizarTituloOferta(oferta.cargo);
   const renta = formatRenta(oferta.renta_bruta_min, oferta.renta_bruta_max, oferta.grado_eus);
@@ -1281,8 +1313,8 @@ function renderCard(oferta) {
     <div class="oferta-header">
       <div class="oferta-logo${instLogo.confiable ? ' oferta-logo--verificada' : ''}" title="${escAttr(instLogo.fuente)}">${instLogo.html}</div>
       <div class="oferta-meta">
-        <div class="oferta-institucion">${escHtml(_aplicarAcronimosForzados(oferta.institucion || '')) || 'Institución pública'}</div>
-        <div class="oferta-cargo"><span class="oferta-cargo-link">${escHtml(cargoDisplay)}</span></div>
+        <div class="oferta-institucion">${resaltarBusqueda(_aplicarAcronimosForzados(oferta.institucion || ''), estado.q) || 'Institución pública'}</div>
+        <div class="oferta-cargo"><span class="oferta-cargo-link">${resaltarBusqueda(cargoDisplay, estado.q)}</span></div>
         <div class="oferta-tipo-wrap">
           ${oferta.tipo_contrato ? `<span class="badge ${tipoCss}">${tipoLabel}</span>` : ''}
           ${regionCompleta ? `<span class="badge badge-region">🗺 ${escHtml(regionCompleta)}</span>` : ''}

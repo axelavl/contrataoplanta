@@ -1154,10 +1154,10 @@ body, .hero, .buscador-wrap, .oferta-card, .widget, .filtro-tag, .ribbon {
 header nav,
 header {
   position: sticky !important;
-  /* 33px ≈ altura real del ribbon (padding 8px + line-height). En móvil
-     se recalcula con var(--ribbon-h) si fuera necesario, pero este valor
-     funciona bien en todos los breakpoints actuales. */
-  top: 33px !important;
+  /* La cinta mide 32px. Antes esto estaba en 33px y dejaba 1px de hueco entre
+     la cinta y el nav por el que se veía el contenido de atrás al scrollear.
+     A 32px el nav queda al ras de la cinta (sin costura). */
+  top: 32px !important;
   z-index: 100 !important;
 }
 @media (max-width: 600px) {

@@ -191,6 +191,18 @@ FAMILIAS_ROOTS: dict[str, list[str]] = {
 }
 
 
+def build_cargo_relevance(q: str) -> tuple[str, list[Any]]:
+    """Fragmento de ORDER BY (con su parámetro) para priorizar por relevancia
+    cuando hay búsqueda: los avisos cuyo CARGO contiene la frase van primero; los
+    que solo la mencionan en la descripción quedan después. Accent-insensitive vía
+    `_norm_sql` (sin depender de unaccent). Se antepone al orden elegido.
+
+    Devuelve ('<expr>, ', [param]). El `cargo` referenciado es el de la CTE `base`.
+    """
+    expr = _norm_sql("cargo")
+    return (f"CASE WHEN {expr} LIKE %s THEN 0 ELSE 1 END, ", [_norm_like(q)])
+
+
 def build_ofertas_filters(
     q: str | None = None,
     region: str | None = None,
@@ -237,14 +249,17 @@ def build_ofertas_filters(
         norm_sigla_sql = _norm_sql("COALESCE(i.sigla, i.nombre_corto, '')")
         where.append(
             "("
-            # Búsqueda por FRASE: phraseto_tsquery exige que los lexemas aparezcan
-            # ADYACENTES, no sueltos. Así "administrador público" matchea el cargo
-            # "Administrador Público" y no cualquier aviso que tenga "administrador"
-            # en un lado y "público" en otro (antes era plainto_tsquery, que los
-            # unía con AND disperso y traía ruido). Los ILIKE/LIKE de abajo ya
-            # exigen la frase completa como substring, así que todo el bloque es
-            # coherente con búsqueda por frase.
-            "to_tsvector('spanish', coalesce(o.cargo, '') || ' ' || coalesce(i.nombre, '') || ' ' || coalesce(o.descripcion, '')) @@ phraseto_tsquery('spanish', %s) "
+            # Búsqueda por FRASE y morfológica sobre TÍTULO + INSTITUCIÓN.
+            # - phraseto_tsquery exige lexemas ADYACENTES (frase), no sueltos: así
+            #   "administrador público" matchea el cargo "Administrador Público" y
+            #   no avisos con "administrador" por un lado y "público" por otro.
+            # - El stemmer 'spanish' abre la morfología: "ingeniero" matchea
+            #   "ingeniera"/"ingeniería"; "administrador" matchea "administración".
+            # - La descripción se SACA del tsvector a propósito: incluirla hacía
+            #   que "administradora" matcheara 345 avisos que solo la mencionan
+            #   como requisito en el cuerpo. La descripción sigue buscándose, pero
+            #   solo por substring literal (ILIKE de abajo), que es preciso.
+            "to_tsvector('spanish', coalesce(o.cargo, '') || ' ' || coalesce(i.nombre, '')) @@ phraseto_tsquery('spanish', %s) "
             "OR o.cargo ILIKE %s "
             "OR COALESCE(i.nombre, o.institucion_nombre, '') ILIKE %s "
             "OR COALESCE(o.descripcion, '') ILIKE %s "

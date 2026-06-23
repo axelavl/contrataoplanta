@@ -28,8 +28,11 @@
 
 /* ---------- Resaltado de coincidencias ---------- */
 mark.cop-hl {
-  background: var(--acento-l, #FBE4C0); color: var(--gold-ink, #5C3A10);
+  background: #FDE047; color: #422006;   /* amarillo resaltador, texto oscuro legible */
   border-radius: 3px; padding: 0 2px; font-weight: 600;
+}
+:root[data-theme="dark"] mark.cop-hl {
+  background: #E0B83A; color: #1B1305;   /* amarillo algo más apagado para fondo oscuro */
 }
 
 /* ---------- Ficha (modal) ---------- */
