@@ -1405,13 +1405,13 @@ function renderRowCompacta(oferta) {
       ${regionCompleta ? `<div class="row-region">🗺 ${escHtml(regionCompleta)}</div>` : ''}
     </div>
     <div class="row-meta">
-      ${tipoLabel ? `<span class="badge ${tipoCss}" style="font-size:10px;white-space:nowrap">${tipoLabel}</span>` : '<span style="color:var(--texto3);font-size:11px">—</span>'}
+      ${tipoLabel ? `<span class="badge ${tipoCss}" style="font-size:10px;white-space:nowrap">${tipoLabel}</span>` : ''}
     </div>
     <div class="row-plazo">
       <div class="plazo-dot ${plazo.clase}"></div>
       <span style="color:${plazo.color}">${plazo.texto}</span>
     </div>
-    <div class="row-renta">${rentaHtml || '<span style="color:var(--texto3)">—</span>'}</div>
+    <div class="row-renta">${rentaHtml || ''}</div>
     <div class="row-acciones" style="display:flex;gap:6px;align-items:center;justify-content:flex-end">
       <button class="cop-cmp-btn cop-cmp-btn--icon" type="button" data-action="toggle-comparar" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}" title="Comparar oferta" aria-label="Comparar oferta">${CMP_SVG_SWAP}</button>
       <button class="btn-fav-row${esFav ? ' activo' : ''}"

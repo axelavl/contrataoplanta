@@ -81,16 +81,31 @@
           <svg viewBox="${G.viewBox}" class="cop-map-svg" role="img" aria-label="Mapa de Chile con vacantes por región">${paths}${dots}</svg>
           ${legend}
         </div>
-        <div class="cop-mapx-panel" id="cop-mapx-panel"></div>
+        <div class="cop-mapx-detalle">
+          <button class="cop-mapx-volver" type="button" aria-label="Volver al mapa">← Volver al mapa</button>
+          <div class="cop-mapx-panel" id="cop-mapx-panel"></div>
+        </div>
       </div>`;
 
     const panel = host.querySelector('#cop-mapx-panel');
+    const mapx = host.querySelector('.cop-mapx');
+    // Maestro-detalle en móvil: "Volver al mapa" oculta el panel y muestra el mapa.
+    const btnVolver = host.querySelector('.cop-mapx-volver');
+    if (btnVolver) {
+      btnVolver.addEventListener('click', () => {
+        if (mapx) mapx.classList.remove('is-detalle');
+        const mapEl = host.querySelector('.cop-mapx-map');
+        if (mapEl) mapEl.scrollIntoView({ block: 'nearest' });
+      });
+    }
     const placeholder = () => { panel.innerHTML = `<div class="cop-mapx-hint"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg><p>Tocá una región del mapa para ver sus ofertas aquí, sin perder el mapa de vista.</p></div>`; };
     if (selected && (counts[selected] || 0) >= 0) {/* el host inyectará */} else placeholder();
 
     function fire(el) {
       if (!el || !el.dataset.region) return;
       selected = el.dataset.region;
+      if (mapx) mapx.classList.add('is-detalle'); // móvil: entra el panel
+
       // re-pintar selección (stroke + dot) sin re-render completo
       host.querySelectorAll('path[data-region]').forEach((p) => {
         const on = p.dataset.region === selected;
