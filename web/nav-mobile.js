@@ -160,12 +160,11 @@
       }).filter(function (l) { return !!l.href; });
     } else {
       data = [
-        { href: 'index.html', text: 'Buscar empleos', cls: '', id: '' },
-        { href: 'favoritos.html', text: '♡ Mis favoritos', cls: 'nav-link-favs', id: 'mobile-nav-favoritos' },
+        { href: 'index.html', text: 'Buscar', cls: '', id: '' },
+        { href: 'favoritos.html', text: '♡ Favoritos', cls: 'nav-link-favs', id: 'mobile-nav-favoritos' },
         { href: 'preparacion.html', text: 'Preparación', cls: '', id: '' },
         { href: 'cursos.html', text: 'Cursos', cls: '', id: '' },
         { href: 'calculadora-renta.html', text: 'Calculadora de renta', cls: '', id: '' },
-        { href: 'estadisticas.html', text: 'Estadísticas', cls: '', id: '' },
         { href: 'faq.html', text: 'Preguntas frecuentes', cls: '', id: '' }
       ];
     }

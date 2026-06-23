@@ -149,7 +149,9 @@
   }
 
   function allRibbonFilled() {
-    var ids = ['ribbon-actualizado', 'ribbon-instituciones', 'ribbon-vigentes', 'ribbon-cierran'];
+    // 'ribbon-instituciones' se quitó de la cinta; no se incluye para que el
+    // polling pueda darse por completo cuando los 3 slots restantes están llenos.
+    var ids = ['ribbon-actualizado', 'ribbon-vigentes', 'ribbon-cierran'];
     return ids.every(function (id) { return isFilled(getRibbonSlot(id)); });
   }
 

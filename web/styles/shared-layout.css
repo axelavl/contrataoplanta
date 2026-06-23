@@ -107,6 +107,7 @@ header nav {
   border-radius: 6px;
   transition: all .15s;
   font-weight: 500;
+  white-space: nowrap; /* evita que las etiquetas del nav se partan en dos líneas */
 }
 
 .nav-links a:hover,

@@ -133,6 +133,7 @@ nav {
   text-decoration: none; padding: 8px 13px;
   border-radius: 6px; transition: all .15s;
   font-weight: 500;
+  white-space: nowrap; /* evita que "Buscar empleos" se parta en dos líneas */
 }
 .nav-links a:hover, .nav-links a.active {
   color: white; background: rgba(255,255,255,0.1);

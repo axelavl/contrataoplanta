@@ -34,14 +34,18 @@
 /gestion.html
   X-Robots-Tag: noindex, nofollow
 
-# Hash en nombres todavía no está implementado, así que los assets no
-# se cachean eternamente. Cuando se versionen (ej: index.abc123.css)
-# subir esto a `max-age=31536000, immutable`.
+# Los assets (CSS/JS) NO llevan hash en el nombre, así que un max-age largo
+# dejaba el build viejo cacheado y los deploys quedaban "invisibles" hasta que
+# expirara (antes: 1 h). Forzamos revalidación en cada carga: el navegador
+# pregunta al edge con su ETag y recibe 304 si no cambió (costo mínimo), pero
+# cualquier cambio se ve de inmediato tras desplegar. Determinista y sin riesgo.
+# Si algún día se versiona el nombre (index.abc123.css) o se les agrega
+# ?v=<hash> en el deploy, recién ahí conviene `max-age=31536000, immutable`.
 /styles/*
-  Cache-Control: public, max-age=3600
+  Cache-Control: public, max-age=0, must-revalidate
 
 /*.js
-  Cache-Control: public, max-age=3600
+  Cache-Control: public, max-age=0, must-revalidate
 
 /logo/*
   Cache-Control: public, max-age=604800

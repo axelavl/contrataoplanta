@@ -237,7 +237,14 @@ def build_ofertas_filters(
         norm_sigla_sql = _norm_sql("COALESCE(i.sigla, i.nombre_corto, '')")
         where.append(
             "("
-            "to_tsvector('spanish', coalesce(o.cargo, '') || ' ' || coalesce(i.nombre, '') || ' ' || coalesce(o.descripcion, '')) @@ plainto_tsquery('spanish', %s) "
+            # Búsqueda por FRASE: phraseto_tsquery exige que los lexemas aparezcan
+            # ADYACENTES, no sueltos. Así "administrador público" matchea el cargo
+            # "Administrador Público" y no cualquier aviso que tenga "administrador"
+            # en un lado y "público" en otro (antes era plainto_tsquery, que los
+            # unía con AND disperso y traía ruido). Los ILIKE/LIKE de abajo ya
+            # exigen la frase completa como substring, así que todo el bloque es
+            # coherente con búsqueda por frase.
+            "to_tsvector('spanish', coalesce(o.cargo, '') || ' ' || coalesce(i.nombre, '') || ' ' || coalesce(o.descripcion, '')) @@ phraseto_tsquery('spanish', %s) "
             "OR o.cargo ILIKE %s "
             "OR COALESCE(i.nombre, o.institucion_nombre, '') ILIKE %s "
             "OR COALESCE(o.descripcion, '') ILIKE %s "
