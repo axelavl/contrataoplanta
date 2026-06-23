@@ -709,6 +709,16 @@
         <button id="cf-cancelar" class="btn btn-ghost" style="display:none">Cancelar</button>
       </div>
       <div id="cursos-tabla"></div>
+
+      <hr style="margin:26px 0;border:none;border-top:1px solid var(--border,#e5e5e5)">
+      <h3 style="margin:0 0 6px">Categorías</h3>
+      <p class="text-muted" style="margin:0 0 12px;font-size:13px">Agregá, renombrá o eliminá categorías. Al borrar una, sus cursos pasan a “Otros”.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        <input id="cc-etiqueta" placeholder="Nueva categoría (ej. Innovación pública)" style="padding:8px;flex:1 1 240px">
+        <input id="cc-orden" type="number" placeholder="Orden" style="padding:8px;width:100px">
+        <button id="cc-agregar" class="btn btn-primary">Agregar categoría</button>
+      </div>
+      <div id="cursos-cats-tabla"></div>
     </div>
 
     <!-- Fuentes -->

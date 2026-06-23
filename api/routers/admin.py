@@ -688,6 +688,105 @@ def admin_borrar_curso(
     return {"id": curso_pk, "deleted": True}
 
 
+# ── Cursos: categorías (gestionables) ────────────────────────────────────────
+
+@router.get(f"/api/{ADMIN_PATH}/cursos/categorias", tags=["admin"])
+def admin_listar_categorias(_user: str = Depends(_verify_admin_jwt)) -> dict[str, Any]:
+    rows = execute_fetch_all(
+        "SELECT id, slug, etiqueta, orden, activo FROM cursos_categorias "
+        "ORDER BY orden ASC, etiqueta ASC",
+        [],
+    )
+    return {"categorias": rows}
+
+
+@router.post(f"/api/{ADMIN_PATH}/cursos/categorias", tags=["admin"])
+def admin_crear_categoria(
+    payload: dict[str, Any],
+    _user: str = Depends(_verify_admin_jwt),
+) -> dict[str, Any]:
+    etiqueta = (payload.get("etiqueta") or "").strip()
+    if not etiqueta:
+        raise HTTPException(400, "La etiqueta es obligatoria")
+    slug = ((payload.get("slug") or _slugify(etiqueta)) or "")[:40] or None
+    if not slug:
+        raise HTTPException(400, "Slug inválido")
+    orden = int(payload.get("orden") or 100)
+    with get_cursor() as (conn, cur):
+        cur.execute(
+            "INSERT INTO cursos_categorias (slug, etiqueta, orden, activo) "
+            "VALUES (%s, %s, %s, TRUE) ON CONFLICT (slug) DO NOTHING RETURNING id",
+            [slug, etiqueta[:120], orden],
+        )
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(409, "Ya existe una categoría con ese slug")
+        conn.commit()
+        nuevo_id = row["id"] if isinstance(row, dict) else row[0]
+    _auditar(_user, "crear_categoria_curso", "cursos_categoria", nuevo_id, {"slug": slug})
+    return {"id": nuevo_id, "slug": slug}
+
+
+@router.put(f"/api/{ADMIN_PATH}/cursos/categorias/{{cat_id}}", tags=["admin"])
+def admin_editar_categoria(
+    cat_id: int,
+    payload: dict[str, Any],
+    _user: str = Depends(_verify_admin_jwt),
+) -> dict[str, Any]:
+    """Renombra (etiqueta) o reordena/activa una categoría. El slug no se cambia
+    para no romper los cursos ya asignados."""
+    updates: dict[str, Any] = {}
+    if "etiqueta" in payload:
+        et = (payload.get("etiqueta") or "").strip()
+        if not et:
+            raise HTTPException(400, "La etiqueta no puede quedar vacía")
+        updates["etiqueta"] = et[:120]
+    if "orden" in payload:
+        try:
+            updates["orden"] = int(payload.get("orden") or 100)
+        except (TypeError, ValueError):
+            raise HTTPException(400, "orden debe ser numérico") from None
+    if "activo" in payload:
+        updates["activo"] = bool(payload.get("activo"))
+    if not updates:
+        raise HTTPException(400, "Sin campos para actualizar")
+    set_parts = [f"{c} = %({c})s" for c in updates]
+    params = dict(updates)
+    params["_id"] = cat_id
+    with get_cursor() as (conn, cur):
+        cur.execute(
+            f"UPDATE cursos_categorias SET {', '.join(set_parts)} WHERE id = %(_id)s",
+            params,
+        )
+        if cur.rowcount == 0:
+            raise HTTPException(404, "Categoría no encontrada")
+        conn.commit()
+    _auditar(_user, "editar_categoria_curso", "cursos_categoria", cat_id, {"campos": sorted(updates)})
+    return {"id": cat_id, "updated": list(updates.keys())}
+
+
+@router.delete(f"/api/{ADMIN_PATH}/cursos/categorias/{{cat_id}}", tags=["admin"])
+def admin_borrar_categoria(
+    cat_id: int,
+    _user: str = Depends(_verify_admin_jwt),
+) -> dict[str, Any]:
+    """Borra una categoría. Los cursos que la usaban pasan a 'Otros' para no
+    quedar huérfanos. 'Otros' no se puede borrar (es el destino de reasignación)."""
+    with get_cursor() as (conn, cur):
+        cur.execute("SELECT slug FROM cursos_categorias WHERE id = %s", [cat_id])
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(404, "Categoría no encontrada")
+        slug = row["slug"] if isinstance(row, dict) else row[0]
+        if slug == "otros":
+            raise HTTPException(400, "No se puede borrar 'Otros' (es el destino de reasignación)")
+        cur.execute("UPDATE cursos SET categoria = 'otros' WHERE categoria = %s", [slug])
+        cur.execute("DELETE FROM cursos_categorias WHERE id = %s", [cat_id])
+        conn.commit()
+    _auditar(_user, "borrar_categoria_curso", "cursos_categoria", cat_id, {"slug": slug})
+    return {"id": cat_id, "deleted": True}
+
+
 @router.put(f"/api/{ADMIN_PATH}/ofertas/{{oferta_id}}", tags=["admin"])
 def admin_editar_oferta(
     oferta_id: int,

@@ -232,11 +232,9 @@ async function loadCursos() {
     window._cursosWired = true;
     const g = _cfEl('cf-guardar'); if (g) g.addEventListener('click', _guardarCurso);
     const c = _cfEl('cf-cancelar'); if (c) c.addEventListener('click', _cfReset);
+    const ca = document.getElementById('cc-agregar'); if (ca) ca.addEventListener('click', _agregarCategoria);
   }
-  const sel = _cfEl('cf-categoria');
-  if (sel && !sel.options.length) {
-    sel.innerHTML = _CURSO_CATS.map(c => `<option value="${c[0]}">${c[1]}</option>`).join('');
-  }
+  loadCategoriasCursos(); // puebla el <select> de categorías y la tabla de gestión
   const cont = document.getElementById('cursos-tabla');
   cont.innerHTML = '<p class="text-muted">Cargando…</p>';
   try {
@@ -273,6 +271,65 @@ async function loadCursos() {
       catch (e) { toast(e.message, 'error'); }
     }));
   } catch (e) { cont.innerHTML = '<p class="text-muted">Error: ' + _escCurso(e.message) + '</p>'; }
+}
+
+function _escAttrC(s) { return _escCurso(s).replace(/"/g, '&quot;'); }
+
+async function _agregarCategoria() {
+  const et = document.getElementById('cc-etiqueta').value.trim();
+  if (!et) { toast('Escribí una etiqueta', 'error'); return; }
+  const ord = parseInt(document.getElementById('cc-orden').value, 10) || 100;
+  try {
+    await api('/cursos/categorias', { method: 'POST', body: JSON.stringify({ etiqueta: et, orden: ord }) });
+    toast('Categoría agregada');
+    document.getElementById('cc-etiqueta').value = '';
+    document.getElementById('cc-orden').value = '';
+    loadCategoriasCursos();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function loadCategoriasCursos() {
+  let cats = [];
+  try { const d = await api('/cursos/categorias'); cats = d.categorias || []; }
+  catch (e) { cats = _CURSO_CATS.map(function (c) { return { slug: c[0], etiqueta: c[1] }; }); }
+  // Poblar el <select> de categoría del formulario de cursos.
+  const sel = _cfEl('cf-categoria');
+  if (sel) {
+    const actual = sel.value;
+    sel.innerHTML = cats.map(function (c) { return '<option value="' + c.slug + '">' + _escCurso(c.etiqueta) + '</option>'; }).join('');
+    if (actual) sel.value = actual;
+  }
+  const cont = document.getElementById('cursos-cats-tabla');
+  if (!cont) return;
+  if (!cats.length) { cont.innerHTML = '<p class="text-muted">Sin categorías.</p>'; return; }
+  cont.innerHTML = '<table class="data-table" style="width:100%;border-collapse:collapse"><thead><tr>'
+    + '<th style="text-align:left;padding:6px;width:74px">Orden</th><th style="text-align:left;padding:6px">Etiqueta</th>'
+    + '<th style="text-align:left;padding:6px">Slug</th><th></th></tr></thead><tbody>'
+    + cats.map(function (c) {
+      return '<tr style="border-top:1px solid var(--borde,#e5e5e5)">'
+        + '<td style="padding:6px"><input type="number" data-cat-ord="' + c.id + '" value="' + (c.orden != null ? c.orden : 100) + '" style="padding:4px;width:64px"></td>'
+        + '<td style="padding:6px"><input data-cat-et="' + c.id + '" value="' + _escAttrC(c.etiqueta) + '" style="padding:5px;width:100%;max-width:300px"></td>'
+        + '<td style="padding:6px"><code class="text-small">' + _escCurso(c.slug) + '</code></td>'
+        + '<td style="padding:6px;white-space:nowrap"><button class="btn btn-ghost btn-sm" data-cat-save="' + c.id + '">Guardar</button> '
+        + (c.slug === 'otros' ? '' : '<button class="btn btn-ghost btn-sm" data-cat-del="' + c.id + '">Borrar</button>')
+        + '</td></tr>';
+    }).join('') + '</tbody></table>';
+  cont.querySelectorAll('[data-cat-save]').forEach(function (b) {
+    b.addEventListener('click', async function () {
+      const id = b.dataset.catSave;
+      const et = cont.querySelector('[data-cat-et="' + id + '"]').value.trim();
+      const ord = parseInt(cont.querySelector('[data-cat-ord="' + id + '"]').value, 10) || 100;
+      try { await api('/cursos/categorias/' + id, { method: 'PUT', body: JSON.stringify({ etiqueta: et, orden: ord }) }); toast('Categoría actualizada'); loadCategoriasCursos(); }
+      catch (e) { toast(e.message, 'error'); }
+    });
+  });
+  cont.querySelectorAll('[data-cat-del]').forEach(function (b) {
+    b.addEventListener('click', async function () {
+      if (!confirm('¿Borrar esta categoría? Sus cursos pasan a "Otros".')) return;
+      try { await api('/cursos/categorias/' + b.dataset.catDel, { method: 'DELETE' }); toast('Categoría borrada'); loadCategoriasCursos(); }
+      catch (e) { toast(e.message, 'error'); }
+    });
+  });
 }
 
 // ── Utils ──────────────────────────────────────────────────────

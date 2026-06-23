@@ -259,6 +259,21 @@ def get_cursos() -> dict[str, Any]:
     return {"cursos": rows}
 
 
+@router.get("/api/cursos/categorias")
+def get_cursos_categorias() -> dict[str, Any]:
+    """Categorías ACTIVAS de cursos (chips de /cursos.html). Fallback a [] si la
+    tabla aún no existe (el frontend usa las del archivo estático)."""
+    try:
+        rows = execute_fetch_all(
+            "SELECT slug, etiqueta FROM cursos_categorias "
+            "WHERE activo = TRUE ORDER BY orden ASC, etiqueta ASC",
+            [],
+        )
+    except Exception:
+        rows = []
+    return {"categorias": rows}
+
+
 # Versión del renderer. Se incluye en el ETag para invalidar cachés de CDN
 # cuando cambiamos el layout de la tarjeta.
 _OG_RENDERER_VERSION = "v2"

@@ -173,5 +173,21 @@
         }
       })
       .catch(function () { /* sin conexión: queda el fallback estático */ });
+
+    // Categorías administrables: si la API responde, reemplaza las del archivo
+    // y repinta los chips.
+    fetch(API + '/api/cursos/categorias')
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (d && Array.isArray(d.categorias) && d.categorias.length) {
+          D.categorias = d.categorias; // [{slug, etiqueta}]
+          if (filtroActivo !== 'todas' && !D.categorias.some(function (c) { return c.slug === filtroActivo; })) {
+            filtroActivo = 'todas';
+          }
+          pintarFiltros();
+          pintarLista();
+        }
+      })
+      .catch(function () { /* queda el set estático */ });
   } catch (e) { /* noop */ }
 })();
