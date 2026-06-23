@@ -1356,14 +1356,36 @@
     return true;
   }
 
+  // Un objetivo real es una declaración breve de propósito ("Contribuir a…",
+  // "Apoyar la gestión de…"). Varios avisos mal estructurados vuelcan bajo el
+  // header "Objetivo del cargo" un muro con condiciones/requisitos/competencias
+  // que luego se repite ya parseado en sus propias secciones. Si el texto bajo
+  // el header arranca con otra categoría, NO es un objetivo → lo descartamos
+  // para no duplicar contenido ni contaminar la sección.
+  // Stems (sin \b final para tolerar plurales: "Condiciones", "Requisitos"…)
+  // de categorías que NO son un objetivo. Si el texto bajo el header arranca
+  // con uno de estos, es un volcado mal clasificado.
+  var NON_OBJECTIVE_START_RE = /^(condicion|requisit|formaci[oó]n|competencia|conocimiento|habilidad|experiencia|especializ|especialidad|capacitaci[oó]n|licencia|certificaci[oó]n|documentaci[oó]n|documento|antecedente|renta|remuneraci[oó]n|honorario|jornada|horario|turno|vacante|beneficio|funcion|tarea|responsabilidad|nivel\s+(b[aá]sico|medio|avanzado))/i;
+  // Señal POSITIVA de objetivo real: arranca con lenguaje de propósito
+  // ("El objetivo…", "Misión…") o con un verbo de propósito en infinitivo.
+  // Se usa como gate del fallback por heading para no rescatar como objetivo
+  // frases de condiciones/requisitos sueltas que el resto de reglas no atrapó.
+  var OBJECTIVE_SENTENCE_RE = /^(el\s+|la\s+|este\s+)?(objetivo|prop[oó]sito|misi[oó]n|finalidad)\b|^(contribuir|apoyar|asesorar|colaborar|coordinar|gestionar|administrar|liderar|dirigir|planificar|desarrollar|brindar|prestar|proveer|otorgar|garantizar|asegurar|velar|promover|facilitar|aportar)\b/i;
+
   function extractObjective(text) {
     if (!text) return '';
     var lines = String(text).split('\n').map(trim).filter(Boolean);
     for (var i = 0; i < lines.length; i++) {
-      if (OBJECTIVE_HEADER_RE.test(lines[i])) {
-        var next = trim(lines[i + 1] || '');
-        if (next && next.length >= 18) return next.replace(/\.$/, '') + '.';
-      }
+      if (!OBJECTIVE_HEADER_RE.test(lines[i])) continue;
+      var next = trim(lines[i + 1] || '');
+      if (next.length < 18) continue;
+      // (a) arranca con otra categoría → volcado, no es objetivo.
+      if (NON_OBJECTIVE_START_RE.test(next)) return '';
+      // (b) un objetivo real es una declaración breve de propósito; un muro
+      // de texto (>400 chars) es casi siempre condiciones/requisitos pegados
+      // que ya viven parseados en sus secciones → se omite para no duplicar.
+      if (next.length > 400) return '';
+      return next.replace(/\.$/, '') + '.';
     }
     return '';
   }
@@ -1387,6 +1409,33 @@
     if (conf < 0) conf = 0;
     if (conf > 1) conf = 1;
     return conf;
+  }
+
+  // 1.3 — Explota ítems pegados por guiones SIN espacio que en realidad son
+  // varios: "-Iniciativa-Flexibilidad-Tolerancia a la presión" → 3 ítems.
+  // Conservador: sólo actúa cuando es claramente una enumeración (guion
+  // inicial, o ≥2 fronteras "minúscula-Mayúscula"). NO parte "teórico-práctico"
+  // (minúscula-minúscula) ni apellidos con un solo guion ("García-Lorca").
+  function splitHyphenEnumeration(s) {
+    var txt = String(s == null ? '' : s);
+    var boundaries = (txt.match(/[a-záéíóúüñ]-[A-ZÁÉÍÓÚÜÑ]/g) || []).length;
+    var leading = /^\s*-\s*[A-ZÁÉÍÓÚÜÑ]/.test(txt);
+    if (boundaries < 2 && !(leading && boundaries >= 1)) return [txt];
+    var work = txt.replace(/^\s*-\s*/, '')
+      .replace(/([a-záéíóúüñ])-([A-ZÁÉÍÓÚÜÑ])/g, '$1\n$2');
+    var parts = work.split('\n')
+      .map(function (p) { return p.replace(/^[\s\-–—]+/, '').replace(/[\s\-–—]+$/, '').trim(); })
+      .filter(function (p) { return p.length >= 2; });
+    return parts.length >= 2 ? parts : [txt];
+  }
+
+  function expandHyphenList(list) {
+    var out = [];
+    for (var i = 0; i < list.length; i++) {
+      var pieces = splitHyphenEnumeration(list[i]);
+      for (var j = 0; j < pieces.length; j++) out.push(pieces[j]);
+    }
+    return out;
   }
 
   function buildSemanticSections(payload) {
@@ -1520,9 +1569,16 @@
         out.postulacion.push(s);
         continue;
       }
-      if (hint === 'objetivo' && !out.objetivo && s.length >= 20) {
-        // Sólo lo usamos como objetivo si extractObjective no lo detectó
-        // ya por la regex literal "El objetivo del cargo es...".
+      if (hint === 'objetivo' && !out.objetivo && s.length >= 20
+          && OBJECTIVE_SENTENCE_RE.test(s)
+          && !NON_OBJECTIVE_START_RE.test(s)
+          && !CONDITIONS_RE.test(s)
+          && !POSTULATION_RE.test(s)
+          && !classifyRequirementItem(s)) {
+        // Sólo lo tomamos como objetivo si la frase ABRE como propósito
+        // (gate positivo) y no trae señales de otra categoría. Los avisos que
+        // vuelcan condiciones/requisitos bajo el header "Objetivo" caen fuera
+        // y se clasifican en su sección real más abajo, sin duplicar.
         out.objetivo = s.replace(/\.$/, '') + '.';
         continue;
       }
@@ -1546,6 +1602,16 @@
       // 6. Residual
       out.residual.push(s);
     }
+
+    // 1.3 — Expande run-ons pegados por guiones dentro de su misma categoría,
+    // antes de deduplicar. (Funciones queda fuera: ahí los guiones suelen ser
+    // parte de la redacción, no enumeración.)
+    out.condiciones = expandHyphenList(out.condiciones);
+    out.requisitos.obligatorios = expandHyphenList(out.requisitos.obligatorios);
+    out.requisitos.deseables = expandHyphenList(out.requisitos.deseables);
+    out.requisitos.especialidades = expandHyphenList(out.requisitos.especialidades);
+    out.requisitos.competencias = expandHyphenList(out.requisitos.competencias);
+    out.requisitos.documentos = expandHyphenList(out.requisitos.documentos);
 
     out.funciones = dedupeSentenceList(out.funciones, 10)
       .filter(function (t) { return !BROKEN_FUNCTION_RE.test(t); });

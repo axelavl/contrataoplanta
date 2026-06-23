@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<script src="boot.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plantilla de CV para sector público — contrata o planta .cl</title>
+<meta name="description" content="Plantilla editable e imprimible de CV para concursos del sector público chileno: experiencia trazable, normativa utilizada y resultados verificables.">
+<link rel="canonical" href="https://estadoemplea.pages.dev/plantilla-cv-sector-publico.html">
+<meta property="og:title" content="Plantilla de CV para sector público — contrata o planta .cl">
+<meta property="og:description" content="Plantilla editable e imprimible de CV pensada para concursos del Estado chileno.">
+<meta property="og:url" content="https://estadoemplea.pages.dev/plantilla-cv-sector-publico.html">
+<meta property="og:image" content="https://estadoemplea.pages.dev/og-default.jpg">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_CL">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="alternate icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#0A2E6E">
+<link rel="stylesheet" href="styles/fonts.css">
+<link rel="stylesheet" href="styles/shared-layout.css">
+<link rel="stylesheet" href="styles/redesign-overrides.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--texto);min-height:100vh}
+.skip-link{position:absolute;left:12px;top:-48px;z-index:1000;background:var(--azul,#0A2E6E);color:#fff;padding:10px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600}.skip-link:focus{top:10px}
+.page-content{max-width:920px;margin:0 auto;padding:32px 24px 80px}
+
+.barra{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.barra-info{font-size:13px;color:var(--texto2);line-height:1.6;max-width:560px}
+.barra-acciones{display:flex;gap:10px;flex-shrink:0}
+.btn{display:inline-flex;align-items:center;gap:6px;border:none;border-radius:8px;padding:11px 18px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;text-decoration:none}
+.btn-primary{background:var(--azul);color:#fff}
+.btn-secondary{background:var(--blanco);color:var(--azul);border:1px solid var(--borde)}
+
+/* HOJA CV */
+.cv{background:#fff;color:#1a1a1a;border:1px solid var(--borde);border-radius:8px;box-shadow:var(--sombra);padding:48px 52px;line-height:1.5}
+.cv [contenteditable]:focus{outline:2px solid var(--cielo);outline-offset:2px;border-radius:3px}
+.cv [contenteditable]:empty::before{content:attr(data-ph);color:#aaa}
+.cv-nombre{font-family:'Fraunces',Georgia,serif;font-size:30px;color:#0A2E6E;line-height:1.1}
+.cv-cargo{font-size:15px;color:#444;margin-top:4px;font-weight:600}
+.cv-contacto{font-size:13px;color:#555;margin-top:10px;display:flex;flex-wrap:wrap;gap:4px 18px}
+.cv-hr{height:2px;background:#0A2E6E;margin:18px 0 4px;opacity:.15}
+.cv-sec-tit{font-size:13px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#0A2E6E;margin:22px 0 10px}
+.cv-resumen{font-size:14px;color:#333}
+.cv-item{margin-bottom:16px}
+.cv-item-top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.cv-item-cargo{font-size:15px;font-weight:700;color:#1a1a1a}
+.cv-item-fecha{font-size:13px;color:#666;white-space:nowrap}
+.cv-item-org{font-size:13px;color:#0A2E6E;font-weight:600;margin-bottom:6px}
+.cv-item ul{margin:0 0 0 18px}
+.cv-item li{font-size:13.5px;color:#333;margin-bottom:3px}
+.cv-grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px 28px}
+.cv-line{font-size:13.5px;color:#333;margin-bottom:4px}
+.cv-tip{font-size:12px;color:#888;font-style:italic;margin-top:2px}
+
+.nota-final{font-size:12px;color:var(--texto3);line-height:1.6;margin-top:22px}
+.nota-final a{color:var(--cielo)}
+
+@media(max-width:680px){.cv{padding:30px 24px}.cv-grid2{grid-template-columns:1fr}}
+
+/* IMPRESIÓN: solo la hoja CV */
+@media print{
+  body{background:#fff}
+  #site-ribbon,#site-header,#site-footer,.breadcrumb,.barra,.nota-final,.skip-link{display:none !important}
+  .page-content{padding:0;max-width:none}
+  .cv{border:none;box-shadow:none;border-radius:0;padding:0}
+  .cv [contenteditable]:empty::before{content:''}
+  @page{margin:18mm}
+}
+</style>
+<script defer src="shared-shell.js"></script>
+</head>
+<body data-page="none">
+<a class="skip-link" href="#contenido-principal">Saltar al contenido</a>
+
+<div id="site-ribbon"></div>
+<div id="site-header"></div>
+
+<nav class="breadcrumb" aria-label="Ruta de navegación">
+  <div class="breadcrumb-inner">
+    <a href="index.html">Inicio</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="preparacion.html">Preparación</a>
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-actual">Plantilla de CV</span>
+  </div>
+</nav>
+
+<main id="contenido-principal">
+<div class="page-content">
+
+  <div class="barra">
+    <p class="barra-info">Edita directamente sobre la hoja (los campos son escribibles) y luego usa <strong>Guardar como PDF</strong>. Pensada para concursos: experiencia trazable, normativa utilizada y resultados verificables.</p>
+    <div class="barra-acciones">
+      <button class="btn btn-primary" id="btn-pdf">🖨 Guardar como PDF</button>
+      <a class="btn btn-secondary" href="guia-preparacion-cv-sector-publico.html">Ver guía</a>
+    </div>
+  </div>
+
+  <article class="cv" id="cv">
+    <div class="cv-nombre" contenteditable="true" data-ph="Nombre y apellidos">Nombre y apellidos</div>
+    <div class="cv-cargo" contenteditable="true" data-ph="Cargo o perfil al que postulas (ej: Profesional de Recursos Humanos)">Cargo o perfil al que postulas</div>
+    <div class="cv-contacto">
+      <span contenteditable="true" data-ph="correo@dominio.cl">correo@dominio.cl</span>
+      <span contenteditable="true" data-ph="+56 9 0000 0000">+56 9 0000 0000</span>
+      <span contenteditable="true" data-ph="Comuna, Región">Comuna, Región</span>
+      <span contenteditable="true" data-ph="RUT (opcional)">RUT (opcional)</span>
+    </div>
+
+    <div class="cv-hr"></div>
+
+    <div class="cv-sec-tit">Resumen profesional</div>
+    <div class="cv-resumen" contenteditable="true" data-ph="2–3 líneas orientadas al cargo: tu perfil, años de experiencia específica y el aporte concreto que ofreces.">
+      Profesional con X años de experiencia en [área], orientado a [función clave del cargo]. Experiencia comprobable en [proceso/normativa relevante] con resultados verificables.
+    </div>
+
+    <div class="cv-sec-tit">Experiencia laboral</div>
+
+    <div class="cv-item">
+      <div class="cv-item-top">
+        <span class="cv-item-cargo" contenteditable="true" data-ph="Cargo">Cargo</span>
+        <span class="cv-item-fecha" contenteditable="true" data-ph="MM/AAAA – MM/AAAA">MM/AAAA – MM/AAAA</span>
+      </div>
+      <div class="cv-item-org" contenteditable="true" data-ph="Institución / Servicio">Institución / Servicio</div>
+      <ul>
+        <li contenteditable="true" data-ph="Función principal + normativa/proceso utilizado (ej: Ley 19.880, Mercado Público, SIGFE).">Función principal + normativa o proceso utilizado.</li>
+        <li contenteditable="true" data-ph="Resultado verificable y cuantificado (ej: reduje observaciones documentales en 30%).">Resultado verificable y cuantificado.</li>
+      </ul>
+      <div class="cv-tip">Tip: separa experiencia total de experiencia específica al cargo. Cada periodo debe coincidir con tus certificados.</div>
+    </div>
+
+    <div class="cv-item">
+      <div class="cv-item-top">
+        <span class="cv-item-cargo" contenteditable="true" data-ph="Cargo">Cargo</span>
+        <span class="cv-item-fecha" contenteditable="true" data-ph="MM/AAAA – MM/AAAA">MM/AAAA – MM/AAAA</span>
+      </div>
+      <div class="cv-item-org" contenteditable="true" data-ph="Institución / Servicio">Institución / Servicio</div>
+      <ul>
+        <li contenteditable="true" data-ph="Función principal + normativa/proceso.">Función principal + normativa o proceso.</li>
+        <li contenteditable="true" data-ph="Resultado verificable.">Resultado verificable.</li>
+      </ul>
+    </div>
+
+    <div class="cv-sec-tit">Formación académica</div>
+    <div class="cv-line" contenteditable="true" data-ph="Título / Grado — Institución — Año">Título / Grado — Institución — Año</div>
+    <div class="cv-line" contenteditable="true" data-ph="Título / Grado — Institución — Año">Título / Grado — Institución — Año</div>
+
+    <div class="cv-sec-tit">Formación continua y certificaciones</div>
+    <div class="cv-line" contenteditable="true" data-ph="Curso / Diplomado — Institución — Horas — Año">Curso / Diplomado — Institución — Horas — Año</div>
+    <div class="cv-line" contenteditable="true" data-ph="Curso / Diplomado — Institución — Horas — Año">Curso / Diplomado — Institución — Horas — Año</div>
+
+    <div class="cv-sec-tit">Competencias y herramientas</div>
+    <div class="cv-grid2">
+      <div class="cv-line" contenteditable="true" data-ph="Herramienta relevante (ej: SIGFE)">Herramienta relevante (ej: SIGFE)</div>
+      <div class="cv-line" contenteditable="true" data-ph="Herramienta (ej: Mercado Público)">Herramienta (ej: Mercado Público)</div>
+      <div class="cv-line" contenteditable="true" data-ph="Competencia (ej: gestión documental)">Competencia (ej: gestión documental)</div>
+      <div class="cv-line" contenteditable="true" data-ph="Competencia (ej: atención ciudadana)">Competencia (ej: atención ciudadana)</div>
+    </div>
+
+    <div class="cv-sec-tit">Documentos de respaldo disponibles</div>
+    <div class="cv-line" contenteditable="true" data-ph="Ej: certificado de título, certificados de experiencia, antecedentes, situación militar al día.">Certificado de título, certificados de experiencia, antecedentes y documentos exigidos por las bases.</div>
+  </article>
+
+  <p class="nota-final">
+    Antes de enviar: confirma que cada dato coincide con tus certificados y con las bases del concurso. Respeta el formato y nombre de archivo que pida la institución.
+    ¿Dudas sobre las etapas? Vuelve al <a href="preparacion.html">centro de preparación</a>.
+  </p>
+
+</div>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="nav-mobile.js"></script>
+<script src="plantilla-cv.js"></script>
+
+</body>
+</html>

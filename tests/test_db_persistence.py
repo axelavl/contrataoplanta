@@ -157,6 +157,42 @@ class UpsertOfertaTests(unittest.TestCase):
         self.assertEqual(session.rollbacks, 1)
         self.assertEqual(session.commits, 0)
 
+    def test_fusion_difusa_entre_portales(self):
+        # Parte 1.8: misma oferta (con fecha de cierre) llegada desde otro
+        # portal. url_hash no existe, pero dedup_hash sí → se actualiza la fila
+        # gemela en vez de insertar un duplicado.
+        from types import SimpleNamespace
+        session = FakeSession(scripted_results=[
+            {"fetchone": None},                         # miss por url_hash
+            {"fetchone": SimpleNamespace(id=777)},      # hit por dedup_hash
+        ])
+        datos = _oferta_minima(
+            fecha_cierre="2026-07-15",
+            url_original="https://portal-b.cl/oferta/9",
+        )
+        es_nueva, actualizada = upsert_oferta(session, datos)
+
+        self.assertFalse(es_nueva)
+        self.assertTrue(actualizada)
+        self.assertEqual(len(session.calls), 3)  # SELECT url_hash + SELECT dedup + UPDATE
+        self.assertIn("dedup_hash", session.calls[1].sql)
+        self.assertIn("UPDATE ofertas", session.calls[2].sql)
+        self.assertEqual(session.calls[2].params["id"], 777)
+        self.assertEqual(session.commits, 1)
+
+    def test_insert_incluye_dedup_hash_y_renta_regional(self):
+        # Sin gemela: el INSERT debe enlazar las columnas nuevas.
+        session = FakeSession(scripted_results=[
+            {"fetchone": None},   # miss por url_hash
+            {"fetchone": None},   # miss por dedup_hash (hay fecha_cierre)
+        ])
+        datos = _oferta_minima(fecha_cierre="2026-07-15")
+        upsert_oferta(session, datos)
+        insert = session.calls[-1]
+        self.assertIn("INSERT INTO ofertas", insert.sql)
+        self.assertIn("dedup_hash", insert.params)
+        self.assertIn("renta_regional", insert.params)
+
 
 class MarcarOfertasCerradasTests(unittest.TestCase):
     def test_no_urls_returns_zero_without_sql(self):

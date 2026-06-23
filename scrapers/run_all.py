@@ -859,6 +859,29 @@ def persistir_corrida(
     except Exception as exc:
         log.warning("No se pudo registrar scraper_runs: %s", exc)
 
+    # Parte 1.10 — resumen legible de la corrida (además del registro en DB).
+    # "ok" = normalizadas y persistidas (nuevas + actualizadas). Los reason
+    # codes top dan visibilidad de descartes (incluye renta/contenido no
+    # parseable). El detalle por-campo se acumula en scrapers.ingest_summary
+    # cuando se instrumente el bucle de upsert.
+    top_descartes = ", ".join(
+        f"{code}={n}" for code, n in list(distribucion_descartes_reason_code.items())[:5]
+    )
+    log.info(
+        "ingesta_resumen instituciones=%d encontradas=%d ok=%d (nuevas=%d actualizadas=%d) "
+        "descartadas=%d vencidas=%d errores=%d tasa=%.1f%%%s",
+        len(reports),
+        total_encontradas,
+        total_nuevas + total_actualizadas,
+        total_nuevas,
+        total_actualizadas,
+        total_descartadas,
+        vencidas_cerradas,
+        total_errores,
+        tasa,
+        (f" | top_descartes[{top_descartes}]" if top_descartes else ""),
+    )
+
 
 def _print_evaluation_summary(runtime_sources: list[RuntimeSource]) -> None:
     by_decision: dict[str, int] = {}

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<script src="boot.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cursos y especializaciones para el sector público — contrata o planta .cl</title>
+<meta name="description" content="Directorio de cursos, diplomados y especializaciones que pide el sector público chileno: ChileCompra, SIGFE, derecho administrativo, gestión pública y más.">
+<link rel="canonical" href="https://estadoemplea.pages.dev/cursos.html">
+<meta property="og:title" content="Cursos y especializaciones para el sector público">
+<meta property="og:description" content="Capacitación alineada con lo que piden los concursos públicos en Chile.">
+<meta property="og:url" content="https://estadoemplea.pages.dev/cursos.html">
+<meta property="og:image" content="https://estadoemplea.pages.dev/og-default.jpg">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_CL">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Cursos y especializaciones para el sector público">
+<meta name="twitter:description" content="Capacitación alineada con lo que piden los concursos públicos.">
+<meta name="twitter:image" content="https://estadoemplea.pages.dev/og-default.jpg">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="alternate icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#0A2E6E">
+<link rel="stylesheet" href="styles/fonts.css">
+<link rel="stylesheet" href="styles/shared-layout.css">
+<link rel="stylesheet" href="styles/redesign-overrides.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--texto);-webkit-font-smoothing:antialiased;min-height:100vh}
+.skip-link{position:absolute;left:12px;top:-48px;z-index:1000;background:var(--azul,#0A2E6E);color:#fff;padding:10px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;transition:top .2s}
+.skip-link:focus{top:10px}
+.page-content{max-width:1100px;margin:0 auto;padding:40px 24px 80px}
+
+/* FILTROS */
+.cursos-filtros{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:26px}
+.curso-chip{background:var(--blanco);border:1px solid var(--borde);border-radius:20px;padding:8px 14px;font-size:13px;font-family:inherit;color:var(--texto2);cursor:pointer;transition:all .15s}
+.curso-chip:hover{border-color:var(--cielo)}
+.curso-chip--on{background:var(--azul);color:#fff;border-color:var(--azul)}
+
+/* GRID */
+.cursos-lista{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.curso-card{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--r-l);padding:20px;box-shadow:var(--sombra);display:flex;flex-direction:column}
+.curso-card--top{border-color:#F2C26A;box-shadow:0 6px 20px rgba(242,194,106,.25)}
+.curso-card-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.curso-sello{background:#F2C26A;color:#3a2a00;font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:3px 8px;border-radius:12px}
+.curso-demo{background:var(--bg2);color:var(--texto3);font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:3px 8px;border-radius:12px}
+.curso-cat{font-size:11px;color:var(--cielo);font-weight:600}
+.curso-titulo{font-family:'Fraunces',Georgia,serif;font-size:17px;color:var(--texto);line-height:1.3;margin-bottom:4px}
+.curso-prov{font-size:12px;color:var(--texto3);margin-bottom:10px}
+.curso-desc{font-size:13px;color:var(--texto2);line-height:1.6;flex:1;margin-bottom:14px}
+.curso-meta{display:flex;gap:14px;font-size:12px;color:var(--texto2);margin-bottom:14px}
+.curso-cta{display:inline-block;text-align:center;background:var(--azul);color:#fff;font-size:13px;font-weight:600;padding:9px 14px;border-radius:8px;text-decoration:none}
+.curso-cta--off{background:var(--bg2);color:var(--texto3);cursor:default}
+
+/* SLOT LIBRE */
+.curso-slot{flex-direction:row;align-items:center;gap:14px;border:2px dashed var(--borde);background:transparent;box-shadow:none;text-decoration:none;color:inherit;transition:border-color .15s}
+.curso-slot:hover{border-color:var(--cielo)}
+.curso-slot-ico{width:44px;height:44px;border-radius:50%;background:var(--cielo-l);color:var(--azul);display:grid;place-items:center;font-size:26px;flex-shrink:0}
+.curso-slot-txt{display:flex;flex-direction:column}
+.curso-slot-txt strong{font-size:15px;color:var(--texto)}
+.curso-slot-txt span{font-size:12px;color:var(--texto2)}
+
+/* ANUNCIATE */
+.anunciate{background:linear-gradient(135deg,var(--azul),#143d8a);color:#fff;border-radius:var(--r-l);padding:30px;margin-top:34px;display:grid;grid-template-columns:1.4fr 1fr;gap:24px;align-items:center}
+.anunciate h2{font-family:'Fraunces',Georgia,serif;font-size:24px;margin-bottom:10px}
+.anunciate p{font-size:14px;opacity:.92;line-height:1.6;margin-bottom:14px}
+.anunciate ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+.anunciate li{font-size:13.5px;opacity:.95;display:flex;gap:8px}
+.anunciate li::before{content:'✓';color:#F2C26A;font-weight:800}
+.anunciate-cta{display:inline-block;background:#F2C26A;color:#3a2a00;font-weight:700;font-size:14px;padding:12px 20px;border-radius:8px;text-decoration:none;margin-top:6px}
+.anunciate-panel{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:20px}
+.anunciate-panel h3{font-size:13px;letter-spacing:.6px;text-transform:uppercase;opacity:.8;margin-bottom:12px}
+.anunciate-nivel{display:flex;justify-content:space-between;font-size:14px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.14)}
+.anunciate-nivel:last-child{border-bottom:none}
+.anunciate-nivel b{color:#F2C26A}
+
+.bridge{font-size:13px;color:var(--texto2);background:var(--blanco);border:1px solid var(--borde);border-radius:12px;padding:16px 18px;margin-bottom:24px;line-height:1.6}
+.bridge a{color:var(--cielo);font-weight:600}
+
+.fuente-nota{font-size:12px;color:var(--texto3);line-height:1.6;margin-top:24px;padding-top:16px;border-top:1px solid var(--borde)}
+
+@media(max-width:880px){
+  .cursos-lista{grid-template-columns:1fr 1fr}
+  .anunciate{grid-template-columns:1fr}
+}
+@media(max-width:600px){.cursos-lista{grid-template-columns:1fr}}
+</style>
+<script defer src="shared-shell.js"></script>
+</head>
+<body data-page="cursos">
+<a class="skip-link" href="#contenido-principal">Saltar al contenido</a>
+
+<div id="site-ribbon"></div>
+<div id="site-header"></div>
+
+<nav class="breadcrumb" aria-label="Ruta de navegación">
+  <div class="breadcrumb-inner">
+    <a href="index.html">Inicio</a>
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-actual">Cursos y especializaciones</span>
+  </div>
+</nav>
+
+<main id="contenido-principal">
+
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <div class="page-kicker">Capacitación</div>
+    <h1 class="page-titulo">Cursos y especializaciones para el sector público</h1>
+    <p class="page-sub">Formación alineada con lo que efectivamente piden los concursos del Estado. Filtra por el área que te interesa.</p>
+  </div>
+</div>
+
+<div class="page-content">
+
+  <div class="bridge">
+    💡 ¿No sabes qué especialización conviene? Mira la <a href="panel-mercado.html">demanda real del mercado público</a> para ver qué áreas concentran más vacantes hoy.
+  </div>
+
+  <div class="cursos-filtros" id="cursos-filtros"></div>
+  <div class="cursos-lista" id="cursos-lista"></div>
+
+  <!-- ANÚNCIATE -->
+  <section class="anunciate" id="anunciate">
+    <div>
+      <h2>¿Ofreces capacitación para el sector público?</h2>
+      <p>Tu curso aparece justo frente a quienes están postulando a concursos del Estado y buscan la especialización que tú enseñas.</p>
+      <ul>
+        <li>Audiencia segmentada por área y región</li>
+        <li>Aparición ligada a las vacantes que exigen esa formación</li>
+        <li>Niveles destacado y estándar según visibilidad</li>
+      </ul>
+      <a class="anunciate-cta" href="mailto:contacto@estadoemplea.cl?subject=Quiero%20anunciar%20un%20curso">Quiero anunciar mi curso</a>
+    </div>
+    <div class="anunciate-panel">
+      <h3>Planes de aviso</h3>
+      <div id="cursos-planes"></div>
+      <p style="font-size:12px;opacity:.75;margin-top:12px;line-height:1.5">Precios referenciales (CLP/mes). Definimos el plan según volumen y objetivos.</p>
+    </div>
+  </section>
+
+  <p class="fuente-nota">
+    Los avisos marcados como <strong>“Ejemplo”</strong> son de demostración y no representan empresas reales ni implican relación comercial alguna.
+    Este directorio es un espacio publicitario: la inclusión de un curso no constituye recomendación ni garantía por parte del sitio.
+  </p>
+
+</div>
+
+</main>
+
+<div id="site-footer"></div>
+
+<script src="cursos-data.js"></script>
+<script src="cursos.js"></script>
+<script src="nav-mobile.js"></script>
+
+</body>
+</html>

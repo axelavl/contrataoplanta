@@ -377,6 +377,85 @@ def get_estadisticas() -> dict[str, Any]:
     }
 
 
+@router.get("/api/mercado/agregados")
+def get_mercado_agregados() -> dict[str, Any]:
+    """Agregaciones del mercado laboral público para el panel B2B.
+
+    Calcula sobre el universo COMPLETO de ofertas activas (no una muestra):
+    demanda por región, por área profesional (normalizada), por tipo de
+    vínculo, y cobertura de renta estructurada. Alimenta `panel-mercado.html`.
+    """
+    activo = ACTIVE_OFFER_SQL.replace("o.", "")
+
+    por_region = execute_fetch_all(
+        f"""
+        SELECT COALESCE(NULLIF(TRIM(region), ''), 'Sin región') AS region,
+               COUNT(*) AS total
+        FROM ofertas
+        WHERE {activo}
+        GROUP BY 1
+        ORDER BY total DESC, region ASC
+        LIMIT 16
+        """
+    )
+
+    # INITCAP(LOWER(...)) normaliza casing inconsistente (ej. "Salud" vs "salud").
+    por_area = execute_fetch_all(
+        f"""
+        SELECT COALESCE(NULLIF(INITCAP(LOWER(TRIM(area_profesional))), ''), 'Sin clasificar') AS area,
+               COUNT(*) AS total
+        FROM ofertas
+        WHERE {activo}
+        GROUP BY 1
+        ORDER BY total DESC, area ASC
+        LIMIT 12
+        """
+    )
+
+    por_tipo = execute_fetch_all(
+        f"""
+        SELECT INITCAP(LOWER(COALESCE(
+                   NULLIF(TRIM(tipo_contrato), ''),
+                   NULLIF(TRIM(calidad_juridica), ''),
+                   'Sin especificar'))) AS tipo,
+               COUNT(*) AS total
+        FROM ofertas
+        WHERE {activo}
+        GROUP BY 1
+        ORDER BY total DESC, tipo ASC
+        LIMIT 8
+        """
+    )
+
+    renta = execute_fetch_one(
+        f"""
+        SELECT
+            COUNT(*) AS total,
+            COUNT(*) FILTER (
+                WHERE renta_bruta_min IS NOT NULL OR renta_bruta_max IS NOT NULL
+            ) AS con_renta
+        FROM ofertas
+        WHERE {activo}
+        """
+    ) or {}
+
+    total = int(renta.get("total") or 0)
+    con_renta = int(renta.get("con_renta") or 0)
+    pct_renta = round(con_renta / total * 100) if total else 0
+
+    return {
+        "total_activas": total,
+        "por_region": por_region,
+        "por_area": por_area,
+        "por_tipo": por_tipo,
+        "renta": {
+            "total": total,
+            "con_renta": con_renta,
+            "pct_con_renta": pct_renta,
+        },
+    }
+
+
 @router.get("/api/instituciones")
 def get_instituciones(
     q: str | None = Query(None),

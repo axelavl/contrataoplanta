@@ -1,0 +1,185 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+import json, os, sys, csv
+from datetime import date, datetime
+from collections import Counter
+
+SUFFIXES = [
+    "1781842505054","1781842508373","1781842511540","1781842518914",
+    "1781842521255","1781842524145","1781842972698","1781842975165",
+    "1781842977656","1781842983130","1781842985607","1781842987805",
+]
+
+BASE = sys.argv[1]
+CSV_PATH = sys.argv[2]
+sep = "/" if "/" in BASE else "\\"
+
+def build_path(suf):
+    return BASE + sep + "mcp-workspace-web_fetch-" + suf + ".txt"
+
+def salvage_ofertas(raw):
+    """Extrae objetos oferta completos del array "ofertas":[ ... ]
+    aunque el JSON global este truncado a mitad de objeto."""
+    marker = '"ofertas":['
+    i = raw.find(marker)
+    if i == -1:
+        return []
+    j = i + len(marker)
+    n = len(raw)
+    ofertas = []
+    # escanear objetos top-level dentro del array
+    while j < n:
+        # saltar separadores/espacios
+        while j < n and raw[j] in ' \t\r\n,':
+            j += 1
+        if j >= n:
+            break
+        if raw[j] == ']':
+            break
+        if raw[j] != '{':
+            # algo inesperado; intentar avanzar al proximo '{'
+            nxt = raw.find('{', j)
+            if nxt == -1:
+                break
+            j = nxt
+        # escanear un objeto balanceado
+        depth = 0
+        in_str = False
+        esc = False
+        start = j
+        complete = False
+        k = j
+        while k < n:
+            c = raw[k]
+            if in_str:
+                if esc:
+                    esc = False
+                elif c == '\\':
+                    esc = True
+                elif c == '"':
+                    in_str = False
+            else:
+                if c == '"':
+                    in_str = True
+                elif c == '{':
+                    depth += 1
+                elif c == '}':
+                    depth -= 1
+                    if depth == 0:
+                        complete = True
+                        k += 1
+                        break
+            k += 1
+        if complete:
+            chunk = raw[start:k]
+            try:
+                ofertas.append(json.loads(chunk))
+            except Exception:
+                pass
+            j = k
+        else:
+            # objeto truncado al final del archivo -> descartar, fin
+            break
+    return ofertas
+
+all_ofertas = []
+loaded_files = 0
+file_errors = []
+per_file = {}
+for suf in SUFFIXES:
+    p = build_path(suf)
+    if not os.path.exists(p):
+        file_errors.append((suf, "no existe"))
+        continue
+    try:
+        with open(p, "r", encoding="utf-8") as f:
+            raw = f.read()
+    except Exception as e:
+        file_errors.append((suf, "read error: %r" % e))
+        continue
+    # intentar JSON completo primero
+    ofs = None
+    idx = raw.find("{")
+    if idx != -1:
+        try:
+            obj = json.loads(raw[idx:])
+            ofs = obj.get("ofertas", [])
+        except Exception:
+            ofs = None
+    if ofs is None:
+        ofs = salvage_ofertas(raw)
+        file_errors.append((suf, "salvage (JSON truncado) -> %d ofertas recuperadas" % len(ofs)))
+    per_file[suf] = len(ofs)
+    all_ofertas.extend(ofs)
+    loaded_files += 1
+
+total_raw = len(all_ofertas)
+
+by_id = {}
+for o in all_ofertas:
+    oid = o.get("id")
+    if oid not in by_id:
+        by_id[oid] = o
+unique_ofertas = list(by_id.values())
+unique_ids = len(by_id)
+
+sin_fecha = [o for o in unique_ofertas if o.get("fecha_cierre") is None]
+n_sin_fecha = len(sin_fecha)
+
+plat = Counter(o.get("plataforma") for o in sin_fecha)
+sect = Counter(o.get("sector") for o in sin_fecha)
+inst = Counter(o.get("institucion") for o in sin_fecha)
+
+uv = Counter()
+for o in sin_fecha:
+    v = o.get("url_oferta_valida")
+    if v is True: uv["True"] += 1
+    elif v is False: uv["False"] += 1
+    elif v is None: uv["None"] += 1
+    else: uv["otro(%r)" % v] += 1
+
+HOY = date(2026, 6, 19)
+def parse_fecha(s):
+    if not s or not isinstance(s, str):
+        return None
+    part = s.strip().split("T")[0].split(" ")[0]
+    try:
+        return datetime.strptime(part, "%Y-%m-%d").date()
+    except Exception:
+        return None
+
+ant_gt90 = ant_30_90 = ant_lt30 = ant_sin = 0
+for o in sin_fecha:
+    d = parse_fecha(o.get("fecha_scraped"))
+    if d is None:
+        ant_sin += 1; continue
+    delta = (HOY - d).days
+    if delta > 90: ant_gt90 += 1
+    elif delta >= 30: ant_30_90 += 1
+    else: ant_lt30 += 1
+
+cols = ["id","institucion","sigla","plataforma","sector","region","cargo",
+        "fecha_publicacion","fecha_scraped","url_oferta","url_bases",
+        "url_oferta_valida","url_bases_valida"]
+rows_written = 0
+with open(CSV_PATH, "w", encoding="utf-8", newline="") as f:
+    w = csv.writer(f, quoting=csv.QUOTE_MINIMAL)
+    w.writerow(cols)
+    for o in sin_fecha:
+        w.writerow([o.get(c) for c in cols])
+        rows_written += 1
+
+out = []
+out.append("=== COBERTURA ===")
+out.append("Archivos procesados: %d de 12" % loaded_files)
+out.append("Ofertas por archivo (pagina): " + ", ".join("p%d=%d" % (i+1, per_file.get(s,0)) for i,s in enumerate(SUFFIXES)))
+out.append("Ofertas totales leidas (con duplicados): %d" % total_raw)
+out.append("IDs unicos (todas, dedup): %d" % unique_ids)
+for s, e in file_errors:
+    out.append("  NOTA %s: %s" % (s, e))
+out.append("")
+out.append("=== (1) sin_fecha (fecha_cierre null, dedup por id): %d ===" % n_sin_fecha)
+out.append("")
+out.append("=== (2) Conteo por PLATAFORMA (desc) ===")
+for k, v in plat.most_common(): out.append("  %6d  %s" % (v, k))
+out.append("

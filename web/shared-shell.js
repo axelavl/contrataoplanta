@@ -148,12 +148,16 @@
   function applyActiveNav(root) {
     var map = {
       home: 'home', favoritos: 'favoritos', estadisticas: 'estadisticas', faq: 'faq',
-      historial: 'home', terminos: 'none', privacidad: 'none', descargo: 'none', ruta: 'ruta'
+      calculadora: 'calculadora', preparacion: 'preparacion', cursos: 'cursos', panel: 'none',
+      historial: 'home', terminos: 'none', privacidad: 'none', descargo: 'none', ruta: 'preparacion'
     };
     var target = map[page] || 'none';
     if (target === 'none') return;
     var el = root.querySelector('[data-nav="' + target + '"]');
-    if (el) el.classList.add('active');
+    if (el) {
+      el.classList.add('active');
+      el.setAttribute('aria-current', 'page'); // 3.3/3.6: "you are here" accesible
+    }
   }
 
   function updateFavCount(root) {

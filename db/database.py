@@ -4,7 +4,9 @@ Manejo de conexiones, modelos y operaciones de escritura.
 """
 
 import hashlib
+import json
 import logging
+import unicodedata
 from datetime import datetime, date
 from typing import Optional
 
@@ -61,6 +63,37 @@ def generar_id_estable(*partes, largo: int = 20) -> str:
     base = "||".join(limpiar_texto(parte) for parte in partes if parte is not None)
     digest = hashlib.sha1(base.lower().encode()).hexdigest()
     return digest[:largo]
+
+
+def _plegar_para_clave(texto: str | None) -> str:
+    """Minúsculas, sin tildes y sin puntuación, para comparar entre portales."""
+    base = limpiar_texto(texto)
+    if not base:
+        return ""
+    desc = unicodedata.normalize("NFD", base)
+    sin_tildes = "".join(c for c in desc if unicodedata.category(c) != "Mn")
+    solo_alnum = "".join(c if c.isalnum() or c.isspace() else " " for c in sin_tildes)
+    return " ".join(solo_alnum.lower().split())
+
+
+def clave_dedup_difusa(institucion, cargo, fecha_cierre, region) -> str:
+    """Clave estable para detectar la MISMA oferta llegada desde portales distintos
+    (Plan Parte 1.8). Combina institución + cargo + fecha de cierre + región,
+    todo plegado (sin tildes, sin puntuación, minúsculas) para que variaciones
+    de formato no rompan el match. No reemplaza al ``url_hash`` exacto: es una
+    segunda llave de fusión.
+    """
+    if hasattr(fecha_cierre, "isoformat"):
+        fecha = fecha_cierre.isoformat()
+    else:
+        fecha = limpiar_texto(str(fecha_cierre)) if fecha_cierre else ""
+    return generar_id_estable(
+        _plegar_para_clave(institucion),
+        _plegar_para_clave(cargo),
+        fecha,
+        _plegar_para_clave(region),
+        largo=40,
+    )
 
 
 def truncar_texto(valor, max_len: int) -> str | None:
@@ -129,6 +162,21 @@ def upsert_oferta(db: Session, datos: dict) -> tuple[bool, bool]:
     datos = normalizar_datos_oferta(datos)
     datos.setdefault("institucion_id", None)  # FK a instituciones; NULL si no aplica
     url_hash = url_a_hash(datos["url_original"])
+
+    # Parte 1.8 — llave difusa para detectar la misma oferta entre portales.
+    dedup_hash = clave_dedup_difusa(
+        datos.get("institucion_nombre"), datos.get("cargo"),
+        datos.get("fecha_cierre"), datos.get("region"),
+    )
+    # Parte 1.5 — tabla de renta multi-región reconstruida (NULL si no parseable).
+    from extraction.renta_regional import parse_renta_regional
+    _filas_renta = parse_renta_regional(datos.get("renta_texto") or datos.get("descripcion"))
+    renta_regional_json = (
+        json.dumps([f.as_dict() for f in _filas_renta], ensure_ascii=False)
+        if _filas_renta else None
+    )
+    params_extra = {"dedup_hash": dedup_hash, "renta_regional": renta_regional_json}
+
     try:
         # ¿Existe?
         row = db.execute(
@@ -137,30 +185,50 @@ def upsert_oferta(db: Session, datos: dict) -> tuple[bool, bool]:
         ).fetchone()
 
         if row is None:
+            # Parte 1.8 — antes de insertar, ¿llegó la misma oferta desde otro
+            # portal? Solo fusionamos cuando hay fecha de cierre (señal fuerte
+            # que evita unir avisos sin plazo del mismo cargo). Conservamos la
+            # fila original (enlace ya establecido) y la refrescamos.
+            if datos.get("fecha_cierre"):
+                gemela = db.execute(
+                    text("SELECT id FROM ofertas WHERE dedup_hash = :d AND url_hash <> :h LIMIT 1"),
+                    {"d": dedup_hash, "h": url_hash},
+                ).fetchone()
+                if gemela is not None:
+                    db.execute(text("""
+                        UPDATE ofertas SET
+                            activa         = TRUE,
+                            actualizada_en = NOW(),
+                            renta_regional = COALESCE(CAST(:renta_regional AS JSONB), renta_regional)
+                        WHERE id = :id
+                    """), {"id": gemela.id, "renta_regional": renta_regional_json})
+                    db.commit()
+                    return False, True
+
             # INSERT
             db.execute(text("""
                 INSERT INTO ofertas (
-                    id_externo, fuente_id, url_original, url_hash,
+                    id_externo, fuente_id, url_original, url_hash, dedup_hash,
                     cargo, descripcion,
                     institucion_id, institucion_nombre, sector, area_profesional,
                     tipo_cargo, nivel,
                     region, ciudad,
-                    renta_bruta_min, renta_bruta_max, renta_texto,
+                    renta_bruta_min, renta_bruta_max, renta_texto, renta_regional,
                     fecha_publicacion, fecha_cierre,
                     requisitos_texto,
                     activa, es_nueva, detectada_en
                 ) VALUES (
-                    :id_externo, :fuente_id, :url_original, :url_hash,
+                    :id_externo, :fuente_id, :url_original, :url_hash, :dedup_hash,
                     :cargo, :descripcion,
                     (SELECT id FROM instituciones WHERE id = :institucion_id), :institucion_nombre, :sector, :area_profesional,
                     :tipo_cargo, :nivel,
                     :region, :ciudad,
-                    :renta_bruta_min, :renta_bruta_max, :renta_texto,
+                    :renta_bruta_min, :renta_bruta_max, :renta_texto, CAST(:renta_regional AS JSONB),
                     :fecha_publicacion, :fecha_cierre,
                     :requisitos_texto,
                     TRUE, TRUE, NOW()
                 )
-            """), {**datos, "url_hash": url_hash})
+            """), {**datos, "url_hash": url_hash, **params_extra})
             db.commit()
             return True, False
 
@@ -184,6 +252,8 @@ def upsert_oferta(db: Session, datos: dict) -> tuple[bool, bool]:
                     fecha_publicacion   = COALESCE(:fecha_publicacion, fecha_publicacion),
                     fecha_cierre        = COALESCE(:fecha_cierre, fecha_cierre),
                     requisitos_texto    = COALESCE(NULLIF(:requisitos_texto, ''), requisitos_texto),
+                    dedup_hash          = COALESCE(:dedup_hash, dedup_hash),
+                    renta_regional      = COALESCE(CAST(:renta_regional AS JSONB), renta_regional),
                     activa              = TRUE,
                     actualizada_en      = NOW()
                 WHERE url_hash = :h
@@ -204,6 +274,8 @@ def upsert_oferta(db: Session, datos: dict) -> tuple[bool, bool]:
                 "fecha_publicacion": datos.get("fecha_publicacion"),
                 "fecha_cierre": datos.get("fecha_cierre"),
                 "requisitos_texto": datos.get("requisitos_texto"),
+                "dedup_hash": dedup_hash,
+                "renta_regional": renta_regional_json,
                 "h": url_hash
             })
             db.commit()

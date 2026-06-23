@@ -3088,6 +3088,46 @@ button:focus-visible,
 }
 
 /* ══════════════════════════════════════════════════════════════════════
+   PARTE 2.5 — Accesibilidad transversal (foco, área táctil, movimiento)
+   Este archivo lo cargan tanto la SPA (junto a index.css) como las páginas
+   internas (junto a shared-layout.css), así que aplica a todo el sitio.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Red de seguridad de foco por teclado: anillo visible en cualquier control
+   interactivo que no defina el suyo. Las reglas por clase (más específicas)
+   siguen ganando. --acento tiene contraste suficiente en claro y oscuro. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+/* Hamburguesa: área táctil cómoda en móvil (≥44px) sin tocar el ícono. */
+.hamburger {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Respeta "reducir movimiento" del sistema: desactiva animaciones,
+   transiciones y scroll suave para quien lo pide. No afecta a los demás. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
    UX MOBILE POLISH (abril 2026) — listado + detalle.
 
    Dos objetivos:
@@ -3694,6 +3734,9 @@ button:focus-visible,
   color: rgba(255, 255, 255, 0.88);
 }
 :root[data-theme="dark"] .modal-list .modal-list-toggle button {
+  color: var(--acento);
+}
+:root[data-theme="dark"] .modal-objetivo-toggle {
   color: var(--acento);
 }
 :root[data-theme="dark"] .modal-residual-title {

@@ -9,6 +9,13 @@
 # browser ahora **bloquea** cualquier recurso que viole la política.
 # `style-src` mantiene `'unsafe-inline'` por los `style=` del HTML de
 # oferta — moverlos a clases va en otro PR.
+#
+# Dominios de Google AdSense agregados a script-src / connect-src / frame-src
+# para habilitar publicidad (ver web/ads.js y MONETIZACION_ADS_RRSS.md). Los
+# anuncios están DESACTIVADOS por defecto (ads-config.js: enabled=false), así
+# que estos orígenes no se contactan hasta que se active AdSense. Nota: algunas
+# unidades de AdSense (Auto Ads) pueden requerir 'unsafe-inline' en script-src;
+# no se agrega aquí para no debilitar la política — evaluar caso a caso.
 
 /*
   X-Frame-Options: SAMEORIGIN
@@ -16,7 +23,7 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https:; connect-src 'self' https://contrataoplanta-production.up.railway.app; frame-ancestors 'self'; base-uri 'self'; form-action 'self' https://contrataoplanta-production.up.railway.app; object-src 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://pagead2.googlesyndication.com https://*.googlesyndication.com https://partner.googleadservices.com https://www.googletagservices.com https://adservice.google.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https:; connect-src 'self' https://contrataoplanta-production.up.railway.app https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.g.doubleclick.net https://www.google.com; frame-src https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self' https://contrataoplanta-production.up.railway.app; object-src 'none'; upgrade-insecure-requests
 
 # El panel de gestión cumple el CSP global desde que su JS vive en
 # gestion.js (externo, sin handlers inline). Acá sólo se evita que los

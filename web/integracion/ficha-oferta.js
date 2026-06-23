@@ -89,6 +89,30 @@
     } catch (e) { return out; }
   }
 
+  // Humaniza valores de máquina a etiquetas legibles. Nunca debe sobrevivir
+  // snake_case en la UI (Parte 1.4). Mapa explícito para los casos conocidos
+  // y fallback genérico (guion_bajo → "Palabras Capitalizadas") para el resto.
+  var _VALOR_LABELS = {
+    codigo_trabajo: 'Código del Trabajo',
+    planta: 'Planta', contrata: 'Contrata', honorarios: 'Honorarios',
+    suplencia: 'Suplencia', reemplazo: 'Reemplazo', otro: 'Otro',
+    no_informa: 'No informa', sin_datos: '', no_aplica: '',
+  };
+  function humanizarValor(v) {
+    if (v == null) return '';
+    var s = String(v).trim();
+    if (!s) return '';
+    var key = s.toLowerCase();
+    if (Object.prototype.hasOwnProperty.call(_VALOR_LABELS, key)) return _VALOR_LABELS[key];
+    // Fallback: sólo para valores de máquina (con guion bajo o todo minúscula);
+    // los textos ya legibles se devuelven tal cual.
+    if (s.indexOf('_') !== -1 || s === s.toLowerCase()) {
+      return s.replace(/_+/g, ' ').replace(/\s+/g, ' ').trim()
+        .replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+    }
+    return s;
+  }
+
   // --- helpers de bloques (devuelven '' si no hay datos => se ocultan) ---
   const kv = (k, v, isRenta) => v ? `<div class="cop-kv"><div class="cop-kv-k">${k}</div><div class="cop-kv-v${isRenta ? ' is-renta' : ''}">${escHtml(v)}</div></div>` : '';
   const sub = (t, items) => (items && items.length)
@@ -194,13 +218,23 @@
     $('cop-plazo-v').textContent = pl.txt;
 
     // resumen (oculta lo vacío)
+    // Modalidad ya viene humanizada (oferta.tipo); calidad jurídica puede
+    // llegar cruda ("codigo_trabajo") → humanizar. 6.4: si ambas coinciden,
+    // no repetir el mismo valor en dos campos (mostramos sólo Modalidad).
+    const _modalidadLbl = oferta.tipo || '';
+    const _calidadLbl = humanizarValor(oferta.calidadJuridica);
+    const _calidadMostrar = (_calidadLbl && _calidadLbl.toLowerCase() === String(_modalidadLbl).toLowerCase())
+      ? '' : _calidadLbl;
+    // 6.5: vacantes 0 → "No especificado" (no "0"); ausente → se oculta.
+    const _vacantesLbl = oferta.numeroVacantes === 0 ? 'No especificado'
+      : (oferta.numeroVacantes != null ? String(oferta.numeroVacantes) : '');
     const grid = `<div class="cop-grid">
       ${kv('Renta bruta', fmtRenta(oferta.renta), true)}
       ${kv('Jornada', oferta.jornada)}
-      ${kv('Modalidad', oferta.tipo)}
-      ${kv('Calidad jurídica', oferta.calidadJuridica)}
-      ${kv('Estamento', oferta.estamento)}
-      ${kv('Vacantes', oferta.numeroVacantes != null ? String(oferta.numeroVacantes) : '')}
+      ${kv('Modalidad', _modalidadLbl)}
+      ${kv('Calidad jurídica', _calidadMostrar)}
+      ${kv('Estamento', humanizarValor(oferta.estamento))}
+      ${kv('Vacantes', _vacantesLbl)}
       ${kv('Ubicación', ubic)}
       ${kv('Lugar de desempeño', oferta.lugarDesempenio)}
       ${kv('Publicación', oferta.fechaPublicacion)}
@@ -222,7 +256,24 @@
     const requisitos = reqInner
       ? `<div class="cop-sec"><div class="cop-sec-t">Requisitos para postular</div><div class="cop-subgrid">${reqInner}</div></div>` : '';
 
-    $('cop-body').innerHTML = grid + contacto + objetivo + requisitos +
+    // Parte 6.6 — tabla compacta de renta por región (solo si el backend la
+    // entregó parseada; si no, queda el campo "Renta bruta" del grid).
+    const _rentaReg = Array.isArray(oferta.rentaRegional) ? oferta.rentaRegional : [];
+    const _fmtPesos = (n) => (n == null ? '—' : '$' + Number(n).toLocaleString('es-CL'));
+    const _thS = 'padding:6px 8px;border-bottom:1px solid var(--borde,#e5e5e5);color:var(--texto3,#6b7280);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.4px';
+    const _tdS = 'padding:6px 8px;border-bottom:1px solid var(--borde,#eee);font-size:13px';
+    const rentaTabla = _rentaReg.length
+      ? `<div class="cop-sec"><div class="cop-sec-t">Renta por región</div>`
+        + `<table style="width:100%;border-collapse:collapse;margin-top:4px">`
+        + `<thead><tr><th style="${_thS};text-align:left">Región</th><th style="${_thS};text-align:right">Sin bono</th><th style="${_thS};text-align:right">Con bono</th></tr></thead>`
+        + `<tbody>` + _rentaReg.map((r) =>
+            `<tr><td style="${_tdS}">${escHtml(r.region || '—')}</td>`
+            + `<td style="${_tdS};text-align:right">${_fmtPesos(r.sin_bono)}</td>`
+            + `<td style="${_tdS};text-align:right">${_fmtPesos(r.con_bono)}</td></tr>`).join('')
+        + `</tbody></table></div>`
+      : '';
+
+    $('cop-body').innerHTML = grid + rentaTabla + contacto + objetivo + requisitos +
       sec('Funciones principales', oferta.funciones) +
       sec('Condiciones del cargo', oferta.condiciones) +
       sec('Cómo postular', oferta.comoPostular, true);

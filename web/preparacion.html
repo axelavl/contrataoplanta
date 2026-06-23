@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<script src="boot.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Preparación de concursos públicos — contrata o planta .cl</title>
+<meta name="description" content="Centro de preparación para concursos del Estado: ruta por etapas, plantilla de CV, simulacro de conocimientos del sector público y guías de postulación.">
+<link rel="canonical" href="https://estadoemplea.pages.dev/preparacion.html">
+<meta property="og:title" content="Preparación de concursos públicos — contrata o planta .cl">
+<meta property="og:description" content="Ruta por etapas, plantilla de CV y simulacro de conocimientos del Estado para postular mejor a concursos públicos.">
+<meta property="og:url" content="https://estadoemplea.pages.dev/preparacion.html">
+<meta property="og:image" content="https://estadoemplea.pages.dev/og-default.jpg">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_CL">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Preparación de concursos públicos">
+<meta name="twitter:description" content="Ruta, plantilla de CV y simulacro para concursos del Estado.">
+<meta name="twitter:image" content="https://estadoemplea.pages.dev/og-default.jpg">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="alternate icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#0A2E6E">
+<link rel="stylesheet" href="styles/fonts.css">
+<link rel="stylesheet" href="styles/shared-layout.css">
+<link rel="stylesheet" href="styles/redesign-overrides.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--texto);-webkit-font-smoothing:antialiased;min-height:100vh}
+.skip-link{position:absolute;left:12px;top:-48px;z-index:1000;background:var(--azul,#0A2E6E);color:var(--blanco,#FAFAF8);padding:10px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;transition:top .2s}
+.skip-link:focus{top:10px}
+.page-content{max-width:1100px;margin:0 auto;padding:40px 24px 80px}
+
+.sec-titulo{font-family:'Fraunces',Georgia,serif;font-size:24px;color:var(--azul);margin:38px 0 6px}
+.sec-sub{font-size:14px;color:var(--texto2);line-height:1.6;margin-bottom:20px;max-width:680px}
+
+/* RUTA POR ETAPAS */
+.ruta-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.etapa{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--r-l);padding:20px;box-shadow:var(--sombra);display:flex;flex-direction:column;text-decoration:none;color:inherit;transition:transform .15s,box-shadow .15s}
+.etapa:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(10,46,110,.12)}
+.etapa-num{font-size:11px;font-weight:800;letter-spacing:1px;color:var(--cielo);text-transform:uppercase;margin-bottom:8px}
+.etapa h3{font-size:16px;color:var(--texto);margin-bottom:8px;font-family:'Fraunces',Georgia,serif}
+.etapa p{font-size:13px;color:var(--texto2);line-height:1.6;flex:1}
+.etapa-link{font-size:13px;color:var(--cielo);font-weight:600;margin-top:12px}
+
+/* RECURSOS */
+.rec-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.rec-card{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--r-l);padding:22px;box-shadow:var(--sombra);display:flex;gap:16px;align-items:flex-start}
+.rec-ico{font-size:26px;line-height:1}
+.rec-card h3{font-size:16px;color:var(--texto);margin-bottom:6px}
+.rec-card p{font-size:13px;color:var(--texto2);line-height:1.6;margin-bottom:10px}
+.rec-btn{display:inline-block;background:var(--azul);color:var(--blanco);font-size:13px;font-weight:600;padding:9px 14px;border-radius:8px;text-decoration:none}
+.rec-btn--alt{background:var(--blanco);color:var(--azul);border:1px solid var(--borde)}
+
+/* SIMULACRO */
+.quiz-card{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--r-l);padding:26px;box-shadow:var(--sombra);max-width:760px}
+.quiz-progreso{font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--texto3);margin-bottom:12px}
+.quiz-pregunta{font-family:'Fraunces',Georgia,serif;font-size:20px;color:var(--texto);line-height:1.4;margin-bottom:18px}
+.quiz-opciones{display:flex;flex-direction:column;gap:10px}
+.quiz-op{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--bg);border:1px solid var(--borde);border-radius:10px;padding:13px 15px;font-size:15px;font-family:inherit;color:var(--texto);cursor:pointer;transition:border-color .15s,background .15s}
+.quiz-op:hover:not(:disabled){border-color:var(--cielo);background:var(--cielo-l)}
+.quiz-op:disabled{cursor:default}
+.quiz-op-letra{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--bg2);font-size:13px;font-weight:700;color:var(--texto2);flex-shrink:0}
+.quiz-op--ok{border-color:#16a34a;background:#dcfce7}
+.quiz-op--ok .quiz-op-letra{background:#16a34a;color:#fff}
+.quiz-op--mal{border-color:#dc2626;background:#fee2e2}
+.quiz-op--mal .quiz-op-letra{background:#dc2626;color:#fff}
+.quiz-feedback{margin-top:16px}
+.quiz-fb{font-size:13px;line-height:1.6;padding:13px 15px;border-radius:10px}
+.quiz-fb--ok{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
+.quiz-fb--mal{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+.quiz-nav{display:flex;justify-content:flex-end;margin-top:18px}
+.quiz-next{background:var(--azul);color:var(--blanco);border:none;border-radius:8px;padding:11px 20px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:opacity .15s}
+.quiz-next:disabled{opacity:.4;cursor:not-allowed}
+.quiz-resultado{text-align:center;padding:14px 0}
+.quiz-resultado-pct{font-family:'Fraunces',Georgia,serif;font-size:56px;color:var(--azul);line-height:1}
+.quiz-resultado-msg{font-size:15px;color:var(--texto2);margin:8px 0 20px}
+.quiz-premium{margin-top:24px;background:var(--bg);border:1px dashed var(--borde);border-radius:12px;padding:18px;font-size:13px;color:var(--texto2);line-height:1.6;text-align:left}
+.quiz-premium-cta{display:inline-block;margin-top:10px;color:var(--cielo);font-weight:700;text-decoration:none}
+
+/* CURSOS / AFILIADOS */
+.cursos-card{background:linear-gradient(135deg,var(--azul),#143d8a);color:var(--blanco);border-radius:var(--r-l);padding:26px;margin-top:14px}
+.cursos-card h3{font-family:'Fraunces',Georgia,serif;font-size:20px;margin-bottom:8px}
+.cursos-card p{font-size:14px;opacity:.9;line-height:1.6;max-width:620px}
+.cursos-badge{display:inline-block;background:#F2C26A;color:#3a2a00;font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;padding:4px 10px;border-radius:20px;margin-bottom:12px}
+
+.fuente-nota{font-size:12px;color:var(--texto3);line-height:1.6;margin-top:30px;padding-top:16px;border-top:1px solid var(--borde)}
+
+@media(max-width:880px){
+  .ruta-grid{grid-template-columns:1fr}
+  .rec-grid{grid-template-columns:1fr}
+}
+</style>
+<script defer src="shared-shell.js"></script>
+</head>
+<body data-page="preparacion">
+<a class="skip-link" href="#contenido-principal">Saltar al contenido</a>
+
+<div id="site-ribbon"></div>
+<div id="site-header"></div>
+
+<nav class="breadcrumb" aria-label="Ruta de navegación">
+  <div class="breadcrumb-inner">
+    <a href="index.html">Inicio</a>
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-actual">Preparación</span>
+  </div>
+</nav>
+
+<main id="contenido-principal">
+
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <div class="page-kicker">Centro de preparación</div>
+    <h1 class="page-titulo">Prepárate para tu concurso público</h1>
+    <p class="page-sub">Todo lo que necesitas para postular bien: una ruta clara por etapas, plantilla de CV, un simulacro de conocimientos del Estado y guías paso a paso.</p>
+  </div>
+</div>
+
+<div class="page-content">
+
+  <!-- RUTA POR ETAPAS -->
+  <h2 class="sec-titulo">La ruta, etapa por etapa</h2>
+  <p class="sec-sub">Sigue el orden. Cada etapa te lleva a una guía con lo concreto que debes hacer.</p>
+  <div class="ruta-grid">
+    <a class="etapa" href="guia-busqueda-empleo-publico.html">
+      <div class="etapa-num">Etapa 1</div>
+      <h3>Encontrar el concurso correcto</h3>
+      <p>Cómo buscar, leer una convocatoria y detectar si sigue vigente sin perder requisitos críticos.</p>
+      <span class="etapa-link">Ver guía →</span>
+    </a>
+    <a class="etapa" href="guia-preparacion-cv-sector-publico.html">
+      <div class="etapa-num">Etapa 2</div>
+      <h3>Construir tu CV</h3>
+      <p>Estructura, trazabilidad y evidencia documental: que cada dato coincida con bases y certificados.</p>
+      <span class="etapa-link">Ver guía →</span>
+    </a>
+    <a class="etapa" href="guia-postulacion-empleos-publicos.html">
+      <div class="etapa-num">Etapa 3</div>
+      <h3>Postular sin errores</h3>
+      <p>Documentos, formatos, canal de postulación y respaldo del envío. Las etapas de evaluación.</p>
+      <span class="etapa-link">Ver guía →</span>
+    </a>
+    <a class="etapa" href="ruta-ingreso-empleo-publico.html">
+      <div class="etapa-num">Etapa 4</div>
+      <h3>Entrevista y pruebas</h3>
+      <p>Cómo enfrentar la evaluación psicolaboral y la entrevista por competencias en el Estado.</p>
+      <span class="etapa-link">Ver ruta completa →</span>
+    </a>
+    <a class="etapa" href="guia-seguimiento-postulacion-publica.html">
+      <div class="etapa-num">Etapa 5</div>
+      <h3>Seguimiento</h3>
+      <p>Qué hacer después de postular: plazos, estados y cómo dar seguimiento a tu postulación.</p>
+      <span class="etapa-link">Ver guía →</span>
+    </a>
+    <a class="etapa" href="glosario-laboral-publico.html">
+      <div class="etapa-num">Apoyo</div>
+      <h3>Glosario laboral</h3>
+      <p>Planta, contrata, honorarios, grado, estamento, EUS y otros términos que aparecen en las bases.</p>
+      <span class="etapa-link">Ver glosario →</span>
+    </a>
+  </div>
+
+  <!-- RECURSOS DESCARGABLES -->
+  <h2 class="sec-titulo">Recursos listos para usar</h2>
+  <p class="sec-sub">Herramientas concretas para no partir de cero.</p>
+  <div class="rec-grid">
+    <div class="rec-card">
+      <div class="rec-ico">📄</div>
+      <div>
+        <h3>Plantilla de CV para sector público</h3>
+        <p>Formato pensado para concursos: experiencia trazable por función, normativa utilizada y resultados verificables. Editable e imprimible a PDF.</p>
+        <a class="rec-btn" href="plantilla-cv-sector-publico.html">Abrir plantilla</a>
+      </div>
+    </div>
+    <div class="rec-card">
+      <div class="rec-ico">💰</div>
+      <div>
+        <h3>Calculadora de renta por grado</h3>
+        <p>¿Cuánto paga el grado del concurso? Estima la renta bruta y el líquido según estamento y grado de la EUS.</p>
+        <a class="rec-btn rec-btn--alt" href="calculadora-renta.html">Abrir calculadora</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIMULACRO -->
+  <h2 class="sec-titulo">Simulacro: conocimientos del Estado</h2>
+  <p class="sec-sub">Pon a prueba lo que suele medirse en concursos: procedimiento administrativo, Estatuto Administrativo y probidad. Recibes la explicación de cada respuesta.</p>
+  <div class="quiz-card">
+    <div id="quiz-cont"></div>
+  </div>
+
+  <!-- Publicidad en contenido (se oculta hasta que AdSense inyecta el anuncio) -->
+  <div class="ad-slot ad-slot-contenido"><div class="ad-slot-inner">Publicidad</div></div>
+
+  <!-- CURSOS / AFILIADOS -->
+  <h2 class="sec-titulo">¿Necesitas preparación con apoyo?</h2>
+  <div class="cursos-card">
+    <span class="cursos-badge">Próximamente</span>
+    <h3>Directorio de cursos y diplomados</h3>
+    <p>Estamos reuniendo cursos de preparación, diplomados en administración pública y talleres de prueba psicolaboral. Si quieres aparecer aquí o que te avisemos cuando esté listo, escríbenos o activa una alerta.</p>
+  </div>
+
+  <p class="fuente-nota">
+    <strong>Aviso.</strong> El simulacro y las guías son material de estudio referencial basado en normativa vigente
+    (Ley 19.880 sobre Bases de los Procedimientos Administrativos; Ley 18.834 Estatuto Administrativo; Ley 20.880 sobre Probidad),
+    y no constituyen asesoría legal. Ante una duda concreta, revisa siempre las bases del concurso y la norma aplicable.
+  </p>
+
+</div>
+
+</main>
+
+<div id="site-footer"></div>
+
+<script src="preparacion.js"></script>
+<script src="nav-mobile.js"></script>
+<script src="ads-config.js"></script>
+<script src="ads.js"></script>
+
+</body>
+</html>

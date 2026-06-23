@@ -162,9 +162,11 @@
       data = [
         { href: 'index.html', text: 'Buscar empleos', cls: '', id: '' },
         { href: 'favoritos.html', text: '♡ Mis favoritos', cls: 'nav-link-favs', id: 'mobile-nav-favoritos' },
+        { href: 'preparacion.html', text: 'Preparación', cls: '', id: '' },
+        { href: 'cursos.html', text: 'Cursos', cls: '', id: '' },
+        { href: 'calculadora-renta.html', text: 'Calculadora de renta', cls: '', id: '' },
         { href: 'estadisticas.html', text: 'Estadísticas', cls: '', id: '' },
-        { href: 'faq.html', text: 'Preguntas frecuentes', cls: '', id: '' },
-        { href: 'ruta-ingreso-empleo-publico.html', text: 'Ruta de ingreso', cls: '', id: '' }
+        { href: 'faq.html', text: 'Preguntas frecuentes', cls: '', id: '' }
       ];
     }
 
@@ -335,7 +337,8 @@
       var favCount = JSON.parse(localStorage.getItem('fav_contrataoplanta') || '[]').length;
       if (favCount > 0) {
         var navFav = document.getElementById('nav-favoritos');
-        if (navFav) navFav.textContent = '♡ Mis favoritos (' + favCount + ')';
+        // 3.3: el contador va como badge, no como "(N)" inline ni fondo de fila.
+        if (navFav) navFav.innerHTML = '♡ Mis favoritos <span class="nav-fav-badge">' + favCount + '</span>';
       }
     } catch (e) { /* noop */ }
   }

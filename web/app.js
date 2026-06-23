@@ -175,6 +175,16 @@ document.addEventListener('click', function (e) {
       }
       break;
     }
+    case 'modal-objetivo-toggle': {
+      // Alterna el clamp del párrafo "Objetivo del cargo" y actualiza el
+      // texto/estado del botón. CSS controla el recorte vía `.is-clamped`.
+      var parrafoObj = document.getElementById('modal-objetivo');
+      if (!parrafoObj) break;
+      var colapsadoObj = parrafoObj.classList.toggle('is-clamped');
+      el.textContent = colapsadoObj ? 'Ver más' : (el.getAttribute('data-collapse-label') || 'Ver menos');
+      el.setAttribute('aria-expanded', colapsadoObj ? 'false' : 'true');
+      break;
+    }
     case 'noop':
       // Hace sólo stopPropagation (caso botón "bases no disponibles"
       // dentro de card, que evita que se dispare el click de la card).
@@ -1788,6 +1798,12 @@ async function cargarEstadisticas() {
     if (hsN) hsN.textContent = Number(data.nuevas_48h  || 0).toLocaleString('es-CL');
     if (hsI) hsI.textContent = Number(data.instituciones_activas || 0).toLocaleString('es-CL');
 
+    // Hero (12.1): una sola cifra coherente con la barra superior y stats —
+    // instituciones con al menos un concurso activo. Reemplaza el antiguo
+    // "N fuentes activas de M instituciones" (dos números que confundían).
+    const heroInst = document.getElementById('hero-instituciones-activas');
+    if (heroInst) heroInst.textContent = Number(data.instituciones_activas || 0).toLocaleString('es-CL');
+
     // Sectores
     const sec = Array.isArray(data.por_sector) ? data.por_sector : [];
     if (sec.length) renderSectores(sec);
@@ -2016,6 +2032,30 @@ function _toggleSection(sectionId, visible) {
   if (el) el.hidden = !visible;
 }
 
+// "Objetivo del cargo": algunos avisos pegan condiciones, requisitos y
+// competencias enteras dentro de este campo y el párrafo se vuelve un muro
+// de texto que satura el modal. Lo colapsamos a unas pocas líneas (clamp por
+// CSS vía `.is-clamped`) y exponemos un botón "Ver más"/"Ver menos".
+// Usamos un umbral por caracteres en vez de medir el layout porque el modal
+// puede estar oculto al renderizar (offsetHeight == 0) y la medición fallaría.
+const _OBJETIVO_UMBRAL_COLAPSO = 260;
+function _renderObjetivoColapsable(texto) {
+  const p = document.getElementById('modal-objetivo');
+  if (!p) return;
+  const limpio = String(texto || '');
+  p.textContent = limpio;
+  const largo = limpio.length > _OBJETIVO_UMBRAL_COLAPSO;
+  // Reset: cada apertura del modal reutiliza el mismo nodo, así que partimos
+  // siempre colapsado cuando el texto es largo y sin clamp cuando es corto.
+  p.classList.toggle('is-clamped', largo);
+  const btn = document.getElementById('modal-objetivo-toggle');
+  if (btn) {
+    btn.hidden = !largo;
+    btn.textContent = 'Ver más';
+    btn.setAttribute('aria-expanded', 'false');
+  }
+}
+
 // Marca un subgroupo como "aproximado" cuando la confianza media de la
 // categoría está bajo el umbral. Inserta o remueve un span sutil al
 // lado del título h5. La idea: que el usuario sepa cuándo confiar
@@ -2218,6 +2258,7 @@ function normalizarOferta(o) {
     comuna:       ciudadValida(o.ciudad, o.institucion) || '',
     jornada:      jornadaValida(o.jornada) || '',
     renta:        formatRenta(o.renta_bruta_min, o.renta_bruta_max, o.grado_eus), // string|null
+    rentaRegional: Array.isArray(o.renta_regional) ? o.renta_regional : null,    // [{region,sin_bono,con_bono,notas}]|null
     fechaPublicacion: frescuraTexto(o) || (o.fecha_publicacion ? formatFecha(o.fecha_publicacion) : null),
     fechaCierre:  o.fecha_cierre ? formatFecha(o.fecha_cierre) : null,
     diasRestantes: dias,
@@ -2522,7 +2563,7 @@ async function _abrirModalLegacy(ofertaId) {
       _setApproxBadge('sec-req-documentos', confR.documentos);
       _toggleSection('modal-objetivo-wrap', !!semantic.objetivo);
       if (semantic.objetivo) {
-        document.getElementById('modal-objetivo').textContent = semantic.objetivo;
+        _renderObjetivoColapsable(semantic.objetivo);
       }
       _toggleSection('modal-postulacion-wrap', semantic.postulacion.length > 0);
       _renderListInto('modal-postulacion-list', semantic.postulacion, { max: 5 });

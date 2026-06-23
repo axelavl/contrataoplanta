@@ -113,6 +113,7 @@ def ofertas_select_sql() -> str:
         o.renta_bruta_min,
         o.renta_bruta_max,
         o.grado_eus,
+        o.renta_regional,
         COALESCE(
             o.jornada,
             CASE

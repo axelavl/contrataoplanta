@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<script src="boot.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel de mercado laboral público (B2B) — contrata o planta .cl</title>
+<meta name="description" content="Inteligencia del mercado laboral público chileno: demanda por sector, región y área profesional, instituciones más activas y cobertura de renta. Reportes y datos para empresas e instituciones.">
+<link rel="canonical" href="https://estadoemplea.pages.dev/panel-mercado.html">
+<meta property="og:title" content="Panel de mercado laboral público (B2B)">
+<meta property="og:description" content="Demanda del empleo público chileno por sector, región y área. Reportes y datos para empresas e instituciones.">
+<meta property="og:url" content="https://estadoemplea.pages.dev/panel-mercado.html">
+<meta property="og:image" content="https://estadoemplea.pages.dev/og-default.jpg">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_CL">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Panel de mercado laboral público (B2B)">
+<meta name="twitter:description" content="Inteligencia del mercado laboral público chileno.">
+<meta name="twitter:image" content="https://estadoemplea.pages.dev/og-default.jpg">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="alternate icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#0A2E6E">
+<link rel="stylesheet" href="styles/fonts.css">
+<link rel="stylesheet" href="styles/shared-layout.css">
+<link rel="stylesheet" href="styles/redesign-overrides.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--texto);-webkit-font-smoothing:antialiased;min-height:100vh}
+.skip-link{position:absolute;left:12px;top:-48px;z-index:1000;background:var(--azul,#0A2E6E);color:#fff;padding:10px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;transition:top .2s}
+.skip-link:focus{top:10px}
+.page-content{max-width:1100px;margin:0 auto;padding:40px 24px 80px}
+.pm-actualizado{font-size:13px;color:var(--texto3);margin:-6px 0 22px}
+.pm-actualizado strong{color:var(--texto2)}
+
+/* KPIs */
+.pm-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:14px}
+.pm-kpi{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--r-l);padding:22px;box-shadow:var(--sombra)}
+.pm-kpi-label{font-size:11px;font-weight:700;color:var(--texto3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+.pm-kpi-valor{font-family:'Fraunces',Georgia,serif;font-size:38px;color:var(--azul);line-height:1}
+
+/* GRID DE PANELES */
+.pm-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:24px}
+.pm-card{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--r-l);padding:22px;box-shadow:var(--sombra)}
+.pm-card-full{grid-column:1/-1}
+.pm-card h2{font-family:'Fraunces',Georgia,serif;font-size:16px;color:var(--azul);margin-bottom:4px}
+.pm-card .sub{font-size:12px;color:var(--texto3);margin-bottom:16px}
+
+/* BARRAS */
+.pm-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.pm-row-k{font-size:13px;color:var(--texto2);min-width:140px;max-width:140px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pm-bar-wrap{flex:1;background:var(--bg2);border-radius:4px;height:9px;overflow:hidden}
+.pm-bar{height:9px;background:var(--azul-m,#1A6BCC);border-radius:4px;transition:width .6s ease}
+.pm-row-v{font-size:13px;font-weight:600;color:var(--texto);min-width:48px;text-align:right}
+.pm-vacio{font-size:13px;color:var(--texto3);padding:14px 0}
+
+/* RENTA */
+.pm-renta{display:flex;align-items:center;gap:20px}
+.pm-renta-num{font-family:'Fraunces',Georgia,serif;font-size:52px;color:var(--azul);line-height:1;flex-shrink:0}
+.pm-renta-txt{font-size:13px;color:var(--texto2);line-height:1.6}
+
+.pm-muestra-nota{font-size:12px;color:var(--texto3);margin-top:6px}
+
+/* BRIDGE CURSOS */
+.pm-bridge{background:linear-gradient(135deg,#143d8a,var(--azul));color:#fff;border-radius:var(--r-l);padding:24px;margin-top:24px}
+.pm-bridge h2{font-family:'Fraunces',Georgia,serif;font-size:20px;margin-bottom:8px}
+.pm-bridge p{font-size:14px;opacity:.92;line-height:1.6;max-width:680px;margin-bottom:8px}
+.pm-bridge .areas{font-weight:700;color:#F2C26A}
+.pm-bridge a{display:inline-block;margin-top:10px;background:#F2C26A;color:#3a2a00;font-weight:700;font-size:13px;padding:10px 16px;border-radius:8px;text-decoration:none}
+
+/* OFERTA B2B */
+.pm-b2b{margin-top:30px}
+.pm-b2b-titulo{font-family:'Fraunces',Georgia,serif;font-size:24px;color:var(--azul);margin-bottom:6px}
+.pm-b2b-sub{font-size:14px;color:var(--texto2);margin-bottom:20px;max-width:680px;line-height:1.6}
+.pm-planes{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.pm-plan{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--r-l);padding:22px;box-shadow:var(--sombra);display:flex;flex-direction:column}
+.pm-plan h3{font-size:16px;color:var(--texto);margin-bottom:6px}
+.pm-plan p{font-size:13px;color:var(--texto2);line-height:1.6;flex:1;margin-bottom:14px}
+.pm-plan-cta{display:inline-block;text-align:center;background:var(--azul);color:#fff;font-size:13px;font-weight:600;padding:10px 14px;border-radius:8px;text-decoration:none}
+.pm-plan-cta--alt{background:var(--blanco);color:var(--azul);border:1px solid var(--borde)}
+
+.fuente-nota{font-size:12px;color:var(--texto3);line-height:1.6;margin-top:28px;padding-top:16px;border-top:1px solid var(--borde)}
+
+@media(max-width:880px){
+  .pm-kpis{grid-template-columns:repeat(2,1fr)}
+  .pm-grid{grid-template-columns:1fr}
+  .pm-planes{grid-template-columns:1fr}
+  .pm-row-k{min-width:110px;max-width:110px}
+}
+</style>
+<script defer src="shared-shell.js"></script>
+</head>
+<body data-page="panel">
+<a class="skip-link" href="#contenido-principal">Saltar al contenido</a>
+
+<div id="site-ribbon"></div>
+<div id="site-header"></div>
+
+<nav class="breadcrumb" aria-label="Ruta de navegación">
+  <div class="breadcrumb-inner">
+    <a href="index.html">Inicio</a>
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-actual">Panel de mercado</span>
+  </div>
+</nav>
+
+<main id="contenido-principal">
+
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <div class="page-kicker">Inteligencia de mercado · B2B</div>
+    <h1 class="page-titulo">Panel del mercado laboral público</h1>
+    <p class="page-sub">Quién contrata, dónde y en qué áreas. Datos en vivo del empleo público chileno para empresas, universidades, gremios e instituciones.</p>
+  </div>
+</div>
+
+<div class="page-content">
+  <p class="pm-actualizado">Datos en vivo · última actualización: <strong id="pm-actualizado">cargando…</strong></p>
+
+  <div class="pm-kpis" id="pm-kpis"></div>
+
+  <div class="pm-grid">
+    <div class="pm-card">
+      <h2>Demanda por sector</h2>
+      <p class="sub">Ofertas activas según sector institucional.</p>
+      <div id="pm-sectores"></div>
+    </div>
+    <div class="pm-card">
+      <h2>Demanda por región</h2>
+      <p class="sub">Dónde se concentran las vacantes.</p>
+      <div id="pm-regiones"></div>
+    </div>
+    <div class="pm-card">
+      <h2>Demanda por área profesional</h2>
+      <p class="sub">Las áreas que más contrata el Estado hoy.</p>
+      <div id="pm-areas"></div>
+    </div>
+    <div class="pm-card">
+      <h2>Tipo de vínculo</h2>
+      <p class="sub">Distribución por calidad jurídica / contrato.</p>
+      <div id="pm-tipos"></div>
+    </div>
+    <div class="pm-card pm-card-full">
+      <h2>Instituciones más activas</h2>
+      <p class="sub">Mayor número de concursos vigentes.</p>
+      <div id="pm-instituciones"></div>
+    </div>
+    <div class="pm-card pm-card-full">
+      <h2>Transparencia de renta</h2>
+      <p class="sub">Qué proporción de ofertas publica renta de forma estructurada.</p>
+      <div class="pm-renta" id="pm-renta"></div>
+    </div>
+  </div>
+
+  <p class="pm-muestra-nota">Las vistas por región, área, vínculo y renta se calculan sobre una muestra de <strong id="pm-muestra-n">…</strong> ofertas activas (de <strong id="pm-total-real">…</strong> totales). KPIs y sectores reflejan el total.</p>
+
+  <!-- PUENTE A CURSOS -->
+  <section class="pm-bridge">
+    <h2>De la demanda a la capacitación</h2>
+    <p>Las áreas con más demanda ahora mismo: <span class="areas" id="pm-bridge-areas">…</span>. Ahí es donde la formación tiene mayor retorno.</p>
+    <p>Si ofreces cursos o especializaciones para el sector público, conecta tu oferta con esta demanda.</p>
+    <a href="cursos.html#anunciate">Anunciar un curso →</a>
+  </section>
+
+  <!-- OFERTA B2B -->
+  <section class="pm-b2b">
+    <h2 class="pm-b2b-titulo">Datos para tu organización</h2>
+    <p class="pm-b2b-sub">El mismo dataset que ves aquí, en el formato que necesitas. Para consultoras de RR.HH., universidades, gremios, prensa e instituciones que quieren entender el mercado laboral del Estado.</p>
+    <div class="pm-planes">
+      <div class="pm-plan">
+        <h3>Reporte mensual</h3>
+        <p>Informe del estado del empleo público: tendencias por sector, región y área, con comparativos mes a mes. Entrega en PDF.</p>
+        <a class="pm-plan-cta" href="mailto:contacto@estadoemplea.cl?subject=Reporte%20mensual%20mercado%20p%C3%BAblico">Solicitar reporte</a>
+      </div>
+      <div class="pm-plan">
+        <h3>Estudio a medida</h3>
+        <p>Análisis específico: una región, un estamento, un conjunto de instituciones o un rango de rentas. Con la profundidad que requieras.</p>
+        <a class="pm-plan-cta pm-plan-cta--alt" href="mailto:contacto@estadoemplea.cl?subject=Estudio%20a%20medida">Conversemos</a>
+      </div>
+      <div class="pm-plan">
+        <h3>Acceso a datos / API</h3>
+        <p>Acceso programático o entregas periódicas del dataset para alimentar tus propios análisis y tableros.</p>
+        <a class="pm-plan-cta pm-plan-cta--alt" href="mailto:contacto@estadoemplea.cl?subject=Acceso%20a%20datos%20/%20API">Pedir acceso</a>
+      </div>
+    </div>
+  </section>
+
+  <p class="fuente-nota">
+    Datos generados a partir de las ofertas agregadas por el sitio desde el portal central y cientos de fuentes institucionales.
+    Las vistas finas se calculan sobre una muestra reciente y son referenciales; los reportes B2B se elaboran sobre el dataset completo.
+    Las direcciones de contacto y los planes son referenciales y se ajustan según el alcance acordado.
+  </p>
+
+</div>
+
+</main>
+
+<div id="site-footer"></div>
+
+<script src="panel-mercado.js"></script>
+<script src="nav-mobile.js"></script>
+
+</body>
+</html>
