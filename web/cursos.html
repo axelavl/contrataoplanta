@@ -45,7 +45,18 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .curso-chip--on{background:var(--azul);color:#fff;border-color:var(--azul)}
 
 /* GRID */
-.cursos-lista{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.cursos-lista{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;transition:opacity .16s ease}
+/* Entrada suave de las tarjetas al cambiar filtro/chip (la clase la pone
+   cursos.js solo en ese momento; al tipear no se anima para no parpadear). */
+@keyframes cursoIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.cursos-lista.is-animando .curso-card{animation:cursoIn .32s cubic-bezier(.22,.61,.36,1) both}
+.cursos-lista.is-animando .curso-card:nth-child(2){animation-delay:.04s}
+.cursos-lista.is-animando .curso-card:nth-child(3){animation-delay:.08s}
+.cursos-lista.is-animando .curso-card:nth-child(4){animation-delay:.12s}
+.cursos-lista.is-animando .curso-card:nth-child(5){animation-delay:.16s}
+.cursos-lista.is-animando .curso-card:nth-child(6){animation-delay:.20s}
+.cursos-lista.is-animando .curso-card:nth-child(n+7){animation-delay:.24s}
+@media(prefers-reduced-motion:reduce){.cursos-lista{transition:none}.cursos-lista.is-animando .curso-card{animation:none}}
 .curso-card{position:relative;overflow:hidden;background:var(--blanco);border:1px solid var(--borde);border-radius:var(--r-l);padding:22px;box-shadow:var(--sombra);display:flex;flex-direction:column;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
 .curso-card:hover{transform:translateY(-3px);box-shadow:0 16px 34px rgba(14,32,70,.13);border-color:var(--cielo-l,#E1E8F6)}
 /* Acento lateral: barra completa a la izquierda — verde para gratis, dorado

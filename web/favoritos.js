@@ -384,8 +384,8 @@ document.getElementById('favs-grid')?.addEventListener('click', (e) => {
 if (window.Comparador) {
   const tray = document.createElement('div');
   tray.className = 'cop-cmp-tray';
-  tray.innerHTML = '<span class="cop-cmp-tray-txt"><b id="cmp-tray-n">0</b> para comparar</span>'
-    + '<button class="cop-cmp-tray-go" type="button">Ver comparador →</button>'
+  tray.innerHTML = '<span class="cop-cmp-tray-txt"><b id="cmp-tray-n">0</b> <span id="cmp-tray-lbl">ofertas seleccionadas</span></span>'
+    + '<button class="cop-cmp-tray-go" type="button">Comparar</button>'
     + '<button class="cop-cmp-tray-clear" type="button">Quitar</button>';
   document.body.appendChild(tray);
   tray.querySelector('.cop-cmp-tray-go').onclick = () => Comparador.abrir();
@@ -402,6 +402,8 @@ if (window.Comparador) {
     tray.classList.toggle('is-on', n > 0);
     const nEl = tray.querySelector('#cmp-tray-n');
     if (nEl) nEl.textContent = n;
+    const lblEl = tray.querySelector('#cmp-tray-lbl');
+    if (lblEl) lblEl.textContent = (n === 1 ? 'oferta seleccionada' : 'ofertas seleccionadas');
     document.querySelectorAll('.cop-cmp-btn[data-fav-comparar]').forEach((b) => {
       const on = Comparador.has(b.getAttribute('data-fav-comparar'));
       b.classList.toggle('is-on', on);

@@ -31,13 +31,13 @@
     if (_buscadorWired) return;
     _buscadorWired = true;
     var q = document.getElementById('cursos-q');
-    if (q) q.addEventListener('input', function () { busqueda.q = q.value.trim(); pintarLista(); });
+    if (q) q.addEventListener('input', function () { busqueda.q = q.value.trim(); pintarLista(false); });
     var fp = document.getElementById('cursos-fpago');
-    if (fp) fp.addEventListener('change', function () { busqueda.fpago = fp.value; pintarLista(); });
+    if (fp) fp.addEventListener('change', function () { busqueda.fpago = fp.value; repintarAnimado(); });
     var ins = document.getElementById('cursos-inst');
-    if (ins) ins.addEventListener('change', function () { busqueda.inst = ins.value; pintarLista(); });
+    if (ins) ins.addEventListener('change', function () { busqueda.inst = ins.value; repintarAnimado(); });
     var tp = document.getElementById('cursos-tipo');
-    if (tp) tp.addEventListener('change', function () { busqueda.tipo = tp.value; pintarLista(); });
+    if (tp) tp.addEventListener('change', function () { busqueda.tipo = tp.value; repintarAnimado(); });
   }
 
   // Deep-link: ?cat=<slug> o ?area=<area_profesional de la API>
@@ -85,7 +85,7 @@
         Array.prototype.forEach.call(contFiltros.querySelectorAll('.curso-chip'), function (x) {
           x.classList.toggle('curso-chip--on', x === b);
         });
-        pintarLista();
+        repintarAnimado();
       });
     });
   }
@@ -124,7 +124,18 @@
     '</a>';
   }
 
-  function pintarLista() {
+  var _reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  // Repinta con transición suave: fade-out breve del grid y entrada animada
+  // (escalonada) de las tarjetas. Se usa al cambiar filtros o chips; al tipear
+  // se repinta directo para no introducir lag.
+  function repintarAnimado() {
+    if (_reduce) { pintarLista(false); return; }
+    contLista.style.opacity = '0';
+    setTimeout(function () { pintarLista(true); contLista.style.opacity = '1'; }, 150);
+  }
+
+  function pintarLista(animar) {
     var q = _fold(busqueda.q);
     var lista = D.avisos.filter(function (a) {
       if (filtroActivo !== 'todas' && a.categoria !== filtroActivo) return false;
@@ -143,15 +154,27 @@
       return (y.nivel === 'destacado' ? 1 : 0) - (x.nivel === 'destacado' ? 1 : 0);
     });
     if (!lista.length) {
+      contLista.classList.remove('is-animando');
       contLista.innerHTML = '<p style="grid-column:1/-1;color:var(--texto3);padding:24px 4px">No encontramos cursos con esos criterios. Prueba con otras palabras o quita un filtro.</p>';
       return;
     }
     contLista.innerHTML = lista.map(tarjeta).join('') + slotLibre();
+    if (animar) {
+      contLista.classList.remove('is-animando');
+      void contLista.offsetWidth; // fuerza reflow para reiniciar la animación
+      contLista.classList.add('is-animando');
+      // Quita la clase al terminar para que el hover (transform) vuelva a
+      // funcionar y la animación no quede "pegada" por animation-fill-mode.
+      clearTimeout(contLista._animT);
+      contLista._animT = setTimeout(function () { contLista.classList.remove('is-animando'); }, 650);
+    } else {
+      contLista.classList.remove('is-animando');
+    }
   }
 
   pintarFiltros();
   pintarBuscador();
-  pintarLista();
+  pintarLista(true);
   pintarPlanes();
   wireMailto();
 
@@ -169,7 +192,7 @@
         if (d && Array.isArray(d.cursos) && d.cursos.length) {
           D.avisos = d.cursos;
           pintarBuscador();
-          pintarLista();
+          pintarLista(true);
         }
       })
       .catch(function () { /* sin conexión: queda el fallback estático */ });
@@ -185,7 +208,7 @@
             filtroActivo = 'todas';
           }
           pintarFiltros();
-          pintarLista();
+          pintarLista(true);
         }
       })
       .catch(function () { /* queda el set estático */ });
