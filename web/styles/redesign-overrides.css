@@ -2788,6 +2788,31 @@ header {
   overflow: visible;
 }
 
+/* ── Borde del widget (p.ej. "Alertas de empleo") parejo y visible ───────
+   Antes el borde tomaba un navy a 0.14 de opacidad y la sombra solo caía
+   hacia abajo (0 2px 10px), de modo que el lado SUPERIOR quedaba sin sombra
+   y con una línea casi invisible: el recuadro se veía "abierto" arriba.
+   Encima, por el device-pixel-ratio los anchos quedaban disparejos
+   (arriba ~2.6px, lados ~0.6px). Lo dejamos sólido, de 1px parejo en los
+   cuatro lados y con una sombra suave envolvente. */
+.widget {
+  border: 1px solid rgba(20, 46, 107, 0.20) !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 4px 14px rgba(20, 46, 107, 0.06) !important;
+}
+:root[data-theme="dark"] .widget {
+  border: 1px solid rgba(160, 185, 225, 0.22) !important;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 6px 18px rgba(0, 0, 0, 0.22) !important;
+}
+/* El header arrastra su propio fondo casi blanco; le damos un separador
+   inferior algo más nítido para que el bloque del título no se confunda
+   con el cuerpo del formulario. */
+.widget-header {
+  border-bottom-color: rgba(20, 46, 107, 0.10) !important;
+}
+:root[data-theme="dark"] .widget-header {
+  border-bottom-color: rgba(160, 185, 225, 0.16) !important;
+}
+
 /* ── 3. Bloque "Explora por región/sector": fondo integrado ────────
    Define --surface-alt con color derivado del tema activo para que
    los chips se integren con el body en vez de flotar sobre un fondo
