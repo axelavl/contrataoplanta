@@ -136,7 +136,7 @@ document.addEventListener('click', function (e) {
       var cmpId = Number(el.getAttribute('data-oferta-id') || 0);
       if (cmpId && window.Comparador) {
         if (!window.Comparador.toggle(cmpId) && window.Comparador.count() >= window.Comparador.MAX) {
-          (window.mostrarToast || window.alert)('Podés comparar hasta ' + window.Comparador.MAX + ' ofertas');
+          (window.mostrarToast || window.alert)('Puedes comparar hasta ' + window.Comparador.MAX + ' ofertas');
         }
       }
       break;
@@ -2350,7 +2350,7 @@ function _toggleCompararFicha(id) {
   const estabaAntes = Comparador.has(id);
   const ahora = Comparador.toggle(id);
   if (!estabaAntes && ahora === false) {
-    (window.mostrarToast || window.alert)('Podés comparar hasta ' + Comparador.MAX + ' ofertas');
+    (window.mostrarToast || window.alert)('Puedes comparar hasta ' + Comparador.MAX + ' ofertas');
   }
   if (window.repintarComparar) window.repintarComparar();
   return ahora;

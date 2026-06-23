@@ -164,7 +164,6 @@
         { href: 'favoritos.html', text: '♡ Favoritos', cls: 'nav-link-favs', id: 'mobile-nav-favoritos' },
         { href: 'preparacion.html', text: 'Preparación', cls: '', id: '' },
         { href: 'cursos.html', text: 'Capacítate', cls: '', id: '' },
-        { href: 'calculadora-renta.html', text: 'Calculadora de renta', cls: '', id: '' },
         { href: 'faq.html', text: 'Preguntas frecuentes', cls: '', id: '' }
       ];
     }

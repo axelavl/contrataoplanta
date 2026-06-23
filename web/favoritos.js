@@ -209,7 +209,7 @@ async function abrirFichaFav(ofertaId) {
       if (!window.Comparador) return false;
       const antes = Comparador.has(o.id);
       const ahora = Comparador.toggle(o.id);
-      if (!antes && ahora === false) alert('Podés comparar hasta ' + Comparador.MAX + ' ofertas');
+      if (!antes && ahora === false) alert('Puedes comparar hasta ' + Comparador.MAX + ' ofertas');
       if (window.repintarComparar) window.repintarComparar();
       return ahora;
     },
@@ -375,7 +375,7 @@ document.getElementById('favs-grid')?.addEventListener('click', (e) => {
   if (cmp && window.Comparador) {
     const id = parseInt(cmp.dataset.favComparar, 10);
     if (!Comparador.toggle(id) && Comparador.count() >= Comparador.MAX) {
-      alert('Podés comparar hasta ' + Comparador.MAX + ' ofertas');
+      alert('Puedes comparar hasta ' + Comparador.MAX + ' ofertas');
     }
   }
 });

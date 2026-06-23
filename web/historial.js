@@ -231,7 +231,7 @@ async function abrirFichaHist(id) {
       if (!window.Comparador) return false;
       const antes = Comparador.has(o.id);
       const ahora = Comparador.toggle(o.id);
-      if (!antes && ahora === false) alert('Podés comparar hasta ' + Comparador.MAX + ' ofertas');
+      if (!antes && ahora === false) alert('Puedes comparar hasta ' + Comparador.MAX + ' ofertas');
       return ahora;
     },
   });
