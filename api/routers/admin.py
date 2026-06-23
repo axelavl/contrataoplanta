@@ -569,6 +569,124 @@ def admin_toggle_activa(
     return {"id": oferta_id, "activa": nuevo_estado}
 
 
+# ── Cursos (directorio gestionable desde el panel) ───────────────────────────
+
+_CURSO_CAMPOS = (
+    "curso_id", "titulo", "proveedor", "categoria", "modalidad", "duracion",
+    "nivel", "url", "descripcion", "gratuito", "demo", "orden", "activo",
+)
+
+
+@router.get(f"/api/{ADMIN_PATH}/cursos", tags=["admin"])
+def admin_listar_cursos(_user: str = Depends(_verify_admin_jwt)) -> dict[str, Any]:
+    """Lista TODOS los cursos (activos e inactivos) para el panel."""
+    rows = execute_fetch_all(
+        """
+        SELECT id, curso_id, titulo, proveedor, categoria, modalidad, duracion,
+               nivel, url, descripcion, gratuito, demo, orden, activo
+        FROM cursos ORDER BY orden ASC, id ASC
+        """,
+        [],
+    )
+    return {"cursos": rows}
+
+
+@router.post(f"/api/{ADMIN_PATH}/cursos", tags=["admin"])
+def admin_crear_curso(
+    payload: dict[str, Any],
+    _user: str = Depends(_verify_admin_jwt),
+) -> dict[str, Any]:
+    """Crea un curso. Requerido: titulo. `curso_id` se deriva del título si falta."""
+    titulo = (payload.get("titulo") or "").strip()
+    if not titulo:
+        raise HTTPException(400, "El título es obligatorio")
+    datos = {
+        "curso_id": ((payload.get("curso_id") or _slugify(titulo)) or "")[:80] or None,
+        "titulo": titulo[:300],
+        "proveedor": (payload.get("proveedor") or "")[:200] or None,
+        "categoria": (payload.get("categoria") or "")[:40] or None,
+        "modalidad": (payload.get("modalidad") or "")[:80] or None,
+        "duracion": (payload.get("duracion") or "")[:60] or None,
+        "nivel": "destacado" if payload.get("nivel") == "destacado" else "estandar",
+        "url": (str(payload.get("url") or "").strip()) or None,
+        "descripcion": (payload.get("descripcion") or "") or None,
+        "gratuito": bool(payload.get("gratuito", True)),
+        "demo": bool(payload.get("demo", False)),
+        "orden": int(payload.get("orden") or 100),
+        "activo": bool(payload.get("activo", True)),
+    }
+    with get_cursor() as (conn, cur):
+        cur.execute(
+            """
+            INSERT INTO cursos (curso_id, titulo, proveedor, categoria, modalidad,
+                duracion, nivel, url, descripcion, gratuito, demo, orden, activo)
+            VALUES (%(curso_id)s, %(titulo)s, %(proveedor)s, %(categoria)s, %(modalidad)s,
+                %(duracion)s, %(nivel)s, %(url)s, %(descripcion)s, %(gratuito)s,
+                %(demo)s, %(orden)s, %(activo)s)
+            ON CONFLICT (curso_id) DO NOTHING
+            RETURNING id
+            """,
+            datos,
+        )
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(409, "Ya existe un curso con ese identificador")
+        conn.commit()
+        nuevo_id = row["id"] if isinstance(row, dict) else row[0]
+    _auditar(_user, "crear_curso", "curso", nuevo_id, {"titulo": titulo})
+    return {"id": nuevo_id}
+
+
+@router.put(f"/api/{ADMIN_PATH}/cursos/{{curso_pk}}", tags=["admin"])
+def admin_editar_curso(
+    curso_pk: int,
+    payload: dict[str, Any],
+    _user: str = Depends(_verify_admin_jwt),
+) -> dict[str, Any]:
+    """Edita un curso. Acepta cualquier subconjunto de los campos del curso."""
+    updates = {k: v for k, v in payload.items() if k in set(_CURSO_CAMPOS)}
+    if not updates:
+        raise HTTPException(400, "Sin campos válidos para actualizar")
+    if "nivel" in updates:
+        updates["nivel"] = "destacado" if updates["nivel"] == "destacado" else "estandar"
+    for b in ("gratuito", "demo", "activo"):
+        if b in updates:
+            updates[b] = bool(updates[b])
+    if "orden" in updates:
+        try:
+            updates["orden"] = int(updates["orden"] or 100)
+        except (TypeError, ValueError):
+            raise HTTPException(400, "orden debe ser numérico") from None
+    set_parts = [f"{c} = %({c})s" for c in updates]
+    params = dict(updates)
+    params["_pk"] = curso_pk
+    with get_cursor() as (conn, cur):
+        cur.execute(
+            f"UPDATE cursos SET {', '.join(set_parts)}, actualizada_en = NOW() WHERE id = %(_pk)s",
+            params,
+        )
+        if cur.rowcount == 0:
+            raise HTTPException(404, "Curso no encontrado")
+        conn.commit()
+    _auditar(_user, "editar_curso", "curso", curso_pk, {"campos": sorted(updates)})
+    return {"id": curso_pk, "updated": list(updates.keys())}
+
+
+@router.delete(f"/api/{ADMIN_PATH}/cursos/{{curso_pk}}", tags=["admin"])
+def admin_borrar_curso(
+    curso_pk: int,
+    _user: str = Depends(_verify_admin_jwt),
+) -> dict[str, Any]:
+    """Elimina un curso del directorio."""
+    with get_cursor() as (conn, cur):
+        cur.execute("DELETE FROM cursos WHERE id = %s", [curso_pk])
+        if cur.rowcount == 0:
+            raise HTTPException(404, "Curso no encontrado")
+        conn.commit()
+    _auditar(_user, "borrar_curso", "curso", curso_pk)
+    return {"id": curso_pk, "deleted": True}
+
+
 @router.put(f"/api/{ADMIN_PATH}/ofertas/{{oferta_id}}", tags=["admin"])
 def admin_editar_oferta(
     oferta_id: int,

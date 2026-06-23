@@ -1,19 +1,20 @@
 /* ──────────────────────────────────────────────────────────────────────────
    cursos-data.js · Directorio de cursos y especializaciones para el sector público
    ──────────────────────────────────────────────────────────────────────────
-   Modelo de monetización: empresas de capacitación pagan por aparecer aquí.
-   Niveles:
-     - destacado  → tarjeta arriba, con sello "Destacado" (mayor precio).
-     - estandar   → listado normal.
-     - slot libre → "Anúnciate aquí" (espacio en venta).
+   Contiene DOS tipos de entrada:
+     1. Cursos GRATUITOS oficiales del Estado (gratuito:true). Capacitación real
+        y sin costo de organismos públicos (AcademiaCEA/Contraloría, ChileCompra,
+        Servicio Civil, SUBDERE). Las URLs apuntan a la plataforma del organismo;
+        casi todas requieren Clave Única.
+     2. Avisos pagados (modelo de monetización): empresas de capacitación que
+        pagan por aparecer. Niveles: destacado (sello, arriba) / estandar.
 
    Las CATEGORÍAS están alineadas con las áreas que más demanda el sector
-   público (ver panel-mercado.html), para que el aviso le llegue a la persona
-   correcta en el momento que busca empleo en esa área.
+   público (ver panel-mercado.html).
 
-   IMPORTANTE: los listados de abajo son EJEMPLOS de demostración (marcados con
-   `demo:true`) para mostrar cómo se ve un aviso. No representan empresas reales
-   ni implican relación comercial. Reemplazar por avisadores reales al vender.
+   NOTA: para administrar este listado desde el panel admin se requiere mover
+   estos datos a una tabla en la DB + endpoints CRUD (ver docs). Mientras tanto,
+   esta es la fuente de verdad y se edita acá.
    ────────────────────────────────────────────────────────────────────────── */
 (function () {
   'use strict';
@@ -32,68 +33,226 @@
     { slug: 'atencion',        etiqueta: 'Atención ciudadana' }
   ];
 
-  // Avisos (ejemplos de demostración). Estructura de un aviso real:
-  //   { id, titulo, proveedor, categoria, modalidad, duracion, nivel, url, descripcion, demo }
+  // Estructura de un aviso:
+  //   { id, titulo, proveedor, categoria, modalidad, duracion, nivel, url,
+  //     descripcion, gratuito, demo }
   var avisos = [
+    // ── AcademiaCEA · Contraloría General de la República (CGR) ──────────────
+    // Aula virtual gratuita, 100% online, requiere Clave Única.
     {
-      id: 'demo-1',
-      titulo: 'Diplomado en Gestión Pública',
-      proveedor: 'Institución de ejemplo',
+      id: 'cea-induccion-estado',
+      titulo: 'Inducción General a la Administración del Estado',
+      proveedor: 'AcademiaCEA · Contraloría (CGR)',
       categoria: 'admin-publica',
-      modalidad: 'Online',
-      duracion: '120 h',
-      nivel: 'destacado',
-      url: '#',
-      descripcion: 'Formación integral en administración del Estado, modernización y gestión de personas.',
-      demo: true
-    },
-    {
-      id: 'demo-2',
-      titulo: 'Curso ChileCompra / Mercado Público (Ley 19.886)',
-      proveedor: 'Institución de ejemplo',
-      categoria: 'compras',
-      modalidad: 'Online en vivo',
-      duracion: '24 h',
-      nivel: 'destacado',
-      url: '#',
-      descripcion: 'Operación de la plataforma de compras públicas, bases de licitación y normativa aplicable.',
-      demo: true
-    },
-    {
-      id: 'demo-3',
-      titulo: 'Especialización en SIGFE y presupuesto público',
-      proveedor: 'Institución de ejemplo',
-      categoria: 'finanzas',
-      modalidad: 'Online',
-      duracion: '40 h',
+      modalidad: 'Online · Clave Única',
+      duracion: 'A tu ritmo',
       nivel: 'estandar',
-      url: '#',
-      descripcion: 'Ejecución presupuestaria, contabilidad gubernamental y reportería en SIGFE.',
-      demo: true
+      url: 'https://www.ceacgr.cl/aulavirtual/',
+      descripcion: 'Curso base sobre el Estado, sus instituciones, principios y el rol del funcionario público. Punto de partida ideal para quien recién ingresa.',
+      gratuito: true,
+      demo: false
     },
     {
-      id: 'demo-4',
-      titulo: 'Derecho administrativo y probidad (Ley 19.880 · 20.880)',
-      proveedor: 'Institución de ejemplo',
+      id: 'cea-estatuto-administrativo',
+      titulo: 'Estatuto Administrativo',
+      proveedor: 'AcademiaCEA · Contraloría (CGR)',
+      categoria: 'rrhh',
+      modalidad: 'Online · Clave Única',
+      duracion: 'A tu ritmo',
+      nivel: 'estandar',
+      url: 'https://www.ceacgr.cl/aulavirtual/',
+      descripcion: 'Derechos, deberes, carrera funcionaria, calidades jurídicas (planta, contrata) y régimen disciplinario del personal del Estado.',
+      gratuito: true,
+      demo: false
+    },
+    {
+      id: 'cea-derecho-administrativo',
+      titulo: 'Derecho Administrativo',
+      proveedor: 'AcademiaCEA · Contraloría (CGR)',
       categoria: 'derecho',
-      modalidad: 'Online',
-      duracion: '30 h',
+      modalidad: 'Online · Clave Única',
+      duracion: 'A tu ritmo',
       nivel: 'estandar',
-      url: '#',
-      descripcion: 'Procedimiento administrativo, actos, plazos, probidad y transparencia.',
-      demo: true
+      url: 'https://www.ceacgr.cl/aulavirtual/',
+      descripcion: 'Acto administrativo, procedimiento (Ley 19.880), plazos, notificaciones y control de la legalidad.',
+      gratuito: true,
+      demo: false
     },
     {
-      id: 'demo-5',
-      titulo: 'Transformación digital del Estado',
-      proveedor: 'Institución de ejemplo',
+      id: 'cea-etica-transparencia-lobby',
+      titulo: 'Ética, Probidad, Transparencia y Lobby',
+      proveedor: 'AcademiaCEA · Contraloría (CGR)',
+      categoria: 'derecho',
+      modalidad: 'Online · Clave Única',
+      duracion: 'A tu ritmo',
+      nivel: 'estandar',
+      url: 'https://www.ceacgr.cl/aulavirtual/',
+      descripcion: 'Probidad administrativa, conflictos de interés, transparencia activa y Ley del Lobby. Anticorrupción en el ejercicio del cargo.',
+      gratuito: true,
+      demo: false
+    },
+    {
+      id: 'cea-ley-karin',
+      titulo: 'Ley Karin: prevención del acoso laboral y sexual',
+      proveedor: 'AcademiaCEA · Contraloría (CGR)',
+      categoria: 'rrhh',
+      modalidad: 'Online · Clave Única',
+      duracion: 'A tu ritmo',
+      nivel: 'estandar',
+      url: 'https://www.ceacgr.cl/aulavirtual/',
+      descripcion: 'Marco de la Ley Karin, prevención del acoso y la violencia en el trabajo, y procedimientos de denuncia en el Estado.',
+      gratuito: true,
+      demo: false
+    },
+    {
+      id: 'cea-ciberseguridad',
+      titulo: 'Ciberseguridad en el sector público',
+      proveedor: 'AcademiaCEA · Contraloría (CGR)',
       categoria: 'ti',
-      modalidad: 'Online',
+      modalidad: 'Online · Clave Única',
+      duracion: 'A tu ritmo',
+      nivel: 'estandar',
+      url: 'https://www.ceacgr.cl/aulavirtual/',
+      descripcion: 'Buenas prácticas de seguridad de la información, gestión de riesgos y protección de datos en instituciones del Estado.',
+      gratuito: true,
+      demo: false
+    },
+    {
+      id: 'cea-administracion-financiera',
+      titulo: 'Administración Financiera del Estado',
+      proveedor: 'AcademiaCEA · Contraloría (CGR)',
+      categoria: 'finanzas',
+      modalidad: 'Online · Clave Única',
+      duracion: 'A tu ritmo',
+      nivel: 'estandar',
+      url: 'https://www.ceacgr.cl/aulavirtual/',
+      descripcion: 'Presupuesto público, contabilidad gubernamental (NICSP) y rendición de cuentas en el sector público.',
+      gratuito: true,
+      demo: false
+    },
+    {
+      id: 'cea-induccion-municipal',
+      titulo: 'Inducción para el Sector Municipal',
+      proveedor: 'AcademiaCEA · Contraloría (CGR)',
+      categoria: 'admin-publica',
+      modalidad: 'Online · Clave Única',
+      duracion: 'A tu ritmo',
+      nivel: 'estandar',
+      url: 'https://www.ceacgr.cl/aulavirtual/',
+      descripcion: 'Funcionamiento municipal, competencias del municipio y particularidades del régimen aplicable a su personal.',
+      gratuito: true,
+      demo: false
+    },
+
+    // ── ChileCompra · Mercado Público ───────────────────────────────────────
+    // Certificación de competencias 100% online y gratuita, con Clave Única.
+    {
+      id: 'chilecompra-cert-basico',
+      titulo: 'Certificación en Compras Públicas — Nivel Básico',
+      proveedor: 'ChileCompra · Mercado Público',
+      categoria: 'compras',
+      modalidad: 'Online · Clave Única',
       duracion: '36 h',
       nivel: 'estandar',
-      url: '#',
-      descripcion: 'Gobierno digital, interoperabilidad y gestión de proyectos tecnológicos en el sector público.',
-      demo: true
+      url: 'https://www.chilecompra.cl/certificacion/',
+      descripcion: 'Normativa (Ley 19.886), uso de la plataforma Mercado Público y ética en las compras. Para operar tareas diarias de abastecimiento.',
+      gratuito: true,
+      demo: false
+    },
+    {
+      id: 'chilecompra-cert-intermedio',
+      titulo: 'Certificación en Compras Públicas — Nivel Intermedio',
+      proveedor: 'ChileCompra · Mercado Público',
+      categoria: 'compras',
+      modalidad: 'Online · Clave Única',
+      duracion: '44 h',
+      nivel: 'estandar',
+      url: 'https://www.chilecompra.cl/certificacion/',
+      descripcion: 'Evaluación de ofertas y gestión de contratos, para supervisores y gestores de contratos del Estado.',
+      gratuito: true,
+      demo: false
+    },
+    {
+      id: 'chilecompra-cert-avanzado',
+      titulo: 'Certificación en Compras Públicas — Nivel Avanzado',
+      proveedor: 'ChileCompra · Mercado Público',
+      categoria: 'compras',
+      modalidad: 'Online · Clave Única',
+      duracion: '59 h',
+      nivel: 'estandar',
+      url: 'https://www.chilecompra.cl/certificacion/',
+      descripcion: 'Abastecimiento estratégico y análisis de datos para compras de alta complejidad. Para abogados, auditores y administradores.',
+      gratuito: true,
+      demo: false
+    },
+    {
+      id: 'chilecompra-capacitacion',
+      titulo: 'Cursos gratuitos para compradores y proveedores del Estado',
+      proveedor: 'ChileCompra · Mercado Público',
+      categoria: 'compras',
+      modalidad: 'Online · Clave Única',
+      duracion: 'Todo el año',
+      nivel: 'estandar',
+      url: 'https://capacitacion.chilecompra.cl/',
+      descripcion: 'Catálogo permanente de cursos y charlas online y gratuitas sobre la operación de Mercado Público.',
+      gratuito: true,
+      demo: false
+    },
+
+    // ── Campus · Dirección Nacional del Servicio Civil ──────────────────────
+    {
+      id: 'serviciocivil-gestion-personas',
+      titulo: 'Gestión y Desarrollo de Personas en el Estado',
+      proveedor: 'Campus · Servicio Civil',
+      categoria: 'rrhh',
+      modalidad: 'Online',
+      duracion: 'A tu ritmo',
+      nivel: 'estandar',
+      url: 'https://campus.serviciocivil.cl/',
+      descripcion: 'Formación transversal para servidores públicos en gestión y desarrollo de personas, con mirada de Estado.',
+      gratuito: true,
+      demo: false
+    },
+    {
+      id: 'serviciocivil-inclusion',
+      titulo: 'Inclusión laboral y gestión de la diversidad',
+      proveedor: 'Campus · Servicio Civil',
+      categoria: 'rrhh',
+      modalidad: 'Online',
+      duracion: 'A tu ritmo',
+      nivel: 'estandar',
+      url: 'https://campus.serviciocivil.cl/',
+      descripcion: 'Inclusión de personas con discapacidad y gestión inclusiva de la diversidad en los servicios públicos.',
+      gratuito: true,
+      demo: false
+    },
+    {
+      id: 'serviciocivil-capacitacion',
+      titulo: 'Fundamentos para la Gestión de la Capacitación',
+      proveedor: 'Campus · Servicio Civil',
+      categoria: 'rrhh',
+      modalidad: 'Online',
+      duracion: 'A tu ritmo',
+      nivel: 'estandar',
+      url: 'https://campus.serviciocivil.cl/',
+      descripcion: 'Cómo planificar, ejecutar y evaluar la capacitación en un servicio público.',
+      gratuito: true,
+      demo: false
+    },
+
+    // ── Academia de Capacitación Municipal y Regional · SUBDERE ─────────────
+    {
+      id: 'subdere-municipal-regional',
+      titulo: 'Formación para funcionarios/as municipales y regionales',
+      proveedor: 'Academia SUBDERE',
+      categoria: 'admin-publica',
+      modalidad: 'Online',
+      duracion: '20–40 h',
+      nivel: 'estandar',
+      url: 'https://academia.subdere.gov.cl/',
+      descripcion: 'Diplomados y cursos gratuitos para personal de municipios y gobiernos regionales, dictados por universidades acreditadas.',
+      gratuito: true,
+      demo: false
     }
   ];
 

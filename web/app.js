@@ -3448,6 +3448,15 @@ function registrarClicPostular(oferta) {
 function _totalClicsSectores(data) {
   return Object.values(data).reduce((s, v) => s + (v?.clics || 0), 0);
 }
+// 12.2 — Etiqueta visible del sector. La mayoría de los valores ya son legibles
+// (Salud Pública, Ejecutivo Central…); solo el de educación se guarda con un
+// value distinto al label del filtro. Aquí lo unificamos para que "sectores
+// explorados" muestre la MISMA etiqueta que el filtro y las alertas.
+const _SECTOR_LABEL = {
+  'Universidad/Educación': 'Educación Superior',
+};
+function sectorLabel(v) { return _SECTOR_LABEL[v] || v; }
+
 function renderSectoresExplorados() {
   const widget = document.getElementById('widget-sectores-explorados');
   const lista  = document.getElementById('sectores-explorados-lista');
@@ -3461,7 +3470,7 @@ function renderSectoresExplorados() {
     .slice(0, 3);
   lista.innerHTML = top.map(item => `
     <button type="button" class="sector-explorado" data-sector="${escAttr(item.sector)}">
-      <span class="sector-explorado-nombre">${escHtml(item.sector)}</span>
+      <span class="sector-explorado-nombre">${escHtml(sectorLabel(item.sector))}</span>
       <span class="sector-explorado-clics">${item.clics} clic${item.clics === 1 ? '' : 's'}</span>
     </button>
   `).join('');

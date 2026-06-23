@@ -68,12 +68,16 @@
   function tarjeta(a) {
     var destacado = a.nivel === 'destacado';
     var sello = destacado ? '<span class="curso-sello">Destacado</span>' : '';
+    var grat = a.gratuito ? '<span class="curso-grat">Gratis</span>' : '';
     var demo = a.demo ? '<span class="curso-demo" title="Aviso de demostración">Ejemplo</span>' : '';
+    // Los cursos oficiales gratuitos llevan un enlace normal (sin nofollow/
+    // sponsored, que se reservan para los avisos pagados).
+    var rel = a.gratuito ? 'noopener' : 'noopener nofollow sponsored';
     var cta = a.url && a.url !== '#'
-      ? '<a class="curso-cta" href="' + a.url + '" target="_blank" rel="noopener nofollow sponsored">Ver curso →</a>'
+      ? '<a class="curso-cta" href="' + a.url + '" target="_blank" rel="' + rel + '">' + (a.gratuito ? 'Ir al curso →' : 'Ver curso →') + '</a>'
       : '<span class="curso-cta curso-cta--off">Próximamente</span>';
-    return '<article class="curso-card' + (destacado ? ' curso-card--top' : '') + '">' +
-      '<div class="curso-card-head">' + sello + demo +
+    return '<article class="curso-card' + (destacado ? ' curso-card--top' : '') + (a.gratuito ? ' curso-card--gratis' : '') + '">' +
+      '<div class="curso-card-head">' + sello + grat + demo +
         '<span class="curso-cat">' + etiquetaCat(a.categoria) + '</span></div>' +
       '<h3 class="curso-titulo">' + a.titulo + '</h3>' +
       '<div class="curso-prov">' + a.proveedor + '</div>' +
@@ -107,4 +111,23 @@
   pintarLista();
   pintarPlanes();
   wireMailto();
+
+  // Directorio administrable: si la API responde con cursos (gestionados desde
+  // el panel admin), reemplaza el set estático y repinta. Si falla o viene
+  // vacía, queda el directorio del archivo cursos-data.js (fallback robusto).
+  try {
+    var RAILWAY = 'https://contrataoplanta-production.up.railway.app';
+    var _h = location.hostname;
+    var API = window.__API_BASE ||
+      ((_h === 'localhost' || _h === '127.0.0.1' || _h === '') ? 'http://localhost:8000' : RAILWAY);
+    fetch(API + '/api/cursos')
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (d && Array.isArray(d.cursos) && d.cursos.length) {
+          D.avisos = d.cursos;
+          pintarLista();
+        }
+      })
+      .catch(function () { /* sin conexión: queda el fallback estático */ });
+  } catch (e) { /* noop */ }
 })();

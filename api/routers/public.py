@@ -238,6 +238,27 @@ def get_oferta(oferta_id: int) -> dict[str, Any]:
     return serialize_offer(row)
 
 
+@router.get("/api/cursos")
+def get_cursos() -> dict[str, Any]:
+    """Directorio de cursos ACTIVOS para `web/cursos.js`, ordenado por `orden`.
+    Si la tabla aún no existe (migración pendiente), el frontend cae al archivo
+    estático `cursos-data.js`, así que devolvemos lista vacía en vez de 500."""
+    try:
+        rows = execute_fetch_all(
+            """
+            SELECT curso_id AS id, titulo, proveedor, categoria, modalidad,
+                   duracion, nivel, url, descripcion, gratuito, demo
+            FROM cursos
+            WHERE activo = TRUE
+            ORDER BY orden ASC, id ASC
+            """,
+            [],
+        )
+    except Exception:
+        rows = []
+    return {"cursos": rows}
+
+
 # Versión del renderer. Se incluye en el ETag para invalidar cachés de CDN
 # cuando cambiamos el layout de la tarjeta.
 _OG_RENDERER_VERSION = "v2"

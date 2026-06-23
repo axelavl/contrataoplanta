@@ -159,8 +159,114 @@ document.querySelectorAll('nav button').forEach(btn => {
     else if (tab === 'alertas')  { loadAlertas(); loadEventos(); }
     else if (tab === 'config')   loadConfig();
     else if (tab === 'acciones') loadProcesos();
+    else if (tab === 'cursos')   loadCursos();
   });
 });
+
+// ── Cursos (directorio gestionable) ────────────────────────────
+const _CURSO_CATS = [
+  ['admin-publica', 'Administración y gestión pública'],
+  ['finanzas', 'Finanzas y presupuesto público'],
+  ['compras', 'Compras públicas'],
+  ['derecho', 'Derecho administrativo y probidad'],
+  ['rrhh', 'Recursos humanos del Estado'],
+  ['salud', 'Salud pública'],
+  ['educacion', 'Educación y párvulos'],
+  ['ti', 'TI y transformación digital'],
+  ['prevencion', 'Prevención de riesgos'],
+  ['atencion', 'Atención ciudadana'],
+];
+let _cursoEditId = null;
+function _escCurso(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function _cfEl(id) { return document.getElementById(id); }
+function _cfSet(v) {
+  _cfEl('cf-titulo').value = v.titulo || '';
+  _cfEl('cf-proveedor').value = v.proveedor || '';
+  _cfEl('cf-categoria').value = v.categoria || 'admin-publica';
+  _cfEl('cf-modalidad').value = v.modalidad || '';
+  _cfEl('cf-duracion').value = v.duracion || '';
+  _cfEl('cf-url').value = v.url || '';
+  _cfEl('cf-descripcion').value = v.descripcion || '';
+  _cfEl('cf-orden').value = (v.orden != null ? v.orden : '');
+  _cfEl('cf-gratuito').checked = v.gratuito !== false;
+  _cfEl('cf-activo').checked = v.activo !== false;
+}
+function _cfReset() {
+  _cursoEditId = null;
+  _cfSet({ gratuito: true, activo: true });
+  _cfEl('cf-guardar').textContent = 'Guardar curso';
+  _cfEl('cf-cancelar').style.display = 'none';
+}
+async function _guardarCurso() {
+  const titulo = _cfEl('cf-titulo').value.trim();
+  if (!titulo) { toast('El título es obligatorio', 'error'); return; }
+  const body = {
+    titulo,
+    proveedor: _cfEl('cf-proveedor').value.trim(),
+    categoria: _cfEl('cf-categoria').value,
+    modalidad: _cfEl('cf-modalidad').value.trim(),
+    duracion: _cfEl('cf-duracion').value.trim(),
+    url: _cfEl('cf-url').value.trim(),
+    descripcion: _cfEl('cf-descripcion').value.trim(),
+    orden: parseInt(_cfEl('cf-orden').value, 10) || 100,
+    gratuito: _cfEl('cf-gratuito').checked,
+    activo: _cfEl('cf-activo').checked,
+  };
+  try {
+    if (_cursoEditId) await api('/cursos/' + _cursoEditId, { method: 'PUT', body: JSON.stringify(body) });
+    else await api('/cursos', { method: 'POST', body: JSON.stringify(body) });
+    toast('Curso guardado');
+    _cfReset();
+    loadCursos();
+  } catch (e) { toast(e.message, 'error'); }
+}
+async function loadCursos() {
+  if (!window._cursosWired) {
+    window._cursosWired = true;
+    const g = _cfEl('cf-guardar'); if (g) g.addEventListener('click', _guardarCurso);
+    const c = _cfEl('cf-cancelar'); if (c) c.addEventListener('click', _cfReset);
+  }
+  const sel = _cfEl('cf-categoria');
+  if (sel && !sel.options.length) {
+    sel.innerHTML = _CURSO_CATS.map(c => `<option value="${c[0]}">${c[1]}</option>`).join('');
+  }
+  const cont = document.getElementById('cursos-tabla');
+  cont.innerHTML = '<p class="text-muted">Cargando…</p>';
+  try {
+    const d = await api('/cursos');
+    const cursos = d.cursos || [];
+    if (!cursos.length) { cont.innerHTML = '<p class="text-muted">Sin cursos. Agregá el primero arriba.</p>'; return; }
+    cont.innerHTML = '<table class="data-table" style="width:100%;border-collapse:collapse"><thead><tr>'
+      + '<th style="text-align:left;padding:6px">Orden</th><th style="text-align:left;padding:6px">Título</th>'
+      + '<th style="text-align:left;padding:6px">Proveedor</th><th style="text-align:left;padding:6px">Categoría</th>'
+      + '<th style="text-align:left;padding:6px">Estado</th><th></th></tr></thead><tbody>'
+      + cursos.map(c => '<tr style="border-top:1px solid var(--borde,#e5e5e5)">'
+        + '<td style="padding:6px">' + (c.orden != null ? c.orden : '') + '</td>'
+        + '<td style="padding:6px">' + _escCurso(c.titulo) + (c.gratuito ? ' <span class="pill green">Gratis</span>' : '') + '</td>'
+        + '<td style="padding:6px">' + _escCurso(c.proveedor || '') + '</td>'
+        + '<td style="padding:6px">' + _escCurso(c.categoria || '') + '</td>'
+        + '<td style="padding:6px">' + (c.activo ? '<span class="pill green">Activo</span>' : '<span class="pill gray">Oculto</span>') + '</td>'
+        + '<td style="padding:6px;white-space:nowrap"><button class="btn btn-ghost btn-sm" data-curso-edit="' + c.id + '">Editar</button> '
+        + '<button class="btn btn-ghost btn-sm" data-curso-del="' + c.id + '">Borrar</button></td></tr>').join('')
+      + '</tbody></table>';
+    cont.querySelectorAll('[data-curso-edit]').forEach(b => b.addEventListener('click', () => {
+      const c = cursos.find(x => String(x.id) === b.dataset.cursoEdit);
+      if (!c) return;
+      _cursoEditId = c.id;
+      _cfSet(c);
+      _cfEl('cf-guardar').textContent = 'Actualizar curso';
+      _cfEl('cf-cancelar').style.display = '';
+      document.getElementById('tab-cursos').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }));
+    cont.querySelectorAll('[data-curso-del]').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm('¿Borrar este curso del directorio?')) return;
+      try { await api('/cursos/' + b.dataset.cursoDel, { method: 'DELETE' }); toast('Curso borrado'); loadCursos(); }
+      catch (e) { toast(e.message, 'error'); }
+    }));
+  } catch (e) { cont.innerHTML = '<p class="text-muted">Error: ' + _escCurso(e.message) + '</p>'; }
+}
 
 // ── Utils ──────────────────────────────────────────────────────
 function fmtDate(v) {
