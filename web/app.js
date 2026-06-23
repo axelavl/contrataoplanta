@@ -3488,17 +3488,14 @@ document.getElementById('btn-reset-sectores')?.addEventListener('click', () => {
   renderSectoresExplorados();
 });
 
-// Contador de favoritos en el nav
+// Contador de favoritos en el nav. Etiqueta fija "♡ Favoritos" + el conteo como
+// BADGE (no "(N)" inline) — Parte 3.3. El color dorado lo da .nav-link-favs.
 function actualizarNavFavs() {
   const favs = JSON.parse(localStorage.getItem('fav_contrataoplanta') || '[]');
   const link = document.getElementById('nav-favoritos');
   if (!link) return;
-  if (favs.length > 0) {
-    link.textContent = `♥ Mis favoritos (${favs.length})`;
-    link.style.color = 'white';
-  } else {
-    link.textContent = '♡ Mis favoritos';
-  }
+  const n = favs.length;
+  link.innerHTML = '♡ Favoritos' + (n > 0 ? ` <span class="nav-fav-badge">${n}</span>` : '');
 }
 actualizarNavFavs();
 

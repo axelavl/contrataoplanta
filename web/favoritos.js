@@ -104,7 +104,7 @@ function renderFavs() {
     } else if (dias <= 7) {
       cierreHtml = `<span class="fav-cierre fav-cierre--pronto">⏱ Cierra en ${dias} ${dias === 1 ? 'día' : 'días'}</span>`;
     } else {
-      cierreHtml = `<span class="fav-cierre fav-cierre--ok">📅 ${formatFecha(f.fecha_cierre)}</span>`;
+      cierreHtml = `<span class="fav-cierre fav-cierre--ok"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:-2px;margin-right:3px" aria-hidden="true"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M16 2.5v4M8 2.5v4M3 10h18"/></svg>${formatFecha(f.fecha_cierre)}</span>`;
     }
 
     return `
