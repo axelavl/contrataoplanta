@@ -58,7 +58,15 @@ sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';" 2>
 sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" 2>/dev/null || \
     warn "Base de datos $DB_NAME ya existe"
 
-sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;"
+# El usuario de la app es OWNER de la base, así que ya controla sus propios
+# objetos (tablas/índices). A nivel de DATABASE sólo necesita CONNECT y TEMP;
+# evitamos `GRANT ALL PRIVILEGES ON DATABASE` (que añade CREATE de schemas y
+# es más amplio de lo necesario para la operación normal de la API/scrapers).
+# Nota: como es owner, recuperaría esos privilegios si los necesitara — esto
+# documenta la intención de mínimo privilegio, no un sandbox infranqueable.
+# Para un hardening real, ejecutar la app con un rol NO-owner que sólo tenga
+# SELECT/INSERT/UPDATE/DELETE sobre las tablas (fuera del alcance de setup).
+sudo -u postgres psql -c "GRANT CONNECT, TEMP ON DATABASE $DB_NAME TO $DB_USER;"
 
 # ── 4. CÓDIGO ──────────────────────────────────────────────────────────────────
 info "Clonando repositorio..."

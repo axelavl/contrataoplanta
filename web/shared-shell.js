@@ -163,9 +163,16 @@
   function updateFavCount(root) {
     try {
       var favs = JSON.parse(localStorage.getItem('fav_contrataoplanta') || '[]');
-      if (!favs.length) return;
       var navFav = root.querySelector('#nav-favoritos');
-      if (navFav) navFav.textContent = '♥ Mis favoritos (' + favs.length + ')';
+      if (!navFav) return;
+      // El texto base ("♡ Mis favoritos") siempre se conserva; el conteo va en
+      // un badge separado, igual que en app.js/nav-mobile.js. Antes esto sólo
+      // corría cuando había favoritos y reescribía todo el texto con formato
+      // "(N)", dejando inconsistencia entre páginas y rompiendo cuando el
+      // contador estaba en cero.
+      var n = Array.isArray(favs) ? favs.length : 0;
+      navFav.innerHTML = '♡ Mis favoritos' +
+        (n > 0 ? ' <span class="nav-fav-badge">' + n + '</span>' : '');
     } catch (e) {}
   }
 

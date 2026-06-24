@@ -1358,7 +1358,24 @@ async def admin_scraper_run(
             raise HTTPException(400, "institucion_id es requerido para mode=institucion")
         cmd += ["--id", str(inst_id), "--skip-empleos-publicos"]
     elif mode == "kind":
-        kind = payload.get("kind", "wordpress")
+        kind = str(payload.get("kind", "wordpress"))
+        # `kind` se pasa como argumento a run_all.py (`--only-kind <kind>`).
+        # Sin validar, un valor como "--alguna-flag" se colaría como flag
+        # arbitraria del subproceso (argument injection). Lo restringimos a
+        # los valores conocidos del enum ScraperKind.
+        try:
+            from scrapers.source_status import ScraperKind
+            _kinds_validos = {k.value for k in ScraperKind}
+        except Exception:
+            _kinds_validos = {
+                "empleos_publicos", "wordpress", "generic",
+                "custom_trabajando", "custom_hiringroom", "custom_buk",
+                "custom_playwright", "custom_policia", "custom_ffaa",
+            }
+        if kind not in _kinds_validos:
+            raise HTTPException(
+                400, f"kind inválido: {kind!r}. Válidos: {sorted(_kinds_validos)}"
+            )
         cmd += ["--only-kind", kind, "--skip-empleos-publicos"]
     else:
         raise HTTPException(400, f"mode inválido: {mode}")

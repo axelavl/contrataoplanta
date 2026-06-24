@@ -360,7 +360,7 @@ def get_estadisticas() -> dict[str, Any]:
                   AND {ACTIVE_OFFER_SQL.replace('o.', '')}
             ) AS nuevas_48h,
             COUNT(*) FILTER (
-                WHERE fecha_cierre = CURRENT_DATE
+                WHERE fecha_cierre = (NOW() AT TIME ZONE 'America/Santiago')::date
                   AND {ACTIVE_OFFER_SQL.replace('o.', '')}
             ) AS cierran_hoy,
             COUNT(DISTINCT institucion_id) FILTER (WHERE {ACTIVE_OFFER_SQL.replace('o.', '')}) AS instituciones_activas

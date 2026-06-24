@@ -89,7 +89,11 @@
       setText('ribbon-instituciones', hsI.textContent.trim());
       log('copied instituciones from #hs-instituciones:', hsI.textContent.trim());
     }
-    if (countSub && countSub.textContent) {
+    // El "actualizado hace X" del DOM (#count-sub) es un fallback para pintar
+    // rápido; una vez que /api/estadisticas respondió (fuente fresca y
+    // autoritativa), NO lo sobreescribimos con el valor del DOM, que puede
+    // venir de un SSR/listado más viejo.
+    if (!window.__copRibbonApiOk && countSub && countSub.textContent) {
       var m = countSub.textContent.match(/hace\s+([^·]+?)(?:\s*$|\s*·)/i);
       if (m && m[1]) {
         setText('ribbon-actualizado', m[1].trim());
@@ -101,7 +105,9 @@
   async function fetchAndFill() {
     try {
       log('fetching', apiBase() + '/api/estadisticas');
-      var resp = await fetch(apiBase() + '/api/estadisticas');
+      // cache:'no-store' evita que el navegador sirva una copia HTTP vieja del
+      // endpoint: queremos el estado real del servidor en cada visita.
+      var resp = await fetch(apiBase() + '/api/estadisticas', { cache: 'no-store' });
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       var data = await resp.json();
       log('fetched data:', {
@@ -117,14 +123,19 @@
         ultima_actualizacion: data.ultima_actualizacion
       });
 
-      if (!isFilled(getRibbonSlot('ribbon-actualizado'))) {
-        var ago = timeAgoFromIso(data.ultima_actualizacion);
-        if (ago) setText('ribbon-actualizado', ago);
-      }
-      if (!isFilled(getRibbonSlot('ribbon-instituciones')) && data.instituciones_activas != null) {
+      // El dato del fetch es la fuente de verdad: SIEMPRE sobreescribe lo que
+      // pintó el caché. Antes esto sólo corría si el slot estaba vacío
+      // (`!isFilled`), de modo que el valor cacheado viejo se quedaba fijo y
+      // "actualizado hace X" no se refrescaba aunque los scrapers ya hubieran
+      // corrido. El caché es sólo para el primer pintado sin parpadeo.
+      var ago = timeAgoFromIso(data.ultima_actualizacion);
+      if (ago) setText('ribbon-actualizado', ago);
+      // A partir de aquí el API manda: copyFromDom dejará de tocar el timestamp.
+      window.__copRibbonApiOk = true;
+      if (data.instituciones_activas != null) {
         setText('ribbon-instituciones', fmt(data.instituciones_activas));
       }
-      if (!isFilled(getRibbonSlot('ribbon-vigentes')) && data.activas_hoy != null) {
+      if (data.activas_hoy != null) {
         setText('ribbon-vigentes', fmt(data.activas_hoy));
       }
       if (data.cierran_hoy != null) {
@@ -135,9 +146,9 @@
         setText('ribbon-cierran-label', label);
       }
 
-      // También llenar #data-last-update si está en "no disponible"
+      // También llenar #data-last-update (siempre, con el valor fresco).
       var lu = document.getElementById('data-last-update');
-      if (lu && /no disponible|cargando/i.test(lu.textContent) && data.ultima_actualizacion) {
+      if (lu && data.ultima_actualizacion) {
         var fecha = new Date(data.ultima_actualizacion);
         if (!isNaN(fecha.getTime())) {
           lu.textContent = fecha.toLocaleString('es-CL', { dateStyle: 'medium', timeStyle: 'short' });
@@ -197,6 +208,34 @@
 
     // Fetch paralelo al API para cierran_hoy y fallback
     fetchAndFill();
+
+    // Botón "Actualizar": fuerza datos frescos sin recargar la página.
+    var btnRefresh = document.getElementById('ribbon-refresh');
+    if (btnRefresh && !btnRefresh.__wired) {
+      btnRefresh.__wired = true;
+      btnRefresh.addEventListener('click', function () {
+        if (btnRefresh.classList.contains('is-loading')) return;
+        btnRefresh.classList.add('is-loading');
+        btnRefresh.disabled = true;
+        // Limpia el caché para que el próximo pintado no parta de un valor viejo.
+        try { localStorage.removeItem(CACHE_KEY); } catch (e) {}
+        var tareas = [fetchAndFill()];
+        // Recarga el listado de ofertas si la home expone la función.
+        try {
+          if (typeof window.cargarOfertas === 'function') {
+            var p = window.cargarOfertas();
+            if (p && typeof p.then === 'function') tareas.push(p);
+          }
+        } catch (e) { /* noop */ }
+        Promise.all(tareas).finally(function () {
+          // Pequeño mínimo visible para que el giro no parpadee.
+          setTimeout(function () {
+            btnRefresh.classList.remove('is-loading');
+            btnRefresh.disabled = false;
+          }, 400);
+        });
+      });
+    }
 
     // Si tras 10 seg no se llenó "Actualizado hace", ocultar ese item
     setTimeout(hideActualizadoIfEmpty, 10000);

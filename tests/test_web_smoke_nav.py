@@ -42,10 +42,18 @@ def test_desktop_navigation_and_breadcrumb(web_server):
         assert page.locator(".nav-links a.active").first.inner_text().strip() in {"♡ Mis favoritos", "♥ Mis favoritos"}
         assert page.locator("nav.breadcrumb .breadcrumb-actual").count() == 1
 
-        # quick internal links smoke from header
-        hrefs = page.eval_on_selector_all("header a[href]", "els => els.map(e => e.getAttribute('href'))")
-        assert "estadisticas.html" in hrefs
-        assert "faq.html" in hrefs
+        # quick internal links smoke: el header lleva las secciones de uso
+        # frecuente (Buscar, Favoritos, Preparación, Capacítate, FAQ); las
+        # páginas secundarias (Estadísticas, Calculadora, Panel B2B) viven en
+        # el footer (inyectado en #site-footer). Verificamos cada link donde
+        # realmente está, tolerando el slash inicial de las rutas.
+        header_hrefs = page.eval_on_selector_all(
+            "header a[href]", "els => els.map(e => e.getAttribute('href'))")
+        assert any("faq.html" in h for h in header_hrefs)
+        page.wait_for_selector("footer a[href]")
+        footer_hrefs = page.eval_on_selector_all(
+            "footer a[href]", "els => els.map(e => e.getAttribute('href'))")
+        assert any("estadisticas.html" in h for h in footer_hrefs)
         browser.close()
 
 

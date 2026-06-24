@@ -343,8 +343,17 @@ app.add_middleware(
 # que lleguen directo a Railway sin pasar por Pages.
 #
 # CSP en modo **enforce** tras #164 + #165 + ciclo de observación sin
-# violations. `style-src 'unsafe-inline'` se mantiene por los `style=`
-# del HTML de oferta — moverlos a clases va en otro PR.
+# violations. `style-src 'unsafe-inline'` se mantiene de forma consciente:
+# hay ~263 atributos `style=` repartidos entre el HTML estático y los
+# templates que el JS inyecta vía innerHTML (la mayoría estáticos y
+# repetitivos, ~18 dinámicos con valores calculados como anchos/`display`).
+# Migrarlos todos a clases es un refactor grande y frágil (una omisión rompe
+# estilos en prod en silencio al endurecer la directiva). El beneficio es
+# bajo: el vector que `'unsafe-inline'` en *style-src* habilita es CSS
+# injection, que requiere una inyección de HTML previa — ya mitigada porque
+# el contenido no confiable se escapa y `script-src` NO lleva 'unsafe-inline'
+# (el vector grave, XSS de scripts, está cerrado). Por eso se prioriza dejarlo
+# documentado antes que migrar. Ver auditoría para el detalle del trade-off.
 _SECURITY_HEADERS = {
     "X-Frame-Options": "SAMEORIGIN",
     "X-Content-Type-Options": "nosniff",
@@ -377,6 +386,16 @@ async def add_security_headers(request: Request, call_next):
         # setdefault para no sobrescribir si un endpoint ya los setea
         # (ej: un iframe embebible podría querer X-Frame-Options distinto).
         response.headers.setdefault(name, value)
+    # Datos que reflejan el estado vivo del scraping (estadísticas, listado de
+    # ofertas) NO deben servirse desde caché del navegador/CDN: si no, al
+    # revisitar el sitio se ve "actualizado hace X" o un listado viejo aunque
+    # los scrapers ya corrieron. `no-cache` obliga a revalidar contra el
+    # servidor en cada visita (permite 304 si nada cambió). Endpoints
+    # cacheables a propósito (imágenes OG) setean su propio Cache-Control antes,
+    # y este setdefault no los pisa.
+    path = request.url.path
+    if path == "/api/estadisticas" or path.startswith("/api/ofertas"):
+        response.headers.setdefault("Cache-Control", "no-cache, must-revalidate")
     return response
 
 

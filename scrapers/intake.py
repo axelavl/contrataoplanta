@@ -429,6 +429,18 @@ def fecha_cierre_desde_texto(texto: Any, *, today: "date | None" = None) -> "dat
     m = _CIERRE_HINT_RE.search(t)
     if m:
         f = _fecha_es(m.group(1), m.group(2), m.group(3), today.year)
+        # Si la frase de cierre no traía año explícito (group(3) vacío) y la
+        # fecha asumida con el año actual ya pasó, es casi seguro que se
+        # refiere al año entrante: una fecha de CIERRE es futura respecto a la
+        # publicación. Sin esto, un aviso de diciembre que dice "postular hasta
+        # el 15 de enero" se fechaba 11 meses en el pasado y se descartaba como
+        # vencido, perdiendo una oferta vigente. Sólo aplica al caso sin año.
+        if f and not m.group(3) and f < today:
+            try:
+                f = f.replace(year=f.year + 1)
+            except ValueError:
+                # 29-feb en año no bisiesto al avanzar: caso degenerado, se deja.
+                pass
         if f:
             return f
     fechas = _todas_las_fechas(t, today.year)

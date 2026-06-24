@@ -291,7 +291,7 @@ assertEq(window.UI_STRINGS.CTA_POSTULAR_OFF, 'Postulación no disponible',
   'CTA_POSTULAR_OFF canónico');
 assertEq(window.UI_STRINGS.CTA_BASES, 'Ver bases oficiales',
   'CTA_BASES canónico');
-assertEq(window.UI_STRINGS.CTA_VER_DETALLE, 'Ver detalle →',
+assertEq(window.UI_STRINGS.CTA_VER_DETALLE, 'Ver detalles',
   'CTA_VER_DETALLE canónico');
 assertEq(window.UI_STRINGS.SEC_AVISO, 'Texto completo del aviso',
   'SEC_AVISO canónico');

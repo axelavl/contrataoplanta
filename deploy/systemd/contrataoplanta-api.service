@@ -18,6 +18,22 @@ SyslogIdentifier=contrataoplanta-api
 # Seguridad
 NoNewPrivileges=true
 PrivateTmp=true
+# Sandboxing adicional (systemd). El proceso sólo necesita leer su código,
+# hablar con Postgres por red y escribir logs vía journal — nada más.
+ProtectSystem=strict
+ProtectHome=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+# ProtectSystem=strict deja todo / en read-only. La app escribe logs de
+# procesos admin en APP_DIR/logs; habilitamos sólo ese subárbol.
+ReadWritePaths=APP_DIR/logs
 
 [Install]
 WantedBy=multi-user.target

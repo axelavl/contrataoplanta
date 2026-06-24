@@ -194,8 +194,6 @@ const btnDetalle = card.querySelector('.btn-detalle');
 assertTrue(btnDetalle != null, 'btn-detalle presente');
 assertEq(btnDetalle.textContent.trim(), window.UI_STRINGS.CTA_VER_DETALLE,
   'btn-detalle usa UI_STRINGS.CTA_VER_DETALLE');
-assertTrue(btnDetalle.textContent.includes('→'),
-  'CTA termina en flecha → consistente con CTA primario del modal');
 
 // 7. Favorito secundario (corner top-right)
 const favBtn = card.querySelector('.btn-fav-card');

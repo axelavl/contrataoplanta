@@ -438,7 +438,13 @@ mark.cop-hl {
   width: 36px; min-width: 36px; height: 36px; padding: 0; justify-content: center;
   font-size: 15px; color: var(--texto3, #747B91); border-color: var(--borde, #E5E1D2);
   flex: none;
+  gap: 0;
 }
+/* El SVG inline arrastra el espacio de línea base de texto y queda descentrado
+   (se ve corrido hacia abajo/derecha, el "pico" de la flecha asomando fuera).
+   display:block lo saca del flujo de texto y el justify/align-center del botón
+   lo centran de verdad. */
+.cop-cmp-btn--icon svg { display: block; }
 .cop-cmp-btn--icon:hover { color: var(--azul-m, #254BA0); border-color: var(--azul-m, #254BA0); }
 .cop-cmp-btn--icon.is-on { color: var(--azul, #142E6B); border-color: var(--azul, #142E6B); background: var(--cielo-l, #E1E8F6); }
 

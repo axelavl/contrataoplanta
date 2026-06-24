@@ -19,7 +19,12 @@ function fmt(n) { return (n ?? 0).toLocaleString('es-CL'); }
 
 function fmtFecha(s) {
   if (!s) return null;
-  const d = new Date(s);
+  // Una fecha 'YYYY-MM-DD' pasada a new Date() se interpreta como medianoche
+  // UTC, que en Chile (UTC-3/-4) cae el día anterior → la fecha se mostraba
+  // corrida un día atrás. Forzamos medianoche LOCAL para fechas de sólo-día;
+  // los timestamps con hora ya traen zona y se parsean tal cual.
+  const str = String(s);
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(str) ? new Date(str + 'T00:00:00') : new Date(str);
   if (isNaN(d)) return s;
   return d.toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' });
 }

@@ -30,13 +30,18 @@ OFFER_STATUS_SQL = (
     "WHEN LOWER(COALESCE(NULLIF(o.estado, ''), '')) IN "
     "('cerrada', 'cerrado', 'cerrada_manual', 'vencido', 'finalizada', 'closed', 'expired') THEN 'closed' "
     "WHEN COALESCE(o.fecha_inicio, o.fecha_publicacion) IS NOT NULL "
-    "  AND COALESCE(o.fecha_inicio, o.fecha_publicacion) > CURRENT_DATE THEN 'upcoming' "
-    "WHEN o.fecha_cierre IS NOT NULL AND o.fecha_cierre < CURRENT_DATE THEN 'closed' "
-    "WHEN o.fecha_cierre = CURRENT_DATE THEN 'closing_today' "
-    "WHEN o.fecha_cierre IS NULL OR o.fecha_cierre > CURRENT_DATE THEN 'active' "
+    "  AND COALESCE(o.fecha_inicio, o.fecha_publicacion) > _HOY_CL THEN 'upcoming' "
+    "WHEN o.fecha_cierre IS NOT NULL AND o.fecha_cierre < _HOY_CL THEN 'closed' "
+    "WHEN o.fecha_cierre = _HOY_CL THEN 'closing_today' "
+    "WHEN o.fecha_cierre IS NULL OR o.fecha_cierre > _HOY_CL THEN 'active' "
     "ELSE 'unknown' "
     "END"
-)
+    # "Hoy" se evalúa en hora de Chile, no en UTC. CURRENT_DATE en Railway
+    # corre en UTC, lo que durante las últimas ~3-4h del día chileno
+    # adelantaba el cambio de día y marcaba como 'closed' ofertas que para
+    # el usuario cerraban "hoy" (y desincronizaba el conteo del backend con
+    # el render del frontend). Fijamos la zona explícitamente.
+).replace("_HOY_CL", "(NOW() AT TIME ZONE 'America/Santiago')::date")
 
 ACTIVE_OFFER_SQL = f"{OFFER_STATUS_SQL} IN ('active', 'closing_today')"
 
@@ -372,8 +377,12 @@ def build_ofertas_filters(
         params.append(f"%{ciudad}%")
 
     if cierra_pronto:
-        # "Cierra pronto" = cierra hoy o mañana (issue #242).
-        where.append("o.fecha_cierre BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '1 day'")
+        # "Cierra pronto" = cierra hoy o mañana (issue #242). "Hoy" en hora de
+        # Chile para ser consistente con OFFER_STATUS_SQL (ver nota allí).
+        where.append(
+            "o.fecha_cierre BETWEEN (NOW() AT TIME ZONE 'America/Santiago')::date "
+            "AND (NOW() AT TIME ZONE 'America/Santiago')::date + INTERVAL '1 day'"
+        )
 
     if nuevas:
         # "Nuevas" = añadidas en las últimas 24 horas (issue #242).

@@ -284,6 +284,22 @@ async function fetchApi(path, options = {}) {
 
 // ── Estado global de filtros y paginación ──────────────────────────────────
 const PREFS_KEY = 'prefs_contrataoplanta';
+const FAV_KEY = 'fav_contrataoplanta';
+
+// Lectura robusta de favoritos. Si el valor en localStorage está corrupto
+// (escritura parcial, edición manual, bug previo), un JSON.parse crudo lanza
+// SyntaxError. Antes algunas lecturas lo atrapaban y otras no: las que no,
+// reventaban funciones centrales como renderCard → el listado completo salía
+// vacío. Una sola fuente con try/catch evita esa inconsistencia.
+function leerFavoritos() {
+  try {
+    const v = JSON.parse(localStorage.getItem(FAV_KEY) || '[]');
+    return Array.isArray(v) ? v : [];
+  } catch {
+    return [];
+  }
+}
+
 function cargarPrefs() {
   try { return JSON.parse(localStorage.getItem(PREFS_KEY) || '{}'); } catch { return {}; }
 }
@@ -745,11 +761,17 @@ function ofertaPostulable(oferta) {
 
 // ── Utilidades de formato ──────────────────────────────────────────────────
 function formatRenta(min, max, grado) {
-  if (min) {
+  // `min > 0`: 0 no es una renta válida (dato faltante o mal scrapeado), y el
+  // `if (min)` anterior lo trataba como ausente — además ignoraba el caso de
+  // ofertas que sólo publican el techo (max sin min).
+  const tieneMin = min != null && min > 0;
+  const tieneMax = max != null && max > 0;
+  if (tieneMin) {
     const minF = '$' + min.toLocaleString('es-CL');
-    if (max && max !== min) return minF + ' – $' + max.toLocaleString('es-CL');
+    if (tieneMax && max !== min) return minF + ' – $' + max.toLocaleString('es-CL');
     return minF;
   }
+  if (tieneMax) return 'Hasta $' + max.toLocaleString('es-CL');
   if (grado) return 'Grado ' + grado + ' EUS';
   return null;
 }
@@ -757,14 +779,17 @@ function formatRenta(min, max, grado) {
 // Versión HTML para la vista compacta: muestra min/max en dos líneas
 // cuando hay rango, para evitar truncar valores largos en columnas angostas.
 function formatRentaRow(min, max, grado) {
-  if (min) {
+  const tieneMin = min != null && min > 0;
+  const tieneMax = max != null && max > 0;
+  if (tieneMin) {
     const minF = '$' + min.toLocaleString('es-CL');
-    if (max && max !== min) {
+    if (tieneMax && max !== min) {
       const maxF = '$' + max.toLocaleString('es-CL');
       return `<span class="renta-principal">${minF}</span><span class="renta-rango">hasta ${maxF}</span>`;
     }
     return `<span class="renta-principal">${minF}</span>`;
   }
+  if (tieneMax) return `<span class="renta-principal">hasta $${max.toLocaleString('es-CL')}</span>`;
   if (grado) return `<span class="renta-principal" style="font-size:11.5px">Grado ${grado} EUS</span>`;
   return null;
 }
@@ -822,6 +847,18 @@ function parseLocalDate(value) {
 
 function getOfertaEstado(oferta) {
   if (!oferta) return { key: 'unknown', dias: null };
+  // Fuente de verdad: el estado que calcula el backend (OFFER_STATUS_SQL),
+  // ya evaluado en hora de Chile. Recalcular acá con `new Date()` del
+  // navegador divergía del backend cerca del cambio de día UTC y hacía que
+  // el contador (data.total del backend) y la lista (filtrada en JS) no
+  // cuadraran — páginas con menos tarjetas de las contadas, o vacías con
+  // contador positivo. Sólo recalculamos por fecha si el backend no mandó
+  // estado (p.ej. favoritos guardados en localStorage de versiones viejas).
+  const ESTADOS_VALIDOS = ['closed', 'active', 'closing_today', 'upcoming'];
+  if (oferta.estado && ESTADOS_VALIDOS.includes(oferta.estado)) {
+    const dias = oferta.dias_restantes ?? null;
+    return { key: oferta.estado, dias };
+  }
   const hoy = new Date();
   const hoyLocal = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
   const inicio = parseLocalDate(oferta.fecha_inicio);
@@ -832,9 +869,6 @@ function getOfertaEstado(oferta) {
     if (dias < 0) return { key: 'closed', dias };
     if (dias === 0) return { key: 'closing_today', dias };
     return { key: 'active', dias };
-  }
-  if (oferta.estado && ['closed','active','closing_today','upcoming'].includes(oferta.estado)) {
-    return { key: oferta.estado, dias: oferta.dias_restantes ?? null };
   }
   return { key: 'active', dias: oferta.dias_restantes ?? null };
 }
@@ -1283,7 +1317,7 @@ function renderCard(oferta) {
   const frescura = frescuraTexto(oferta);
   const instLogo = getInstIcon(oferta);
 
-  const favs = JSON.parse(localStorage.getItem('fav_contrataoplanta') || '[]');
+  const favs = leerFavoritos();
   const esFav = favs.some(f => f.id === oferta.id);
   const jobPosting = buildJobPostingJsonLd(oferta);
   if (!jobPosting.valido) {
@@ -1342,7 +1376,7 @@ function renderCard(oferta) {
         ${oferta.fecha_cierre ? `<span class="oferta-plazo-fecha">· ${formatFecha(oferta.fecha_cierre)}</span>` : ''}
       </div>
       <div class="oferta-acciones">
-        <button class="btn-detalle" type="button" data-action="abrir-modal" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}">${UI.CTA_VER_DETALLE || 'Ver detalle →'}</button>
+        <button class="btn-detalle" type="button" data-action="abrir-modal" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}">${UI.CTA_VER_DETALLE || 'Ver detalles'}</button>
         <button class="cop-cmp-btn cop-cmp-btn--icon" type="button" data-action="toggle-comparar" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}" title="Comparar oferta" aria-label="Comparar oferta">${CMP_SVG_SWAP}</button>
       </div>
     </div>
@@ -1354,7 +1388,7 @@ function renderCard(oferta) {
 function toggleFavCard(btn) {
   const KEY = 'fav_contrataoplanta';
   const id  = parseInt(btn.dataset.id);
-  let favs  = JSON.parse(localStorage.getItem(KEY) || '[]');
+  let favs  = leerFavoritos();
   const idx = favs.findIndex(f => f.id === id);
   const card = btn.closest('.oferta-card, .oferta-row');
 
@@ -1391,7 +1425,7 @@ function renderRowCompacta(oferta) {
   const tipoLabel = tipoEtiqueta(oferta.tipo_contrato);
   const regionCompleta = nombreRegionCompleto(oferta.region);
   const rentaHtml = formatRentaRow(oferta.renta_bruta_min, oferta.renta_bruta_max, oferta.grado_eus);
-  const favs  = JSON.parse(localStorage.getItem('fav_contrataoplanta') || '[]');
+  const favs  = leerFavoritos();
   const esFav = favs.some(f => f.id === oferta.id);
   const jobPosting = buildJobPostingJsonLd(oferta);
   if (!jobPosting.valido) {
@@ -2361,7 +2395,7 @@ async function abrirFichaOferta(ofertaId) {
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   const o = await resp.json();
   let favs = [];
-  try { favs = JSON.parse(localStorage.getItem('fav_contrataoplanta') || '[]'); } catch (e) { /* noop */ }
+  favs = leerFavoritos();
   FichaOferta.abrir(normalizarOferta(o), {
     query: estado.q || '',
     profesion: estado.profesion || null,
@@ -2660,7 +2694,7 @@ async function _abrirModalLegacy(ofertaId) {
     }
 
     // Botón favorito
-    const favs = JSON.parse(localStorage.getItem('fav_contrataoplanta') || '[]');
+    const favs = leerFavoritos();
     const btnFav = document.getElementById('modal-btn-favorito');
     const esFavoritaOferta = favs.some(f => f.id === o.id);
     btnFav.textContent = esFavoritaOferta
@@ -3074,7 +3108,7 @@ document.addEventListener('keydown', (e) => {
 
 function toggleFavorito(oferta) {
   const KEY = 'fav_contrataoplanta';
-  let favs = JSON.parse(localStorage.getItem(KEY) || '[]');
+  let favs = leerFavoritos();
   const idx = favs.findIndex(f => f.id === oferta.id);
   const btn = document.getElementById('modal-btn-favorito');
   if (idx >= 0) {
@@ -3497,14 +3531,14 @@ document.getElementById('btn-reset-sectores')?.addEventListener('click', () => {
   renderSectoresExplorados();
 });
 
-// Contador de favoritos en el nav. Etiqueta fija "♡ Favoritos" + el conteo como
+// Contador de favoritos en el nav. Etiqueta fija "♡ Mis favoritos" + el conteo como
 // BADGE (no "(N)" inline) — Parte 3.3. El color dorado lo da .nav-link-favs.
 function actualizarNavFavs() {
-  const favs = JSON.parse(localStorage.getItem('fav_contrataoplanta') || '[]');
+  const favs = leerFavoritos();
   const link = document.getElementById('nav-favoritos');
   if (!link) return;
   const n = favs.length;
-  link.innerHTML = '♡ Favoritos' + (n > 0 ? ` <span class="nav-fav-badge">${n}</span>` : '');
+  link.innerHTML = '♡ Mis favoritos' + (n > 0 ? ` <span class="nav-fav-badge">${n}</span>` : '');
 }
 actualizarNavFavs();
 
@@ -4445,6 +4479,34 @@ async function _contarOfertasRegion(region) {
 
 // Mapa 2 columnas: izquierda el mapa, derecha el panel con las ofertas de la
 // región tocada (MapaChile.render devuelve api.setPanel / api.cargando).
+// Obtiene los conteos por región (canónicos) en UN solo request. Cacheable:
+// se dispara en segundo plano al cargar la página para que, al abrir el mapa,
+// los números ya estén listos.
+let _mapaCountsPromise = null;
+async function _obtenerMapaCounts() {
+  const counts = {};
+  try {
+    const r = await fetchApi('/api/estadisticas');
+    if (r.ok) {
+      const d = await r.json();
+      for (const fila of (d.por_region || [])) {
+        const canon = regionCanonica(fila.region);
+        if (canon) counts[canon] = (counts[canon] || 0) + (Number(fila.total) || 0);
+      }
+      return counts;
+    }
+  } catch (e) { /* cae al fallback */ }
+  // Fallback: conteo por región (lento) si estadísticas falla, para no dejar
+  // el mapa permanentemente sin números.
+  await Promise.all(_REGIONES_CANON.map(async (reg) => { counts[reg] = await _contarOfertasRegion(reg); }));
+  return counts;
+}
+
+function _prefetchMapaCounts() {
+  if (!_mapaCountsPromise) _mapaCountsPromise = _obtenerMapaCounts();
+  return _mapaCountsPromise;
+}
+
 async function _renderMapaConteos() {
   const host = document.getElementById('mapa-chile');
   if (!host || !window.MapaChile) return;
@@ -4464,11 +4526,11 @@ async function _renderMapaConteos() {
       if (api && api.setPanel) api.setPanel('<div class="cop-mapx-hint"><p>No se pudieron cargar las ofertas.</p></div>');
     }
   };
-  // 1) Dibuja el mapa de inmediato (antes era invisible hasta terminar los 16
-  //    conteos). 2) Luego refresca con los números por región.
+  // Dibuja el mapa de inmediato; los conteos suelen venir ya precargados
+  // (_prefetchMapaCounts se dispara al cargar la página), así que el repintado
+  // con números es casi instantáneo al abrir.
   api = MapaChile.render(host, { counts: {}, selected: regionCanonica(estado.region), onSelect: onSel });
-  const counts = {};
-  await Promise.all(_REGIONES_CANON.map(async (reg) => { counts[reg] = await _contarOfertasRegion(reg); }));
+  const counts = await _prefetchMapaCounts();
   api = MapaChile.render(host, { counts, selected: regionCanonica(estado.region), onSelect: onSel });
 }
 
@@ -4490,6 +4552,10 @@ function _initIntegracion() {
   const wrapMapa = document.getElementById('mapa-chile-wrap');
   if (btnMapa && wrapMapa && window.MapaChile) {
     let cargado = false;
+    // Precarga los conteos por región en segundo plano (request único), para
+    // que al abrir el mapa los números aparezcan de inmediato en vez de
+    // quedar vacíos hasta que el usuario interactúe.
+    _prefetchMapaCounts();
     btnMapa.addEventListener('click', () => {
       const abrir = wrapMapa.hidden;
       wrapMapa.hidden = !abrir;

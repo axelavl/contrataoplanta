@@ -7,7 +7,7 @@
 <script src="boot.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Empleo público en Chile — contrata o planta .cl</title>
+<title>Empleo público en Chile · contrata o planta .cl</title>
 <meta name="description" content="Encuentra empleos públicos en Chile, filtra por institución y revisa oportunidades del sector público en un solo buscador.">
 <link rel="canonical" href="https://estadoemplea.pages.dev/">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -15,21 +15,21 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="manifest" href="/site.webmanifest">
 <meta name="theme-color" content="#0A2E6E">
-<meta property="og:title" content="contrata o planta .cl — Empleo público en Chile">
+<meta property="og:title" content="contrata o planta .cl · Empleo público en Chile">
 <meta property="og:description" content="Buscador laboral del sector público chileno con vacantes, filtros y acceso directo a concursos vigentes.">
 <meta property="og:url" content="https://estadoemplea.pages.dev/">
 <meta property="og:image" content="https://estadoemplea.pages.dev/og-default.jpg">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="es_CL">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="contrata o planta .cl — Empleo público en Chile">
+<meta name="twitter:title" content="contrata o planta .cl · Empleo público en Chile">
 <meta name="twitter:description" content="Busca vacantes del sector público chileno con filtros por institución, región y tipo de cargo.">
 <meta name="twitter:image" content="https://estadoemplea.pages.dev/og-default.jpg">
-<!-- Fuentes self-hosted desde web/fonts/. Ver web/styles/fonts.css — ya no
+<!-- Fuentes self-hosted desde web/fonts/. Ver web/styles/fonts.css. Ya no
      hay dependencia con fonts.googleapis.com / fonts.gstatic.com, con lo
      que el CSP puede cerrar `style-src` y `font-src` a `'self'`. -->
 <link rel="stylesheet" href="styles/fonts.css">
-<!-- Analytics (Umami) — activable editando los dos meta tags con el
+<!-- Analytics (Umami): activable editando los dos meta tags con el
      URL del script y el website_id de la instancia. Si quedan vacíos,
      `window.track()` queda como no-op y el resto del código sigue
      funcionando. Ver `web/analytics.js`. -->
@@ -198,7 +198,7 @@
             <button class="filtro-tag" type="button" data-action="toggle-filtro" data-filtro="cierra-hoy">⏰ Cierra pronto</button>
             <button class="filtro-tag" type="button" data-action="toggle-filtro" data-filtro="nuevos">✨ Últimas 24 h</button>
             <button class="filtro-tag" type="button" data-action="toggle-filtro" data-filtro="sin-experiencia">Sin experiencia</button>
-            <button class="filtro-tag" type="button" data-action="toggle-filtro" data-filtro="con-correo" title="Solo ofertas con correo de postulación o contacto">✉ Postular por correo</button>
+            <button class="filtro-tag" type="button" data-action="toggle-filtro" data-filtro="con-correo" title="Solo ofertas con correo de postulación o contacto">Postular por correo</button>
           </div>
         </div>
       </div>
@@ -225,8 +225,8 @@
       </div>
       <div class="resultados-controles">
         <div class="resultados-acciones">
-          <button class="btn-copiar-busqueda btn-copiar-busqueda--sec btn-limpiar-filtros" id="btn-limpiar-filtros" type="button" data-action="limpiar-filtros" title="Quitar todos los filtros aplicados" hidden>✕ Limpiar filtros</button>
-          <button class="btn-copiar-busqueda btn-copiar-busqueda--sec btn-compartir-busqueda" id="btn-compartir-busqueda" type="button" data-action="toggle-compartir" title="Compartir esta búsqueda en RRSS" aria-expanded="false" aria-controls="popover-compartir-busqueda" hidden>↗ Compartir búsqueda</button>
+          <button class="btn-copiar-busqueda btn-copiar-busqueda--sec btn-limpiar-filtros" id="btn-limpiar-filtros" type="button" data-action="limpiar-filtros" title="Quitar todos los filtros aplicados" hidden>Limpiar filtros</button>
+          <button class="btn-copiar-busqueda btn-copiar-busqueda--sec btn-compartir-busqueda" id="btn-compartir-busqueda" type="button" data-action="toggle-compartir" title="Compartir esta búsqueda en RRSS" aria-expanded="false" aria-controls="popover-compartir-busqueda" hidden>Compartir búsqueda</button>
         </div>
         <div class="resultados-preferencias">
           <!-- Orden: label prefijo + select nativo para que parezca un trigger. -->
@@ -237,7 +237,7 @@
               <option value="cierre">⏰ Cierra antes</option>
               <option value="renta_desc">$ Mayor renta</option>
               <option value="renta_asc">$ Menor renta</option>
-              <option value="az">A–Z cargo</option>
+              <option value="az">A-Z cargo</option>
             </select>
             <span class="sort-wrap-chevron" aria-hidden="true">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
@@ -291,10 +291,10 @@
 
     </div><!-- /lista-ofertas -->
 
-    <!-- PAGINACIÓN — generada dinámicamente por JS -->
+    <!-- Paginación: generada dinámicamente por JS -->
     <div class="paginacion" id="paginacion"></div>
 
-    <!-- Publicidad — banner horizontal bajo resultados -->
+    <!-- Publicidad: banner horizontal bajo resultados -->
     <div class="ad-slot ad-slot-resultados">
       <div class="ad-slot-inner">Publicidad</div>
     </div>
@@ -389,7 +389,7 @@
     <div class="widget">
       <div class="widget-header">
         <div class="widget-titulo">📊 En este momento</div>
-        <a href="estadisticas.html" class="widget-ver-todo">Ver todo →</a>
+        <a href="estadisticas.html" class="widget-ver-todo">Ver todo</a>
       </div>
       <div class="widget-body">
         <div class="stat-grid">
@@ -413,7 +413,7 @@
       </div>
     </div>
 
-    <!-- Widget sectores — dinámico -->
+    <!-- Widget sectores (dinámico) -->
     <div class="widget widget--solo-estadisticas">
       <div class="widget-header">
         <div class="widget-titulo">Por sector</div>
@@ -425,11 +425,11 @@
       </div>
     </div>
 
-    <!-- Widget histórico — dinámico -->
+    <!-- Widget histórico (dinámico) -->
     <div class="widget widget--solo-estadisticas">
       <div class="widget-header">
         <div class="widget-titulo">📈 Histórico mensual</div>
-        <a href="estadisticas.html" class="widget-ver-todo">2025–2026</a>
+        <a href="estadisticas.html" class="widget-ver-todo">2025-2026</a>
       </div>
       <div class="widget-body">
         <div class="hist-bar-wrap" id="historico-lista">
@@ -438,11 +438,11 @@
       </div>
     </div>
 
-    <!-- Widget instituciones más activas — dinámico -->
+    <!-- Widget instituciones más activas (dinámico) -->
     <div class="widget widget--solo-estadisticas" id="fuentes-activas">
       <div class="widget-header">
         <div class="widget-titulo">🏆 Fuentes más activas esta semana</div>
-        <a href="#fuentes-activas" class="widget-ver-todo">Ver más →</a>
+        <a href="#fuentes-activas" class="widget-ver-todo">Ver más</a>
       </div>
       <div class="widget-body">
         <div id="masactivas-lista">
@@ -577,7 +577,7 @@
           <summary>Texto completo del aviso</summary>
           <!-- Residual: oraciones que el clasificador semántico no pudo
                encajar en ninguna sección (Funciones, Requisitos, Condiciones,
-               etc.) — se exponen acá como bullets. Si está vacío, se oculta. -->
+               etc.) se exponen acá como bullets. Si está vacío, se oculta. -->
           <div class="modal-residual-wrap" id="modal-residual-wrap" hidden>
             <h5 class="modal-residual-title">Otros aspectos del aviso</h5>
             <ul class="modal-list modal-list--residual" id="modal-residual-list"></ul>
@@ -591,7 +591,7 @@
       </div>
     </div>
     <div class="modal-actions">
-      <button class="btn-modal-primary" id="modal-btn-postular">Ir al portal de postulación →</button>
+      <button class="btn-modal-primary" id="modal-btn-postular">Ir al portal de postulación</button>
       <div class="modal-actions-secondary">
         <button class="btn-modal-sec" id="modal-btn-bases" style="display:none">📄 Ver bases del concurso</button>
         <button class="btn-modal-sec" id="modal-btn-favorito">♡ Guardar</button>
@@ -640,7 +640,7 @@
       <div class="bases-viewer-url" id="bases-viewer-url" title="URL de destino"></div>
 
       <div class="bases-viewer-actions" role="group" aria-label="Acciones de bases oficiales">
-        <a id="bases-action-open" class="btn-modal-primary" target="_blank" rel="noopener noreferrer">Abrir bases oficiales ↗</a>
+        <a id="bases-action-open" class="btn-modal-primary" target="_blank" rel="noopener noreferrer">Abrir bases oficiales</a>
         <button id="bases-action-copy" class="bases-link-copy" type="button">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
           <span>Copiar enlace</span>
@@ -654,7 +654,7 @@
 <div id="qr-popover" class="qr-popover" role="dialog" aria-modal="true" aria-labelledby="qr-titulo" hidden>
   <div class="qr-popover-caja">
     <button class="qr-popover-cerrar" type="button" aria-label="Cerrar" data-action="cerrar-qr">×</button>
-    <div class="qr-popover-titulo" id="qr-titulo">Escanea para abrir en tu móvil</div>
+    <div class="qr-popover-titulo" id="qr-titulo">Escanea para abrir en tu celular</div>
     <div class="qr-popover-canvas" id="qr-canvas" aria-live="polite"></div>
     <div class="qr-popover-url" id="qr-url"></div>
     <div class="qr-popover-hint">Apunta la cámara de tu teléfono al código.</div>
@@ -693,7 +693,7 @@
       <div class="share-meta-titulo" id="share-meta-cargo">Oferta</div>
     </div>
 
-    <!-- Enlace con botón de copiar — se comparte junto a la imagen. -->
+    <!-- Enlace con botón de copiar: se comparte junto a la imagen. -->
     <div class="share-link" role="group" aria-label="Enlace de la oferta">
       <input type="text" class="share-link-input" id="share-link-input" readonly value="">
       <button type="button" class="share-link-copy" id="share-link-copy">📋 Copiar</button>
@@ -722,7 +722,7 @@
      que CSP no bloquea). Los onclick= del HTML se rutean via
      `data-action` al dispatcher en app.js. -->
 <!-- Componentes de integración (vanilla, exponen globals window.*).
-     Orden: chile-geo (datos) → profesiones → ficha-oferta → mapa-chile.
+     Orden de carga: chile-geo (datos), luego profesiones, ficha-oferta y mapa-chile.
      Deben cargar ANTES de app.js para que los globals existan en su init. -->
 <script src="integracion/chile-geo.js"></script>
 <script src="integracion/profesiones.js"></script>

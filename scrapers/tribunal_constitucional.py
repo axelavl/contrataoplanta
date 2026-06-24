@@ -304,7 +304,10 @@ def construir_oferta(item: dict[str, Any], perfil: dict[str, Any],
     fecha_pub = None
     if item.get("date"):
         try:
-            fecha_pub = datetime.fromisoformat(item["date"]).date()
+            # Normaliza 'Z' → '+00:00' (consistencia con fiscalia.py; no
+            # depende de Python ≥3.11).
+            fecha_pub = datetime.fromisoformat(
+                str(item["date"]).replace("Z", "+00:00")).date()
         except ValueError:
             pass
 

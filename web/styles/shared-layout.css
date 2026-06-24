@@ -302,3 +302,31 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
   .logo-name { font-size: 16px; }
   .logo-tagline { display: none; }
 }
+
+/* ──────────────────────────────────────────────────────────────────────
+   Menú hamburguesa. Antes solo index.css definía el ícono (.hamburger span),
+   así que en las páginas internas que cargan ESTE stylesheet el botón salía
+   como un cuadro vacío (dependía de que nav-mobile.js inyectara el estilo, y
+   esa inyección JS era frágil). Lo definimos acá en CSS estático para que el
+   ícono aparezca siempre, sin depender de JS. Idéntico al de index.css.
+   ────────────────────────────────────────────────────────────────────── */
+.hamburger {
+  display: none;
+  background: none; border: none; cursor: pointer;
+  width: 36px; height: 36px;
+  flex-direction: column; align-items: center; justify-content: center;
+  gap: 5px; padding: 0; margin-left: auto;
+}
+.hamburger span {
+  display: block; width: 22px; height: 2px;
+  background: #fff; border-radius: 2px;
+  transition: transform .3s, opacity .3s;
+}
+.hamburger.abierto span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger.abierto span:nth-child(2) { opacity: 0; }
+.hamburger.abierto span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+.js-nav .hamburger { display: none; }
+@media (max-width: 600px) {
+  .js-nav .hamburger { display: flex; }
+  .js-nav .nav-links { display: none; }
+}

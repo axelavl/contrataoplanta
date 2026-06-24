@@ -86,18 +86,63 @@ ADMIN_JWT_USER = "ops"  # usuario lógico único por ahora
 ADMIN_PATH = os.getenv("ADMIN_PATH", "_gestion_ops").strip("/")
 
 
-# ── Rate limiting (in-memory) ─────────────────────────────────
+# ── Rate limiting (Postgres compartido, con fallback en memoria) ──
+#
+# El estado de auth (intentos fallidos + denylist de jti) vivía en dicts
+# de proceso. Con la API corriendo en >1 worker de uvicorn eso fragmenta
+# el límite (5 intentos por worker → N×5 efectivos) y un jti revocado en
+# /logout seguía válido en los otros workers. Ahora ambos viven en
+# Postgres para que el estado sea consistente entre workers/instancias.
+#
+# Fallback: si la DB no está disponible, caemos al dict en memoria. Es
+# degradación intencional — preferible a tumbar el login por un blip de
+# Postgres, asumiendo que el outage de DB es transitorio.
 
-_auth_failures: dict[str, list[float]] = defaultdict(list)
+_auth_failures: dict[str, list[float]] = defaultdict(list)  # fallback en memoria
 RATE_WINDOW_SEG = 600   # 10 minutos
 RATE_MAX_INTENTOS = 5   # máx. intentos fallidos por ventana
 
+#: Marca para no spamear el log cuando la DB no responde.
+_auth_store_degraded = False
+
+
+def _auth_store_warn_once(exc: Exception) -> None:
+    global _auth_store_degraded
+    if not _auth_store_degraded:
+        _auth_store_degraded = True
+        import logging
+        logging.getLogger("api.deps").warning(
+            "Auth store en Postgres no disponible (%s). "
+            "Rate limit y denylist degradan a memoria por proceso.",
+            type(exc).__name__,
+        )
+
 
 def check_rate_limit(ip: str) -> None:
-    ahora = _time.monotonic()
+    ahora = _time.time()
     corte = ahora - RATE_WINDOW_SEG
-    _auth_failures[ip] = [t for t in _auth_failures[ip] if t > corte]
-    if len(_auth_failures[ip]) >= RATE_MAX_INTENTOS:
+    try:
+        from api.services.db import get_cursor
+        with get_cursor() as (conn, cur):
+            # Purga perezosa de la ventana vencida y conteo en una pasada.
+            cur.execute(
+                "DELETE FROM admin_auth_failures WHERE ts < to_timestamp(%s)",
+                [corte],
+            )
+            cur.execute(
+                "SELECT COUNT(*) AS n FROM admin_auth_failures "
+                "WHERE ip = %s AND ts >= to_timestamp(%s)",
+                [ip, corte],
+            )
+            row = cur.fetchone()
+            conn.commit()
+            n = int((row["n"] if isinstance(row, dict) else row[0]) or 0)
+    except Exception as exc:  # noqa: BLE001 — degradación intencional
+        _auth_store_warn_once(exc)
+        _auth_failures[ip] = [t for t in _auth_failures[ip] if t > corte]
+        n = len(_auth_failures[ip])
+
+    if n >= RATE_MAX_INTENTOS:
         raise HTTPException(
             status_code=429,
             detail="Demasiados intentos fallidos. Espere 10 minutos.",
@@ -106,7 +151,19 @@ def check_rate_limit(ip: str) -> None:
 
 
 def record_failure(ip: str) -> None:
-    _auth_failures[ip].append(_time.monotonic())
+    ahora = _time.time()
+    try:
+        from api.services.db import get_cursor
+        with get_cursor() as (conn, cur):
+            cur.execute(
+                "INSERT INTO admin_auth_failures (ip, ts) "
+                "VALUES (%s, to_timestamp(%s))",
+                [ip, ahora],
+            )
+            conn.commit()
+    except Exception as exc:  # noqa: BLE001
+        _auth_store_warn_once(exc)
+        _auth_failures[ip].append(ahora)
 
 
 def client_ip(request: Request) -> str:
@@ -178,7 +235,7 @@ def verify_admin_jwt(request: Request) -> str:
         raise HTTPException(status_code=401, detail="Token inválido") from None
 
     jti = payload.get("jti") or ""
-    if jti in _revoked_jti:
+    if _jti_revocado(jti):
         raise HTTPException(status_code=401, detail="Sesión revocada")
 
     user = str(payload.get("sub") or "")
@@ -191,11 +248,52 @@ def verify_admin_jwt(request: Request) -> str:
     return user
 
 
-def revoke_jti(jti: str, exp_ts: int) -> None:
-    """Añade un jti al denylist y purga los ya vencidos."""
+def _jti_revocado(jti: str) -> bool:
+    """True si el jti está en la denylist (revocado por /logout y aún no
+    vencido). Consulta Postgres; si la DB no responde, cae a memoria."""
+    if not jti:
+        return False
     ahora = _time.time()
-    vencidos = [j for j, e in _revoked_jti.items() if e <= ahora]
-    for j in vencidos:
-        _revoked_jti.pop(j, None)
-    if exp_ts > ahora:
+    try:
+        from api.services.db import get_cursor
+        with get_cursor() as (_, cur):
+            cur.execute(
+                "SELECT 1 FROM admin_jwt_denylist "
+                "WHERE jti = %s AND exp_ts > to_timestamp(%s) LIMIT 1",
+                [jti, ahora],
+            )
+            return cur.fetchone() is not None
+    except Exception as exc:  # noqa: BLE001 — degradación intencional
+        _auth_store_warn_once(exc)
+        return _revoked_jti.get(jti, 0.0) > ahora
+
+
+def revoke_jti(jti: str, exp_ts: int) -> None:
+    """Añade un jti a la denylist (Postgres) y purga los ya vencidos.
+
+    Idempotente: un re-logout del mismo token no falla. Fallback a memoria
+    si la DB no responde — en ese caso la revocación sólo aplica a este
+    worker, igual que antes de la migración a estado compartido.
+    """
+    ahora = _time.time()
+    if exp_ts <= ahora:
+        return  # ya vencido: PyJWT lo rechaza por `exp`, no hace falta guardarlo
+    try:
+        from api.services.db import get_cursor
+        with get_cursor() as (conn, cur):
+            cur.execute(
+                "DELETE FROM admin_jwt_denylist WHERE exp_ts <= to_timestamp(%s)",
+                [ahora],
+            )
+            cur.execute(
+                "INSERT INTO admin_jwt_denylist (jti, exp_ts) "
+                "VALUES (%s, to_timestamp(%s)) ON CONFLICT (jti) DO NOTHING",
+                [jti, float(exp_ts)],
+            )
+            conn.commit()
+    except Exception as exc:  # noqa: BLE001
+        _auth_store_warn_once(exc)
+        vencidos = [j for j, e in _revoked_jti.items() if e <= ahora]
+        for j in vencidos:
+            _revoked_jti.pop(j, None)
         _revoked_jti[jti] = float(exp_ts)

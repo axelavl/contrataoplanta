@@ -50,6 +50,9 @@
   --navy-60: #5570BD;
   --navy-ink: #0B1E48;
   --navy-tint: var(--cielo-l);
+  /* En claro, el azul de texto es el navy normal (ya tiene buen contraste
+     sobre fondos claros). En oscuro se redefine a un azul claro accesible. */
+  --navy-text: var(--cielo);
 
   --gold: var(--acento);
   --gold-soft: #E5A946;
@@ -167,6 +170,11 @@
   --navy-60: #4A6AAD;
   --navy-ink: #E5EDF9;
   --navy-tint: rgba(127, 169, 221, 0.14);
+  /* Azul CLARO accesible para texto/enlaces en modo oscuro: #3057AA (el navy
+     de marca) sólo da ~2.1:1 sobre los fondos oscuros (AA exige 4.5). El navy
+     se mantiene para FONDOS de botón (texto blanco encima); este token es para
+     cuando el azul actúa como color de TEXTO. Ratio ≥4.5 en todos los fondos. */
+  --navy-text: #7AA1DC;
 
   --gold: #EAB858;
   --gold-soft: #F5D289;

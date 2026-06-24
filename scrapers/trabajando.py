@@ -343,9 +343,19 @@ def _html_a_texto(texto: str | None) -> str:
 def _parse_fecha(valor: str | None) -> date | None:
     if not valor:
         return None
+    s = valor.strip()
+    # ISO con 'T' (formato JSON habitual de APIs): '2026-06-23T14:30:00',
+    # con segundos, milisegundos o 'Z'. strptime con los formatos de abajo NO
+    # los cubre (usan espacio, no 'T'), así que antes una fechaExpiracion en
+    # ISO-T devolvía None y la oferta perdía su fecha de cierre. fromisoformat
+    # los maneja; normalizamos 'Z' → '+00:00' (no aceptado en Python <3.11).
+    try:
+        return datetime.fromisoformat(s.replace("Z", "+00:00")).date()
+    except ValueError:
+        pass
     for fmt in ("%Y-%m-%d %H:%M", "%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"):
         try:
-            return datetime.strptime(valor.strip()[:16], fmt).date()
+            return datetime.strptime(s[:16], fmt).date()
         except ValueError:
             continue
     return None

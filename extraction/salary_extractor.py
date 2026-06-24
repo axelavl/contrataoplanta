@@ -100,7 +100,13 @@ def extract_salary(text: str) -> SalaryExtraction:
     candidates: list[tuple[int, str, int, int, int, str | None]] = []
     for m in matches:
         raw = m.group(1)
-        number = re.sub(r"[^\d]", "", raw)
+        # En formato chileno '.' separa miles y ',' decimales. Antes se hacía
+        # re.sub(r"[^\d]", "", raw) directo, que pegaba los decimales a los
+        # miles: '$2.345,50' -> '234550' (≈100x), y '$1.800.000,00' ->
+        # '180000000' (descartado por el tope de 15MM). Recortamos la parte
+        # decimal ',\d{1,2}' antes de quitar separadores de miles.
+        sin_decimales = re.sub(r",\d{1,2}\b", "", raw)
+        number = re.sub(r"[^\d]", "", sin_decimales)
         if not number:
             continue
         amount = int(number)

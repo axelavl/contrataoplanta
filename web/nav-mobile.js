@@ -112,6 +112,15 @@
        index.css — sin esto el <button> aparecía en desktop. */
     '.hamburger { display: none; }',
 
+    /* Las 3 barras del ícono. SOLO index.css las definía (.hamburger span),
+       así que en las páginas internas el botón salía como un cuadro vacío.
+       Las inyectamos acá para que el ícono se dibuje en todas las páginas. */
+    '.hamburger { background: none; border: none; cursor: pointer; width: 36px; height: 36px; flex-direction: column; align-items: center; justify-content: center; gap: 5px; padding: 0; margin-left: auto; }',
+    '.hamburger span { display: block; width: 22px; height: 2px; background: #fff; border-radius: 2px; transition: transform .3s, opacity .3s; }',
+    '.hamburger.abierto span:nth-child(1) { transform: translateY(7px) rotate(45deg); }',
+    '.hamburger.abierto span:nth-child(2) { opacity: 0; }',
+    '.hamburger.abierto span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }',
+
     /* En móvil forzamos hamburguesa visible y nav-links oculto. Esto
        duplica parte de redesign-overrides pero garantiza que el menú
        opere aunque ese stylesheet no haya cargado. */
@@ -161,7 +170,7 @@
     } else {
       data = [
         { href: 'index.html', text: 'Buscar', cls: '', id: '' },
-        { href: 'favoritos.html', text: '♡ Favoritos', cls: 'nav-link-favs', id: 'mobile-nav-favoritos' },
+        { href: 'favoritos.html', text: '♡ Mis favoritos', cls: 'nav-link-favs', id: 'mobile-nav-favoritos' },
         { href: 'preparacion.html', text: 'Preparación', cls: '', id: '' },
         { href: 'cursos.html', text: 'Capacítate', cls: '', id: '' },
         { href: 'faq.html', text: 'Preguntas frecuentes', cls: '', id: '' }

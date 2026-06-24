@@ -335,7 +335,10 @@ async function loadCategoriasCursos() {
 // ── Utils ──────────────────────────────────────────────────────
 function fmtDate(v) {
   if (!v) return '<span class="text-muted">—</span>';
-  const d = new Date(v);
+  // 'YYYY-MM-DD' → medianoche local (no UTC), para que la fecha no se muestre
+  // corrida un día atrás en hora de Chile. Ver nota en app.js/historial.js.
+  const str = String(v);
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(str) ? new Date(str + 'T00:00:00') : new Date(str);
   return isNaN(d) ? v : d.toLocaleDateString('es-CL',{day:'2-digit',month:'short',year:'numeric'});
 }
 function fmtDt(v) {

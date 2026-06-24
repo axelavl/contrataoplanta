@@ -411,7 +411,10 @@ def _post_a_oferta(post: dict) -> dict:
     campos = parsear_campos(contenido)
     fecha_post = None
     try:
-        fecha_post = datetime.fromisoformat(post.get("date", "")).date()
+        # Normaliza 'Z' → '+00:00' por consistencia con fiscalia.py y para no
+        # depender de Python ≥3.11 (donde fromisoformat ya acepta 'Z').
+        fecha_post = datetime.fromisoformat(
+            str(post.get("date", "")).replace("Z", "+00:00")).date()
     except ValueError:
         pass
     return construir_oferta(titulo, post.get("link", ""), campos, fecha_post)

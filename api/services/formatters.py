@@ -20,9 +20,15 @@ from __future__ import annotations
 import html
 import json
 import re
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
+
+try:
+    from zoneinfo import ZoneInfo
+    _TZ_CL = ZoneInfo("America/Santiago")
+except Exception:  # pragma: no cover — sin tzdata, cae a fecha del sistema
+    _TZ_CL = None
 
 from fastapi import HTTPException
 
@@ -125,10 +131,22 @@ def _descripcion_a_parrafos_html(texto: str, max_chars: int = 2000) -> str:
 
 # ── Fechas y rentas ───────────────────────────────────────────────────────
 
+def _hoy_cl() -> date:
+    """Fecha de "hoy" en hora de Chile.
+
+    Sin esto, `date.today()` usa la zona del proceso (UTC en Railway), lo que
+    desfasa el conteo de días para usuarios chilenos cerca del cambio de día
+    UTC y desincroniza con OFFER_STATUS_SQL (que ya evalúa en hora de Chile).
+    """
+    if _TZ_CL is not None:
+        return datetime.now(_TZ_CL).date()
+    return date.today()
+
+
 def dias_restantes(value: date | None) -> int | None:
     if value is None:
         return None
-    return (value - date.today()).days
+    return (value - _hoy_cl()).days
 
 
 def _format_fecha_larga(value: date | None) -> str | None:

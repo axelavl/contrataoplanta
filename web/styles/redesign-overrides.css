@@ -577,7 +577,11 @@
   color: rgba(244, 241, 232, 0.75);
   font-size: 12.5px;
   letter-spacing: 0.01em;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  /* Línea de separación entre la cinta y el header navy. Antes era casi
+     invisible (blanco 6%) y, al ser dos tonos oscuros parecidos (#050C1A vs
+     #0A2E6E), la cinta y el header se veían pegados como un solo bloque. Un
+     hairline dorado tenue los delimita sin romper la estética. */
+  border-bottom: 1px solid rgba(242, 194, 106, 0.22);
 }
 .ribbon-inner {
   max-width: 1200px;
@@ -3801,4 +3805,113 @@ summary:focus-visible,
 .oferta-row:hover {
   /* el hover no debe romper la rejilla: conserva el borde inferior */
   border-bottom-color: var(--borde);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   ACCESIBILIDAD · contraste de AZULES en modo oscuro (WCAG AA)
+   El navy de marca (#3057AA) sobre fondos oscuros da ~2.1–2.7:1 cuando se
+   usa como color de TEXTO — por debajo del 4.5:1 que exige AA. Estos
+   selectores lo redirigen a --navy-text (#7AA1DC, ≥4.5:1 en todos los
+   fondos oscuros). NO se toca el navy donde es FONDO de botón (ahí lleva
+   texto claro encima y su contraste ya es correcto).
+   ────────────────────────────────────────────────────────────────────── */
+:root[data-theme="dark"] .oferta-cargo-link:hover,
+:root[data-theme="dark"] .estado-tab.activo,
+:root[data-theme="dark"] .vista-btn.activo,
+:root[data-theme="dark"] .row-inst,
+:root[data-theme="dark"] .resultados-count strong,
+:root[data-theme="dark"] .badge-contrata,
+:root[data-theme="dark"] .col-sort.activo,
+:root[data-theme="dark"] .col-sort:hover,
+:root[data-theme="dark"] .nav-links a.active:not(.nav-link-favs),
+:root[data-theme="dark"] .nav-links a:hover:not(.nav-link-favs),
+:root[data-theme="dark"] a.enlace,
+:root[data-theme="dark"] .link,
+:root[data-theme="dark"] .quick-links a {
+  color: var(--navy-text) !important;
+}
+/* Bordes que usaban --navy en dark: el azul claro también mejora su
+   visibilidad de borde sin afectar contraste de texto. */
+:root[data-theme="dark"] .ctrl-select:hover,
+:root[data-theme="dark"] .comunas-trigger:hover {
+  border-color: var(--navy-text) !important;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Botón "Actualizar" del ribbon. Fuerza datos frescos sin recargar página.
+   ────────────────────────────────────────────────────────────────────── */
+.ribbon-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  padding: 3px 10px;
+  font: inherit;
+  font-size: 0.82em;
+  line-height: 1;
+  color: var(--navy-text, var(--navy));
+  background: transparent;
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.ribbon-refresh:hover {
+  background: var(--navy-tint);
+  border-color: var(--navy-text, var(--navy));
+}
+.ribbon-refresh:focus-visible {
+  outline: 2px solid var(--navy-text, var(--navy));
+  outline-offset: 2px;
+}
+.ribbon-refresh:disabled { cursor: default; opacity: 0.7; }
+.ribbon-refresh-icon { display: inline-block; font-size: 1.05em; }
+.ribbon-refresh.is-loading .ribbon-refresh-icon {
+  animation: ribbon-spin 0.7s linear infinite;
+}
+@keyframes ribbon-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .ribbon-refresh.is-loading .ribbon-refresh-icon { animation: none; }
+}
+/* En pantallas chicas, deja solo el ícono para no apretar la cinta. */
+@media (max-width: 560px) {
+  .ribbon-refresh-label { display: none; }
+  .ribbon-refresh { padding: 4px 8px; }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Menú móvil (panel lateral) en MODO CLARO.
+   El CSS base del panel (inyectado por nav-mobile.js) está pensado para
+   oscuro: separadores y hover usan rgba(255,255,255,...), invisibles sobre
+   el fondo blanco del tema claro, y el fondo queda blanco plano "sin diseño".
+   Acá le damos al tema claro: fondo con tono cálido sutil, separadores
+   visibles, y un estado activo/hover perceptible con el azul de la marca.
+   Solo aplica en claro (no lleva [data-theme="dark"]).
+   ────────────────────────────────────────────────────────────────────── */
+:root:not([data-theme="dark"]) .nav-mobile-panel {
+  background: linear-gradient(180deg, #FFFFFF 0%, var(--bg2, #F3F0E6) 100%) !important;
+  color: var(--texto, #18202F) !important;
+  border-left: 1px solid var(--borde, #E5E1D2) !important;
+  box-shadow: -22px 0 48px rgba(14, 32, 70, 0.18) !important;
+}
+:root:not([data-theme="dark"]) .nav-mobile-panel a {
+  color: var(--texto2, #4B5167) !important;
+  border-bottom: 1px solid var(--borde, #E5E1D2) !important;
+}
+:root:not([data-theme="dark"]) .nav-mobile-panel a:hover,
+:root:not([data-theme="dark"]) .nav-mobile-panel a:focus,
+:root:not([data-theme="dark"]) .nav-mobile-panel a.active {
+  background: var(--cielo-l, #E1E8F6) !important;
+  color: var(--azul, #142E6B) !important;
+}
+:root:not([data-theme="dark"]) .nav-mobile-panel a:active {
+  background: #D4DEF1 !important;
+}
+:root:not([data-theme="dark"]) .nav-mobile-panel .nav-link-favs {
+  color: var(--gold-dim, #A66E1B) !important;
+}
+:root:not([data-theme="dark"]) .nav-mobile-panel-close {
+  background: var(--bg2, #F3F0E6) !important;
+  border: 1px solid var(--borde, #E5E1D2) !important;
+  color: var(--texto, #18202F) !important;
 }

@@ -1784,6 +1784,10 @@ def build_file_handler(base_path: Path) -> logging.Handler:
                 return logging.NullHandler()
 
 
+class _ResponseTooLarge(Exception):
+    """El cuerpo de la respuesta superó MAX_RESPONSE_BYTES."""
+
+
 class LegacyBaseScraper(abc.ABC):
     """Clase base para todos los scrapers del proyecto."""
 
@@ -1791,6 +1795,46 @@ class LegacyBaseScraper(abc.ABC):
     RETRYABLE_STATUS_CODES: frozenset[int] = frozenset({408, 425, 429, 500, 502, 503, 504})
     #: estados HTTP terminales (no se reintenta)
     TERMINAL_STATUS_CODES: frozenset[int] = frozenset({400, 401, 403, 404, 405, 410, 451})
+
+    #: Tope de bytes que se leen de una respuesta. El contenido viene de
+    #: servidores externos no confiables; sin tope, un cuerpo gigante (o un
+    #: `Content-Length` mentiroso seguido de un stream infinito) agota la
+    #: memoria del worker del scraper. 25 MB cubre con holgura cualquier
+    #: página de ofertas o PDF de bases legítimo. Override por entorno con
+    #: SCRAPER_MAX_RESPONSE_BYTES.
+    MAX_RESPONSE_BYTES: int = int(os.getenv("SCRAPER_MAX_RESPONSE_BYTES", str(25 * 1024 * 1024)))
+
+    #: Hosts para los que se permite el reintento inseguro (verify=False) ante
+    #: SSLError. SOLO debe contener dominios públicos de instituciones que se
+    #: sabe que sirven cadenas de certificado rotas y cuyo contenido scrapeado
+    #: se vuelve a verificar contra el catálogo. Aplicar el downgrade a
+    #: cualquier host permitía a un MITM forzarlo rompiendo el primer
+    #: handshake. Se puede ampliar por entorno con
+    #: SCRAPER_TLS_INSECURE_HOSTS="a.cl,b.gob.cl" (coma-separado, sin esquema).
+    #: El match es exacto sobre el hostname en minúsculas o sufijo de dominio.
+    TLS_INSECURE_RETRY_HOSTS: frozenset[str] = frozenset(
+        h.strip().lower().lstrip(".")
+        for h in os.getenv("SCRAPER_TLS_INSECURE_HOSTS", "").split(",")
+        if h.strip()
+    )
+
+    @classmethod
+    def _tls_insecure_retry_allowed(cls, url: str) -> bool:
+        """True si el host de `url` está explícitamente autorizado para el
+        reintento sin verificación de certificado. Coincide por host exacto o
+        por sufijo de dominio (`.gob.cl` cubre `www.x.gob.cl`)."""
+        if not cls.TLS_INSECURE_RETRY_HOSTS:
+            return False
+        try:
+            host = (urlparse(url).hostname or "").lower()
+        except Exception:
+            return False
+        if not host:
+            return False
+        for allowed in cls.TLS_INSECURE_RETRY_HOSTS:
+            if host == allowed or host.endswith("." + allowed):
+                return True
+        return False
 
     def __init__(
         self,
@@ -2290,6 +2334,7 @@ class LegacyBaseScraper(abc.ABC):
                     timeout=request_kwargs.pop("timeout", self.timeout),
                     headers=headers,
                     verify=verify,
+                    stream=True,
                     **request_kwargs,
                 )
                 status = response.status_code
@@ -2298,7 +2343,22 @@ class LegacyBaseScraper(abc.ABC):
                     response.raise_for_status()
                 if status in self.RETRYABLE_STATUS_CODES or status >= 500:
                     response.raise_for_status()
+                # Tope de tamaño: corta cuerpos abusivos de servidores externos.
+                # Rechazo temprano por Content-Length declarado, y tope duro al
+                # leer el stream (cubre el caso de Content-Length mentiroso).
+                self._enforce_response_size(response, url)
                 return response
+
+            except _ResponseTooLarge as exc:
+                # Terminal: no reintentamos un cuerpo abusivo.
+                last_error = exc
+                self.logger.warning(
+                    "evento=request_too_large scraper=%s url=%s limite=%s",
+                    self.nombre,
+                    url,
+                    self.MAX_RESPONSE_BYTES,
+                )
+                break
 
             except requests_exceptions.SSLError as exc:
                 last_error = exc
@@ -2309,10 +2369,22 @@ class LegacyBaseScraper(abc.ABC):
                         url,
                     )
                     break
+                # Reintento inseguro (verify=False) SOLO si el host está en la
+                # allowlist explícita. Para cualquier otro host, un SSLError es
+                # terminal: degradar la verificación ahí permitiría a un MITM
+                # forzar el downgrade rompiendo el primer handshake.
+                if not self._tls_insecure_retry_allowed(url):
+                    self.logger.warning(
+                        "evento=request_ssl_fail_no_allowlist scraper=%s url=%s",
+                        self.nombre,
+                        url,
+                    )
+                    break
                 insecure_retry_done = True
                 verify = False
                 self.logger.warning(
-                    "evento=request_ssl_insecure_retry scraper=%s url=%s",
+                    "evento=request_ssl_insecure_retry scraper=%s url=%s "
+                    "motivo=host_en_allowlist",
                     self.nombre,
                     url,
                 )
@@ -2388,6 +2460,38 @@ class LegacyBaseScraper(abc.ABC):
 
         assert last_error is not None
         raise last_error
+
+    def _enforce_response_size(self, response: "requests.Response", url: str) -> None:
+        """Impone MAX_RESPONSE_BYTES sobre el cuerpo de `response`.
+
+        Como `request()` usa `stream=True`, el cuerpo no está descargado aún.
+        Rechazamos temprano si el `Content-Length` ya excede el tope, y luego
+        leemos el stream con un tope duro (defensa ante Content-Length falso).
+        El contenido leído se materializa en `response._content` para que los
+        consumidores (`.text`, `.json()`, `.content`) funcionen igual que con
+        una respuesta normal, sin re-descargar.
+        """
+        limite = self.MAX_RESPONSE_BYTES
+        declarado = response.headers.get("Content-Length")
+        if declarado is not None:
+            try:
+                if int(declarado) > limite:
+                    response.close()
+                    raise _ResponseTooLarge(f"Content-Length={declarado} > {limite}")
+            except ValueError:
+                pass  # header no numérico: lo ignoramos y caemos al tope duro
+        chunks: list[bytes] = []
+        leido = 0
+        for chunk in response.iter_content(chunk_size=65536):
+            if not chunk:
+                continue
+            leido += len(chunk)
+            if leido > limite:
+                response.close()
+                raise _ResponseTooLarge(f"stream > {limite} bytes")
+            chunks.append(chunk)
+        # Materializa el cuerpo para que .content/.text/.json sigan operando.
+        response._content = b"".join(chunks)
 
     def request_text(self, url: str, method: str = "GET", **kwargs: Any) -> str:
         response = self.request(url=url, method=method, **kwargs)

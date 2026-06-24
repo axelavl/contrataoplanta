@@ -49,15 +49,41 @@ function tipoClase(v){ return TIPO_CSS[tipoClaveNormalizada(v)] || 'badge-otro';
 
 // ── Helpers ────────────────────────────────────────────────────────
 function getFavs() {
-  return JSON.parse(localStorage.getItem(FAV_KEY) || '[]');
+  // try/catch: un valor corrupto en localStorage (escritura parcial, edición
+  // manual, bug previo) haría que un JSON.parse crudo lance y rompa todo el
+  // render de favoritos. Ante error, tratamos como lista vacía.
+  try {
+    const v = JSON.parse(localStorage.getItem(FAV_KEY) || '[]');
+    return Array.isArray(v) ? v : [];
+  } catch {
+    return [];
+  }
 }
 function setFavs(favs) {
   localStorage.setItem(FAV_KEY, JSON.stringify(favs));
 }
 
+// "Hoy" en hora de Chile, independiente de la zona del navegador. El backend
+// (OFFER_STATUS_SQL / dias_restantes) evalúa el cierre en America/Santiago; si
+// acá usáramos new Date() local, un usuario fuera de Chile —o cualquiera en las
+// últimas horas del día chileno— vería un conteo de días distinto al del
+// listado principal y al detalle que devuelve la API.
+function hoyEnSantiago() {
+  try {
+    // en-CA da formato YYYY-MM-DD, fácil de descomponer.
+    const partes = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Santiago', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(new Date());
+    const [y, m, d] = partes.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  } catch {
+    const h = new Date(); h.setHours(0, 0, 0, 0); return h;
+  }
+}
+
 function diasRestantes(fechaStr) {
   if (!fechaStr) return null;
-  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const hoy = hoyEnSantiago();
   const cierre = new Date(fechaStr + 'T00:00:00');
   return Math.round((cierre - hoy) / 86400000);
 }
