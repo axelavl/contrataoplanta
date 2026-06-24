@@ -25,12 +25,22 @@ El detalle agrega: Gerencia, Tipo de contrato, Vacantes, Fecha de
 postulación (publicación), Circular.
 
 El Banco Central no publica renta en estas páginas (renta_bruta_* queda
-vacío); el "Nivel de la estructura de cargos" va en la descripción.
+vacío salvo que aparezca en el PDF de bases); el "Nivel de la estructura de
+cargos" va en la descripción.
+
+PDF de bases: la ficha de detalle enlaza el documento de bases mediante el
+icono de PDF. Cuando ``con_pdf`` está activo (por defecto), el scraper lo
+descarga reutilizando la sesión de Playwright (las cookies de Incapsula ya
+resueltas — un requests plano recibiría el challenge), extrae el texto con
+pdfplumber y rellena requisitos_texto, renta_bruta_* y la sección de
+funciones de la descripción. Si pdfplumber no está instalado o el PDF es
+escaneado/cifrado, el scraper sigue funcionando sin esos campos.
 
 Uso:
     python scrapers/bcentral.py --dry-run --verbose
     python scrapers/bcentral.py --dry-run --export ofertas_bc
     python scrapers/bcentral.py --sin-detalle      # solo listado (1 carga)
+    python scrapers/bcentral.py --sin-pdf          # no leer las bases en PDF
 """
 
 from __future__ import annotations
@@ -45,7 +55,7 @@ import time
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
-from urllib.parse import urljoin
+from urllib.parse import unquote, urljoin
 
 from bs4 import BeautifulSoup
 
@@ -53,6 +63,14 @@ try:
     from playwright.sync_api import sync_playwright
 except ImportError:
     sync_playwright = None  # type: ignore[assignment]
+
+try:  # pdfplumber es opcional: si falta, simplemente no se leen las bases.
+    import pdfplumber  # type: ignore
+except Exception as _pdfplumber_err:  # pragma: no cover
+    pdfplumber = None  # type: ignore[assignment]
+    _PDFPLUMBER_ERR: Exception | None = _pdfplumber_err
+else:
+    _PDFPLUMBER_ERR = None
 
 # ── Integración con el proyecto (con fallback standalone) ───────────────────
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -71,6 +89,18 @@ try:
     STANDALONE = False
 except ImportError:
     STANDALONE = True
+
+# Extractores compartidos (sin dependencia de BD). Si el repo no está en el
+# path —modo standalone aislado— quedan en None y el scraper sigue funcionando
+# leyendo el PDF pero sin parsear requisitos/renta finos.
+try:
+    from extraction.requirements_extractor import extract_requirements
+    from extraction.salary_extractor import extract_salary
+except Exception:  # pragma: no cover
+    extract_requirements = None  # type: ignore[assignment]
+    extract_salary = None  # type: ignore[assignment]
+
+if STANDALONE:
 
     class _Cfg:
         LOG_DIR = "logs"
@@ -151,7 +181,7 @@ _NUM_PALABRA = {"una": 1, "dos": 2, "tres": 3, "cuatro": 4, "cinco": 5}
 CAMPOS_EXPORT = ["id_externo", "fuente_id", "institucion_nombre", "sector", "cargo",
                  "area_profesional", "tipo_cargo", "nivel", "region", "ciudad",
                  "renta_bruta_min", "renta_bruta_max", "renta_texto",
-                 "fecha_publicacion", "fecha_cierre", "url_original",
+                 "fecha_publicacion", "fecha_cierre", "url_original", "url_bases",
                  "descripcion", "requisitos_texto"]
 
 
@@ -279,11 +309,18 @@ def parsear_listado(html: str, base_url: str = BASE) -> list[dict[str, Any]]:
     return vacantes
 
 
-def parsear_detalle(html: str) -> dict[str, Any]:
-    """Detalle: Gerencia, Tipo de contrato, Vacantes, Fecha de postulación..."""
+def parsear_detalle(html: str, base_url: str = BASE) -> dict[str, Any]:
+    """Detalle: Gerencia, Tipo de contrato, Vacantes, Fecha de postulación...
+
+    Además localiza el PDF de bases (icono de PDF en la ficha) y lo deja en
+    ``d["url_bases"]`` para que ``recolectar`` lo descargue y lo parsee.
+    """
     soup = BeautifulSoup(html, "html.parser")
     texto = limpiar_texto(soup.get_text(" ", strip=True))
     d: dict[str, Any] = {}
+
+    if url_pdf := _encontrar_pdf_bases(soup, base_url):
+        d["url_bases"] = url_pdf
 
     def cap(label: str, patron_valor: str = r"([^:]{2,60}?)") -> str | None:
         m = re.search(rf"{label}\s*:\s*{patron_valor}\s*(?=[A-ZÁÉÍÓÚ][\wáéíóú]+\s*:|$)",
@@ -313,6 +350,152 @@ def parsear_detalle(html: str) -> dict[str, Any]:
     return d
 
 
+# ── PDF de bases (descarga + extracción) ─────────────────────────────────────
+# Pistas para priorizar cuando la ficha enlaza varios PDFs. El icono de PDF del
+# Banco Central suele apuntar a un documento de Liferay cuyo nombre contiene
+# "bases"/"concurso"/"perfil"; si no, caemos al primer PDF de la ficha.
+_PDF_HINTS = ("bases", "concurso", "perfil", "descriptor", "convocatoria",
+              "anexo", "tdr")
+_RE_FUNCIONES = re.compile(
+    r"(?:principales\s+)?funciones(?:\s+del\s+cargo|\s+principales)?\s*:?\s*(.{40,1200}?)"
+    r"(?=\b(?:requisitos|perfil|competencias|formaci[oó]n|condiciones|"
+    r"renta|remuneraci[oó]n|postulaci[oó]n)\b|$)",
+    re.I | re.S)
+
+
+def _encontrar_pdf_bases(soup: BeautifulSoup, base_url: str = BASE) -> str | None:
+    """Devuelve la URL del PDF de bases enlazado en la ficha de detalle.
+
+    Acepta href que terminen en .pdf o que sean documentos de Liferay
+    (``/documents/``), que es como el portal sirve los archivos sin extensión
+    visible. Prioriza por nombre usando ``_PDF_HINTS``.
+    """
+    candidatos: list[str] = []
+    for a in soup.select("a[href]"):
+        href = (a.get("href") or "").strip()
+        if not href:
+            continue
+        low = href.lower()
+        es_pdf = (".pdf" in low) or ("/documents/" in low) or \
+            ("get_file" in low) or ("fileentry" in low)
+        if not es_pdf:
+            # A veces el ancla envuelve un icono <i>/<img> con clase pdf.
+            icono = a.find(["i", "img", "span"])
+            clases = " ".join(
+                (icono.get("class") or []) if icono else []).lower()
+            alt = ((icono.get("alt") or "") if icono else "").lower()
+            if "pdf" not in clases and "pdf" not in alt:
+                continue
+        candidatos.append(urljoin(base_url, href))
+
+    if not candidatos:
+        return None
+
+    # dedup preservando orden
+    vistos: set[str] = set()
+    unicos = [u for u in candidatos if not (u in vistos or vistos.add(u))]
+
+    def score(url: str) -> int:
+        name = unquote(url).lower()
+        for i, hint in enumerate(_PDF_HINTS):
+            if hint in name:
+                return i
+        return len(_PDF_HINTS)
+
+    unicos.sort(key=score)
+    return unicos[0]
+
+
+def _descargar_pdf(ctx, url: str) -> bytes | None:
+    """Descarga el PDF reutilizando la sesión del navegador (cookies Incapsula).
+
+    bcentral.cl está tras Imperva Incapsula: un requests.get plano recibe el
+    stub del challenge. ``ctx.request`` comparte las cookies ya resueltas por
+    el goto de Playwright, así que la descarga pasa el WAF.
+    """
+    try:
+        resp = ctx.request.get(url, timeout=PAGE_TIMEOUT)
+        if not resp.ok:
+            logger.info("  PDF %s respondió HTTP %s", url[:70], resp.status)
+            return None
+        cuerpo = resp.body()
+        if not cuerpo or not cuerpo[:5].startswith(b"%PDF"):
+            logger.info("  %s no es un PDF (sin cabecera %%PDF)", url[:70])
+            return None
+        return cuerpo
+    except Exception as exc:
+        logger.info("  Error descargando PDF %s: %s", url[:70], type(exc).__name__)
+        return None
+
+
+def _texto_pdf(binario: bytes, max_paginas: int = 10) -> str:
+    """Extrae texto del PDF preservando saltos de línea (los necesita el
+    extractor de requisitos, que trabaja por líneas)."""
+    if pdfplumber is None:
+        if _PDFPLUMBER_ERR is not None:
+            logger.warning("  pdfplumber no disponible (%s); no se lee el PDF.",
+                           type(_PDFPLUMBER_ERR).__name__)
+        return ""
+    import io
+    try:
+        with pdfplumber.open(io.BytesIO(binario)) as pdf:
+            partes = []
+            for pagina in pdf.pages[:max_paginas]:
+                t = pagina.extract_text() or ""
+                if t:
+                    partes.append(t)
+            return "\n".join(partes)
+    except Exception as exc:
+        logger.info("  PDF ilegible (cifrado/escaneado/corrupto): %s",
+                    type(exc).__name__)
+        return ""
+
+
+def parsear_pdf_bases(texto: str) -> dict[str, Any]:
+    """De las bases en texto saca requisitos_texto, renta y funciones."""
+    out: dict[str, Any] = {}
+    if not texto or len(texto) < 80:
+        return out
+
+    plano = limpiar_texto(texto)
+
+    # Requisitos (exigibles + deseables + documentos a presentar)
+    if extract_requirements is not None:
+        try:
+            req, des, docs = extract_requirements(texto)
+            bloques = []
+            if req:
+                bloques.append("Requisitos: " + "; ".join(req))
+            if des:
+                bloques.append("Deseables: " + "; ".join(des))
+            if docs:
+                bloques.append("Documentos: " + "; ".join(docs[:6]))
+            if bloques:
+                out["requisitos_texto"] = limpiar_texto(" | ".join(bloques))[:1900]
+        except Exception:
+            logger.exception("  Error extrayendo requisitos del PDF")
+
+    # Renta (el BC casi nunca la publica, pero las bases a veces sí)
+    if extract_salary is not None:
+        try:
+            sal = extract_salary(plano)
+            if sal.amount:
+                out["renta_bruta_min"] = int(sal.amount)
+                out["renta_bruta_max"] = int(sal.amount)
+                if sal.raw:
+                    out["renta_texto"] = limpiar_texto(sal.raw)[:200]
+        except Exception:
+            logger.exception("  Error extrayendo renta del PDF")
+
+    # Funciones del cargo → enriquece descripción
+    if mf := _RE_FUNCIONES.search(texto):
+        funciones = limpiar_texto(mf.group(1))
+        if len(funciones) >= 40:
+            out["funciones"] = funciones[:900]
+
+    return out
+
+
 def _nivel_columna(cargo: str, texto: str) -> str:
     t = f"{cargo} {texto}".lower()
     if any(w in t for w in ("jefe de grupo", "jefe de departamento", "gerente",
@@ -324,10 +507,12 @@ def _nivel_columna(cargo: str, texto: str) -> str:
     return "Profesional"
 
 
-def construir_oferta(v: dict[str, Any], det: dict[str, Any]) -> dict:
+def construir_oferta(v: dict[str, Any], det: dict[str, Any],
+                     pdf: dict[str, Any] | None = None) -> dict:
     fuente_id = int(FUENTE["id"])
     nombre = FUENTE["nombre"]
     cargo = v["cargo"]
+    pdf = pdf or {}
 
     desc_partes = [v["descripcion"]]
     if v.get("nivel_estructura"):
@@ -337,6 +522,8 @@ def construir_oferta(v: dict[str, Any], det: dict[str, Any]) -> dict:
         desc_partes.append(f"Vacantes: {vac}")
     if det.get("gerencia"):
         desc_partes.append(f"Gerencia: {det['gerencia']}")
+    if pdf.get("funciones"):
+        desc_partes.append(f"Funciones: {pdf['funciones']}")
     descripcion = limpiar_texto(" | ".join(p for p in desc_partes if p))
 
     tipo = v.get("tipo") or det.get("tipo") or "Indefinido"
@@ -357,18 +544,24 @@ def construir_oferta(v: dict[str, Any], det: dict[str, Any]) -> dict:
         "nivel": _nivel_columna(cargo, v["descripcion"]),
         "region": FUENTE["region"],
         "ciudad": "Santiago",
-        "renta_bruta_min": None,   # el BC no publica renta en estas páginas
-        "renta_bruta_max": None,
-        "renta_texto": None,
+        # Renta: el BC no la publica en el HTML; si aparece en las bases (PDF)
+        # se usa lo extraído, si no queda NULL.
+        "renta_bruta_min": pdf.get("renta_bruta_min"),
+        "renta_bruta_max": pdf.get("renta_bruta_max"),
+        "renta_texto": pdf.get("renta_texto"),
         "fecha_publicacion": det.get("fecha_publicacion") or date.today(),
         "fecha_cierre": v["fecha_cierre"],
-        "requisitos_texto": None,  # requisitos detallados van en bases adjuntas
+        # Requisitos detallados provienen de las bases adjuntas (PDF).
+        "requisitos_texto": pdf.get("requisitos_texto"),
+        # URL del PDF de bases (no se persiste hoy en upsert_oferta, pero se
+        # exporta y queda disponible para trazabilidad / "Ver bases").
+        "url_bases": det.get("url_bases"),
     }
 
 
-# ── Recolección ──────────────────────────────────────────────────────────────
+# ── Recolección ───────────────────────────────────────────────────────────────
 def recolectar(max_results: int | None, delay: float, con_detalle: bool,
-               incluir_cerrados: bool) -> list[dict]:
+               incluir_cerrados: bool, con_pdf: bool = True) -> list[dict]:
     if sync_playwright is None:
         logger.error(
             "Playwright no está instalado y es OBLIGATORIO para bcentral.cl "
@@ -401,12 +594,23 @@ def recolectar(max_results: int | None, delay: float, con_detalle: bool,
 
             for v in seleccion:
                 det: dict[str, Any] = {}
+                pdf_datos: dict[str, Any] = {}
                 if con_detalle:
                     time.sleep(delay)
                     hd = _fetch(page, v["url"])
                     if hd:
-                        det = parsear_detalle(hd)
-                ofertas.append(construir_oferta(v, det))
+                        det = parsear_detalle(hd, BASE)
+                        if con_pdf and det.get("url_bases"):
+                            binario = _descargar_pdf(ctx, det["url_bases"])
+                            if binario:
+                                texto = _texto_pdf(binario)
+                                pdf_datos = parsear_pdf_bases(texto)
+                                if pdf_datos:
+                                    logger.info(
+                                        "  PDF bases concurso %s: %s",
+                                        v["concurso"],
+                                        ", ".join(sorted(pdf_datos)))
+                ofertas.append(construir_oferta(v, det, pdf_datos))
         finally:
             browser.close()
     return ofertas
@@ -432,7 +636,7 @@ def _exportar(ofertas: list[dict], prefijo: str) -> None:
 
 def ejecutar(dry_run=False, verbose=False, max_results=None,
              delay=DELAY_DEFAULT, con_detalle=True, incluir_cerrados=False,
-             export=None) -> dict[str, Any]:
+             export=None, con_pdf=True) -> dict[str, Any]:
     inicio = time.time()
     logger.info("=" * 60)
     logger.info("INICIO - Scraper Banco Central%s", " (standalone)" if STANDALONE else "")
@@ -448,7 +652,8 @@ def ejecutar(dry_run=False, verbose=False, max_results=None,
     ofertas: list[dict] = []
 
     try:
-        ofertas = recolectar(max_results, delay, con_detalle, incluir_cerrados)
+        ofertas = recolectar(max_results, delay, con_detalle, incluir_cerrados,
+                             con_pdf=con_pdf)
         stats["encontradas"] = len(ofertas)
         logger.info("  → %d ofertas", len(ofertas))
         for datos in ofertas:
@@ -515,6 +720,8 @@ if __name__ == "__main__":
                    help=f"Pausa entre páginas (default {DELAY_DEFAULT}s)")
     p.add_argument("--sin-detalle", action="store_true",
                    help="Solo cards del listado (1 carga de página)")
+    p.add_argument("--sin-pdf", action="store_true",
+                   help="No descargar ni leer el PDF de bases de cada concurso")
     p.add_argument("--incluir-cerrados", action="store_true",
                    help="Incluir también concursos cerrados/finalizados")
     p.add_argument("--export", default=None, metavar="PREFIJO",
@@ -522,4 +729,5 @@ if __name__ == "__main__":
     a = p.parse_args()
     ejecutar(dry_run=a.dry_run, verbose=a.verbose, max_results=a.max,
              delay=a.delay, con_detalle=not a.sin_detalle,
-             incluir_cerrados=a.incluir_cerrados, export=a.export)
+             incluir_cerrados=a.incluir_cerrados, export=a.export,
+             con_pdf=not a.sin_pdf)
