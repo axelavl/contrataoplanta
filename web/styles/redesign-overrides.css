@@ -3935,3 +3935,91 @@ summary:focus-visible,
   border: 1px solid var(--borde, #E5E1D2) !important;
   color: var(--texto, #18202F) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   DARK MODE · FIX DE CONTRASTE EN PÁGINAS CON <style> INLINE
+   ----------------------------------------------------------------------
+   Varias páginas (preparacion, cursos, favoritos, estadisticas,
+   calculadora-renta, panel-mercado, plantilla-cv, ruta-ingreso, faq)
+   definen estilos inline que usan var(--azul) y var(--blanco) como color
+   de TEXTO. En modo claro funcionan (navy / casi-blanco), pero en oscuro
+   esos tokens son SUPERFICIES OSCURAS (--azul=#0A1426, --blanco=#152847),
+   así que el texto y los botones se volvían invisibles sobre fondos
+   también oscuros. Acá se reasignan a colores claros accesibles (AA).
+   Selectores prefijados con :root[data-theme="dark"] → ganan en
+   especificidad a las reglas inline de cada página. ─────────────────── */
+
+/* 1) Encabezados/títulos que eran navy sólido → texto claro de alto contraste */
+:root[data-theme="dark"] .sec-titulo,
+:root[data-theme="dark"] .cs-h2,
+:root[data-theme="dark"] .faq-bloque h2,
+:root[data-theme="dark"] .stats-titulo,
+:root[data-theme="dark"] .info-title,
+:root[data-theme="dark"] .calc-panel h2,
+:root[data-theme="dark"] .calc-tabla-card h2,
+:root[data-theme="dark"] .pm-card h2,
+:root[data-theme="dark"] .pm-b2b-titulo,
+:root[data-theme="dark"] .step h2,
+:root[data-theme="dark"] .error-num,
+:root[data-theme="dark"] .error-titulo {
+  color: var(--texto);
+}
+/* Botón ghost (fondo transparente) del 404: solo aclarar el texto */
+:root[data-theme="dark"] .btn-ghost {
+  color: var(--navy-text);
+}
+
+/* 2) Números/valores KPI branded en navy → azul claro accesible (mantiene pop) */
+:root[data-theme="dark"] .kpi-valor,
+:root[data-theme="dark"] .quiz-resultado-pct,
+:root[data-theme="dark"] .pm-kpi-valor,
+:root[data-theme="dark"] .pm-renta-num,
+:root[data-theme="dark"] .calc-card--bruto .calc-card-valor,
+:root[data-theme="dark"] .calc-desglose-total span:last-child {
+  color: var(--navy-text);
+}
+
+/* 3) Pills/íconos con fondo translúcido azul y texto navy → texto claro */
+:root[data-theme="dark"] .quick-links a,
+:root[data-theme="dark"] .curso-slot-ico {
+  color: var(--navy-text);
+}
+
+/* 4) Botones sólidos navy cuyo texto (var(--blanco)) invertía a oscuro → blanco */
+:root[data-theme="dark"] .rec-btn,
+:root[data-theme="dark"] .quiz-next {
+  color: #fff;
+}
+
+/* 5) Botones outline (fondo var(--blanco)→superficie oscura) con texto navy
+      → texto azul claro legible sobre la superficie */
+:root[data-theme="dark"] .rec-btn--alt,
+:root[data-theme="dark"] .btn-secondary,
+:root[data-theme="dark"] .pm-plan-cta--alt {
+  background: var(--surface);
+  color: var(--navy-text);
+  border-color: var(--border);
+}
+
+/* 6) Tarjetas con degradado navy + texto que invertía → degradado visible
+      sobre fondo oscuro y texto claro */
+:root[data-theme="dark"] .cursos-card,
+:root[data-theme="dark"] .premium-card,
+:root[data-theme="dark"] .calc-card--liquido,
+:root[data-theme="dark"] .anunciate {
+  background: linear-gradient(135deg, #16294b, #1e3e74);
+  color: #F3F0E6;
+}
+:root[data-theme="dark"] .calc-card--liquido {
+  border-color: #2a4f8f;
+}
+
+/* 7) Skip-links (texto var(--blanco) sobre fondo var(--azul)) → blanco al foco */
+:root[data-theme="dark"] .skip-link {
+  color: #fff;
+}
+
+/* 8) Checkbox de la calculadora: accent navy se perdía → azul claro */
+:root[data-theme="dark"] .calc-check input {
+  accent-color: var(--navy-text);
+}
