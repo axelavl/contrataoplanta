@@ -184,6 +184,7 @@ CAMPOS_EXPORT = ["id_externo", "fuente_id", "institucion_id", "institucion_nombr
 # ── HTTP con alternancia de esquema ──────────────────────────────────────────
 def _session() -> requests.Session:
     s = requests.Session()
+    s.proxies.update(getattr(config, "proxies", lambda: {})())
     s.headers.update({
         "User-Agent": random.choice(config.USER_AGENTS),
         "Accept": "text/html,application/json,*/*;q=0.8",

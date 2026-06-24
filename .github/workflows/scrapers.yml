@@ -36,6 +36,11 @@ jobs:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       PYTHONUNBUFFERED: "1"
       LOG_DIR: logs
+      # Proxy de salida CL para scrapers FF.AA./policía (WAF/geobloqueo por IP).
+      # Crea el secret PROXY_CL con el endpoint de la zona Residential
+      # (http://usuario:password@host:puerto). Si el secret no existe, queda
+      # vacío y los scrapers salen directo — no rompe nada.
+      PROXY_CL: ${{ secrets.PROXY_CL }}
       # Opcionales: descomenta y crea el secret si los necesitas en el batch.
       # SITE_URL: ${{ secrets.SITE_URL }}
       # MEILISEARCH_URL: ${{ secrets.MEILISEARCH_URL }}

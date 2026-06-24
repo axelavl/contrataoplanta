@@ -554,6 +554,7 @@ def construir_oferta(s: dict[str, Any]) -> dict:
 def recolectar(max_results: int | None, delay: float,
                incluir_cerrados: bool, con_pdf: bool = True) -> list[dict]:
     session = requests.Session()
+    session.proxies.update(getattr(config, "proxies", lambda: {})())
     session.headers.update(_headers())
 
     ofertas: list[dict] = []

@@ -34,6 +34,13 @@ class Config:
     MAX_REINTENTOS: int = int(os.getenv("MAX_REINTENTOS", "3"))
     MAX_PAGINAS: int = int(os.getenv("MAX_PAGINAS", "999"))
 
+    # ── Proxy de salida (opcional) ──
+    # Si se define PROXY_CL, los scrapers que lo requieran (FF.AA./policía
+    # con WAF o geobloqueo por IP) enrutan su tráfico HTTP/HTTPS por ese
+    # endpoint. El resto sigue saliendo directo (no consume el proxy).
+    # Formato esperado: http://usuario:password@host:puerto
+    PROXY_CL: str = os.getenv("PROXY_CL", "")
+
     USER_AGENTS = [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
         "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -60,6 +67,11 @@ class Config:
     # ── Logging ──
     LOG_DIR: str  = os.getenv("LOG_DIR", "logs")
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
+
+    def proxies(self) -> dict:
+        """Dict de proxies estilo ``requests``; ``{}`` si PROXY_CL no está
+        definido (entonces la sesión sale directo, sin proxy)."""
+        return {"http": self.PROXY_CL, "https": self.PROXY_CL} if self.PROXY_CL else {}
 
 
 def _sqlalchemy_url_from_env() -> str:

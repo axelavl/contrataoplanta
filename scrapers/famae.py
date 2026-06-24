@@ -137,6 +137,7 @@ CAMPOS_EXPORT = ["id_externo", "institucion_id", "institucion_nombre", "sector",
 # ── HTTP ─────────────────────────────────────────────────────────────────────
 def _session() -> requests.Session:
     s = requests.Session()
+    s.proxies.update(getattr(config, "proxies", lambda: {})())
     s.headers.update({
         "User-Agent": config.USER_AGENTS[0],
         "Accept-Language": "es-CL,es;q=0.9",
