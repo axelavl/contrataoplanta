@@ -247,6 +247,47 @@
       descripcion: 'Diplomados y cursos gratis para funcionarios de municipios y gobiernos regionales, dictados por universidades acreditadas. Las becas salen por convocatoria; conviene estar atento al calendario del año.',
       gratuito: true,
       demo: false
+    },
+
+    // ── Salud pública (MINSAL · ISP) ────────────────────────────────────────
+    {
+      id: 'minsal-siad',
+      titulo: 'Cursos a distancia del Ministerio de Salud (SIAD)',
+      proveedor: 'MINSAL · Subsecretaría de Salud Pública',
+      categoria: 'salud',
+      modalidad: 'Online · Cuenta institucional',
+      duracion: 'Varía por curso',
+      nivel: 'estandar',
+      url: 'https://siadsps.minsal.cl/course/',
+      descripcion: 'La plataforma de formación a distancia del MINSAL para los equipos de salud: esterilización y desinfección, salud mental en emergencias y desastres, interculturalidad con población migrante y más. Acceso con tu cuenta institucional.',
+      gratuito: true,
+      demo: false
+    },
+    {
+      id: 'isp-elearning',
+      titulo: 'Cursos e-learning del Instituto de Salud Pública (ISP)',
+      proveedor: 'Instituto de Salud Pública · ISP',
+      categoria: 'salud',
+      modalidad: 'Online',
+      duracion: 'Varía por curso',
+      nivel: 'estandar',
+      url: 'https://www.ispch.gob.cl/productos-y-servicios/cursos-e-learning/',
+      descripcion: 'Catálogo de cursos en línea de la autoridad sanitaria, en temas de laboratorio, salud ambiental y ocupacional, vigilancia y uso seguro de productos. Formación técnica para quienes trabajan en salud pública.',
+      gratuito: true,
+      demo: false
+    },
+    {
+      id: 'minsal-salud-digital',
+      titulo: 'Capacitaciones en Salud Digital para funcionarios',
+      proveedor: 'MINSAL · Departamento de Salud Digital',
+      categoria: 'salud',
+      modalidad: 'Online',
+      duracion: 'Todo el año',
+      nivel: 'estandar',
+      url: 'https://portalsaluddigital.minsal.cl/difusion-y-documentos-de-interes/capacitaciones-funcionarios/',
+      descripcion: 'Capacitaciones para funcionarios del sector sobre las herramientas y sistemas de salud digital del Estado: registros clínicos, interoperabilidad y buenas prácticas en el uso de datos de salud.',
+      gratuito: true,
+      demo: false
     }
   ];
 

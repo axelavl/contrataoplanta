@@ -636,6 +636,31 @@
             <label>Footer extra (HTML simple)</label>
             <textarea id="cfg-footer-extra" rows="2" placeholder="Texto adicional en el pie de página"></textarea>
           </div>
+
+          <hr style="margin:18px 0;border:none;border-top:1px solid var(--border,#e5e5e5)">
+          <h4 style="margin:0 0 4px">Publicidad (Google AdSense)</h4>
+          <p class="text-muted" style="margin:0 0 12px;font-size:13px">Pega tu ID de editor y los slot id de tus unidades, y activa el interruptor. Los anuncios aparecen donde ya hay espacios reservados (resultados, sidebar y dentro del contenido). Si lo dejas apagado, no se carga ningún script de Google.</p>
+          <div class="form-group" style="display:flex;align-items:center;gap:10px">
+            <label style="margin:0;white-space:nowrap">Anuncios activos</label>
+            <input id="cfg-ads-enabled" type="checkbox">
+          </div>
+          <div class="form-group">
+            <label>ID de editor (client)</label>
+            <input id="cfg-ads-client" type="text" placeholder="ca-pub-XXXXXXXXXXXXXXXX">
+          </div>
+          <div class="form-group">
+            <label>Slot — banner bajo resultados</label>
+            <input id="cfg-ads-resultados" type="text" placeholder="Slot id (número)">
+          </div>
+          <div class="form-group">
+            <label>Slot — caja lateral (sidebar)</label>
+            <input id="cfg-ads-sidebar" type="text" placeholder="Slot id (número)">
+          </div>
+          <div class="form-group">
+            <label>Slot — dentro del contenido</label>
+            <input id="cfg-ads-contenido" type="text" placeholder="Slot id (número)">
+          </div>
+
           <button class="btn btn-primary" data-action="save-config">Guardar configuración</button>
         </div>
       </div>
@@ -696,6 +721,7 @@
           <option value="charla">Charla</option>
         </select>
         <input id="cf-url" placeholder="URL (https://…)" style="padding:8px;grid-column:1/-1">
+        <input id="cf-logo" placeholder="Logo en alta (URL opcional; si se deja vacío usa el ícono del dominio)" style="padding:8px;grid-column:1/-1">
         <textarea id="cf-descripcion" placeholder="Descripción" rows="2" style="padding:8px;grid-column:1/-1"></textarea>
         <input id="cf-orden" type="number" placeholder="Orden (menor = arriba)" style="padding:8px">
         <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">

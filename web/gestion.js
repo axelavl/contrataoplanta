@@ -190,6 +190,7 @@ function _cfSet(v) {
   _cfEl('cf-duracion').value = v.duracion || '';
   _cfEl('cf-tipo').value = v.tipo || 'curso';
   _cfEl('cf-url').value = v.url || '';
+  var _logoEl = _cfEl('cf-logo'); if (_logoEl) _logoEl.value = v.logo || '';
   _cfEl('cf-descripcion').value = v.descripcion || '';
   _cfEl('cf-orden').value = (v.orden != null ? v.orden : '');
   _cfEl('cf-gratuito').checked = v.gratuito !== false;
@@ -213,6 +214,7 @@ async function _guardarCurso() {
     duracion: _cfEl('cf-duracion').value.trim(),
     tipo: _cfEl('cf-tipo').value,
     url: _cfEl('cf-url').value.trim(),
+    logo: (_cfEl('cf-logo') ? _cfEl('cf-logo').value.trim() : ''),
     descripcion: _cfEl('cf-descripcion').value.trim(),
     orden: parseInt(_cfEl('cf-orden').value, 10) || 100,
     gratuito: _cfEl('cf-gratuito').checked,
@@ -1393,6 +1395,12 @@ async function loadConfig() {
     document.getElementById('cfg-max-pagina').value      = c.max_resultados_pagina||50;
     document.getElementById('cfg-alertas').checked       = c.alertas_activas!=='false';
     document.getElementById('cfg-footer-extra').value    = c.footer_extra||'';
+    // AdSense (gestionable desde aquí)
+    const _ae=document.getElementById('cfg-ads-enabled'); if(_ae) _ae.checked = (c.ads_enabled==='1'||c.ads_enabled==='true');
+    const _ac=document.getElementById('cfg-ads-client'); if(_ac) _ac.value = c.ads_client||'';
+    const _ar=document.getElementById('cfg-ads-resultados'); if(_ar) _ar.value = c.ads_slot_resultados||'';
+    const _as=document.getElementById('cfg-ads-sidebar'); if(_as) _as.value = c.ads_slot_sidebar||'';
+    const _aco=document.getElementById('cfg-ads-contenido'); if(_aco) _aco.value = c.ads_slot_contenido||'';
   } catch(e) {
     document.getElementById('env-info').textContent = 'Error: '+e.message;
   }
@@ -1444,6 +1452,15 @@ async function saveConfig() {
     alertas_activas:      document.getElementById('cfg-alertas').checked ? 'true':'false',
     footer_extra:         document.getElementById('cfg-footer-extra').value,
   };
+  const _ae = document.getElementById('cfg-ads-enabled');
+  if (_ae) {
+    const _gv = id => { const e=document.getElementById(id); return e?e.value.trim():''; };
+    payload.ads_enabled = _ae.checked ? '1':'0';
+    payload.ads_client = _gv('cfg-ads-client');
+    payload.ads_slot_resultados = _gv('cfg-ads-resultados');
+    payload.ads_slot_sidebar = _gv('cfg-ads-sidebar');
+    payload.ads_slot_contenido = _gv('cfg-ads-contenido');
+  }
   try {
     const r = await api('/config', { method:'PUT', body:JSON.stringify(payload) });
     toast(`Config guardada: ${r.updated.join(', ')} ✓`);

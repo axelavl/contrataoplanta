@@ -247,7 +247,7 @@ def get_cursos() -> dict[str, Any]:
         rows = execute_fetch_all(
             """
             SELECT curso_id AS id, titulo, proveedor, categoria, modalidad,
-                   duracion, nivel, tipo, url, descripcion, gratuito, demo
+                   duracion, nivel, tipo, url, descripcion, gratuito, demo, logo
             FROM cursos
             WHERE activo = TRUE
             ORDER BY orden ASC, id ASC
@@ -1001,6 +1001,10 @@ def root() -> dict[str, Any]:
 _SITE_CONFIG_PUBLICA = {
     "banner_mensaje", "banner_activo", "mantenimiento",
     "max_resultados_pagina", "alertas_activas", "footer_extra",
+    # AdSense gestionable desde el admin (el `ca-pub` y los slot id son
+    # identificadores públicos, van en el HTML; no son secretos).
+    "ads_enabled", "ads_client",
+    "ads_slot_resultados", "ads_slot_sidebar", "ads_slot_contenido",
 }
 
 

@@ -219,6 +219,53 @@
       .catch(function () { return false; });
   }
 
+  // Banner de aviso / modo mantención / footer extra, editables desde el panel
+  // admin (site_config). El home ya lo resuelve en app.js; acá cubrimos TODAS
+  // las demás páginas (que no cargan app.js). Idempotente vía ids.
+  function renderSiteConfig() {
+    var hasApp = Array.prototype.some.call(document.scripts, function (s) {
+      return /(^|\/)app\.js($|[?#])/.test(s.getAttribute('src') || '');
+    });
+    if (hasApp) return; // en el home lo maneja app.js, no duplicamos
+    var RAILWAY = 'https://contrataoplanta-production.up.railway.app';
+    var _h = location.hostname;
+    var API = window.__API_BASE ||
+      ((_h === 'localhost' || _h === '127.0.0.1' || _h === '') ? 'http://localhost:8000' : RAILWAY);
+    fetch(API + '/api/site-config')
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        var conf = (d && d.config) || {};
+        if (conf.banner_activo === 'true' && (conf.banner_mensaje || '').trim() &&
+            !document.getElementById('site-config-banner')) {
+          var b = document.createElement('div');
+          b.id = 'site-config-banner';
+          b.setAttribute('role', 'status');
+          b.style.cssText = 'background:#1d4ed8;color:#fff;text-align:center;padding:8px 14px;font-size:14px;line-height:1.4';
+          b.textContent = conf.banner_mensaje.trim();
+          document.body.insertBefore(b, document.body.firstChild);
+        }
+        if (conf.mantenimiento === 'true' && !document.getElementById('site-config-mantenimiento')) {
+          var a = document.createElement('div');
+          a.id = 'site-config-mantenimiento';
+          a.setAttribute('role', 'alert');
+          a.style.cssText = 'background:#b45309;color:#fff;text-align:center;padding:8px 14px;font-size:14px;font-weight:600';
+          a.textContent = '⚠️ Sitio en mantención — algunos datos pueden estar desactualizados.';
+          document.body.insertBefore(a, document.body.firstChild);
+        }
+        if ((conf.footer_extra || '').trim() && !document.getElementById('site-config-footer-extra')) {
+          var foot = document.querySelector('footer');
+          if (foot) {
+            var ex = document.createElement('div');
+            ex.id = 'site-config-footer-extra';
+            ex.style.cssText = 'text-align:center;padding:10px 14px;font-size:13px;color:#64748b';
+            ex.innerHTML = conf.footer_extra;
+            foot.parentNode.insertBefore(ex, foot.nextSibling);
+          }
+        }
+      })
+      .catch(function () { /* sin conexión: el sitio sigue normal */ });
+  }
+
   loadPartial('site-ribbon', 'partials/ribbon.html')
     .then(function () {
       return loadPartial('site-header', 'partials/header.html');
@@ -239,6 +286,7 @@
       return loadPartial('site-footer', 'partials/footer.html');
     })
     .then(function () {
+      renderSiteConfig();
       document.dispatchEvent(new CustomEvent('shell:ready', { detail: { page: page } }));
     });
 })();

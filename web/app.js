@@ -4425,7 +4425,9 @@ initMeilisearchAutocomplete();
 async function cargarSiteConfig() {
   let conf = {};
   try {
-    const resp = await fetchApi('/api/site-config');
+    const r = await fetchApi('/api/site-config');
+    if (!r || !r.ok) return;
+    const resp = await r.json();        // fetchApi devuelve el Response: faltaba parsear
     conf = (resp && resp.config) || {};
   } catch (_) { return; }
 
@@ -4444,7 +4446,7 @@ async function cargarSiteConfig() {
   }
 
   // Aviso de mantenimiento (no bloquea el sitio; avisa de forma visible)
-  if (conf.mantenimiento === 'true') {
+  if (conf.mantenimiento === 'true' && !document.getElementById('site-config-mantenimiento')) {
     const aviso = document.createElement('div');
     aviso.id = 'site-config-mantenimiento';
     aviso.setAttribute('role', 'alert');

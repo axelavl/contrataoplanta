@@ -573,7 +573,7 @@ def admin_toggle_activa(
 
 _CURSO_CAMPOS = (
     "curso_id", "titulo", "proveedor", "categoria", "modalidad", "duracion",
-    "nivel", "tipo", "url", "descripcion", "gratuito", "demo", "orden", "activo",
+    "nivel", "tipo", "url", "logo", "descripcion", "gratuito", "demo", "orden", "activo",
 )
 
 
@@ -583,7 +583,7 @@ def admin_listar_cursos(_user: str = Depends(_verify_admin_jwt)) -> dict[str, An
     rows = execute_fetch_all(
         """
         SELECT id, curso_id, titulo, proveedor, categoria, modalidad, duracion,
-               nivel, tipo, url, descripcion, gratuito, demo, orden, activo
+               nivel, tipo, url, logo, descripcion, gratuito, demo, orden, activo
         FROM cursos ORDER BY orden ASC, id ASC
         """,
         [],
@@ -610,6 +610,7 @@ def admin_crear_curso(
         "nivel": "destacado" if payload.get("nivel") == "destacado" else "estandar",
         "tipo": (payload.get("tipo") or "curso")[:30],
         "url": (str(payload.get("url") or "").strip()) or None,
+        "logo": (str(payload.get("logo") or "").strip()) or None,
         "descripcion": (payload.get("descripcion") or "") or None,
         "gratuito": bool(payload.get("gratuito", True)),
         "demo": bool(payload.get("demo", False)),
@@ -620,9 +621,9 @@ def admin_crear_curso(
         cur.execute(
             """
             INSERT INTO cursos (curso_id, titulo, proveedor, categoria, modalidad,
-                duracion, nivel, tipo, url, descripcion, gratuito, demo, orden, activo)
+                duracion, nivel, tipo, url, logo, descripcion, gratuito, demo, orden, activo)
             VALUES (%(curso_id)s, %(titulo)s, %(proveedor)s, %(categoria)s, %(modalidad)s,
-                %(duracion)s, %(nivel)s, %(tipo)s, %(url)s, %(descripcion)s, %(gratuito)s,
+                %(duracion)s, %(nivel)s, %(tipo)s, %(url)s, %(logo)s, %(descripcion)s, %(gratuito)s,
                 %(demo)s, %(orden)s, %(activo)s)
             ON CONFLICT (curso_id) DO NOTHING
             RETURNING id
@@ -1481,6 +1482,8 @@ def admin_set_config(
     CLAVES_PERMITIDAS = {
         "banner_mensaje", "banner_activo", "mantenimiento",
         "max_resultados_pagina", "alertas_activas", "footer_extra",
+        "ads_enabled", "ads_client",
+        "ads_slot_resultados", "ads_slot_sidebar", "ads_slot_contenido",
     }
     updated: list[str] = []
     for clave, valor in payload.items():
