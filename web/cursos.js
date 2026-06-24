@@ -104,7 +104,10 @@
   function _logoDe(a) {
     if (a.logo) return a.logo;
     var h = _hostDe(a.url);
-    return h ? 'https://' + h + '/favicon.ico' : '';
+    // Íconos vía DuckDuckGo: confiable para dominios .cl/.gob.cl (el favicon
+    // directo falla en varios: chilecompra.cl, subdere.gov.cl…) y sin tracking.
+    // Respaldo: monograma (wireLogos quita la <img> si no carga).
+    return h ? 'https://icons.duckduckgo.com/ip3/' + h + '.ico' : '';
   }
   function _monoDe(a) {
     var base = String(a.proveedor || a.titulo || '?').split('·')[0].trim();

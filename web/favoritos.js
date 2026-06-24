@@ -110,6 +110,8 @@ function escHtml(s) {
 function renderFavs() {
   const favs = getFavs();
   document.getElementById('hero-count').textContent = favs.length;
+  var _noun = document.getElementById('hero-noun');
+  if (_noun) _noun.textContent = (favs.length === 1 ? 'oferta guardada' : 'ofertas guardadas');
 
   if (favs.length === 0) {
     document.getElementById('empty-state').style.display = 'block';
