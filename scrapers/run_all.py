@@ -57,6 +57,7 @@ from scrapers import pdi as pdi_scraper
 from scrapers import bcentral as bcentral_scraper
 from scrapers import armada as armada_scraper
 from scrapers import divsal as divsal_scraper
+from scrapers import municipios as municipios_scraper
 from scrapers import famae as famae_scraper
 from scrapers import laborum as laborum_scraper
 from scrapers import codelco as codelco_scraper
@@ -132,6 +133,10 @@ _IDS_NUEVO_ESTANDAR: frozenset[int] = frozenset({
     145, 158, 706, 165, 707, 279, 275,
     146, 166, 285, 290, 291, 292, 293, 708, 709,
     132,  # Fundación Integra (aira_integra.py + trabajando.py _EXTRA)
+    # municipios.py (scraper agrupado, un modo por sitio): municipalidades y
+    # corporaciones con extracción funcional. Las fuentes spa/bloqueada quedan
+    # al genérico (no scrapean nada por ahora). Ver scrapers/municipios.py.
+    345, 379, 382, 384, 385, 401, 407, 409, 416, 419, 456, 527, 537, 580, 647, 670, 676,
 })
 
 
@@ -1158,6 +1163,19 @@ async def main(argv: list[str] | None = None) -> int:
             reports.append(
                 await asyncio.to_thread(
                     _run_modulo_ejecutar_sync, "puertos/empresas", puertos_empresas_scraper.ejecutar
+                )
+            )
+        # municipios.py: scraper agrupado de municipalidades/corporaciones con
+        # modos de extracción por sitio (pdf_links, secciones, enlaces_detalle,
+        # headings, lista_o_vacio). Corre si alguna de sus fuentes funcionales
+        # está en el catálogo activo. Excluidas del genérico vía _IDS_NUEVO_ESTANDAR.
+        _IDS_MUNICIPIOS = {345, 379, 382, 384, 385, 401, 407, 409, 416, 419,
+                           456, 527, 537, 580, 647, 670, 676}
+        hay_municipios = any(s.get("id") in _IDS_MUNICIPIOS for s in catalog_sources)
+        if hay_municipios:
+            reports.append(
+                await asyncio.to_thread(
+                    _run_modulo_ejecutar_sync, "municipios", municipios_scraper.ejecutar
                 )
             )
         # LinkedIn Peñalolén (401): herramienta asistida; corre solo si existe el
