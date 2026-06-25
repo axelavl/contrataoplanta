@@ -52,11 +52,11 @@ def enviar_alerta_operacional(
         logger.warning("Sin destinatario para alerta operacional: %s", asunto)
         return {"ok": False, "error": "sin destinatario"}
 
-    cuerpo = str(mensaje or "").replace("\n", "<br>")
+    cuerpo = _esc(mensaje or "").replace("\n", "<br>")
     html = (
         '<div style="font-family:system-ui,Arial,sans-serif;max-width:560px;'
         'margin:auto;padding:16px;color:#111">'
-        f'<h2 style="color:#B91C1C;margin:0 0 8px">⚠ {asunto}</h2>'
+        f'<h2 style="color:#B91C1C;margin:0 0 8px">⚠ {_esc(asunto)}</h2>'
         f'<div style="font-size:14px;line-height:1.5">{cuerpo}</div>'
         '<p style="margin-top:16px;font-size:11px;color:#9CA3AF">'
         'Alerta automática del orquestador de scrapers (contrata o planta).</p>'
@@ -215,7 +215,8 @@ def enviar_verificacion(email: str, token: str) -> dict[str, Any]:
     if not _RESEND_API_KEY:
         return {"ok": False, "error": "API key no configurada"}
 
-    verify_url = f"{_SITE_URL}?verificar={token}"
+    from urllib.parse import quote
+    verify_url = f"{_SITE_URL}?verificar={quote(token, safe='')}"
 
     html = f"""
     <!DOCTYPE html>
