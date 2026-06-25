@@ -133,6 +133,8 @@ def _find_landing(tipo: str, slug: str) -> dict[str, Any] | None:
 def serialize_offer(row: dict[str, Any]) -> dict[str, Any]:
     data = dict(row)
     data["dias_restantes"] = dias_restantes(data.get("fecha_cierre"))
+    # Bandera de curaduría para la pestaña "Destacadas" (redes sociales).
+    data["destacada"] = bool(data.get("destacada"))
     estado = str(data.get("estado") or "unknown").strip().lower()
     data["estado_normalizado"] = estado
     data["estado_legacy"] = STATUS_LEGACY_MAP.get(estado, "desconocido")

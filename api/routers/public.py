@@ -169,6 +169,7 @@ def get_ofertas(
     cierra_pronto: bool = Query(False),
     nuevas: bool = Query(False),
     solo_con_correo: bool = Query(False, description="Solo ofertas con correo de postulación/contacto."),
+    destacadas: bool = Query(False, description="Solo ofertas destacadas (las que se publican en redes sociales)."),
     vista: str = Query("vigentes", pattern="^(vigentes|cerradas|todas)$"),
     orden: str = Query("recientes"),
     pagina: int = Query(1, ge=1),
@@ -193,6 +194,7 @@ def get_ofertas(
         cierra_pronto=cierra_pronto,
         nuevas=nuevas,
         solo_con_correo=solo_con_correo,
+        solo_destacadas=destacadas,
         solo_activas=only_active,
         closed_only=only_closed,
     )

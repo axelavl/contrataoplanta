@@ -336,7 +336,9 @@
 .estado-listado-tabs {
   background: var(--bg2);
   border-color: var(--border);
-  padding: 5px;
+  /* 4px para que calce con la geometría de la píldora de 3 columnas
+     definida en index.css (width: (100% - 8px)/3). */
+  padding: 4px;
 }
 .estado-listado-tabs::before {
   background: var(--navy);

@@ -516,7 +516,8 @@ def admin_ofertas(
             o.region, o.sector,
             COALESCE(i.sector, o.sector, 'Sin sector') AS sector_real,
             o.tipo_contrato, o.fecha_cierre, o.fecha_publicacion,
-            o.activa, o.estado, o.url_oferta, o.url_oferta_valida,
+            o.activa, COALESCE(o.destacada, FALSE) AS destacada,
+            o.estado, o.url_oferta, o.url_oferta_valida,
             o.url_bases, o.url_bases_valida,
             o.renta_bruta_min, o.renta_bruta_max,
             o.fecha_scraped, o.detectada_en,
@@ -567,6 +568,31 @@ def admin_toggle_activa(
         conn.commit()
     _auditar(_user, "toggle_activa", "oferta", oferta_id, {"activa": nuevo_estado})
     return {"id": oferta_id, "activa": nuevo_estado}
+
+
+@router.post(f"/api/{ADMIN_PATH}/ofertas/{{oferta_id}}/toggle-destacada", tags=["admin"])
+def admin_toggle_destacada(
+    oferta_id: int,
+    _user: str = Depends(_verify_admin_jwt),
+) -> dict[str, Any]:
+    """Marca/desmarca una oferta como destacada (sección de redes sociales).
+
+    Las ofertas destacadas alimentan la pestaña pública "Destacadas":
+    las que el equipo publica activamente en Instagram / TikTok / LinkedIn.
+    """
+    with get_cursor() as (conn, cur):
+        cur.execute("SELECT COALESCE(destacada, FALSE) AS destacada FROM ofertas WHERE id = %s", [oferta_id])
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(404, "Oferta no encontrada")
+        nuevo_estado = not (row["destacada"] if isinstance(row, dict) else row[0])
+        cur.execute(
+            "UPDATE ofertas SET destacada = %s, actualizada_en = NOW() WHERE id = %s",
+            [nuevo_estado, oferta_id],
+        )
+        conn.commit()
+    _auditar(_user, "toggle_destacada", "oferta", oferta_id, {"destacada": nuevo_estado})
+    return {"id": oferta_id, "destacada": nuevo_estado}
 
 
 # ── Cursos (directorio gestionable desde el panel) ───────────────────────────
