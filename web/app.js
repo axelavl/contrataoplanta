@@ -3400,6 +3400,9 @@ function setVista(modo) {
 
 // ── Formulario de alertas ──────────────────────────────────────────────────
 async function enviarAlerta() {
+  // Si el admin no ha activado las alertas, el widget está en modo
+  // "Próximamente": no se envía nada.
+  if (document.getElementById('alertas')?.classList.contains('alertas-off')) return;
   const email      = document.getElementById('alerta-email')?.value.trim();
   const keywords   = document.getElementById('alerta-keywords')?.value.trim();
   const region     = document.getElementById('alerta-region')?.value;
@@ -3465,7 +3468,7 @@ async function enviarAlerta() {
 // ── Inicialización ─────────────────────────────────────────────────────────
 // Nota: el botón "Crear alerta" fue retirado del header. El widget de alertas
 // sigue disponible en el sidebar (#alertas) y su formulario en #btn-alerta-submit.
-document.getElementById('btn-alerta-submit').addEventListener('click', enviarAlerta);
+document.getElementById('btn-alerta-submit')?.addEventListener('click', enviarAlerta);
 
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
@@ -4464,6 +4467,28 @@ initMeilisearchAutocomplete();
   });
 })();
 
+// ── Estado del widget de alertas (Próximamente / activo) ─────────────
+// El widget arranca deshabilitado en el HTML (.alertas-off + campos
+// disabled). Esta función lo habilita o lo deja atenuado según la
+// config del admin. Por defecto queda deshabilitado.
+function aplicarEstadoAlertas(habilitado) {
+  const widget = document.getElementById('alertas');
+  if (!widget) return;
+  const form      = widget.querySelector('.alerta-form');
+  const controles = widget.querySelectorAll('.alerta-form input, .alerta-form select, .alerta-form button');
+  if (habilitado) {
+    widget.classList.remove('alertas-off');
+    widget.setAttribute('data-alertas', 'on');
+    controles.forEach(el => { el.disabled = false; });
+    if (form) form.removeAttribute('aria-hidden');
+  } else {
+    widget.classList.add('alertas-off');
+    widget.setAttribute('data-alertas', 'off');
+    controles.forEach(el => { el.disabled = true; });
+    if (form) form.setAttribute('aria-hidden', 'true');
+  }
+}
+
 // ── Configuración del sitio (banner / mantenimiento / footer extra) ──
 // Editable desde el panel de gestión; el backend la expone en
 // GET /api/site-config. Si el endpoint falla, el sitio sigue normal.
@@ -4500,6 +4525,10 @@ async function cargarSiteConfig() {
     aviso.textContent = '⚠️ Sitio en mantención — algunos datos pueden estar desactualizados.';
     document.body.insertBefore(aviso, document.body.firstChild);
   }
+
+  // Alertas por email: deshabilitadas por defecto ("Próximamente").
+  // Solo se habilitan si el admin las activó (alertas_activas === 'true').
+  aplicarEstadoAlertas(conf.alertas_activas === 'true');
 
   // Footer extra (HTML simple, definido por el administrador del sitio)
   if ((conf.footer_extra || '').trim()) {

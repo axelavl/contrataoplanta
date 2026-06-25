@@ -303,29 +303,37 @@
 
     <!-- Widget alertas (primero en el sidebar para alinearse con el
          inicio del recuadro de ofertas y dar protagonismo al CTA). -->
-    <div class="widget" id="alertas">
+    <!-- Estado por defecto: deshabilitado ("Próximamente"). El admin lo
+         habilita desde Config → "Alertas por email activas"; el frontend
+         lo enciende solo si site-config trae alertas_activas === 'true'. -->
+    <div class="widget alertas-off" id="alertas" data-alertas="off">
       <div class="widget-header">
         <div class="widget-titulo">🔔 Alertas de empleo</div>
+        <span class="badge-proximamente" id="alertas-badge">Próximamente</span>
       </div>
       <div class="widget-body">
-        <div class="alerta-form">
+        <p class="alerta-proximamente-msg" id="alerta-proximamente-msg">
+          Estamos afinando las alertas por correo. Muy pronto podrás recibir avisos
+          de nuevas ofertas según tu perfil. ¡Vuelve pronto!
+        </p>
+        <div class="alerta-form" aria-hidden="true">
           <label class="alerta-label" for="alerta-email">Correo electrónico</label>
-          <input type="email" id="alerta-email" placeholder="tu@correo.cl" autocomplete="email">
+          <input type="email" id="alerta-email" placeholder="tu@correo.cl" autocomplete="email" disabled>
 
           <label class="alerta-label" for="alerta-keywords">Palabras clave</label>
-          <input type="text" id="alerta-keywords" placeholder="Ej: psicólogo, RRHH, ingeniero...">
+          <input type="text" id="alerta-keywords" placeholder="Ej: psicólogo, RRHH, ingeniero..." disabled>
 
           <div class="alerta-row">
             <div>
               <label class="alerta-label" for="alerta-region">Región</label>
-              <select id="alerta-region">
+              <select id="alerta-region" disabled>
                 <option value="">Todas</option>
                 <!-- Se carga dinámicamente desde API DPA -->
               </select>
             </div>
             <div>
               <label class="alerta-label" for="alerta-tipo">Condición contractual</label>
-              <select id="alerta-tipo">
+              <select id="alerta-tipo" disabled>
                 <option value="">Todos</option>
                 <option value="planta">Planta</option>
                 <option value="contrata">Contrata</option>
@@ -340,7 +348,7 @@
           <div class="alerta-row">
             <div>
               <label class="alerta-label" for="alerta-sector">Sector</label>
-              <select id="alerta-sector">
+              <select id="alerta-sector" disabled>
                 <option value="">Todos</option>
                 <option>Municipal</option>
                 <option>Ejecutivo Central</option>
@@ -354,14 +362,14 @@
             </div>
             <div>
               <label class="alerta-label" for="alerta-frecuencia">Frecuencia</label>
-              <select id="alerta-frecuencia">
+              <select id="alerta-frecuencia" disabled>
                 <option value="diaria">Diaria</option>
                 <option value="semanal">Semanal</option>
               </select>
             </div>
           </div>
 
-          <button class="btn-alerta" id="btn-alerta-submit">Activar alerta gratuita</button>
+          <button class="btn-alerta" id="btn-alerta-submit" disabled>Activar alerta gratuita</button>
           <p class="alerta-nota">Recibirás un aviso cuando aparezcan ofertas que coincidan con tu perfil. Sin spam.</p>
         </div>
       </div>

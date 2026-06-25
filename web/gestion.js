@@ -1393,7 +1393,9 @@ async function loadConfig() {
     document.getElementById('cfg-banner-activo').checked = c.banner_activo==='true';
     document.getElementById('cfg-mantenimiento').checked = c.mantenimiento==='true';
     document.getElementById('cfg-max-pagina').value      = c.max_resultados_pagina||50;
-    document.getElementById('cfg-alertas').checked       = c.alertas_activas!=='false';
+    // Por defecto OFF: las alertas se muestran como "Próximamente" en el
+    // sitio público hasta que aquí se activen explícitamente.
+    document.getElementById('cfg-alertas').checked       = c.alertas_activas==='true';
     document.getElementById('cfg-footer-extra').value    = c.footer_extra||'';
     // AdSense (gestionable desde aquí)
     const _ae=document.getElementById('cfg-ads-enabled'); if(_ae) _ae.checked = (c.ads_enabled==='1'||c.ads_enabled==='true');
