@@ -659,14 +659,15 @@ def admin_editar_curso(
             updates["orden"] = int(updates["orden"] or 100)
         except (TypeError, ValueError):
             raise HTTPException(400, "orden debe ser numérico") from None
-    set_parts = [f"{c} = %({c})s" for c in updates]
+    from psycopg2 import sql as _sql
+    set_parts = [_sql.SQL("{} = %({})s").format(_sql.Identifier(c), _sql.Identifier(c)) for c in updates]
+    query = _sql.SQL("UPDATE cursos SET {}, actualizada_en = NOW() WHERE id = %(_pk)s").format(
+        _sql.SQL(", ").join(set_parts),
+    )
     params = dict(updates)
     params["_pk"] = curso_pk
     with get_cursor() as (conn, cur):
-        cur.execute(
-            f"UPDATE cursos SET {', '.join(set_parts)}, actualizada_en = NOW() WHERE id = %(_pk)s",
-            params,
-        )
+        cur.execute(query, params)
         if cur.rowcount == 0:
             raise HTTPException(404, "Curso no encontrado")
         conn.commit()
@@ -751,14 +752,15 @@ def admin_editar_categoria(
         updates["activo"] = bool(payload.get("activo"))
     if not updates:
         raise HTTPException(400, "Sin campos para actualizar")
-    set_parts = [f"{c} = %({c})s" for c in updates]
+    from psycopg2 import sql as _sql
+    set_parts = [_sql.SQL("{} = %({})s").format(_sql.Identifier(c), _sql.Identifier(c)) for c in updates]
+    query = _sql.SQL("UPDATE cursos_categorias SET {} WHERE id = %(_id)s").format(
+        _sql.SQL(", ").join(set_parts),
+    )
     params = dict(updates)
     params["_id"] = cat_id
     with get_cursor() as (conn, cur):
-        cur.execute(
-            f"UPDATE cursos_categorias SET {', '.join(set_parts)} WHERE id = %(_id)s",
-            params,
-        )
+        cur.execute(query, params)
         if cur.rowcount == 0:
             raise HTTPException(404, "Categoría no encontrada")
         conn.commit()
@@ -824,19 +826,19 @@ def admin_editar_oferta(
                 raise HTTPException(400, f"{campo} debe ser una URL http(s)")
             updates[campo] = valor or None
 
-    set_parts = [f"{col} = %s" for col in updates]
-    # Reset del flag de validez cuando cambia la URL correspondiente.
+    from psycopg2 import sql as _sql
+    set_parts = [_sql.SQL("{} = %s").format(_sql.Identifier(col)) for col in updates]
     if "url_oferta" in updates:
-        set_parts.append("url_oferta_valida = NULL")
+        set_parts.append(_sql.SQL("url_oferta_valida = NULL"))
     if "url_bases" in updates:
-        set_parts.append("url_bases_valida = NULL")
+        set_parts.append(_sql.SQL("url_bases_valida = NULL"))
+    query = _sql.SQL("UPDATE ofertas SET {}, actualizada_en = NOW() WHERE id = %s").format(
+        _sql.SQL(", ").join(set_parts),
+    )
     vals = list(updates.values()) + [oferta_id]
 
     with get_cursor() as (conn, cur):
-        cur.execute(
-            f"UPDATE ofertas SET {', '.join(set_parts)}, actualizada_en = NOW() WHERE id = %s",
-            vals,
-        )
+        cur.execute(query, vals)
         if cur.rowcount == 0:
             raise HTTPException(404, "Oferta no encontrada")
         conn.commit()
@@ -897,13 +899,13 @@ def admin_crear_oferta(
     # vienen de migraciones; en DBs viejas pueden faltar).
     fila = {k: v for k, v in fila.items() if k in cols}
 
-    columnas = ", ".join(fila)
-    marcas = ", ".join(["%s"] * len(fila))
+    from psycopg2 import sql as _sql
+    query = _sql.SQL("INSERT INTO ofertas ({}) VALUES ({}) RETURNING id").format(
+        _sql.SQL(", ").join(_sql.Identifier(c) for c in fila),
+        _sql.SQL(", ").join(_sql.Placeholder() for _ in fila),
+    )
     with get_cursor() as (conn, cur):
-        cur.execute(
-            f"INSERT INTO ofertas ({columnas}) VALUES ({marcas}) RETURNING id",
-            list(fila.values()),
-        )
+        cur.execute(query, list(fila.values()))
         row = cur.fetchone()
         nuevo_id = (row["id"] if isinstance(row, dict) else row[0]) if row else None
         conn.commit()
@@ -1643,13 +1645,14 @@ def admin_editar_fuente(
     updates = {k: v for k, v in payload.items() if k in CAMPOS}
     if not updates:
         raise HTTPException(400, "Sin campos válidos")
-    set_clause = ", ".join(f"{c} = %s" for c in updates)
+    from psycopg2 import sql as _sql
+    set_parts = [_sql.SQL("{} = %s").format(_sql.Identifier(c)) for c in updates]
+    query = _sql.SQL("UPDATE instituciones SET {} WHERE id = %s").format(
+        _sql.SQL(", ").join(set_parts),
+    )
     vals = list(updates.values()) + [fuente_id]
     with get_cursor() as (conn, cur):
-        cur.execute(
-            f"UPDATE instituciones SET {set_clause} WHERE id = %s",
-            vals,
-        )
+        cur.execute(query, vals)
         if cur.rowcount == 0:
             raise HTTPException(404, "Institución no encontrada")
         conn.commit()
