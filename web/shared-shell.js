@@ -113,12 +113,50 @@
       var h = img.naturalHeight || 0;
       // 0×0 = imagen rota → que onerror se encargue.
       if (w === 0 && h === 0) return;
-      if (Math.min(w, h) < MIN_LOGO_PX) {
+      // Antes: Math.min(w,h) < 40 → rechazaba logos ANCHOS y BAJOS (wordmarks
+      // tipo Codelco, p.ej. 256×54): el alto <40 los descartaba y caían al
+      // ícono genérico ("aparece y luego desaparece"). Un favicon chico es
+      // pequeño en AMBAS dimensiones; un logo real es grande en al menos una.
+      // Con max() solo descartamos lo realmente diminuto (16×16, 32×32).
+      if (Math.max(w, h) < MIN_LOGO_PX) {
         // Permitimos reintentar con el siguiente source.
         img.dataset.qualityChecked = '';
         advance(img);
+      } else {
+        // Logo bueno: lo memorizamos para esta institución. Así, en la
+        // próxima carga, lo usamos directo (sin reintentar la cadena
+        // Clearbit→apple→Google) y evitamos el parpadeo "aparece y
+        // desaparece". Es un repositorio propio incremental en el cliente.
+        cacheSet(domainFromImg(img), img.currentSrc || img.src);
       }
     };
+
+    // ── Caché de logos resueltos (repositorio propio incremental) ──────
+    // Persistimos en localStorage el último source que SÍ pasó el chequeo de
+    // calidad por dominio. `window.__logoCacheGet` lo consume app.js para
+    // pintar el logo correcto desde el primer frame.
+    var LOGO_CACHE_KEY = 'cop_logo_cache_v1';
+    function cacheRead() {
+      try { return JSON.parse(localStorage.getItem(LOGO_CACHE_KEY) || '{}') || {}; }
+      catch (e) { return {}; }
+    }
+    function cacheGet(domain) {
+      if (!domain) return null;
+      var c = cacheRead();
+      return c[domain] || null;
+    }
+    function cacheSet(domain, src) {
+      if (!domain || !src) return;
+      // No cacheamos el ícono genérico (data-URI / svg inline) ni vacíos.
+      if (src.indexOf('data:') === 0) return;
+      try {
+        var c = cacheRead();
+        if (c[domain] === src) return;
+        c[domain] = src;
+        localStorage.setItem(LOGO_CACHE_KEY, JSON.stringify(c));
+      } catch (e) { /* storage lleno/bloqueado: seguimos sin caché */ }
+    }
+    window.__logoCacheGet = cacheGet;
 
     // ── Delegación para CSP-safe fallback ──
     // CSP `script-src 'self'` (sin 'unsafe-inline') bloquea `onerror=` y
@@ -206,6 +244,22 @@
     document.body.appendChild(script);
   }
 
+  // Inserta una hoja de estilo si no está ya presente (por id o por href).
+  // Idempotente: en el home, donde el <link> ya está en el HTML, no duplica.
+  function ensureStylesheet(href, id) {
+    if (document.getElementById(id)) return;
+    var exists = Array.prototype.some.call(
+      document.querySelectorAll('link[rel="stylesheet"]'),
+      function (l) { return (l.getAttribute('href') || '').indexOf(href) !== -1; }
+    );
+    if (exists) return;
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    link.id = id;
+    document.head.appendChild(link);
+  }
+
   function loadPartial(id, path) {
     var mount = document.getElementById(id);
     if (!mount) return Promise.resolve(false);
@@ -283,6 +337,11 @@
       ensureScript('plazo-colors.js', 'plazo-colors-script');
       ensureScript('title-truncate.js', 'title-truncate-script');
       ensureScript('share-mejoras.js', 'share-mejoras-script');
+      // Ajustes de UX móvil + modo oscuro (costura cinta/header, contraste de
+      // títulos de la ficha, acordeón). En el home ya van en el HTML; acá los
+      // propagamos a TODAS las demás páginas que usan el shell. Idempotente.
+      ensureStylesheet('styles/mobile-ux-fixes.css', 'mobile-ux-fixes-style');
+      ensureScript('mobile-ux.js', 'mobile-ux-script');
       return loadPartial('site-footer', 'partials/footer.html');
     })
     .then(function () {

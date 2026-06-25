@@ -142,6 +142,8 @@
     const filas = [
       ['Institución', (o) => escHtml(o.institucion)],
       ['Modalidad', (o) => o.tipo ? `<span class="cop-cmp-badge">${escHtml(o.tipo)}</span>` : '—'],
+      ['Estamento', (o) => escHtml(o.estamento) || '—'],
+      ['Vacantes', (o) => (o.numeroVacantes ? String(o.numeroVacantes) : '—')],
       ['Región', (o) => escHtml([o.region, o.comuna].filter(Boolean).join(' · ')) || '—'],
       ['Renta bruta', (o) => {
         const v = fmtRenta(o.renta);
@@ -152,7 +154,17 @@
       }],
       ['Jornada', (o) => escHtml(o.jornada) || '—'],
       ['Plazo de cierre', (o) => plazoTxt(o)],
-      ['Descripción', (o) => { const r = limpiarResumen(o.resumen); return r ? `<span class="cop-cmp-resumen">${escHtml(r)}</span>` : '—'; }]
+      // Descripción expandible: clamp a 3 líneas + botón "ver más" que quita el
+      // clamp (estilo inline para no depender de CSS externo).
+      ['Descripción', (o) => {
+        const r = limpiarResumen(o.resumen);
+        if (!r) return '—';
+        const largo = r.length > 120;
+        const boton = largo
+          ? '<button class="cop-cmp-mas" type="button" style="margin-top:5px;display:block;font:600 11px/1.2 inherit;color:var(--azul-m,#254BA0);background:none;border:none;padding:0;cursor:pointer">ver más</button>'
+          : '';
+        return `<span class="cop-cmp-resumen">${escHtml(r)}</span>${boton}`;
+      }]
     ];
 
     // Grilla FILA POR FILA: cada celda es hija directa del grid, así las
@@ -181,6 +193,14 @@
     body.querySelectorAll('[data-rm]').forEach((b) => b.addEventListener('click', () => { toggle(b.dataset.rm); abrir(opts); }));
     body.querySelectorAll('[data-ver]').forEach((b) => b.addEventListener('click', () => { cerrar(); opts.onVerDetalles && opts.onVerDetalles(Number(b.dataset.ver)); }));
     body.querySelector('.cop-cmp-clear').addEventListener('click', () => { limpiar(); abrir(opts); });
+    // Expandir/colapsar la descripción (quita el -webkit-line-clamp de 3 líneas).
+    body.querySelectorAll('.cop-cmp-mas').forEach((b) => b.addEventListener('click', () => {
+      const span = b.previousElementSibling;
+      if (!span) return;
+      const expandido = span.style.webkitLineClamp === 'unset';
+      span.style.webkitLineClamp = expandido ? '3' : 'unset';
+      b.textContent = expandido ? 'ver más' : 'ver menos';
+    }));
 
     function plazoTxt(o) {
       const d = o.diasRestantes;

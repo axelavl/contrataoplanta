@@ -139,13 +139,17 @@ nav {
   color: var(--acento);
 }
 .logo-name {
-  font-family: 'Lora', Georgia, serif;
+  /* Unificado con shared-layout.css: el wordmark usa la serif de marca
+     (--font-serif = Fraunces) en TODAS las páginas. Antes acá decía 'Lora',
+     por lo que el título se veía con otra fuente/tamaño en el home vs el
+     resto del sitio. */
+  font-family: var(--font-serif);
   font-size: 19.5px;
   letter-spacing: -0.25px;
 }
 .logo-tagline {
-  font-family: 'Inter', sans-serif;
-  font-size: 10.5px;
+  font-family: var(--font-sans);
+  font-size: 10px;
   font-weight: 600;
   color: rgba(255,255,255,.68);
   letter-spacing: .42px;

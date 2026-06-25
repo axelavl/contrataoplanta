@@ -278,11 +278,11 @@
     // divisoria, aprovechando el espacio inferior.
     var foot = document.createElement('div');
     foot.className = 'nm-foot';
+    // Nota: el toggle claro/oscuro se quitó de aquí porque DUPLICA el que ya
+    // está en el header (.theme-toggle), visible también en móvil. Dejamos
+    // solo los enlaces legales. El código de sincronización de más abajo
+    // queda como no-op inofensivo (no hay [data-tema] en el pie).
     foot.innerHTML =
-      '<div class="nm-theme">' +
-        '<button type="button" data-tema="light" aria-label="Tema claro">' + _ICON_SUN + 'Claro</button>' +
-        '<button type="button" data-tema="dark" aria-label="Tema oscuro">' + _ICON_MOON + 'Oscuro</button>' +
-      '</div>' +
       '<div class="nm-legal">' +
         '<a href="terminos.html">Términos</a>' +
         '<a href="privacidad.html">Privacidad</a>' +

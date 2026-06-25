@@ -165,9 +165,7 @@
           <div class="renta-wrap" id="renta-wrap">
             <span class="renta-prefix">$</span>
             <input type="text" id="filtro-renta-min" inputmode="numeric"
-              placeholder="Ej: 800.000" autocomplete="off"
-              oninput="formatearRentaInput(this)"
-              onkeydown="if(event.key==='Enter'){buscar();this.blur()}">
+              placeholder="Ej: 800.000" autocomplete="off">
             <button class="btn-renta-x" type="button" data-action="limpiar-renta" title="Limpiar renta">×</button>
           </div>
         </div>
@@ -176,9 +174,7 @@
           <div class="renta-wrap" id="renta-wrap-max">
             <span class="renta-prefix">$</span>
             <input type="text" id="filtro-renta-max" inputmode="numeric"
-              placeholder="Ej: 2.500.000" autocomplete="off"
-              oninput="formatearRentaInput(this)"
-              onkeydown="if(event.key==='Enter'){buscar();this.blur()}">
+              placeholder="Ej: 2.500.000" autocomplete="off">
             <button class="btn-renta-x" type="button" data-action="limpiar-renta-max" title="Limpiar renta máxima">×</button>
           </div>
         </div>
@@ -234,7 +230,7 @@
           <!-- Orden: label prefijo + select nativo para que parezca un trigger. -->
           <label class="sort-wrap" for="ctrl-orden">
             <span class="sort-wrap-label">Ordenar por:</span>
-            <select class="ctrl-select ctrl-select--sort" id="ctrl-orden" onchange="setOrdenSelect(this)" title="Ordenar por">
+            <select class="ctrl-select ctrl-select--sort" id="ctrl-orden" title="Ordenar por">
               <option value="recientes">↓ Más recientes</option>
               <option value="cierre">⏰ Cierra antes</option>
               <option value="renta_desc">$ Mayor renta</option>
@@ -246,7 +242,7 @@
             </span>
           </label>
           <!-- Por página -->
-          <select class="ctrl-select" id="ctrl-por-pagina" onchange="setPorPagina(this)" title="Ofertas por página"></select>
+          <select class="ctrl-select" id="ctrl-por-pagina" title="Ofertas por página"></select>
           <div class="ctrl-sep"></div>
           <!-- Vista -->
           <div class="vista-btns" role="group" aria-label="Formato de visualización">

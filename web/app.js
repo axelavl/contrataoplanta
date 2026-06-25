@@ -1202,10 +1202,20 @@ function getInstIcon(oferta) {
   const dom = escAttr(resolved.domain);
   // size=256 → Clearbit devuelve PNG de 256 px, nítido al escalar a 44-128 px.
   // data-attempt=0 inicializa la cadena: si onerror dispara o imgFavCheckQuality
-  // detecta naturalWidth<40, advance() pasa a apple-touch-icon → Google → etc.
+  // detecta logo diminuto, advance() pasa a apple-touch-icon → Google → etc.
   const primary = `https://logo.clearbit.com/${dom}?size=256`;
+  // Repositorio propio: si ya resolvimos un logo bueno para este dominio en una
+  // visita anterior (cacheado en localStorage por shared-shell.js), lo usamos
+  // como source inicial → se pinta al primer frame, sin parpadeo. data-attempt
+  // sigue en 0, así que si el cacheado fallara, la cadena de fallback corre.
+  let inicial = primary;
+  try {
+    const cached = (typeof window !== 'undefined' && window.__logoCacheGet)
+      ? window.__logoCacheGet(resolved.domain) : null;
+    if (cached) inicial = cached;
+  } catch (_) { /* sin caché: usamos Clearbit */ }
   return {
-    html: `<img src="${primary}" data-attempt="0" alt="Logo de ${escAttr(institucionNombre)}" loading="lazy" decoding="async">`,
+    html: `<img src="${escAttr(inicial)}" data-domain="${dom}" data-attempt="0" alt="Logo de ${escAttr(institucionNombre)}" loading="lazy" decoding="async">`,
     confiable: Boolean(resolved.confiable),
     fuente: resolved.fuente,
   };
@@ -2318,7 +2328,10 @@ function normalizarOferta(o) {
   if (!_resumen && o.descripcion) {
     _resumen = String(o.descripcion).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
   }
-  if (_resumen.length > 180) _resumen = _resumen.slice(0, 177).trimEnd() + '…';
+  // Tope amplio: el comparador permite EXPANDIR la descripción, así que
+  // guardamos bastante más que el resumen corto de antes (180). Igual lo
+  // acotamos para no arrastrar descripciones gigantes al localStorage/DOM.
+  if (_resumen.length > 600) _resumen = _resumen.slice(0, 597).trimEnd() + '…';
 
   let portal = null;
   try { if (o.url_oferta) portal = new URL(o.url_oferta).hostname.replace(/^www\./, ''); } catch (e) { /* noop */ }
@@ -4438,13 +4451,17 @@ initMeilisearchAutocomplete();
   var porPagSel = document.getElementById('ctrl-por-pagina');
   if (porPagSel) porPagSel.addEventListener('change', function () { setPorPagina(this); });
 
-  var rentaInp = document.getElementById('filtro-renta-min');
-  if (rentaInp) {
-    rentaInp.addEventListener('input', function () { formatearRentaInput(this); });
-    rentaInp.addEventListener('keydown', function (e) {
+  // Renta mínima y máxima: ambos inputs tenían handlers inline (oninput /
+  // onkeydown) que la CSP bloquea. Antes solo se reataba el MÍNIMO, así que
+  // el MÁXIMO quedaba sin formateo ni Enter. Reatamos los dos.
+  ['filtro-renta-min', 'filtro-renta-max'].forEach(function (id) {
+    var inp = document.getElementById(id);
+    if (!inp) return;
+    inp.addEventListener('input', function () { formatearRentaInput(this); });
+    inp.addEventListener('keydown', function (e) {
       if (e.key === 'Enter') { buscar(); this.blur(); }
     });
-  }
+  });
 })();
 
 // ── Configuración del sitio (banner / mantenimiento / footer extra) ──
