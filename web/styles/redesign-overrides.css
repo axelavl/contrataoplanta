@@ -4039,18 +4039,17 @@ summary:focus-visible,
 .oferta-card {
   padding: 18px 20px !important;
   border-radius: 12px !important;
-  border-width: 1px !important;
 }
 
 :root[data-theme="dark"] .oferta-card {
-  background: linear-gradient(180deg, #14294A 0%, #112040 100%) !important;
-  border: 1px solid rgba(120, 155, 210, 0.28) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+  background: linear-gradient(180deg, #182F56 0%, #142848 100%) !important;
+  border: 1px solid rgba(120, 165, 225, 0.32) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
 }
 :root[data-theme="dark"] .oferta-card:hover {
-  background: linear-gradient(180deg, #1A3460 0%, #152C50 100%) !important;
-  border-color: rgba(160, 190, 235, 0.45) !important;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+  background: linear-gradient(180deg, #1E3A68 0%, #1A3258 100%) !important;
+  border-color: rgba(160, 195, 240, 0.5) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.07) !important;
 }
 
 /* ── 2. INSTITUCIÓN · más legible en dark ───────────────────────────── */
@@ -4128,7 +4127,10 @@ summary:focus-visible,
 :root[data-theme="dark"] .oferta-detalle {
   color: #A8B8D4 !important;
 }
-/* (SVG opacity movido a sección 19) */
+:root[data-theme="dark"] .oferta-detalle svg {
+  opacity: 0.7 !important;
+  color: #7AA1DC !important;
+}
 :root[data-theme="dark"] .oferta-frescura {
   background: rgba(234, 184, 88, 0.12) !important;
   color: #E5C06A !important;
@@ -4144,7 +4146,7 @@ summary:focus-visible,
   margin-top: 2px !important;
 }
 :root[data-theme="dark"] .oferta-footer {
-  border-top-color: rgba(120, 155, 210, 0.15) !important;
+  border-top: 1px solid rgba(120, 165, 225, 0.18) !important;
 }
 :root[data-theme="dark"] .oferta-plazo {
   color: #C0CCDF !important;
@@ -4164,9 +4166,14 @@ summary:focus-visible,
 
 /* ── 7. RESULTADOS SHELL · fondo con más profundidad en dark ────────── */
 :root[data-theme="dark"] .resultados-shell {
-  background: linear-gradient(180deg, #0F1F3A 0%, #0C1A30 100%) !important;
+  background: linear-gradient(180deg, #0D1A2F 0%, #0A1525 100%) !important;
   border-color: rgba(120, 155, 210, 0.2) !important;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+}
+:root[data-theme="dark"] .resultados-header {
+  border-bottom: 1px solid rgba(120, 155, 210, 0.12) !important;
+  padding-bottom: 14px !important;
+  margin-bottom: 6px !important;
 }
 
 /* ── 8. CONTROLES (orden, vista, paginación) ────────────────────────── */
@@ -4346,12 +4353,6 @@ summary:focus-visible,
   border-color: rgba(148, 180, 225, 0.18) !important;
 }
 
-/* ── 19. ICONOS SVG en detalles · más visibles ─────────────────────── */
-:root[data-theme="dark"] .oferta-detalle svg {
-  opacity: 0.7 !important;
-  color: #7AA1DC !important;
-}
-
 /* ── 20. URGENCIA · borde izquierdo más visible en dark ────────────── */
 :root[data-theme="dark"] .oferta-card.urg-status-closing-today {
   border-left: 3px solid #F0B86A !important;
@@ -4367,9 +4368,6 @@ summary:focus-visible,
 .oferta-detalles {
   padding-bottom: 10px !important;
 }
-:root[data-theme="dark"] .oferta-footer {
-  border-top: 1px solid rgba(120, 155, 210, 0.12) !important;
-}
 
 /* ── 22. PLAZO DOT · glow en dark para mayor visibilidad ──────────── */
 :root[data-theme="dark"] .plazo-dot.status-active {
@@ -4377,12 +4375,15 @@ summary:focus-visible,
 }
 
 /* ── 23. LIGHT MODE · refuerzo sutil ────────────────────────────────── */
-.oferta-card {
-  box-shadow: 0 1px 3px rgba(14, 32, 70, 0.06) !important;
+:root:not([data-theme="dark"]) .oferta-card {
+  box-shadow: 0 1px 4px rgba(14, 32, 70, 0.07), 0 0 0 1px rgba(14, 32, 70, 0.04) !important;
 }
-.oferta-card:hover {
-  box-shadow: 0 4px 16px rgba(14, 32, 70, 0.1) !important;
+:root:not([data-theme="dark"]) .oferta-card:hover {
+  box-shadow: 0 4px 16px rgba(14, 32, 70, 0.12), 0 0 0 1px rgba(14, 32, 70, 0.06) !important;
 }
-.resultados-shell {
+:root:not([data-theme="dark"]) .resultados-shell {
   box-shadow: 0 2px 12px rgba(14, 32, 70, 0.08), 0 16px 32px rgba(14, 32, 70, 0.06) !important;
+}
+:root:not([data-theme="dark"]) .oferta-card.urg-status-closing-today {
+  background: linear-gradient(135deg, #FFFCF5 0%, #FFF8EB 100%) !important;
 }
