@@ -181,7 +181,16 @@ CAMPOS_EXPORT = ["id_externo", "fuente_id", "institucion_nombre", "sector", "car
 TRABAJA_URL = BASE + "/instituci%C3%B3n/trabaja-con-nosotros"
 
 # Extracción de texto de PDFs de perfil (estos SÍ tienen capa de texto,
-# a diferencia de las bases de planta que están escaneadas)
+# a diferencia de las bases de planta que están escaneadas).
+# pdfplumber es el estándar del proyecto (está en requirements.txt); pypdf
+# queda solo como respaldo opcional si estuviera instalado. Antes este módulo
+# dependía únicamente de pypdf, que NO está en requirements: en producción la
+# extracción de perfiles quedaba silenciosamente vacía.
+try:
+    import pdfplumber  # type: ignore
+except Exception:
+    pdfplumber = None  # type: ignore[assignment]
+
 try:
     from pypdf import PdfReader as _PdfReader
 except ImportError:
@@ -189,14 +198,24 @@ except ImportError:
 
 
 def pdf_a_texto(contenido: bytes) -> str:
-    if _PdfReader is None:
+    if not contenido or not contenido[:5].startswith(b"%PDF"):
         return ""
-    try:
-        import io
-        return "\n".join((p.extract_text() or "")
-                         for p in _PdfReader(io.BytesIO(contenido)).pages)
-    except Exception:
-        return ""
+    import io
+    if pdfplumber is not None:
+        try:
+            with pdfplumber.open(io.BytesIO(contenido)) as pdf:
+                texto = "\n".join((p.extract_text() or "") for p in pdf.pages)
+            if texto.strip():
+                return texto
+        except Exception:
+            pass
+    if _PdfReader is not None:
+        try:
+            return "\n".join((p.extract_text() or "")
+                             for p in _PdfReader(io.BytesIO(contenido)).pages)
+        except Exception:
+            return ""
+    return ""
 
 
 _RE_PLAZO = re.compile(r"plazo de postulaci[oó]n\s*:?\s*([^)]{5,80})\)", re.I)

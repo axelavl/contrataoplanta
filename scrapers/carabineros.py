@@ -98,6 +98,68 @@ except ImportError:
     def upsert_oferta(*a: Any, **k: Any) -> tuple[bool, bool]:  # type: ignore[misc]
         return False, False
 
+# ── Lectura de PDF de perfil (opcional) ─────────────────────────────────────
+# El "Perfil" del cargo se publica como PDF con capa de texto; si el detalle
+# HTML no trae requisitos, se descarga ese PDF y se extraen. No-op si pdfplumber
+# no está o si no hay PDF. El "Descriptor" (bases) está escaneado: se ignora.
+import io as _io
+
+try:
+    import pdfplumber  # type: ignore
+except Exception:
+    pdfplumber = None  # type: ignore[assignment]
+
+try:
+    from extraction.requirements_extractor import extract_requirements
+    from extraction.salary_extractor import extract_salary
+except Exception:
+    extract_requirements = None  # type: ignore[assignment]
+    extract_salary = None  # type: ignore[assignment]
+
+
+def _pdf_a_texto(contenido: bytes, max_paginas: int = 10) -> str:
+    """Texto del PDF con pdfplumber. '' si no se puede (escaneado/cifrado)."""
+    if pdfplumber is None or not contenido[:5].startswith(b"%PDF"):
+        return ""
+    try:
+        with pdfplumber.open(_io.BytesIO(contenido)) as pdf:
+            return "\n".join((p.extract_text() or "") for p in pdf.pages[:max_paginas])
+    except Exception:
+        return ""
+
+
+def _datos_desde_pdf(texto: str) -> dict[str, Any]:
+    """De un PDF de perfil/bases en texto saca requisitos_texto y renta."""
+    out: dict[str, Any] = {}
+    if not texto or len(texto) < 80:
+        return out
+    plano = limpiar_texto(texto)
+    if extract_requirements is not None:
+        try:
+            req, des, docs = extract_requirements(texto)
+            bloques = []
+            if req:
+                bloques.append("Requisitos: " + "; ".join(req))
+            if des:
+                bloques.append("Deseables: " + "; ".join(des))
+            if docs:
+                bloques.append("Documentos: " + "; ".join(docs[:6]))
+            if bloques:
+                out["requisitos_texto"] = limpiar_texto(" | ".join(bloques))[:1900]
+        except Exception:
+            logger.exception("  Error extrayendo requisitos del PDF")
+    if extract_salary is not None:
+        try:
+            sal = extract_salary(plano)
+            if sal.amount:
+                out["renta_bruta_min"] = int(sal.amount)
+                if sal.raw:
+                    out["renta_texto"] = limpiar_texto(sal.raw)[:200]
+        except Exception:
+            logger.exception("  Error extrayendo renta del PDF")
+    return out
+
+
 LOG_DIR = Path(config.LOG_DIR)
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -446,6 +508,23 @@ def recolectar(max_results: int | None, con_detalle: bool, delay: float) -> list
             rd = _get(session, c["url"])
             if rd is not None:
                 det = parsear_detalle(rd.text)
+            # Si el detalle HTML no trae requisitos, intentar el PDF "Perfil".
+            if not det.get("requisitos"):
+                perfil_url = next((u for k, u in (c.get("docs") or {}).items()
+                                   if "perfil" in k.lower()), None)
+                if perfil_url:
+                    time.sleep(delay)
+                    rp = _get(session, perfil_url)
+                    if rp is not None:
+                        pdf_datos = _datos_desde_pdf(_pdf_a_texto(rp.content))
+                        if pdf_datos.get("requisitos_texto"):
+                            det["requisitos"] = pdf_datos["requisitos_texto"]
+                        if pdf_datos.get("renta_bruta_min") and not det.get("renta"):
+                            det["renta"] = pdf_datos["renta_bruta_min"]
+                            det.setdefault("renta_texto", pdf_datos.get("renta_texto"))
+                        if pdf_datos:
+                            logger.info("  Perfil PDF concurso %s: %s",
+                                        c["id"], ", ".join(sorted(pdf_datos)))
         ofertas.append(construir_oferta(c, det))
         if i % 10 == 0:
             logger.info("  Procesados %d/%d", i, len(cards))

@@ -733,4 +733,4 @@ if __name__ == "__main__":
     a = p.parse_args()
     ejecutar(dry_run=a.dry_run, verbose=a.verbose, max_results=a.max,
              delay=a.delay, con_detalle=not a.sin_detalle,
-          
+          incluir_cerrados=a.incluir_cerrados, export=a.export)
