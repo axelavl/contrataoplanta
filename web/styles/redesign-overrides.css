@@ -3985,10 +3985,12 @@ summary:focus-visible,
   color: var(--navy-text);
 }
 
-/* 4) Botones sólidos navy cuyo texto (var(--blanco)) invertía a oscuro → blanco */
+/* 4) Botones sólidos navy: fondo var(--azul) = invisible en dark → azul medio */
 :root[data-theme="dark"] .rec-btn,
 :root[data-theme="dark"] .quiz-next {
+  background: #2A5DC8;
   color: #fff;
+  border-color: rgba(120, 170, 240, 0.3);
 }
 
 /* 5) Botones outline (fondo var(--blanco)→superficie oscura) con texto navy
@@ -4022,4 +4024,630 @@ summary:focus-visible,
 /* 8) Checkbox de la calculadora: accent navy se perdía → azul claro */
 :root[data-theme="dark"] .calc-check input {
   accent-color: var(--navy-text);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   MEJORA DE DISPOSICIÓN, CONTRASTE Y JERARQUÍA — VISTA OFERTAS
+   Junio 2026. Refuerza la separación visual de tarjetas, mejora el
+   contraste de texto en dark mode, y reorganiza la información dentro
+   de cada card para lectura más clara.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. CARDS · separación y profundidad ────────────────────────────── */
+.ofertas-lista {
+  gap: 14px !important;
+}
+
+.oferta-card {
+  padding: 18px 20px !important;
+  border-radius: 12px !important;
+}
+
+:root[data-theme="dark"] .oferta-card {
+  background: linear-gradient(180deg, #182F56 0%, #142848 100%) !important;
+  border: 1px solid rgba(120, 165, 225, 0.32) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+}
+:root[data-theme="dark"] .oferta-card:hover {
+  background: linear-gradient(180deg, #1E3A68 0%, #1A3258 100%) !important;
+  border-color: rgba(160, 195, 240, 0.5) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.07) !important;
+}
+
+/* ── 2. INSTITUCIÓN · más legible en dark ───────────────────────────── */
+.oferta-institucion {
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em !important;
+  margin-bottom: 6px !important;
+}
+:root[data-theme="dark"] .oferta-institucion {
+  color: #E0C87A !important;
+  font-weight: 700 !important;
+}
+
+/* ── 3. CARGO · mayor jerarquía y contraste ─────────────────────────── */
+.oferta-cargo,
+.oferta-cargo-link {
+  font-size: 17.5px !important;
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
+  letter-spacing: -0.01em !important;
+}
+:root[data-theme="dark"] .oferta-cargo,
+:root[data-theme="dark"] .oferta-cargo-link {
+  color: #F5F2EA !important;
+}
+:root[data-theme="dark"] .oferta-card:hover .oferta-cargo-link {
+  color: #FFFFFF !important;
+}
+
+/* ── 4. BADGES · mejor contraste y separación en dark ───────────────── */
+.oferta-tipo-wrap {
+  gap: 7px !important;
+  margin-bottom: 4px !important;
+}
+:root[data-theme="dark"] .badge-planta {
+  background: rgba(99, 140, 230, 0.2) !important;
+  color: #A8C4F0 !important;
+}
+:root[data-theme="dark"] .badge-contrata {
+  background: rgba(234, 184, 88, 0.2) !important;
+  color: #F0CC78 !important;
+}
+:root[data-theme="dark"] .badge-honorarios {
+  background: rgba(244, 114, 182, 0.18) !important;
+  color: #F5A3C7 !important;
+}
+:root[data-theme="dark"] .badge-codigo {
+  background: rgba(56, 189, 248, 0.18) !important;
+  color: #7DD3FC !important;
+}
+:root[data-theme="dark"] .badge.badge-region {
+  background: rgba(148, 180, 225, 0.14) !important;
+  color: #B8CEE8 !important;
+}
+
+/* ── 5. DETALLES (renta, ciudad, jornada, frescura) ─────────────────── */
+.oferta-detalles {
+  gap: 14px !important;
+  margin-bottom: 12px !important;
+  padding-top: 2px !important;
+}
+.oferta-renta {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+}
+:root[data-theme="dark"] .oferta-renta {
+  color: #F5D68A !important;
+  text-shadow: 0 0 12px rgba(234, 184, 88, 0.15);
+}
+:root[data-theme="dark"] .oferta-detalles {
+  color: #B8C5DD !important;
+}
+:root[data-theme="dark"] .oferta-detalle {
+  color: #A8B8D4 !important;
+}
+:root[data-theme="dark"] .oferta-detalle svg {
+  opacity: 0.7 !important;
+  color: #7AA1DC !important;
+}
+:root[data-theme="dark"] .oferta-frescura {
+  background: rgba(234, 184, 88, 0.12) !important;
+  color: #E5C06A !important;
+}
+:root[data-theme="dark"] .oferta-frescura.frescura-nueva {
+  background: rgba(34, 197, 94, 0.16) !important;
+  color: #86EFAC !important;
+}
+
+/* ── 6. FOOTER · plazo y acciones con mejor contraste ───────────────── */
+.oferta-footer {
+  padding-top: 12px !important;
+  margin-top: 2px !important;
+}
+:root[data-theme="dark"] .oferta-footer {
+  border-top: 1px solid rgba(120, 165, 225, 0.18) !important;
+}
+:root[data-theme="dark"] .oferta-plazo {
+  color: #C0CCDF !important;
+}
+:root[data-theme="dark"] .plazo-text {
+  color: #D0DAE8 !important;
+}
+:root[data-theme="dark"] .plazo-text--status-active {
+  color: #8FDCAA !important;
+}
+:root[data-theme="dark"] .plazo-text--status-closing-today {
+  color: #F0B86A !important;
+}
+:root[data-theme="dark"] .oferta-plazo-fecha {
+  color: #8E9BB5 !important;
+}
+
+/* ── 7. RESULTADOS SHELL · fondo con más profundidad en dark ────────── */
+:root[data-theme="dark"] .resultados-shell {
+  background: linear-gradient(180deg, #0D1A2F 0%, #0A1525 100%) !important;
+  border-color: rgba(120, 155, 210, 0.2) !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+}
+:root[data-theme="dark"] .resultados-header {
+  border-bottom: 1px solid rgba(120, 155, 210, 0.12) !important;
+  padding-bottom: 14px !important;
+  margin-bottom: 6px !important;
+}
+
+/* ── 8. CONTROLES (orden, vista, paginación) ────────────────────────── */
+:root[data-theme="dark"] .resultados-count {
+  color: #B0BCD2 !important;
+}
+:root[data-theme="dark"] .resultados-count strong {
+  color: #F0CC78 !important;
+}
+:root[data-theme="dark"] .count-sub {
+  color: #8E9BB5 !important;
+}
+
+/* Sort wrap en dark */
+:root[data-theme="dark"] .sort-wrap {
+  background: #0F213E !important;
+  border-color: rgba(120, 155, 210, 0.22) !important;
+}
+:root[data-theme="dark"] .sort-wrap:hover {
+  background: #162B4E !important;
+  border-color: rgba(234, 184, 88, 0.4) !important;
+}
+
+/* Vista buttons en dark */
+:root[data-theme="dark"] .vista-btns {
+  background: #0F213E !important;
+  border-color: rgba(120, 155, 210, 0.2) !important;
+}
+
+/* ── 9. SIDEBAR · widgets con mejor definición ──────────────────────── */
+:root[data-theme="dark"] .widget {
+  background: linear-gradient(180deg, #14294A 0%, #112040 100%) !important;
+  border-color: rgba(120, 155, 210, 0.22) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+}
+:root[data-theme="dark"] .widget-header {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-bottom-color: rgba(120, 155, 210, 0.14) !important;
+}
+:root[data-theme="dark"] .widget-titulo {
+  color: #F0CC78 !important;
+}
+
+/* Badge "Próximamente" en sidebar */
+:root[data-theme="dark"] .badge-proximamente {
+  background: rgba(234, 184, 88, 0.18) !important;
+  color: #E5C06A !important;
+}
+
+/* Stat items en sidebar */
+:root[data-theme="dark"] .stat-item {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(120, 155, 210, 0.12) !important;
+  border-radius: 8px !important;
+}
+:root[data-theme="dark"] .stat-num {
+  color: #F0CC78 !important;
+}
+:root[data-theme="dark"] .stat-label {
+  color: #9AABC5 !important;
+}
+
+/* ── 10. TABS Vigentes/Cerradas · mejor legibilidad en dark ─────────── */
+:root[data-theme="dark"] .estado-listado-tabs {
+  background: #0C1A30 !important;
+  border-color: rgba(120, 155, 210, 0.2) !important;
+}
+:root[data-theme="dark"] .estado-tab {
+  color: #8E9BB5 !important;
+}
+:root[data-theme="dark"] .estado-tab:hover {
+  color: #C8D4E8 !important;
+}
+
+/* ── 11. FILTRO CHIPS · más punch en dark ───────────────────────────── */
+:root[data-theme="dark"] .filtro-tag {
+  background: #0F213E !important;
+  border-color: rgba(120, 155, 210, 0.2) !important;
+  color: #B0BCD2 !important;
+}
+:root[data-theme="dark"] .filtro-tag:hover {
+  border-color: rgba(234, 184, 88, 0.45) !important;
+  color: #E5C06A !important;
+}
+
+/* ── 12. BUSCADOR FORM · campos más definidos en dark ───────────────── */
+:root[data-theme="dark"] .buscador-wrap {
+  background: linear-gradient(180deg, #14294A 0%, #112040 100%) !important;
+  border-color: rgba(120, 155, 210, 0.22) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+:root[data-theme="dark"] .campo input,
+:root[data-theme="dark"] .campo select {
+  background: #0B1830 !important;
+  border-color: rgba(120, 155, 210, 0.2) !important;
+  color: #E8E4D8 !important;
+}
+:root[data-theme="dark"] .campo input::placeholder {
+  color: #6B7A98 !important;
+}
+
+/* ── 13. HOVER ARROW en dark ────────────────────────────────────────── */
+:root[data-theme="dark"] .oferta-card::after {
+  color: #F0CC78 !important;
+}
+:root[data-theme="dark"] .oferta-card:hover::after {
+  opacity: 0.8 !important;
+}
+
+/* ── 14. FAVORITO ICON en dark · más visible ────────────────────────── */
+:root[data-theme="dark"] .btn-fav-card {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(120, 155, 210, 0.2) !important;
+  color: #8E9BB5 !important;
+}
+:root[data-theme="dark"] .btn-fav-card:hover {
+  background: rgba(235, 138, 117, 0.12) !important;
+  border-color: #EB8A75 !important;
+  color: #EB8A75 !important;
+}
+:root[data-theme="dark"] .btn-fav-card.activo {
+  background: rgba(235, 138, 117, 0.18) !important;
+  border-color: #EB8A75 !important;
+  color: #EB8A75 !important;
+}
+
+/* ── 15. BOTÓN "VER DETALLES" · visible en dark ────────────────────── */
+:root[data-theme="dark"] .btn-detalle {
+  background: #2A5DC8 !important;
+  color: #F5F2EA !important;
+  border: 1px solid rgba(120, 170, 240, 0.3) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em !important;
+}
+:root[data-theme="dark"] .btn-detalle:hover {
+  background: #3568D8 !important;
+  box-shadow: 0 2px 10px rgba(42, 93, 200, 0.35) !important;
+}
+
+/* ── 16. LOGO CONTAINER · mejor en dark ────────────────────────────── */
+:root[data-theme="dark"] .oferta-logo {
+  background: #0F1D38 !important;
+  border-color: rgba(120, 155, 210, 0.25) !important;
+}
+
+/* ── 17. COMPARE BUTTON · visible en dark ──────────────────────────── */
+:root[data-theme="dark"] .cop-cmp-btn--icon {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(120, 155, 210, 0.2) !important;
+  color: #8E9BB5 !important;
+}
+:root[data-theme="dark"] .cop-cmp-btn--icon:hover {
+  background: rgba(42, 93, 200, 0.15) !important;
+  border-color: rgba(120, 170, 240, 0.4) !important;
+  color: #B8CEE8 !important;
+}
+
+/* ── 18. BADGES · más padding y legibilidad ────────────────────────── */
+:root[data-theme="dark"] .badge {
+  padding: 3px 10px !important;
+  font-size: 10.5px !important;
+  border: 1px solid transparent !important;
+}
+:root[data-theme="dark"] .badge-planta {
+  border-color: rgba(99, 140, 230, 0.25) !important;
+}
+:root[data-theme="dark"] .badge-contrata {
+  border-color: rgba(234, 184, 88, 0.25) !important;
+}
+:root[data-theme="dark"] .badge-honorarios {
+  border-color: rgba(244, 114, 182, 0.22) !important;
+}
+:root[data-theme="dark"] .badge-codigo {
+  border-color: rgba(56, 189, 248, 0.22) !important;
+}
+:root[data-theme="dark"] .badge.badge-region {
+  border-color: rgba(148, 180, 225, 0.18) !important;
+}
+
+/* ── 20. URGENCIA · borde izquierdo más visible en dark ────────────── */
+:root[data-theme="dark"] .oferta-card.urg-status-closing-today {
+  border-left: 3px solid #F0B86A !important;
+}
+:root[data-theme="dark"] .oferta-card.urg-status-closing-today .plazo-dot {
+  box-shadow: 0 0 6px rgba(240, 184, 106, 0.5) !important;
+}
+
+/* ── 21. CARD INTERIOR · mejor jerarquía visual ────────────────────── */
+.oferta-header {
+  margin-bottom: 12px !important;
+}
+.oferta-detalles {
+  padding-bottom: 10px !important;
+}
+
+/* ── 22. PLAZO DOT · glow en dark para mayor visibilidad ──────────── */
+:root[data-theme="dark"] .plazo-dot.status-active {
+  box-shadow: 0 0 5px rgba(143, 220, 170, 0.4) !important;
+}
+
+/* ── 23. LIGHT MODE · refuerzo sutil ────────────────────────────────── */
+:root:not([data-theme="dark"]) .oferta-card {
+  box-shadow: 0 1px 4px rgba(14, 32, 70, 0.07), 0 0 0 1px rgba(14, 32, 70, 0.04) !important;
+}
+:root:not([data-theme="dark"]) .oferta-card:hover {
+  box-shadow: 0 4px 16px rgba(14, 32, 70, 0.12), 0 0 0 1px rgba(14, 32, 70, 0.06) !important;
+}
+:root:not([data-theme="dark"]) .resultados-shell {
+  box-shadow: 0 2px 12px rgba(14, 32, 70, 0.08), 0 16px 32px rgba(14, 32, 70, 0.06) !important;
+}
+:root:not([data-theme="dark"]) .oferta-card.urg-status-closing-today {
+  background: linear-gradient(135deg, #FFFCF5 0%, #FFF8EB 100%) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   CORRECCIONES DARK MODE — PÁGINAS INTERNAS (glosario, privacidad,
+   estadísticas, 404)
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── 24. GLOSARIO · dark mode ─────────────────────────────────────── */
+:root[data-theme="dark"] .hero {
+  background: linear-gradient(130deg, #152847 0%, #1A3560 100%) !important;
+  border-color: rgba(120, 165, 225, 0.2) !important;
+}
+:root[data-theme="dark"] .kicker {
+  color: var(--acento, #EAB858) !important;
+}
+:root[data-theme="dark"] h1 {
+  color: var(--texto, #ECE8DB) !important;
+}
+:root[data-theme="dark"] .lead {
+  color: #A8B8D4 !important;
+}
+:root[data-theme="dark"] .card {
+  background: var(--blanco, #152847) !important;
+  border-color: rgba(120, 165, 225, 0.2) !important;
+}
+:root[data-theme="dark"] .card h2,
+:root[data-theme="dark"] .card h3 {
+  color: var(--texto, #ECE8DB) !important;
+}
+:root[data-theme="dark"] .card p {
+  color: #A8B8D4 !important;
+}
+:root[data-theme="dark"] table {
+  background: #152847 !important;
+}
+:root[data-theme="dark"] th {
+  background: #1A3560 !important;
+  color: var(--acento, #EAB858) !important;
+  border-color: rgba(120, 165, 225, 0.18) !important;
+}
+:root[data-theme="dark"] td {
+  color: var(--texto, #ECE8DB) !important;
+  border-color: rgba(120, 165, 225, 0.12) !important;
+}
+:root[data-theme="dark"] .table-wrap {
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* ── 25. PRIVACIDAD · dark mode ───────────────────────────────────── */
+:root[data-theme="dark"] .prose h2 {
+  color: var(--navy-text, #7AA1DC) !important;
+}
+:root[data-theme="dark"] .prose p,
+:root[data-theme="dark"] .prose li {
+  color: var(--texto, #ECE8DB) !important;
+}
+:root[data-theme="dark"] .prose .nota {
+  background: rgba(120, 165, 225, 0.1) !important;
+  border-color: rgba(120, 165, 225, 0.2) !important;
+  color: #A8B8D4 !important;
+}
+:root[data-theme="dark"] .page-titulo {
+  color: var(--texto, #ECE8DB) !important;
+}
+:root[data-theme="dark"] .page-kicker {
+  color: var(--acento, #EAB858) !important;
+}
+:root[data-theme="dark"] .page-sub {
+  color: #A8B8D4 !important;
+}
+:root[data-theme="dark"] .page-hero {
+  background: linear-gradient(130deg, #152847 0%, #1A3560 100%) !important;
+  border-color: rgba(120, 165, 225, 0.2) !important;
+}
+:root[data-theme="dark"] .actualizado {
+  color: #8095B8 !important;
+}
+:root[data-theme="dark"] .breadcrumb {
+  background: rgba(21, 40, 71, 0.6) !important;
+  border-color: rgba(120, 165, 225, 0.1) !important;
+}
+:root[data-theme="dark"] .breadcrumb-actual {
+  color: #A8B8D4 !important;
+}
+
+/* ── 26. ESTADÍSTICAS · dark mode ─────────────────────────────────── */
+:root[data-theme="dark"] .kpi-card {
+  background: #152847 !important;
+  border-color: rgba(120, 165, 225, 0.2) !important;
+}
+:root[data-theme="dark"] .kpi-label {
+  color: #A8B8D4 !important;
+}
+:root[data-theme="dark"] .kpi-desc {
+  color: #8095B8 !important;
+}
+:root[data-theme="dark"] .stats-card {
+  background: #152847 !important;
+  border-color: rgba(120, 165, 225, 0.2) !important;
+}
+:root[data-theme="dark"] .stats-reintentar {
+  background: var(--navy-text, #2A5DC8) !important;
+  color: #fff !important;
+}
+:root[data-theme="dark"] .stats-reintentar:hover {
+  background: #3A6DD8 !important;
+}
+
+/* ── 27. 404 · dark mode ──────────────────────────────────────────── */
+:root[data-theme="dark"] .error-card {
+  background: #152847 !important;
+  border-color: rgba(120, 165, 225, 0.2) !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3) !important;
+}
+:root[data-theme="dark"] .error-kicker {
+  color: #8095B8 !important;
+}
+:root[data-theme="dark"] .error-sub {
+  color: #A8B8D4 !important;
+}
+:root[data-theme="dark"] .btn-primary {
+  background: var(--navy-text, #2A5DC8) !important;
+  color: #fff !important;
+}
+:root[data-theme="dark"] .btn-ghost {
+  border-color: rgba(120, 165, 225, 0.3) !important;
+  color: var(--navy-text, #7AA1DC) !important;
+}
+:root[data-theme="dark"] .btn-ghost:hover {
+  background: rgba(120, 165, 225, 0.1) !important;
+  border-color: rgba(120, 165, 225, 0.5) !important;
+}
+:root[data-theme="dark"] .error-atajos {
+  border-color: rgba(120, 165, 225, 0.15) !important;
+}
+:root[data-theme="dark"] .error-atajos-titulo {
+  color: #8095B8 !important;
+}
+:root[data-theme="dark"] .atajo {
+  color: var(--navy-text, #7AA1DC) !important;
+  border-color: rgba(120, 165, 225, 0.2) !important;
+}
+:root[data-theme="dark"] .atajo:hover {
+  background: rgba(120, 165, 225, 0.1) !important;
+  border-color: rgba(120, 165, 225, 0.4) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   ESTANDARIZACIÓN DE BOTONES — tamaño, radio, colores consistentes
+   en light y dark, todas las páginas
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── 28. ESTÁNDAR LIGHT · tamaño y radio consistentes ─────────────── */
+
+/* Primarios sólidos — radio 8px, padding 10px 18px, font 14px/600 */
+.rec-btn,
+.pm-plan-cta,
+.stats-reintentar,
+.curso-cta,
+.quiz-next,
+.btn-primary {
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  padding: 10px 18px !important;
+}
+
+/* Ghost/outline — radio 8px, misma métrica, borde 1.5px */
+.rec-btn--alt,
+.pm-plan-cta--alt,
+.btn-ghost {
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  padding: 10px 18px !important;
+  border-width: 1.5px !important;
+  border-style: solid !important;
+}
+
+/* Botones de card (más compactos) — 13px, padding menor */
+.btn-detalle,
+.btn-ver {
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  padding: 8px 14px !important;
+}
+
+/* ── 29. DARK MODE · fondo visible para TODOS los botones primarios ── */
+
+/* Primarios sólidos: fondo azul medio visible sobre bg oscuro */
+:root[data-theme="dark"] .rec-btn,
+:root[data-theme="dark"] .pm-plan-cta,
+:root[data-theme="dark"] .curso-cta,
+:root[data-theme="dark"] .quiz-next,
+:root[data-theme="dark"] .btn-primary,
+:root[data-theme="dark"] .stats-reintentar {
+  background: #2A5DC8 !important;
+  color: #fff !important;
+  border: 1px solid rgba(120, 170, 240, 0.3) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2) !important;
+}
+:root[data-theme="dark"] .rec-btn:hover,
+:root[data-theme="dark"] .pm-plan-cta:hover,
+:root[data-theme="dark"] .curso-cta:hover,
+:root[data-theme="dark"] .quiz-next:hover:not(:disabled),
+:root[data-theme="dark"] .btn-primary:hover,
+:root[data-theme="dark"] .stats-reintentar:hover {
+  background: #3568D8 !important;
+  box-shadow: 0 2px 10px rgba(42, 93, 200, 0.35) !important;
+}
+
+/* Curso gratis: verde visible en dark */
+:root[data-theme="dark"] .curso-card--gratis .curso-cta {
+  background: #1A7A3D !important;
+  border-color: rgba(30, 160, 80, 0.4) !important;
+}
+:root[data-theme="dark"] .curso-card--gratis .curso-cta:hover {
+  background: #1F9148 !important;
+}
+
+/* Ghost/outline: borde y texto visibles en dark */
+:root[data-theme="dark"] .rec-btn--alt,
+:root[data-theme="dark"] .pm-plan-cta--alt,
+:root[data-theme="dark"] .btn-ghost {
+  background: transparent !important;
+  color: var(--navy-text, #7AA1DC) !important;
+  border: 1.5px solid rgba(120, 165, 225, 0.3) !important;
+}
+:root[data-theme="dark"] .rec-btn--alt:hover,
+:root[data-theme="dark"] .pm-plan-cta--alt:hover,
+:root[data-theme="dark"] .btn-ghost:hover {
+  background: rgba(120, 165, 225, 0.1) !important;
+  border-color: rgba(120, 165, 225, 0.5) !important;
+}
+
+/* Quiz disabled */
+:root[data-theme="dark"] .quiz-next:disabled {
+  background: #1A2D50 !important;
+  color: #5A6F8F !important;
+  border-color: rgba(120, 165, 225, 0.1) !important;
+  box-shadow: none !important;
+}
+
+/* Curso off/disabled */
+:root[data-theme="dark"] .curso-cta--off,
+:root[data-theme="dark"] .curso-card--gratis .curso-cta--off {
+  background: #1A2D50 !important;
+  color: #5A6F8F !important;
+  border-color: rgba(120, 165, 225, 0.1) !important;
+  box-shadow: none !important;
+}
+
+/* ── 30. BOTONES BUSCAR/ALERTA · consistencia con estándar ────────── */
+:root[data-theme="dark"] .btn-alerta {
+  background: #2A5DC8 !important;
+  color: #fff !important;
+  border: 1px solid rgba(120, 170, 240, 0.3) !important;
+}
+:root[data-theme="dark"] .btn-alerta:hover {
+  background: #3568D8 !important;
 }
