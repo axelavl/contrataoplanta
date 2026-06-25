@@ -32,12 +32,16 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel, EmailStr
 
+import time as _time
+from collections import defaultdict
+
 from api.deps import (
     ADMIN_PATH,
     DEFAULT_OG_IMAGE,
     SITE_URL,
     WEB_INDEX_PATH,
     _PROJECT_ROOT,
+    client_ip,
 )
 from api.services.db import (
     DB_CONFIG,
@@ -101,6 +105,26 @@ except Exception:  # pragma: no cover
 # hace falta.
 
 router = APIRouter(tags=["public"])
+
+
+_public_rate: dict[str, list[float]] = defaultdict(list)
+_PUBLIC_RATE_WINDOW = 600
+_PUBLIC_RATE_MAX = 20
+
+
+def _check_public_rate(request: Request, max_hits: int = _PUBLIC_RATE_MAX) -> None:
+    """Rate limit liviano por IP para endpoints públicos sensibles."""
+    ip = client_ip(request)
+    ahora = _time.time()
+    corte = ahora - _PUBLIC_RATE_WINDOW
+    hits = _public_rate[ip] = [t for t in _public_rate[ip] if t > corte]
+    if len(hits) >= max_hits:
+        raise HTTPException(
+            status_code=429,
+            detail="Demasiadas solicitudes. Intente en unos minutos.",
+            headers={"Retry-After": str(_PUBLIC_RATE_WINDOW)},
+        )
+    _public_rate[ip].append(ahora)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -700,7 +724,8 @@ def get_sugerencias(q: str = Query(..., min_length=1, max_length=100)) -> list[s
 
 
 @router.post("/api/alertas")
-def crear_alerta(payload: AlertaPayload) -> dict[str, Any]:
+def crear_alerta(request: Request, payload: AlertaPayload) -> dict[str, Any]:
+    _check_public_rate(request)
     email         = validate_email(payload.email)
     region        = payload.region.strip()        if payload.region        else None
     termino       = payload.termino.strip()       if payload.termino       else None
@@ -718,26 +743,21 @@ def crear_alerta(payload: AlertaPayload) -> dict[str, Any]:
     with get_cursor() as (connection, cursor):
         cursor.execute(
             """
-            UPDATE alertas_suscripciones
-            SET activa = TRUE, frecuencia = %s, actualizada_en = NOW()
-            WHERE LOWER(email) = LOWER(%s)
-              AND COALESCE(region, '')        = COALESCE(%s, '')
-              AND COALESCE(termino, '')       = COALESCE(%s, '')
-              AND COALESCE(tipo_contrato, '') = COALESCE(%s, '')
-              AND COALESCE(sector, '')        = COALESCE(%s, '')
+            INSERT INTO alertas_suscripciones (
+                email, region, termino, tipo_contrato, sector, frecuencia,
+                activa, creada_en, actualizada_en
+            ) VALUES (%s, %s, %s, %s, %s, %s, TRUE, NOW(), NOW())
+            ON CONFLICT (
+                LOWER(email),
+                COALESCE(region, ''),
+                COALESCE(termino, ''),
+                COALESCE(tipo_contrato, ''),
+                COALESCE(sector, '')
+            ) DO UPDATE SET activa = TRUE, frecuencia = EXCLUDED.frecuencia,
+                           actualizada_en = NOW()
             """,
-            [frecuencia, email, region, termino, tipo_contrato, sector],
+            [email, region, termino, tipo_contrato, sector, frecuencia],
         )
-        if cursor.rowcount == 0:
-            cursor.execute(
-                """
-                INSERT INTO alertas_suscripciones (
-                    email, region, termino, tipo_contrato, sector, frecuencia,
-                    activa, creada_en, actualizada_en
-                ) VALUES (%s, %s, %s, %s, %s, %s, TRUE, NOW(), NOW())
-                """,
-                [email, region, termino, tipo_contrato, sector, frecuencia],
-            )
         connection.commit()
 
     response: dict[str, Any] = {"ok": True, "mensaje": "Alerta registrada correctamente"}
@@ -907,11 +927,12 @@ async def api_buscar_ley(q: str = Query(..., min_length=2, max_length=200)) -> l
 # ──────────────────── Validación de email (Mailcheck) ───────────────────────
 
 @router.get("/api/validar-email")
-def api_validar_email(email: str = Query(..., min_length=3, max_length=200)) -> dict[str, Any]:
+def api_validar_email(request: Request, email: str = Query(..., min_length=3, max_length=200)) -> dict[str, Any]:
     """
     Valida un email: detecta dominios temporales/desechables y sugiere
     correcciones de typos comunes (gmial→gmail, hotnail→hotmail).
     """
+    _check_public_rate(request, max_hits=30)
     return mailcheck_validar(email)
 
 
