@@ -115,9 +115,6 @@ from api.services.seo import (  # noqa: E402
 )
 
 DEFAULT_ALLOW_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:5500",
-    "http://127.0.0.1:5500",
     "https://estadoemplea.pages.dev",
 ]
 
@@ -306,10 +303,15 @@ def ensure_api_schema() -> None:
 # en memoria a partir del JSON y la cacheamos por mtime del archivo.
 
 
+_DOCS_ENABLED = os.getenv("DOCS_ENABLED", "").lower() in ("1", "true", "yes")
+
 app = FastAPI(
     title="contrata o planta .cl - API",
     version="2.1.0",
     description="API publica del agregador de empleo publico chileno",
+    docs_url="/docs" if _DOCS_ENABLED else None,
+    redoc_url="/redoc" if _DOCS_ENABLED else None,
+    openapi_url="/openapi.json" if _DOCS_ENABLED else None,
 )
 
 app.add_middleware(
@@ -320,10 +322,7 @@ app.add_middleware(
     # (contrataoplanta.*, estadoemplea.cl, *.netlify.app) se eliminaron para
     # evitar permitir orígenes que ya no corresponden a este deploy.
     allow_origin_regex=(
-        r"https?://("
-        r"(localhost|127\.0\.0\.1)(:\d+)?"
-        r"|([a-z0-9-]+\.)?estadoemplea\.pages\.dev"
-        r")$"
+        r"https://([a-z0-9-]+\.)?estadoemplea\.pages\.dev$"
     ),
     allow_credentials=True,
     # Incluye PUT y DELETE: sin ellos, el preflight CORS bloqueaba editar config
