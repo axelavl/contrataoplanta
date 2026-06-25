@@ -105,6 +105,94 @@ except ImportError:
     def upsert_oferta(*a: Any, **k: Any) -> tuple[bool, bool]:  # type: ignore[misc]
         return False, False
 
+# ── Lectura de PDF de perfil (opcional, detección genérica) ─────────────────
+# La API ADP no documenta una URL de perfil/bases en PDF, pero devuelve los
+# registros crudos completos. Si en algún campo aparece una URL .pdf, se baja
+# y se extraen requisitos/renta. Es no-op si no hay tal URL.
+import io as _io
+
+try:
+    import pdfplumber  # type: ignore
+except Exception:
+    pdfplumber = None  # type: ignore[assignment]
+
+try:
+    from extraction.requirements_extractor import extract_requirements
+    from extraction.salary_extractor import extract_salary
+except Exception:
+    extract_requirements = None  # type: ignore[assignment]
+    extract_salary = None  # type: ignore[assignment]
+
+
+def _pdf_a_texto(contenido: bytes, max_paginas: int = 10) -> str:
+    """Texto del PDF con pdfplumber. '' si no se puede (escaneado/cifrado)."""
+    if pdfplumber is None or not contenido[:5].startswith(b"%PDF"):
+        return ""
+    try:
+        with pdfplumber.open(_io.BytesIO(contenido)) as pdf:
+            return "\n".join((p.extract_text() or "") for p in pdf.pages[:max_paginas])
+    except Exception:
+        return ""
+
+
+def _datos_desde_pdf(texto: str) -> dict[str, Any]:
+    """De un PDF de perfil/bases en texto saca requisitos_texto y renta."""
+    out: dict[str, Any] = {}
+    if not texto or len(texto) < 80:
+        return out
+    plano = limpiar_texto(texto)
+    if extract_requirements is not None:
+        try:
+            req, des, docs = extract_requirements(texto)
+            bloques = []
+            if req:
+                bloques.append("Requisitos: " + "; ".join(req))
+            if des:
+                bloques.append("Deseables: " + "; ".join(des))
+            if docs:
+                bloques.append("Documentos: " + "; ".join(docs[:6]))
+            if bloques:
+                out["requisitos_texto"] = limpiar_texto(" | ".join(bloques))[:1900]
+        except Exception:
+            logger.exception("  Error extrayendo requisitos del PDF")
+    if extract_salary is not None:
+        try:
+            sal = extract_salary(plano)
+            if sal.amount:
+                out["renta_bruta_min"] = int(sal.amount)
+                if sal.raw:
+                    out["renta_texto"] = limpiar_texto(sal.raw)[:200]
+        except Exception:
+            logger.exception("  Error extrayendo renta del PDF")
+    return out
+
+
+def _url_pdf_en_registro(c: dict[str, Any]) -> str | None:
+    """Busca recursivamente en el registro crudo de la API una URL .pdf
+    (perfil/bases). Prioriza nombres con perfil/bases/descriptor."""
+    urls: list[str] = []
+
+    def _walk(v: Any) -> None:
+        if isinstance(v, str):
+            low = v.lower()
+            if low.startswith("http") and ".pdf" in low:
+                urls.append(v)
+        elif isinstance(v, dict):
+            for x in v.values():
+                _walk(x)
+        elif isinstance(v, (list, tuple)):
+            for x in v:
+                _walk(x)
+
+    _walk(c)
+    if not urls:
+        return None
+    hints = ("perfil", "bases", "descriptor", "convocatoria", "cargo")
+    urls.sort(key=lambda u: next(
+        (i for i, h in enumerate(hints) if h in u.lower()), len(hints)))
+    return urls[0]
+
+
 LOG_DIR = Path(config.LOG_DIR)
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -304,6 +392,24 @@ def recolectar(max_results: int | None, incluir_cerrados: bool) -> list[dict]:
         if o["fecha_cierre"] and o["fecha_cierre"] < hoy and not incluir_cerrados:
             omitidas += 1
             continue
+        # Si la API expone una URL de PDF (perfil/bases), extraer requisitos/renta.
+        if not o.get("requisitos_texto"):
+            pdf_url = _url_pdf_en_registro(c)
+            if pdf_url:
+                try:
+                    rp = session.get(pdf_url, timeout=HTTP_TIMEOUT)
+                    if rp.ok and rp.content[:5].startswith(b"%PDF"):
+                        pdf_datos = _datos_desde_pdf(_pdf_a_texto(rp.content))
+                        if pdf_datos.get("requisitos_texto"):
+                            o["requisitos_texto"] = pdf_datos["requisitos_texto"]
+                        if pdf_datos.get("renta_bruta_min") and not o.get("renta_bruta_min"):
+                            o["renta_bruta_min"] = pdf_datos["renta_bruta_min"]
+                            o["renta_texto"] = o.get("renta_texto") or pdf_datos.get("renta_texto")
+                        if pdf_datos:
+                            logger.info("  Perfil PDF %s: %s",
+                                        o.get("id_externo"), ", ".join(sorted(pdf_datos)))
+                except requests.RequestException as exc:
+                    logger.info("  No se pudo descargar PDF ADP: %s", type(exc).__name__)
         ofertas.append(o)
         if max_results and len(ofertas) >= max_results:
             break
