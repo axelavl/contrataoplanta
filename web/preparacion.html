@@ -56,7 +56,9 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 
 /* SIMULACRO */
 .quiz-card{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--r-l);padding:26px;box-shadow:var(--sombra);max-width:760px}
-.quiz-progreso{font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--texto3);margin-bottom:12px}
+.quiz-progreso{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--texto3);margin-bottom:12px}
+.quiz-timer{font-variant-numeric:tabular-nums;background:var(--bg2);color:var(--azul);padding:3px 10px;border-radius:20px;letter-spacing:0}
+.quiz-tema-badge{display:inline-block;font-size:11px;font-weight:700;color:var(--cielo);background:var(--cielo-l,#eef4ff);border-radius:20px;padding:3px 10px;margin-bottom:12px}
 .quiz-pregunta{font-family:'Fraunces',Georgia,serif;font-size:20px;color:var(--texto);line-height:1.4;margin-bottom:18px}
 .quiz-opciones{display:flex;flex-direction:column;gap:10px}
 .quiz-op{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--bg);border:1px solid var(--borde);border-radius:10px;padding:13px 15px;font-size:15px;font-family:inherit;color:var(--texto);cursor:pointer;transition:border-color .15s,background .15s}
@@ -71,9 +73,22 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .quiz-fb{font-size:13px;line-height:1.6;padding:13px 15px;border-radius:10px}
 .quiz-fb--ok{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
 .quiz-fb--mal{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
-.quiz-nav{display:flex;justify-content:flex-end;margin-top:18px}
+.quiz-fb-fuente{display:block;margin-top:8px;font-size:12px;font-weight:600;opacity:.85}
+.quiz-nav{display:flex;justify-content:space-between;align-items:center;margin-top:18px}
 .quiz-next{background:var(--azul);color:var(--blanco);border:none;border-radius:8px;padding:11px 20px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:opacity .15s}
 .quiz-next:disabled{opacity:.4;cursor:not-allowed}
+.quiz-link{background:none;border:none;color:var(--texto3);font-size:13px;font-family:inherit;font-weight:600;cursor:pointer;padding:6px 4px;text-decoration:underline}
+.quiz-link:hover{color:var(--azul)}
+/* Pantalla de configuración */
+.quiz-config-tit{font-family:'Fraunces',Georgia,serif;font-size:20px;color:var(--texto);margin-bottom:6px}
+.quiz-config-lbl{font-size:13px;color:var(--texto2);margin:12px 0 10px}
+.quiz-temas{display:flex;flex-wrap:wrap;gap:8px}
+.quiz-tema-chip{font-size:13px;font-family:inherit;color:var(--texto2);background:var(--bg);border:1px solid var(--borde);border-radius:20px;padding:7px 14px;cursor:pointer;transition:all .15s}
+.quiz-tema-chip:hover{border-color:var(--cielo)}
+.quiz-tema-chip.is-sel{background:var(--azul);color:var(--blanco);border-color:var(--azul)}
+.quiz-toggle{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--texto);margin:20px 0 8px;cursor:pointer}
+.quiz-toggle input{width:17px;height:17px;accent-color:var(--azul);cursor:pointer}
+.quiz-config-start{margin-top:14px}
 .quiz-resultado{text-align:center;padding:14px 0}
 .quiz-resultado-pct{font-family:'Fraunces',Georgia,serif;font-size:56px;color:var(--azul);line-height:1}
 .quiz-resultado-msg{font-size:15px;color:var(--texto2);margin:8px 0 20px}
@@ -187,7 +202,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 
   <!-- SIMULACRO -->
   <h2 class="sec-titulo">Simulacro: conocimientos del Estado</h2>
-  <p class="sec-sub">Pon a prueba lo que suele medirse en concursos: procedimiento administrativo, Estatuto Administrativo y probidad. Recibes la explicación de cada respuesta.</p>
+  <p class="sec-sub">Pon a prueba lo que suele medirse en concursos: procedimiento administrativo, Estatuto Administrativo, probidad, compras públicas, transparencia, lobby y organización del Estado. Filtra por ley o activa el modo contrarreloj. Son 5 preguntas que rotan en cada visita, tomadas de un banco de más de 70, con explicación y fuente (ley y artículo) en cada respuesta.</p>
   <div class="quiz-card">
     <div id="quiz-cont"></div>
   </div>
@@ -206,8 +221,12 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 
   <p class="fuente-nota">
     <strong>Aviso.</strong> El simulacro y las guías son material de estudio referencial basado en normativa vigente
-    (Ley 19.880 sobre Bases de los Procedimientos Administrativos; Ley 18.834 Estatuto Administrativo; Ley 20.880 sobre Probidad),
-    y no constituyen asesoría legal. Ante una duda concreta, revisa siempre las bases del concurso y la norma aplicable.
+    (Ley 19.880 sobre Bases de los Procedimientos Administrativos; Ley 18.834 Estatuto Administrativo; Ley 18.575 de Bases Generales
+    de la Administración del Estado; Ley 20.880 sobre Probidad; Ley 19.886 de Compras Públicas; Ley 20.285 de Transparencia;
+    Ley 20.730 del Lobby; Ley 10.336 y Constitución Política, en lo relativo a la Contraloría y la organización del Estado),
+    y no constituyen asesoría legal. Cada pregunta indica su fuente (ley y artículo) para que puedas verificarla en
+    <a href="https://www.bcn.cl/leychile" rel="nofollow noopener" target="_blank">leychile.cl (BCN)</a>.
+    Ante una duda concreta, revisa siempre las bases del concurso y la norma aplicable.
   </p>
 
 </div>
