@@ -1992,7 +1992,7 @@ function renderMasActivas(instituciones) {
       <div class="inst-item" role="button" tabindex="0" data-inst-id="${instId}" data-inst-nombre="${escAttr(inst.nombre || '')}">
         <div class="inst-icon">${icono}</div>
         <div class="inst-info">
-          <div class="inst-nombre">${inst.nombre || 'Institución'}</div>
+          <div class="inst-nombre">${escHtml(inst.nombre || 'Institución')}</div>
           <div class="inst-activos">${inst.activas} activos · ${inst.nuevas_semana} nuevos</div>
         </div>
         <span class="inst-arrow">›</span>
@@ -3011,7 +3011,7 @@ async function abrirQR(url) {
     qr.make();
     canvas.innerHTML = qr.createSvgTag({ scalable: true, margin: 0 });
   } catch (e) {
-    canvas.innerHTML = `<span style="color:var(--rojo);font-size:13px">${e.message || 'Error generando QR'}</span>`;
+    canvas.innerHTML = `<span style="color:var(--rojo);font-size:13px">${escHtml(e.message || 'Error generando QR')}</span>`;
   }
 }
 
