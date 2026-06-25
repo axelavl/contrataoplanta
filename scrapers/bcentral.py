@@ -610,7 +610,13 @@ def recolectar(max_results: int | None, delay: float, con_detalle: bool,
                                         "  PDF bases concurso %s: %s",
                                         v["concurso"],
                                         ", ".join(sorted(pdf_datos)))
-                ofertas.append(construir_oferta(v, det, pdf_datos))
+                oferta = construir_oferta(v, det, pdf_datos)
+                try:
+                    from scrapers.enrich import enriquecer_oferta
+                    enriquecer_oferta(oferta, texto_html=oferta.get("descripcion"))
+                except Exception:
+                    pass
+                ofertas.append(oferta)
         finally:
             browser.close()
     return ofertas

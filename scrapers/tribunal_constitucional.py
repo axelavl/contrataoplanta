@@ -263,6 +263,7 @@ def parsear_perfil_pdf(texto: str) -> dict[str, Any]:
                         pass
             if d.get("fecha_cierre"):
                 break
+    d["_texto_completo"] = t
     return d
 
 
@@ -400,6 +401,12 @@ def recolectar(max_results: int | None, delay: float, con_detalle: bool,
                     if rp is not None:
                         perfil = parsear_perfil_pdf(_pdf_a_texto(rp.content))
         oferta = construir_oferta(item, perfil, bases_url)
+        try:
+            from scrapers.enrich import enriquecer_oferta
+            texto_perfil = perfil.get("_texto_completo")
+            enriquecer_oferta(oferta, texto_detalle=texto_perfil)
+        except Exception:
+            pass
         if (oferta["fecha_cierre"] and oferta["fecha_cierre"] < hoy
                 and not incluir_cerrados):
             omitidas += 1

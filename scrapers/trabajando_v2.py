@@ -478,7 +478,13 @@ def _recolectar_via_api(
             if detalle is None:
                 logger.info("  Sin detalle para oferta %s", item.get("idOferta"))
             time.sleep(delay)
-        ofertas.append(_construir_oferta_api(item, detalle, base, fuente))
+        oferta = _construir_oferta_api(item, detalle, base, fuente)
+        try:
+            from scrapers.enrich import enriquecer_oferta
+            enriquecer_oferta(oferta, texto_html=oferta.get("descripcion"))
+        except Exception:
+            pass
+        ofertas.append(oferta)
         if i % 20 == 0:
             logger.info("  Detalles procesados: %d/%d", i, len(items))
     return ofertas

@@ -388,6 +388,15 @@ def recolectar(max_results: int | None, delay: float,
             vistos.add(o["url_original"])
             if sin_internos and o["tipo_cargo"] == "Concurso Interno":
                 continue
+            try:
+                from scrapers.enrich import enriquecer_oferta
+                enriquecer_oferta(
+                    o,
+                    texto_html=o.get("descripcion"),
+                    descargar_pdfs=False,
+                )
+            except Exception:
+                pass
             ofertas.append(o)
             if max_results and len(ofertas) >= max_results:
                 return ofertas

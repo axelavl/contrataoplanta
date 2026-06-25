@@ -298,6 +298,15 @@ def recolectar(max_results: int | None, delay: float,
                 and not incluir_cerrados):
             omitidas += 1
             continue
+        try:
+            from scrapers.enrich import enriquecer_oferta
+            enriquecer_oferta(
+                of,
+                texto_html=of.get("descripcion"),
+                descargar_pdfs=False,
+            )
+        except Exception:
+            pass
         ofertas.append(of)
         if max_results and len(ofertas) >= max_results:
             break
