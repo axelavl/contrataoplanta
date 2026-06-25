@@ -3978,7 +3978,15 @@ function restaurarFiltrosDesdeURL() {
       if (!Number.isNaN(renta) && renta > 0) {
         estado.renta_min = renta;
         const inputRenta = document.getElementById('filtro-renta-min');
-        if (inputRenta) inputRenta.value = formatearMilesCL(String(renta));
+        if (inputRenta) inputRenta.value = Number(renta).toLocaleString('es-CL');
+      }
+    }
+    if (params.has('renta_max')) {
+      const renta = Number(params.get('renta_max'));
+      if (!Number.isNaN(renta) && renta > 0) {
+        estado.renta_max = renta;
+        const inputRenta = document.getElementById('filtro-renta-max');
+        if (inputRenta) inputRenta.value = Number(renta).toLocaleString('es-CL');
       }
     }
     if (params.has('orden')) {

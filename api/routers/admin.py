@@ -1295,15 +1295,15 @@ def admin_scraper_catalog(
         enriched = []
         for item in instituciones:  # catálogo completo (~640 instituciones)
             try:
-                info = enrich_with_status(item)
+                decision = classify_source(item)
                 enriched.append({
-                    "id": info.get("id"),
-                    "nombre": info.get("nombre"),
-                    "sector": info.get("sector"),
-                    "url_empleo": info.get("url_empleo"),
-                    "status": str(info.get("status", "")),
-                    "kind": str(info.get("kind", "")),
-                    "fuente_id": info.get("fuente_id"),
+                    "id": item.get("id"),
+                    "nombre": item.get("nombre"),
+                    "sector": item.get("sector"),
+                    "url_empleo": item.get("url_empleo"),
+                    "status": str(decision.status.value) if decision.status else "",
+                    "kind": str(decision.kind.value) if decision.kind else "",
+                    "fuente_id": item.get("fuente_id"),
                 })
             except Exception:
                 enriched.append({

@@ -91,6 +91,6 @@ def classify_with_llm_fallback(
             "llm_reasoning_summary": parsed.reason,
             "positive_signals": current.positive_signals + parsed.evidence_for_job,
             "negative_signals": current.negative_signals + parsed.evidence_against_job,
-            "needs_review": contradiction,
+            "needs_review": current.needs_review or contradiction,
         }
     )

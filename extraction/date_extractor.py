@@ -77,7 +77,7 @@ def resolve_best_dates(evidences: list[DateEvidence], now: datetime | None = Non
         expiration_reason = "explicit_closed_signal"
         confidence = "high"
 
-    if re.search(r"\b(2020|2021|2022|2023|2024)\b", texts) and not re.search(r"\b2025|2026|vigente|abierto|en proceso\b", texts):
+    if re.search(r"\b(2020|2021|2022|2023|2024)\b", texts) and not re.search(r"\b(?:2025|2026|vigente|abierto|en proceso)\b", texts):
         is_expired = True
         expiration_reason = "historical_year_without_current_signals"
         confidence = "medium"
