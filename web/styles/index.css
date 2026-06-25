@@ -1597,6 +1597,7 @@ footer {
   background: var(--bg2); border-radius: 7px;
   padding: 10px 12px;
 }
+.modal-info-item[hidden] { display: none !important; }
 .modal-info-label {
   font-size: 10px; color: var(--texto3);
   font-family: 'Inter', sans-serif; margin-bottom: 3px;

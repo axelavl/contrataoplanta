@@ -81,13 +81,8 @@
           t.setAttribute('role', 'button');
           t.setAttribute('tabindex', '0');
         }
-        if (debeQuedarAbierta(secs[i])) {
-          secs[i].classList.remove('cop-colapsada');
-          if (t) t.setAttribute('aria-expanded', 'true');
-        } else {
-          secs[i].classList.add('cop-colapsada');
-          if (t) t.setAttribute('aria-expanded', 'false');
-        }
+        secs[i].classList.remove('cop-colapsada');
+        if (t) t.setAttribute('aria-expanded', 'true');
       }
     } else {
       // Desktop: sin acordeón, todo desplegado.
