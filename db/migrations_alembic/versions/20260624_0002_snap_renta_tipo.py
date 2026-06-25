@@ -10,7 +10,7 @@ no perder esa señal en el histórico.
 Todo es idempotente y tolerante a despliegues donde el feature de snapshots aún
 no exista (``ALTER TABLE IF EXISTS`` / ``CREATE OR REPLACE FUNCTION``).
 
-Revision ID: 20260624_0002_snapshot_renta_tipo
+Revision ID: 20260624_0002_snap_renta_tipo
 Revises: 20260624_0001_renta_tipo
 Create Date: 2026-06-24
 """
@@ -21,7 +21,7 @@ from typing import Sequence, Union
 from alembic import op
 
 
-revision: str = "20260624_0002_snapshot_renta_tipo"
+revision: str = "20260624_0002_snap_renta_tipo"
 down_revision: Union[str, None] = "20260624_0001_renta_tipo"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -80,6 +80,9 @@ def _funcion_existe() -> bool:
 
 
 def upgrade() -> None:
+    # Ampliar version_num para evitar truncación con IDs descriptivos largos.
+    op.execute("ALTER TABLE alembic_version ALTER COLUMN version_num TYPE VARCHAR(128)")
+
     # Columna nueva, aditiva. Tolerante a despliegues sin el feature de snapshots.
     op.execute(
         "ALTER TABLE IF EXISTS ofertas_snapshots "
