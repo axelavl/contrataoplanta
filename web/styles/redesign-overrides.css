@@ -4387,3 +4387,149 @@ summary:focus-visible,
 :root:not([data-theme="dark"]) .oferta-card.urg-status-closing-today {
   background: linear-gradient(135deg, #FFFCF5 0%, #FFF8EB 100%) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   CORRECCIONES DARK MODE — PÁGINAS INTERNAS (glosario, privacidad,
+   estadísticas, 404)
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── 24. GLOSARIO · dark mode ─────────────────────────────────────── */
+:root[data-theme="dark"] .hero {
+  background: linear-gradient(130deg, #152847 0%, #1A3560 100%) !important;
+  border-color: rgba(120, 165, 225, 0.2) !important;
+}
+:root[data-theme="dark"] .kicker {
+  color: var(--acento, #EAB858) !important;
+}
+:root[data-theme="dark"] h1 {
+  color: var(--texto, #ECE8DB) !important;
+}
+:root[data-theme="dark"] .lead {
+  color: #A8B8D4 !important;
+}
+:root[data-theme="dark"] .card {
+  background: var(--blanco, #152847) !important;
+  border-color: rgba(120, 165, 225, 0.2) !important;
+}
+:root[data-theme="dark"] .card h2,
+:root[data-theme="dark"] .card h3 {
+  color: var(--texto, #ECE8DB) !important;
+}
+:root[data-theme="dark"] .card p {
+  color: #A8B8D4 !important;
+}
+:root[data-theme="dark"] table {
+  background: #152847 !important;
+}
+:root[data-theme="dark"] th {
+  background: #1A3560 !important;
+  color: var(--acento, #EAB858) !important;
+  border-color: rgba(120, 165, 225, 0.18) !important;
+}
+:root[data-theme="dark"] td {
+  color: var(--texto, #ECE8DB) !important;
+  border-color: rgba(120, 165, 225, 0.12) !important;
+}
+:root[data-theme="dark"] .table-wrap {
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* ── 25. PRIVACIDAD · dark mode ───────────────────────────────────── */
+:root[data-theme="dark"] .prose h2 {
+  color: var(--navy-text, #7AA1DC) !important;
+}
+:root[data-theme="dark"] .prose p,
+:root[data-theme="dark"] .prose li {
+  color: var(--texto, #ECE8DB) !important;
+}
+:root[data-theme="dark"] .prose .nota {
+  background: rgba(120, 165, 225, 0.1) !important;
+  border-color: rgba(120, 165, 225, 0.2) !important;
+  color: #A8B8D4 !important;
+}
+:root[data-theme="dark"] .page-titulo {
+  color: var(--texto, #ECE8DB) !important;
+}
+:root[data-theme="dark"] .page-kicker {
+  color: var(--acento, #EAB858) !important;
+}
+:root[data-theme="dark"] .page-sub {
+  color: #A8B8D4 !important;
+}
+:root[data-theme="dark"] .page-hero {
+  background: linear-gradient(130deg, #152847 0%, #1A3560 100%) !important;
+  border-color: rgba(120, 165, 225, 0.2) !important;
+}
+:root[data-theme="dark"] .actualizado {
+  color: #8095B8 !important;
+}
+:root[data-theme="dark"] .breadcrumb {
+  background: rgba(21, 40, 71, 0.6) !important;
+  border-color: rgba(120, 165, 225, 0.1) !important;
+}
+:root[data-theme="dark"] .breadcrumb-actual {
+  color: #A8B8D4 !important;
+}
+
+/* ── 26. ESTADÍSTICAS · dark mode ─────────────────────────────────── */
+:root[data-theme="dark"] .kpi-card {
+  background: #152847 !important;
+  border-color: rgba(120, 165, 225, 0.2) !important;
+}
+:root[data-theme="dark"] .kpi-label {
+  color: #A8B8D4 !important;
+}
+:root[data-theme="dark"] .kpi-desc {
+  color: #8095B8 !important;
+}
+:root[data-theme="dark"] .stats-card {
+  background: #152847 !important;
+  border-color: rgba(120, 165, 225, 0.2) !important;
+}
+:root[data-theme="dark"] .stats-reintentar {
+  background: var(--navy-text, #2A5DC8) !important;
+  color: #fff !important;
+}
+:root[data-theme="dark"] .stats-reintentar:hover {
+  background: #3A6DD8 !important;
+}
+
+/* ── 27. 404 · dark mode ──────────────────────────────────────────── */
+:root[data-theme="dark"] .error-card {
+  background: #152847 !important;
+  border-color: rgba(120, 165, 225, 0.2) !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3) !important;
+}
+:root[data-theme="dark"] .error-kicker {
+  color: #8095B8 !important;
+}
+:root[data-theme="dark"] .error-sub {
+  color: #A8B8D4 !important;
+}
+:root[data-theme="dark"] .btn-primary {
+  background: var(--navy-text, #2A5DC8) !important;
+  color: #fff !important;
+}
+:root[data-theme="dark"] .btn-ghost {
+  border-color: rgba(120, 165, 225, 0.3) !important;
+  color: var(--navy-text, #7AA1DC) !important;
+}
+:root[data-theme="dark"] .btn-ghost:hover {
+  background: rgba(120, 165, 225, 0.1) !important;
+  border-color: rgba(120, 165, 225, 0.5) !important;
+}
+:root[data-theme="dark"] .error-atajos {
+  border-color: rgba(120, 165, 225, 0.15) !important;
+}
+:root[data-theme="dark"] .error-atajos-titulo {
+  color: #8095B8 !important;
+}
+:root[data-theme="dark"] .atajo {
+  color: var(--navy-text, #7AA1DC) !important;
+  border-color: rgba(120, 165, 225, 0.2) !important;
+}
+:root[data-theme="dark"] .atajo:hover {
+  background: rgba(120, 165, 225, 0.1) !important;
+  border-color: rgba(120, 165, 225, 0.4) !important;
+}
