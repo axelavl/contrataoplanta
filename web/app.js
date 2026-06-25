@@ -1986,7 +1986,7 @@ function renderHistorico(meses) {
 function renderMasActivas(instituciones) {
   if (!instituciones.length) return;
   const html = instituciones.map(inst => {
-    const icono = ICONOS_SECTOR[''] || '🏢';
+    const icono = ICONOS_SECTOR[inst.sector] || '🏢';
     const instId = Number.isFinite(Number(inst.id)) ? Number(inst.id) : 0;
     return `
       <div class="inst-item" role="button" tabindex="0" data-inst-id="${instId}" data-inst-nombre="${escAttr(inst.nombre || '')}">
@@ -2851,14 +2851,6 @@ function abrirVisorBasesPorId(ofertaId) {
 // con un solo click para postular.
 function urlDeepLinkOferta(oferta) {
   const url = new URL(window.location.href);
-  const pathname = (url.pathname || '').replace(/\/+/g, '/');
-  const isLegacyRoot = pathname === '/' || pathname === '/index.html' || pathname === '/index_contrataoplanta.html';
-  if (isLegacyRoot) {
-    // Evita depender del redirect / -> /web/index.html para deep links compartidos.
-    url.pathname = '/web/index.html';
-  }
-
-  // Conservamos otros filtros existentes y limpiamos solo el hash visual.
   url.hash = '';
   url.pathname = `/oferta/${oferta.id}`;
   return url.toString();
@@ -3483,10 +3475,10 @@ document.addEventListener('keydown', e => {
 // Activar todos los tipos del catálogo al cargar. Los filtros de cierre/nuevos/
 // sin-experiencia quedan inactivos y sólo se activan manualmente.
 const _TIPOS_ACTIVABLES = new Set(['planta','contrata','honorarios','codigo_trabajo','otro','no_informa']);
-document.querySelectorAll('.filtro-tag.activo[onclick*="toggleFiltro"]').forEach(btn => {
-  const m = btn.getAttribute('onclick').match(/'([^']+)'\)/);
-  if (m && _TIPOS_ACTIVABLES.has(m[1])) {
-    if (!estado.tipos.includes(m[1])) estado.tipos.push(m[1]);
+document.querySelectorAll('.filtro-tag.activo[data-filtro]').forEach(btn => {
+  const filtro = btn.dataset.filtro;
+  if (filtro && _TIPOS_ACTIVABLES.has(filtro)) {
+    if (!estado.tipos.includes(filtro)) estado.tipos.push(filtro);
   }
 });
 
@@ -4016,10 +4008,12 @@ function restaurarFiltrosDesdeURL() {
   } catch { /* ignorar */ }
 }
 
-// Enganchar sincronización: cada vez que cargarOfertas() termina, actualiza la URL
+// Enganchar sincronización: cada vez que cargarOfertas() termina, actualiza la URL.
+// Reasignamos la variable local del closure para que las llamadas internas
+// (buscar, irPagina, etc.) también pasen por el wrapper.
 const _cargarOfertasOriginal = typeof cargarOfertas === 'function' ? cargarOfertas : null;
 if (_cargarOfertasOriginal) {
-  window.cargarOfertas = async function(...args) {
+  cargarOfertas = async function(...args) {
     const result = await _cargarOfertasOriginal.apply(this, args);
     sincronizarURL();
     actualizarVisibilidadCompartirBusqueda();
