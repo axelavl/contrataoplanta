@@ -89,6 +89,8 @@ mark.cop-hl {
 .cop-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px; margin-bottom: 18px;
   background: var(--borde, #E5E1D2); border: 1px solid var(--borde, #E5E1D2); border-radius: 12px; overflow: hidden; }
 .cop-kv { background: var(--blanco, #fff); padding: 11px 14px; }
+.cop-grid > .cop-kv:last-child:nth-child(3n+1) { grid-column: 1 / -1; }
+.cop-grid > .cop-kv:last-child:nth-child(3n+2) { grid-column: span 2; }
 .cop-kv-k { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--texto3, #747B91); margin-bottom: 4px; }
 .cop-kv-v { font-size: 14px; font-weight: 600; color: var(--texto, #18202F); }
 .cop-kv-v.is-renta { font-family: var(--font-serif, 'Fraunces', serif); font-size: 16px; }

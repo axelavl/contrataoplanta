@@ -708,6 +708,30 @@ class EmpleosPublicosScraper(BaseScraper):
             "estado": "activo",
         }
 
+    async def _resolver_url_directa(
+        self,
+        session: aiohttp.ClientSession,
+        url: str | None,
+    ) -> str | None:
+        """HEAD request para resolver redirects y obtener la URL directa."""
+        if not url:
+            return url
+        try:
+            await self._rate_limiter.wait()
+            async with session.head(
+                url,
+                allow_redirects=True,
+                headers={"User-Agent": next(self.user_agents)},
+                timeout=aiohttp.ClientTimeout(total=10),
+            ) as resp:
+                final = str(resp.url)
+                if resp.status < 400 and final != url:
+                    self.logger.debug("url_bases redirect: %s → %s", url, final)
+                    return final
+        except (aiohttp.ClientError, asyncio.TimeoutError):
+            pass
+        return url
+
     async def _enriquecer_con_detalle(
         self,
         session: aiohttp.ClientSession,
@@ -725,7 +749,11 @@ class EmpleosPublicosScraper(BaseScraper):
             html = await self._request_text(session, PageRequest(method="GET", url=iframe_url))
             soup = BeautifulSoup(html, "html.parser")
 
-        return self._parsear_detalle(soup, oferta)
+        resultado = self._parsear_detalle(soup, oferta)
+        resultado["url_bases"] = await self._resolver_url_directa(
+            session, resultado.get("url_bases"),
+        )
+        return resultado
 
     def _parsear_detalle(self, soup: BeautifulSoup, oferta: dict[str, Any]) -> dict[str, Any]:
         resultado = dict(oferta)
