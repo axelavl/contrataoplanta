@@ -25,7 +25,7 @@ from scrapers.plataformas.hiringroom import HiringRoomScraper  # noqa: E402
 from scrapers.plataformas.playwright_scraper import PlaywrightScraper  # noqa: E402
 
 
-CATALOG_PATH = Path("repositorio_instituciones_publicas_chile.json")
+CATALOG_PATH = Path(__file__).resolve().parents[1] / "repositorio_instituciones_publicas_chile.json"
 FAMILY_IDS = {
     "wordpress": 387,   # Municipalidad de Independencia
     "hiringroom": 392,  # Municipalidad de La Reina

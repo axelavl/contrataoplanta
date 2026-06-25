@@ -446,7 +446,7 @@ def ejecutar(dry_run=False, verbose=False, max_results=None,
         if db is not None:
             try:
                 db.rollback()
-                registrar_log(db, 0,
+                registrar_log(db, None,
                               "OK" if stats["errores"] == 0 else "PARCIAL",
                               ofertas_nuevas=stats["nuevas"],
                               ofertas_actualizadas=stats["actualizadas"],

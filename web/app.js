@@ -3954,9 +3954,9 @@ function restaurarFiltrosDesdeURL() {
     if (params.has('tipos')) {
       estado.tipos = (params.get('tipos') || '').split(',').filter(Boolean);
       // Sincronizar botones de tipo con el estado restaurado
-      document.querySelectorAll('.filtro-tag[onclick*="planta"], .filtro-tag[onclick*="contrata"], .filtro-tag[onclick*="honorarios"]').forEach(btn => {
-        const match = btn.getAttribute('onclick').match(/toggleFiltro\(this,'(\w+)'\)/);
-        if (match) btn.classList.toggle('activo', estado.tipos.includes(match[1]));
+      document.querySelectorAll('.filtro-tag[data-filtro]').forEach(btn => {
+        const filtro = btn.dataset.filtro;
+        if (filtro && estado.tipos.includes(filtro)) btn.classList.add('activo');
       });
     }
     if (params.has('institucion')) {
