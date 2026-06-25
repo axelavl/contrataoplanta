@@ -6,9 +6,14 @@ coinciden con el perfil del usuario suscrito.
 
 from __future__ import annotations
 
+import html as _html_mod
 import logging
 import os
 from typing import Any
+
+
+def _esc(s: object) -> str:
+    return _html_mod.escape(str(s)) if s else ""
 
 logger = logging.getLogger("api.email_alerts")
 
@@ -103,15 +108,17 @@ def enviar_alerta_ofertas(
         elif o.get("renta_texto"):
             renta = o["renta_texto"]
 
-        region = o.get("region", "")
-        institucion = o.get("institucion") or o.get("institucion_nombre") or "—"
-        tipo = o.get("tipo_contrato") or o.get("tipo_cargo") or ""
-        url = o.get("url_oferta") or o.get("url_original") or ""
+        region = _esc(o.get("region", ""))
+        institucion = _esc(o.get("institucion") or o.get("institucion_nombre") or "—")
+        tipo = _esc(o.get("tipo_contrato") or o.get("tipo_cargo") or "")
+        cargo = _esc(o.get("cargo", "Sin cargo"))
+        url = _esc(o.get("url_oferta") or o.get("url_original") or "")
+        renta = _esc(renta) if renta else ""
 
         ofertas_html += f"""
         <tr style="border-bottom:1px solid #eee">
           <td style="padding:12px 8px;vertical-align:top">
-            <div style="font-weight:600;color:#0A2E6E;font-size:14px;margin-bottom:4px">{o.get('cargo', 'Sin cargo')}</div>
+            <div style="font-weight:600;color:#0A2E6E;font-size:14px;margin-bottom:4px">{cargo}</div>
             <div style="font-size:12px;color:#4B5563">{institucion}</div>
             <div style="font-size:11px;color:#9CA3AF;margin-top:2px">
               {region}{' · ' + tipo if tipo else ''}{' · ' + renta if renta else ''}
@@ -131,13 +138,13 @@ def enviar_alerta_ofertas(
     if filtros:
         parts = []
         if filtros.get("region"):
-            parts.append(f"Región: {filtros['region']}")
+            parts.append(f"Región: {_esc(filtros['region'])}")
         if filtros.get("termino"):
-            parts.append(f"Palabras clave: {filtros['termino']}")
+            parts.append(f"Palabras clave: {_esc(filtros['termino'])}")
         if filtros.get("tipo_contrato"):
-            parts.append(f"Tipo: {filtros['tipo_contrato']}")
+            parts.append(f"Tipo: {_esc(filtros['tipo_contrato'])}")
         if filtros.get("sector"):
-            parts.append(f"Sector: {filtros['sector']}")
+            parts.append(f"Sector: {_esc(filtros['sector'])}")
         if parts:
             filtros_text = " · ".join(parts)
 
