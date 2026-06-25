@@ -372,8 +372,6 @@ def web_root(request: Request, oferta: int | None = Query(None, ge=1)) -> Respon
             {
                 "nombre": "contrata o planta .cl - API",
                 "version": "3.0.0",
-                "docs": "/docs",
-                "db_host": DB_CONFIG["host"],
             }
         )
     if oferta:

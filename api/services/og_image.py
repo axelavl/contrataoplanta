@@ -43,6 +43,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 from datetime import date
 from functools import lru_cache
 from io import BytesIO
@@ -188,8 +189,13 @@ def _sigla_fallback(nombre: str | None, sigla: str | None) -> str:
 
 
 # ── Logo institucional ───────────────────────────────────────────────────
+_DOMAIN_RE = re.compile(r"^[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?\.[a-zA-Z]{2,}$")
+
+
 def _fetch_logo(domain: str) -> Image.Image | None:
     """Descarga el logo desde Clearbit. Silencioso ante cualquier fallo."""
+    if not domain or not _DOMAIN_RE.match(domain):
+        return None
     try:
         import requests
 
