@@ -398,7 +398,7 @@ def construir_oferta(c: dict[str, Any], det: dict[str, Any]) -> dict:
 # ── Recolección ──────────────────────────────────────────────────────────────
 def recolectar(max_results: int | None, con_detalle: bool, delay: float) -> list[dict]:
     session = requests.Session()
-    session.proxies.update(getattr(config, "proxies", lambda: {})())
+    getattr(config, "aplicar_proxy", lambda *_: None)(session)
     session.headers.update(_headers())
 
     r = _get(session, BASE + "/")

@@ -73,6 +73,22 @@ class Config:
         definido (entonces la sesión sale directo, sin proxy)."""
         return {"http": self.PROXY_CL, "https": self.PROXY_CL} if self.PROXY_CL else {}
 
+    def aplicar_proxy(self, session) -> None:
+        """Configura una sesión ``requests`` para salir por PROXY_CL si está
+        definido. Enruta HTTP/HTTPS por el proxy y desactiva la verificación
+        SSL (equivalente a ``curl -k``): el proxy residencial intercepta TLS
+        y rompe la cadena de certificados, lo que de otro modo lanza SSLError.
+        No-op si PROXY_CL está vacío (la sesión sale directo y con SSL)."""
+        if not self.PROXY_CL:
+            return
+        session.proxies.update({"http": self.PROXY_CL, "https": self.PROXY_CL})
+        session.verify = False
+        try:
+            import urllib3
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        except Exception:
+            pass
+
 
 def _sqlalchemy_url_from_env() -> str:
     """Import tardío de `db.config` para evitar que un import cíclico

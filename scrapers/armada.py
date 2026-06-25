@@ -111,6 +111,24 @@ except ImportError:
     def upsert_oferta(*a: Any, **k: Any) -> tuple[bool, bool]:  # type: ignore[misc]
         return False, False
 
+# ── Lectura de PDF de bases (opcional) ──────────────────────────────────────
+# Si la ficha enlaza las bases en PDF, se descarga y se extraen requisitos/renta.
+# Es no-op si pdfplumber no está instalado o si no hay PDF en la ficha.
+import io as _io
+
+try:
+    import pdfplumber  # type: ignore
+except Exception:
+    pdfplumber = None  # type: ignore[assignment]
+
+try:
+    from extraction.requirements_extractor import extract_requirements
+    from extraction.salary_extractor import extract_salary
+except Exception:
+    extract_requirements = None  # type: ignore[assignment]
+    extract_salary = None  # type: ignore[assignment]
+
+
 LOG_DIR = Path(config.LOG_DIR)
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -200,7 +218,7 @@ CAMPOS_EXPORT = ["id_externo", "fuente_id", "institucion_id", "institucion_nombr
 # ── HTTP ─────────────────────────────────────────────────────────────────────
 def _session() -> requests.Session:
     s = requests.Session()
-    s.proxies.update(getattr(config, "proxies", lambda: {})())
+    getattr(config, "aplicar_proxy", lambda *_: None)(s)
     s.headers.update({
         "User-Agent": random.choice(config.USER_AGENTS),
         "Accept": "text/html,application/xhtml+xml,*/*;q=0.8",
@@ -439,6 +457,50 @@ def _nivel(titulo: str, categoria: str) -> str:
     return "Profesional"
 
 
+def _pdf_a_texto(contenido: bytes, max_paginas: int = 10) -> str:
+    """Texto del PDF con pdfplumber (estándar del proyecto). '' si no se puede."""
+    if pdfplumber is None or not contenido[:5].startswith(b"%PDF"):
+        return ""
+    try:
+        with pdfplumber.open(_io.BytesIO(contenido)) as pdf:
+            return "\n".join((p.extract_text() or "") for p in pdf.pages[:max_paginas])
+    except Exception:
+        return ""
+
+
+def _datos_desde_pdf(texto: str) -> dict[str, Any]:
+    """De las bases en texto saca requisitos_texto y renta (cuando aparecen)."""
+    out: dict[str, Any] = {}
+    if not texto or len(texto) < 80:
+        return out
+    plano = limpiar_texto(texto)
+    if extract_requirements is not None:
+        try:
+            req, des, docs = extract_requirements(texto)
+            bloques = []
+            if req:
+                bloques.append("Requisitos: " + "; ".join(req))
+            if des:
+                bloques.append("Deseables: " + "; ".join(des))
+            if docs:
+                bloques.append("Documentos: " + "; ".join(docs[:6]))
+            if bloques:
+                out["requisitos_texto"] = limpiar_texto(" | ".join(bloques))[:1900]
+        except Exception:
+            logger.exception("  Error extrayendo requisitos del PDF")
+    if extract_salary is not None:
+        try:
+            sal = extract_salary(plano)
+            if sal.amount:
+                out["renta_bruta_min"] = int(sal.amount)
+                out["renta_bruta_max"] = int(sal.amount)
+                if sal.raw:
+                    out["renta_texto"] = limpiar_texto(sal.raw)[:200]
+        except Exception:
+            logger.exception("  Error extrayendo renta del PDF")
+    return out
+
+
 def construir_oferta(item: dict[str, Any], det: dict[str, Any]) -> dict:
     fuente_id = int(FUENTE["id"])
     nombre = FUENTE["nombre"]
@@ -482,12 +544,12 @@ def construir_oferta(item: dict[str, Any], det: dict[str, Any]) -> dict:
         "nivel": _nivel(item["titulo"], item.get("categoria", "")),
         "region": region,
         "ciudad": ciudad,
-        "renta_bruta_min": None,  # la Armada publica grado, no monto
-        "renta_bruta_max": None,
+        "renta_bruta_min": det.get("renta_bruta_min"),  # la Armada publica grado; renta solo si está en las bases PDF
+        "renta_bruta_max": det.get("renta_bruta_max"),
         "renta_texto": det.get("renta_texto"),
         "fecha_publicacion": det.get("fecha_publicacion") or date.today(),
         "fecha_cierre": det.get("fecha_cierre"),
-        "requisitos_texto": None,  # requisitos detallados en bases PDF
+        "requisitos_texto": det.get("requisitos_texto"),  # desde las bases PDF si están disponibles
     }
 
 
@@ -542,6 +604,14 @@ def recolectar(max_results: int | None, delay: float, con_detalle: bool,
             rd = _get(session, it["url"])
             if rd is not None:
                 det = parsear_detalle(rd.text)
+                if det.get("bases_url") and not det.get("requisitos_texto"):
+                    rb = _get(session, urljoin(BASE, det["bases_url"]))
+                    if rb is not None:
+                        pdf_datos = _datos_desde_pdf(_pdf_a_texto(rb.content))
+                        for k, v in pdf_datos.items():
+                            det.setdefault(k, v)
+                        if pdf_datos:
+                            logger.info("  Bases PDF: %s", ", ".join(sorted(pdf_datos)))
         o = construir_oferta(it, det)
         # cinturón extra: aunque la card diga abierta, si el plazo ya venció
         if (not incluir_cerrados and o["fecha_cierre"]
@@ -663,4 +733,4 @@ if __name__ == "__main__":
     a = p.parse_args()
     ejecutar(dry_run=a.dry_run, verbose=a.verbose, max_results=a.max,
              delay=a.delay, con_detalle=not a.sin_detalle,
-             incluir_cerrados=a.incluir_cerrados, export=a.export)
+          
