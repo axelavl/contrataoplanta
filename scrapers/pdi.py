@@ -599,6 +599,11 @@ def recolectar(max_results: int | None, delay: float,
             o = construir_oferta_contrata(c, perfil)
             if o["url_original"] not in vistos:
                 vistos.add(o["url_original"])
+                try:
+                    from scrapers.enrich import enriquecer_oferta
+                    enriquecer_oferta(o, texto_html=o.get("descripcion"))
+                except Exception:
+                    pass
                 ofertas.append(o)
     else:
         logger.warning("  No se pudo acceder a trabaja-con-nosotros")
@@ -641,6 +646,11 @@ def recolectar(max_results: int | None, delay: float,
             if o["url_original"] in vistos:
                 continue
             vistos.add(o["url_original"])
+            try:
+                from scrapers.enrich import enriquecer_oferta
+                enriquecer_oferta(o, texto_html=o.get("descripcion"))
+            except Exception:
+                pass
             ofertas.append(o)
             if max_results and len(ofertas) >= max_results:
                 logger.info("  Omitidas por proceso finalizado: %d", omitidas_cerradas)

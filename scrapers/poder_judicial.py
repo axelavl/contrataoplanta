@@ -336,7 +336,21 @@ def recolectar(max_results: int | None, max_edad_dias: int,
             if pub < limite_edad:
                 omit_viejo += 1
                 continue
-        ofertas.append(construir_oferta(rec))
+        oferta = construir_oferta(rec)
+        pdf_urls = []
+        if rec["url"].lower().endswith(".pdf"):
+            pdf_urls.append(rec["url"])
+        try:
+            from scrapers.enrich import enriquecer_oferta
+            enriquecer_oferta(
+                oferta,
+                texto_html=rec.get("descripcion"),
+                pdf_urls=pdf_urls,
+                session=session,
+            )
+        except Exception:
+            logger.debug("  Enriquecimiento no disponible para %s", oferta["cargo"][:40])
+        ofertas.append(oferta)
         if max_results and len(ofertas) >= max_results:
             break
     logger.info("  → %d vigentes (omitidas: %d vencidas, %d antiguas, %d sin fecha)",

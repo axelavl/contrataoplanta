@@ -402,12 +402,24 @@ def _recolectar_fuente(fuente: dict[str, Any], max_results: int | None,
     ofertas = []
     for it in items:
         det: dict[str, Any] = {}
+        texto_detalle = None
         if con_detalle:
             time.sleep(delay)
             rd = _get(session, it["url"])
             if rd is not None:
                 det = parsear_detalle(rd.text)
-        ofertas.append(construir_oferta(it, det, fuente))
+                texto_detalle = BeautifulSoup(rd.text, "html.parser").get_text(" ", strip=True)
+        oferta = construir_oferta(it, det, fuente)
+        try:
+            from scrapers.enrich import enriquecer_oferta
+            enriquecer_oferta(
+                oferta,
+                texto_html=texto_detalle,
+                descargar_pdfs=False,
+            )
+        except Exception:
+            pass
+        ofertas.append(oferta)
     return ofertas
 
 

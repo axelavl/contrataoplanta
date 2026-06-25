@@ -362,6 +362,11 @@ def recolectar(urls: list[str], delay: float, max_results: int | None,
             logger.info("  Omitida por plazo vencido: %s (cierre %s)",
                         o["cargo"][:45], o["fecha_cierre"])
             continue
+        try:
+            from scrapers.enrich import enriquecer_oferta
+            enriquecer_oferta(o, texto_html=o.get("descripcion"))
+        except Exception:
+            pass
         ofertas.append(o)
     return ofertas
 

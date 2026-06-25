@@ -289,7 +289,19 @@ def recolectar(max_results: int | None, delay: float, con_detalle: bool) -> list
             hd = _fetch(s, it["url"])
             if hd:
                 det = parsear_detalle(hd)
-        ofertas.append(construir_oferta(it, det))
+        oferta = construir_oferta(it, det)
+        try:
+            from scrapers.enrich import enriquecer_oferta, encontrar_pdf_urls
+            pdf_urls = encontrar_pdf_urls(hd, BASE) if hd else []
+            enriquecer_oferta(
+                oferta,
+                texto_html=det.get("descripcion"),
+                pdf_urls=pdf_urls,
+                session=s,
+            )
+        except Exception:
+            pass
+        ofertas.append(oferta)
     return ofertas
 
 

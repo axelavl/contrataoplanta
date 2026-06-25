@@ -467,6 +467,11 @@ def recolectar(max_results: int | None, delay: float,
             o = _post_a_oferta(p)
             if o["url_original"] not in vistos:
                 vistos.add(o["url_original"])
+                try:
+                    from scrapers.enrich import enriquecer_oferta
+                    enriquecer_oferta(o, texto_html=o.get("descripcion"))
+                except Exception:
+                    pass
                 ofertas.append(o)
         if incluir_cerrados:
             tope = None if max_results is None else max(0, max_results - len(ofertas))
