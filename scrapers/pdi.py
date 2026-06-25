@@ -319,7 +319,7 @@ def construir_oferta_contrata(c: dict[str, Any], perfil: dict[str, Any]) -> dict
 
     tipo = perfil.get("tipo")
     if not tipo:
-        tipo = "Contrata" if c.get("grado") else "Contrata"
+        tipo = "Contrata" if c.get("grado") else "Planta"
 
     c_low = cargo.lower()
     nivel = "Profesional"

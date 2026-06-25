@@ -1162,6 +1162,7 @@ def _lanzar_proceso(cmd: list[str], tipo: str) -> _ProcesoLanzado:
         f"started={ahora.isoformat()} cmd={cmd_vista}\n"
     )
     log_f.flush()
+    log_f.close()
     info = _ProcesoLanzado(
         pid=proc.pid, tipo=tipo, cmd=cmd, log_path=log_path,
         started_at=ahora, proc=proc,

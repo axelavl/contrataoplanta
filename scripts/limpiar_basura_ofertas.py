@@ -20,24 +20,9 @@ from db.config import DB_CONFIG
 
 
 def _connect():
-    """Conecta usando psycopg2 si está; si no, cae a pg8000 (driver puro
-    Python, instalable sin compilador: ``pip install pg8000``)."""
-    cfg = dict(DB_CONFIG)
-    try:
-        import psycopg2  # type: ignore
-        return psycopg2.connect(**cfg)
-    except ModuleNotFoundError:
-        import ssl
-        import pg8000.dbapi  # type: ignore
-        kw = dict(
-            user=cfg.get("user"), password=cfg.get("password"),
-            host=cfg.get("host"), port=int(cfg.get("port") or 5432),
-            database=cfg.get("dbname") or cfg.get("database"),
-        )
-        try:  # la proxy pública de Railway suele exigir TLS
-            return pg8000.dbapi.connect(ssl_context=ssl.create_default_context(), **kw)
-        except Exception:
-            return pg8000.dbapi.connect(**kw)
+    """Conecta usando psycopg2 (ya incluido en requirements.txt)."""
+    import psycopg2  # type: ignore
+    return psycopg2.connect(**dict(DB_CONFIG))
 from scrapers.intake import (
     titulo_es_no_laboral, titulo_es_noticia, titulo_anio_pasado,
     titulo_es_empleo, titulo_es_generico, is_garbage_text, is_garbage_url,
