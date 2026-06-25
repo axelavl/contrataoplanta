@@ -3985,10 +3985,12 @@ summary:focus-visible,
   color: var(--navy-text);
 }
 
-/* 4) Botones sólidos navy cuyo texto (var(--blanco)) invertía a oscuro → blanco */
+/* 4) Botones sólidos navy: fondo var(--azul) = invisible en dark → azul medio */
 :root[data-theme="dark"] .rec-btn,
 :root[data-theme="dark"] .quiz-next {
+  background: #2A5DC8;
   color: #fff;
+  border-color: rgba(120, 170, 240, 0.3);
 }
 
 /* 5) Botones outline (fondo var(--blanco)→superficie oscura) con texto navy
@@ -4532,4 +4534,120 @@ summary:focus-visible,
 :root[data-theme="dark"] .atajo:hover {
   background: rgba(120, 165, 225, 0.1) !important;
   border-color: rgba(120, 165, 225, 0.4) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   ESTANDARIZACIÓN DE BOTONES — tamaño, radio, colores consistentes
+   en light y dark, todas las páginas
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── 28. ESTÁNDAR LIGHT · tamaño y radio consistentes ─────────────── */
+
+/* Primarios sólidos — radio 8px, padding 10px 18px, font 14px/600 */
+.rec-btn,
+.pm-plan-cta,
+.stats-reintentar,
+.curso-cta,
+.quiz-next,
+.btn-primary {
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  padding: 10px 18px !important;
+}
+
+/* Ghost/outline — radio 8px, misma métrica, borde 1.5px */
+.rec-btn--alt,
+.pm-plan-cta--alt,
+.btn-ghost {
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  padding: 10px 18px !important;
+  border-width: 1.5px !important;
+  border-style: solid !important;
+}
+
+/* Botones de card (más compactos) — 13px, padding menor */
+.btn-detalle,
+.btn-ver {
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  padding: 8px 14px !important;
+}
+
+/* ── 29. DARK MODE · fondo visible para TODOS los botones primarios ── */
+
+/* Primarios sólidos: fondo azul medio visible sobre bg oscuro */
+:root[data-theme="dark"] .rec-btn,
+:root[data-theme="dark"] .pm-plan-cta,
+:root[data-theme="dark"] .curso-cta,
+:root[data-theme="dark"] .quiz-next,
+:root[data-theme="dark"] .btn-primary,
+:root[data-theme="dark"] .stats-reintentar {
+  background: #2A5DC8 !important;
+  color: #fff !important;
+  border: 1px solid rgba(120, 170, 240, 0.3) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2) !important;
+}
+:root[data-theme="dark"] .rec-btn:hover,
+:root[data-theme="dark"] .pm-plan-cta:hover,
+:root[data-theme="dark"] .curso-cta:hover,
+:root[data-theme="dark"] .quiz-next:hover:not(:disabled),
+:root[data-theme="dark"] .btn-primary:hover,
+:root[data-theme="dark"] .stats-reintentar:hover {
+  background: #3568D8 !important;
+  box-shadow: 0 2px 10px rgba(42, 93, 200, 0.35) !important;
+}
+
+/* Curso gratis: verde visible en dark */
+:root[data-theme="dark"] .curso-card--gratis .curso-cta {
+  background: #1A7A3D !important;
+  border-color: rgba(30, 160, 80, 0.4) !important;
+}
+:root[data-theme="dark"] .curso-card--gratis .curso-cta:hover {
+  background: #1F9148 !important;
+}
+
+/* Ghost/outline: borde y texto visibles en dark */
+:root[data-theme="dark"] .rec-btn--alt,
+:root[data-theme="dark"] .pm-plan-cta--alt,
+:root[data-theme="dark"] .btn-ghost {
+  background: transparent !important;
+  color: var(--navy-text, #7AA1DC) !important;
+  border: 1.5px solid rgba(120, 165, 225, 0.3) !important;
+}
+:root[data-theme="dark"] .rec-btn--alt:hover,
+:root[data-theme="dark"] .pm-plan-cta--alt:hover,
+:root[data-theme="dark"] .btn-ghost:hover {
+  background: rgba(120, 165, 225, 0.1) !important;
+  border-color: rgba(120, 165, 225, 0.5) !important;
+}
+
+/* Quiz disabled */
+:root[data-theme="dark"] .quiz-next:disabled {
+  background: #1A2D50 !important;
+  color: #5A6F8F !important;
+  border-color: rgba(120, 165, 225, 0.1) !important;
+  box-shadow: none !important;
+}
+
+/* Curso off/disabled */
+:root[data-theme="dark"] .curso-cta--off,
+:root[data-theme="dark"] .curso-card--gratis .curso-cta--off {
+  background: #1A2D50 !important;
+  color: #5A6F8F !important;
+  border-color: rgba(120, 165, 225, 0.1) !important;
+  box-shadow: none !important;
+}
+
+/* ── 30. BOTONES BUSCAR/ALERTA · consistencia con estándar ────────── */
+:root[data-theme="dark"] .btn-alerta {
+  background: #2A5DC8 !important;
+  color: #fff !important;
+  border: 1px solid rgba(120, 170, 240, 0.3) !important;
+}
+:root[data-theme="dark"] .btn-alerta:hover {
+  background: #3568D8 !important;
 }
