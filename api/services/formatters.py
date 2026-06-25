@@ -159,17 +159,29 @@ def _format_fecha_larga(value: date | None) -> str | None:
     return f"{value.day} de {meses[value.month - 1]} de {value.year}"
 
 
+def _renta_tipo_sufijo(oferta: dict[str, Any]) -> str:
+    """Sufijo legible del tipo de renta. La renta informada debe ser bruta; si
+    la fuente solo trae líquida hay que señalarlo para no inducir a error."""
+    tipo = (oferta.get("renta_tipo") or "").strip().lower()
+    if tipo == "liquida":
+        return " líquida"
+    if tipo == "bruta":
+        return " bruta"
+    return ""
+
+
 def _format_renta_bruta(oferta: dict[str, Any]) -> str | None:
     rmin = oferta.get("renta_bruta_min")
     rmax = oferta.get("renta_bruta_max")
+    sufijo = _renta_tipo_sufijo(oferta)
     if isinstance(rmin, int) and isinstance(rmax, int) and rmin > 0 and rmax > 0:
         if rmin == rmax:
-            return f"${rmin:,.0f}".replace(",", ".")
-        return f"${rmin:,.0f}".replace(",", ".") + " a " + f"${rmax:,.0f}".replace(",", ".")
+            return f"${rmin:,.0f}".replace(",", ".") + sufijo
+        return f"${rmin:,.0f}".replace(",", ".") + " a " + f"${rmax:,.0f}".replace(",", ".") + sufijo
     if isinstance(rmax, int) and rmax > 0:
-        return f"Hasta ${rmax:,.0f}".replace(",", ".")
+        return f"Hasta ${rmax:,.0f}".replace(",", ".") + sufijo
     if isinstance(rmin, int) and rmin > 0:
-        return f"Desde ${rmin:,.0f}".replace(",", ".")
+        return f"Desde ${rmin:,.0f}".replace(",", ".") + sufijo
     return None
 
 

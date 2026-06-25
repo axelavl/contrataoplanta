@@ -621,6 +621,9 @@ class RentaExtraida:
     maximo: int | None = None
     texto_libre: str | None = None
     grado_eus: str | None = None
+    #: 'bruta' | 'liquida' | 'indeterminada'. La renta informada debe ser
+    #: bruta; si la fuente solo trae líquida queda señalado aquí.
+    tipo: str = "indeterminada"
 
 
 def extraer_renta(texto: str) -> RentaExtraida:
@@ -628,7 +631,10 @@ def extraer_renta(texto: str) -> RentaExtraida:
     if not texto:
         return RentaExtraida()
 
+    from extraction.renta_tipo import clasificar_tipo_renta
+
     resultado = RentaExtraida()
+    resultado.tipo = clasificar_tipo_renta(texto)
     texto_norm = normalizar_texto(texto)
 
     # Rango "entre X y Y"
@@ -1445,6 +1451,14 @@ class BaseScraper(abc.ABC):
             renta_max = extraida.maximo
             grado = extraida.grado_eus
 
+        # Tipo de renta: la informada debe ser bruta; si solo hay líquida se
+        # deja señalado (renta_tipo + marca en renta_texto).
+        from extraction.renta_tipo import anotar_renta_texto, resolver_tipo_renta
+        renta_tipo = resolver_tipo_renta(
+            raw.renta_texto, raw.descripcion, raw.cargo
+        )
+        renta_texto_final = anotar_renta_texto(raw.renta_texto, renta_tipo)
+
         # Match de institución
         inst_id = match_institucion(
             conn,
@@ -1514,14 +1528,14 @@ class BaseScraper(abc.ABC):
                     fuente_id, id_externo, url_oferta, url_original, url_hash, contenido_hash,
                     cargo, descripcion, institucion_id, institucion_nombre, sector,
                     area_profesional, tipo_cargo, nivel, region, ciudad,
-                    renta_bruta_min, renta_bruta_max, renta_texto, grado_eus, url_bases,
+                    renta_bruta_min, renta_bruta_max, renta_texto, renta_tipo, grado_eus, url_bases,
                     fecha_publicacion, fecha_cierre,
                     activa, es_nueva, detectada_en, ultima_vista_en
                 ) VALUES (
                     %s, %s, %s, %s, %s, %s,
                     %s, %s, %s, %s, %s,
                     %s, %s, %s, %s, %s,
-                    %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s, %s, %s,
                     %s, %s,
                     TRUE, TRUE, NOW(), NOW()
                 )
@@ -1538,6 +1552,7 @@ class BaseScraper(abc.ABC):
                     renta_bruta_min     = EXCLUDED.renta_bruta_min,
                     renta_bruta_max     = EXCLUDED.renta_bruta_max,
                     renta_texto         = EXCLUDED.renta_texto,
+                    renta_tipo          = EXCLUDED.renta_tipo,
                     grado_eus           = EXCLUDED.grado_eus,
                     url_bases           = EXCLUDED.url_bases,
                     fecha_cierre        = EXCLUDED.fecha_cierre,
@@ -1554,7 +1569,7 @@ class BaseScraper(abc.ABC):
                     raw.institucion_nombre.strip()[:300], raw.sector,
                     raw.area_profesional, tipo_norm, raw.nivel,
                     region_norm, raw.ciudad,
-                    renta_min, renta_max, raw.renta_texto, grado, raw.url_bases,
+                    renta_min, renta_max, renta_texto_final, renta_tipo, grado, raw.url_bases,
                     raw.fecha_publicacion, raw.fecha_cierre,
                 ),
             )
@@ -2037,6 +2052,17 @@ class LegacyBaseScraper(abc.ABC):
             )
             grado_eus = grado_eus or grado_from_text
 
+        # Tipo de renta: la informada debe ser bruta; si solo hay líquida se
+        # deja señalado (renta_tipo + marca en renta_texto). Respeta el valor
+        # que el scraper ya haya determinado (p.ej. PDI / Tribunal Const.).
+        from extraction.renta_tipo import anotar_renta_texto, resolver_tipo_renta
+        renta_tipo = normalized.get("renta_tipo") or resolver_tipo_renta(
+            normalized.get("renta_texto"),
+            normalized.get("descripcion"),
+            normalized.get("cargo"),
+        )
+        renta_texto_final = anotar_renta_texto(normalized.get("renta_texto"), renta_tipo)
+
         fecha_cierre = parse_date(normalized.get("fecha_cierre"))
         estado = normalized.get("estado") or self._resolve_estado(fecha_cierre)
 
@@ -2077,6 +2103,8 @@ class LegacyBaseScraper(abc.ABC):
             "ciudad": truncate(normalized.get("ciudad"), 150),
             "renta_bruta_min": self._to_int(renta_min),
             "renta_bruta_max": self._to_int(renta_max),
+            "renta_texto": truncate(renta_texto_final, 200) or None,
+            "renta_tipo": renta_tipo,
             "grado_eus": truncate(grado_eus, 20),
             "jornada": truncate(normalized.get("jornada"), 100),
             "area_profesional": truncate(normalized.get("area_profesional"), 200),
@@ -2150,6 +2178,8 @@ class LegacyBaseScraper(abc.ABC):
             ciudad VARCHAR(150),
             renta_bruta_min INTEGER,
             renta_bruta_max INTEGER,
+            renta_texto VARCHAR(200),
+            renta_tipo VARCHAR(20),
             grado_eus VARCHAR(20),
             jornada VARCHAR(100),
             area_profesional VARCHAR(200),
@@ -2181,6 +2211,8 @@ class LegacyBaseScraper(abc.ABC):
         ALTER TABLE ofertas ADD COLUMN IF NOT EXISTS ciudad VARCHAR(150);
         ALTER TABLE ofertas ADD COLUMN IF NOT EXISTS renta_bruta_min INTEGER;
         ALTER TABLE ofertas ADD COLUMN IF NOT EXISTS renta_bruta_max INTEGER;
+        ALTER TABLE ofertas ADD COLUMN IF NOT EXISTS renta_texto VARCHAR(200);
+        ALTER TABLE ofertas ADD COLUMN IF NOT EXISTS renta_tipo VARCHAR(20);
         ALTER TABLE ofertas ADD COLUMN IF NOT EXISTS grado_eus VARCHAR(20);
         ALTER TABLE ofertas ADD COLUMN IF NOT EXISTS jornada VARCHAR(100);
         ALTER TABLE ofertas ADD COLUMN IF NOT EXISTS area_profesional VARCHAR(200);
@@ -2562,6 +2594,8 @@ class LegacyBaseScraper(abc.ABC):
             ciudad,
             renta_bruta_min,
             renta_bruta_max,
+            renta_texto,
+            renta_tipo,
             grado_eus,
             jornada,
             area_profesional,
@@ -2588,6 +2622,8 @@ class LegacyBaseScraper(abc.ABC):
             %(ciudad)s,
             %(renta_bruta_min)s,
             %(renta_bruta_max)s,
+            %(renta_texto)s,
+            %(renta_tipo)s,
             %(grado_eus)s,
             %(jornada)s,
             %(area_profesional)s,
@@ -2615,6 +2651,8 @@ class LegacyBaseScraper(abc.ABC):
             ciudad = COALESCE(EXCLUDED.ciudad, ofertas.ciudad),
             renta_bruta_min = COALESCE(EXCLUDED.renta_bruta_min, ofertas.renta_bruta_min),
             renta_bruta_max = COALESCE(EXCLUDED.renta_bruta_max, ofertas.renta_bruta_max),
+            renta_texto = COALESCE(NULLIF(EXCLUDED.renta_texto, ''), ofertas.renta_texto),
+            renta_tipo = COALESCE(NULLIF(EXCLUDED.renta_tipo, ''), ofertas.renta_tipo),
             grado_eus = COALESCE(EXCLUDED.grado_eus, ofertas.grado_eus),
             jornada = COALESCE(EXCLUDED.jornada, ofertas.jornada),
             area_profesional = COALESCE(EXCLUDED.area_profesional, ofertas.area_profesional),
@@ -2643,6 +2681,8 @@ class LegacyBaseScraper(abc.ABC):
             "calidad_juridica": None,
             "estamento": None,
             "lugar_desempenio": None,
+            "renta_texto": None,
+            "renta_tipo": None,
         }
         return {**defaults, **offer}
 

@@ -69,6 +69,8 @@
 <link rel="stylesheet" href="styles/index.css">
 <link rel="stylesheet" href="styles/redesign-overrides.css">
 <link rel="stylesheet" href="styles/integracion/estilos.css">
+<!-- Ajustes de UX móvil + modo oscuro. Va último para sobrescribir lo previo. -->
+<link rel="stylesheet" href="styles/mobile-ux-fixes.css">
 <script defer src="ui-strings.js"></script>
 <script defer src="shared-shell.js"></script>
 <script defer src="nav-mobile.js"></script>
@@ -516,7 +518,7 @@
             <div class="modal-info-val" id="modal-jornada">—</div>
           </div>
           <div class="modal-info-item" id="summary-item-renta">
-            <div class="modal-info-label">💰 Renta bruta</div>
+            <div class="modal-info-label" id="modal-renta-label">💰 Renta bruta</div>
             <div class="modal-info-val" id="modal-renta">—</div>
           </div>
         </div>
@@ -733,5 +735,7 @@
 <script src="nav-mobile.js"></script>
 <script src="ads-config.js"></script>
 <script src="ads.js"></script>
+<!-- Mejoras UX móvil: alto real de la cinta + acordeón de la ficha. -->
+<script defer src="mobile-ux.js"></script>
 </body>
 </html>

@@ -11,6 +11,7 @@ class ExtractionBundle(BaseModel):
     salary_amount: float | None = None
     salary_currency: str | None = None
     salary_raw: str | None = None
+    salary_kind: str = "indeterminada"
     contract_type: str | None = None
     workday: str | None = None
     modality: str | None = None

@@ -1,0 +1,112 @@
+{
+  "generado_en": "2026-06-24T03:33:06",
+  "campania": "destacados",
+  "total": 4,
+  "demo": true,
+  "posts": [
+    {
+      "oferta_id": 1001,
+      "cargo": "Profesional de Apoyo en Gestión de Personas",
+      "institucion": "Servicio de Salud Metropolitano Sur",
+      "fecha_cierre": "2026-06-30",
+      "dias_restantes": 6,
+      "url_oferta": "https://empleospublicos.cl/x1",
+      "plataformas": {
+        "instagram": {
+          "etiqueta": "Instagram",
+          "formato": "square",
+          "imagen": "oferta-1001/instagram.png",
+          "copy": "🔹 Profesional de Apoyo en Gestión de Personas\n🏛️ Servicio de Salud Metropolitano Sur\n📍 Santiago · Metropolitana\n💰 $1.200.000 – $1.500.000 bruto\n⏳ Cierra 30 jun\n\n👉 Postula desde el link en la bio o en estadoemplea.pages.dev\n\n#EmpleoPúblico #Chile #SectorPúblico #ConcursosPúblicos #TrabajoEstatal #EmpleosChile #Postula #Vacantes #Santiago",
+          "enlace": "https://estadoemplea.pages.dev/oferta/1001?utm_source=instagram&utm_medium=social&utm_campaign=destacados",
+          "estado": "pendiente"
+        },
+        "linkedin": {
+          "etiqueta": "LinkedIn",
+          "formato": "horizontal",
+          "imagen": "oferta-1001/linkedin.png",
+          "copy": "Servicio de Salud Metropolitano Sur busca Profesional de Apoyo en Gestión de Personas.\nUbicación: Santiago · Metropolitana. Remuneración: $1.200.000 – $1.500.000 bruto. Postulaciones cierran 30 jun.\n\nRevisa los requisitos y postula aquí: https://estadoemplea.pages.dev/oferta/1001?utm_source=linkedin&utm_medium=social&utm_campaign=destacados\n\n#EmpleoPúblico #Chile #SectorPúblico #ConcursosPúblicos #EmpleoEstatal #Reclutamiento #Santiago",
+          "enlace": "https://estadoemplea.pages.dev/oferta/1001?utm_source=linkedin&utm_medium=social&utm_campaign=destacados",
+          "estado": "pendiente"
+        }
+      }
+    },
+    {
+      "oferta_id": 1002,
+      "cargo": "Ingeniero/a en Prevención de Riesgos",
+      "institucion": "Municipalidad de Valparaíso",
+      "fecha_cierre": "2026-06-25",
+      "dias_restantes": 1,
+      "url_oferta": "https://empleospublicos.cl/x2",
+      "plataformas": {
+        "instagram": {
+          "etiqueta": "Instagram",
+          "formato": "square",
+          "imagen": "oferta-1002/instagram.png",
+          "copy": "🚨 CIERRA MAÑANA\n🔹 Ingeniero/a en Prevención de Riesgos\n🏛️ Municipalidad de Valparaíso\n📍 Valparaíso\n💰 $1.650.000 bruto\n\n👉 Postula desde el link en la bio o en estadoemplea.pages.dev\n\n#EmpleoPúblico #Chile #SectorPúblico #ConcursosPúblicos #TrabajoEstatal #EmpleosChile #Postula #Vacantes #Valparaíso",
+          "enlace": "https://estadoemplea.pages.dev/oferta/1002?utm_source=instagram&utm_medium=social&utm_campaign=destacados",
+          "estado": "pendiente"
+        },
+        "linkedin": {
+          "etiqueta": "LinkedIn",
+          "formato": "horizontal",
+          "imagen": "oferta-1002/linkedin.png",
+          "copy": "Municipalidad de Valparaíso busca Ingeniero/a en Prevención de Riesgos.\nUbicación: Valparaíso. Remuneración: $1.650.000 bruto. Postulaciones CIERRAN MAÑANA.\n\nRevisa los requisitos y postula aquí: https://estadoemplea.pages.dev/oferta/1002?utm_source=linkedin&utm_medium=social&utm_campaign=destacados\n\n#EmpleoPúblico #Chile #SectorPúblico #ConcursosPúblicos #EmpleoEstatal #Reclutamiento #Valparaíso",
+          "enlace": "https://estadoemplea.pages.dev/oferta/1002?utm_source=linkedin&utm_medium=social&utm_campaign=destacados",
+          "estado": "pendiente"
+        }
+      }
+    },
+    {
+      "oferta_id": 1003,
+      "cargo": "Analista de Presupuesto",
+      "institucion": "Subsecretaría de Hacienda",
+      "fecha_cierre": "2026-07-10",
+      "dias_restantes": 16,
+      "url_oferta": "https://empleospublicos.cl/x3",
+      "plataformas": {
+        "instagram": {
+          "etiqueta": "Instagram",
+          "formato": "square",
+          "imagen": "oferta-1003/instagram.png",
+          "copy": "🔹 Analista de Presupuesto\n🏛️ Subsecretaría de Hacienda\n📍 Santiago · Metropolitana\n💰 $2.100.000 – $2.400.000 bruto\n⏳ Cierra 10 jul\n\n👉 Postula desde el link en la bio o en estadoemplea.pages.dev\n\n#EmpleoPúblico #Chile #SectorPúblico #ConcursosPúblicos #TrabajoEstatal #EmpleosChile #Postula #Vacantes #Santiago",
+          "enlace": "https://estadoemplea.pages.dev/oferta/1003?utm_source=instagram&utm_medium=social&utm_campaign=destacados",
+          "estado": "pendiente"
+        },
+        "linkedin": {
+          "etiqueta": "LinkedIn",
+          "formato": "horizontal",
+          "imagen": "oferta-1003/linkedin.png",
+          "copy": "Subsecretaría de Hacienda busca Analista de Presupuesto.\nUbicación: Santiago · Metropolitana. Remuneración: $2.100.000 – $2.400.000 bruto. Postulaciones cierran 10 jul.\n\nRevisa los requisitos y postula aquí: https://estadoemplea.pages.dev/oferta/1003?utm_source=linkedin&utm_medium=social&utm_campaign=destacados\n\n#EmpleoPúblico #Chile #SectorPúblico #ConcursosPúblicos #EmpleoEstatal #Reclutamiento #Santiago",
+          "enlace": "https://estadoemplea.pages.dev/oferta/1003?utm_source=linkedin&utm_medium=social&utm_campaign=destacados",
+          "estado": "pendiente"
+        }
+      }
+    },
+    {
+      "oferta_id": 1004,
+      "cargo": "Trabajador/a Social",
+      "institucion": "Servicio Nacional de la Mujer y la Equidad de Género",
+      "fecha_cierre": "2026-06-24",
+      "dias_restantes": 0,
+      "url_oferta": "https://empleospublicos.cl/x4",
+      "plataformas": {
+        "instagram": {
+          "etiqueta": "Instagram",
+          "formato": "square",
+          "imagen": "oferta-1004/instagram.png",
+          "copy": "🚨 CIERRA HOY\n🔹 Trabajador/a Social\n🏛️ Servicio Nacional de la Mujer y la Equidad de Género\n📍 Concepción · Biobío\n💰 $980.000 bruto\n\n👉 Postula desde el link en la bio o en estadoemplea.pages.dev\n\n#EmpleoPúblico #Chile #SectorPúblico #ConcursosPúblicos #TrabajoEstatal #EmpleosChile #Postula #Vacantes #Concepción",
+          "enlace": "https://estadoemplea.pages.dev/oferta/1004?utm_source=instagram&utm_medium=social&utm_campaign=destacados",
+          "estado": "pendiente"
+        },
+        "linkedin": {
+          "etiqueta": "LinkedIn",
+          "formato": "horizontal",
+          "imagen": "oferta-1004/linkedin.png",
+          "copy": "Servicio Nacional de la Mujer y la Equidad de Género busca Trabajador/a Social.\nUbicación: Concepción · Biobío. Remuneración: $980.000 bruto. Postulaciones CIERRAN HOY.\n\nRevisa los requisitos y postula aquí: https://estadoemplea.pages.dev/oferta/1004?utm_source=linkedin&utm_medium=social&utm_campaign=destacados\n\n#EmpleoPúblico #Chile #SectorPúblico #ConcursosPúblicos #EmpleoEstatal #Reclutamiento #Concepción",
+          "enlace": "https://estadoemplea.pages.dev/oferta/1004?utm_source=linkedin&utm_medium=social&utm_campaign=destacados",
+          "estado": "pendiente"
+        }
+      }
+    }
+  ]
+}

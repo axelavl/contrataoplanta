@@ -88,6 +88,10 @@ CREATE TABLE IF NOT EXISTS ofertas (
     renta_bruta_min         BIGINT,
     renta_bruta_max         BIGINT,
     renta_texto             VARCHAR(200),
+    -- Tipo de renta informada: 'bruta' | 'liquida' | 'indeterminada'.
+    -- La renta que se reporta debe ser bruta; si la fuente solo publica
+    -- líquida queda señalado aquí y en renta_texto.
+    renta_tipo              VARCHAR(20),
     grado_eus               VARCHAR(20),
     url_bases               TEXT,
     horas_semanales         INTEGER,
@@ -559,6 +563,7 @@ CREATE TABLE IF NOT EXISTS ofertas_snapshots (
     renta_bruta_min     BIGINT,
     renta_bruta_max     BIGINT,
     renta_texto         VARCHAR(200),
+    renta_tipo          VARCHAR(20),
     fecha_publicacion   DATE,
     fecha_cierre        DATE,
     activa              BOOLEAN
@@ -572,13 +577,13 @@ BEGIN
         oferta_id, codigo, capturado_en, origen,
         fuente_id, cargo, descripcion, institucion_nombre, sector,
         area_profesional, tipo_cargo, nivel, region, ciudad,
-        renta_bruta_min, renta_bruta_max, renta_texto,
+        renta_bruta_min, renta_bruta_max, renta_texto, renta_tipo,
         fecha_publicacion, fecha_cierre, activa
     ) VALUES (
         NEW.id, NEW.codigo, NOW(), TG_OP,
         NEW.fuente_id, NEW.cargo, NEW.descripcion, NEW.institucion_nombre, NEW.sector,
         NEW.area_profesional, NEW.tipo_cargo, NEW.nivel, NEW.region, NEW.ciudad,
-        NEW.renta_bruta_min, NEW.renta_bruta_max, NEW.renta_texto,
+        NEW.renta_bruta_min, NEW.renta_bruta_max, NEW.renta_texto, NEW.renta_tipo,
         NEW.fecha_publicacion, NEW.fecha_cierre, NEW.activa
     );
     RETURN NEW;

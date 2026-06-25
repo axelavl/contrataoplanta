@@ -31,6 +31,7 @@ def normalize_job_posting(
         salary_amount=extraction.salary_amount,
         salary_currency=extraction.salary_currency,
         salary_raw=extraction.salary_raw,
+        salary_kind=extraction.salary_kind,
         contract_type=extraction.contract_type,
         workday=extraction.workday,
         modality=extraction.modality,

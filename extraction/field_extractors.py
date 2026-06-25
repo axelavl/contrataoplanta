@@ -65,6 +65,7 @@ def extract_structured_fields(raw_page: RawPage) -> ExtractionBundle:
         salary_amount=salary.amount,
         salary_currency=salary.currency,
         salary_raw=salary.raw,
+        salary_kind=salary.kind,
         contract_type=contract_type,
         workday=workday,
         modality=modality,

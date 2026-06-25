@@ -139,6 +139,8 @@ def ofertas_select_sql() -> str:
         COALESCE(i.sector, o.sector, i.tipo) AS sector,
         o.renta_bruta_min,
         o.renta_bruta_max,
+        o.renta_texto,
+        o.renta_tipo,
         o.grado_eus,
         o.renta_regional,
         COALESCE(

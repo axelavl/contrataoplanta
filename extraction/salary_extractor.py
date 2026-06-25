@@ -50,6 +50,9 @@ class SalaryExtraction:
     confidence: str = "none"
     validation_status: str | None = None
     trace: str | None = None
+    #: Tipo de renta detectada: 'bruta' | 'liquida' | 'indeterminada'. La renta
+    #: que se informa debe ser bruta; si solo hay líquida queda señalado.
+    kind: str = "indeterminada"
 
     def as_tuple(self) -> tuple[float | None, str | None, str | None]:
         """Compatibilidad retroactiva con el contrato histórico (amount, currency, raw)."""
@@ -91,13 +94,14 @@ def _status_for_amount(amount: int, pos_hits: int, neg_hits: int) -> tuple[str |
 
 
 def extract_salary(text: str) -> SalaryExtraction:
+    """Extrae el monto principal de renta y clasifica su tipo (bruta/líquida)."""
     source = text or ""
     pattern = re.compile(r"((?:\$|clp|pesos?)\s*[\d\.\,]{4,})", flags=re.IGNORECASE)
     matches = list(pattern.finditer(source))
     if not matches:
         return SalaryExtraction()
 
-    candidates: list[tuple[int, str, int, int, int, str | None]] = []
+    candidates: list[tuple[int, str, int, int, int, str | None, str]] = []
     for m in matches:
         raw = m.group(1)
         # En formato chileno '.' separa miles y ',' decimales. Antes se hacía
@@ -115,15 +119,22 @@ def extract_salary(text: str) -> SalaryExtraction:
         status, _ = _status_for_amount(amount, pos_hits, neg_hits)
         score = (pos_hits * 3) - (neg_hits * 2)
         if amount >= 250_000:
-            candidates.append((amount, raw, score, pos_hits, neg_hits, status))
+            candidates.append((amount, raw, score, pos_hits, neg_hits, status, context))
 
     if not candidates:
         return SalaryExtraction()
 
     candidates.sort(key=lambda item: (item[2], item[3] - item[4], -item[0]), reverse=True)
-    amount, raw, _, pos_hits, neg_hits, status = candidates[0]
+    amount, raw, _, pos_hits, neg_hits, status, context = candidates[0]
     derived_status, reason = _status_for_amount(amount, pos_hits, neg_hits)
     final_status = status or derived_status
+
+    # Tipo de renta: se prioriza el contexto inmediato del monto elegido; si no
+    # es concluyente se evalúa el texto completo. La renta informada debe ser
+    # bruta; si solo hay líquida queda señalado vía `kind`.
+    from extraction.renta_tipo import resolver_tipo_renta
+    kind = resolver_tipo_renta(context, source)
+
     if final_status in {"remuneracion_descartada", "remuneracion_no_confiable"}:
         return SalaryExtraction(
             amount=None,
@@ -132,6 +143,7 @@ def extract_salary(text: str) -> SalaryExtraction:
             confidence="low",
             validation_status=final_status,
             trace=reason,
+            kind=kind,
         )
 
     confidence = "high" if final_status is None else "medium"
@@ -142,4 +154,5 @@ def extract_salary(text: str) -> SalaryExtraction:
         confidence=confidence,
         validation_status=final_status,
         trace=reason,
+        kind=kind,
     )

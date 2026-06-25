@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cola RRSS · estadoemplea</title>
+<style>
+  :root{
+    --navy:#0A2E6E; --navy-deep:#061C46; --gold:#E8A820; --gold-deep:#B27C12;
+    --ink:#0d1b30; --muted:#5b6b88; --line:#e3e8f2; --bg:#f4f6fb;
+    --ok:#1f9d57; --no:#c2453f; --pend:#8a93a6;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+       background:var(--bg);color:var(--ink)}
+  header{background:linear-gradient(135deg,var(--navy),var(--navy-deep));color:#fff;
+         padding:22px 28px;position:sticky;top:0;z-index:5;box-shadow:0 2px 14px rgba(6,28,70,.25)}
+  header h1{margin:0;font-size:20px;letter-spacing:.2px}
+  header .sub{opacity:.8;font-size:13px;margin-top:4px}
+  .bar{display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin-top:12px;font-size:13px}
+  .chip{background:rgba(255,255,255,.12);padding:4px 10px;border-radius:999px}
+  .wrap{max-width:1080px;margin:24px auto;padding:0 18px}
+  .post{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;
+        margin-bottom:22px;box-shadow:0 1px 3px rgba(13,27,48,.05)}
+  .post-head{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;
+             justify-content:space-between;gap:12px;align-items:flex-start}
+  .post-head h2{margin:0;font-size:16px}
+  .post-head .meta{color:var(--muted);font-size:13px;margin-top:3px}
+  .badge{font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .badge.urgente{background:#fde8e7;color:var(--no)}
+  .badge.ok-b{background:#e3f5ec;color:var(--ok)}
+  .plat{display:grid;grid-template-columns:300px 1fr;gap:18px;padding:18px 20px;
+        border-top:1px dashed var(--line)}
+  .plat:first-of-type{border-top:none}
+  .plat img{width:100%;border-radius:10px;border:1px solid var(--line);background:#fff;cursor:zoom-in}
+  .plat .side{display:flex;flex-direction:column;gap:10px;min-width:0}
+  .plat .ptitle{font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;background:var(--pend)}
+  .dot.aprobado{background:var(--ok)} .dot.rechazado{background:var(--no)}
+  textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:10px;
+           padding:10px 12px;font:13px/1.5 inherit;resize:vertical;color:var(--ink)}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  button{font:600 13px inherit;border:none;border-radius:9px;padding:8px 14px;cursor:pointer}
+  .b-ok{background:var(--ok);color:#fff} .b-no{background:#fff;color:var(--no);border:1px solid var(--no)}
+  .b-ghost{background:#eef1f7;color:var(--ink)} .b-gold{background:var(--gold);color:#3a2a05}
+  a.link{color:var(--navy);font-size:12px;word-break:break-all}
+  .empty{background:#fff;border:1px dashed var(--line);border-radius:16px;padding:40px;text-align:center;color:var(--muted)}
+  .lightbox{position:fixed;inset:0;background:rgba(6,28,70,.85);display:none;align-items:center;
+            justify-content:center;z-index:50;padding:30px}
+  .lightbox img{max-width:90vw;max-height:90vh;border-radius:12px}
+  @media(max-width:640px){.plat{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Cola de publicaciones · estadoemplea</h1>
+  <div class="sub" id="sub">—</div>
+  <div class="bar">
+    <span class="chip" id="c-total">0 posts</span>
+    <span class="chip" id="c-ok">0 aprobados</span>
+    <span class="chip" id="c-no">0 rechazados</span>
+    <button class="b-gold" onclick="exportarAprobados()">⬇ Exportar aprobados (.json)</button>
+  </div>
+</header>
+<div class="wrap" id="app"></div>
+<div class="lightbox" id="lb" onclick="this.style.display='none'"><img id="lbimg" alt=""></div>
+
+<script>
+// El manifest se inyecta al generar la cola (self-contained, abre con doble clic).
+const MANIFEST = {
+  "generado_en": "2026-06-24T03:33:06",
+  "campania": "destacados",
+  "total": 4,
+  "demo": true,
+  "posts": [
+    {
+      "oferta_id": 1001,
+      "cargo": "Profesional de Apoyo en Gestión de Personas",
+      "institucion": "Servicio de Salud Metropolitano Sur",
+      "fecha_cierre": "2026-06-30",
+      "dias_restantes": 6,
+      "url_oferta": "https://empleospublicos.cl/x1",
+      "plataformas": {
+        "instagram": {
+          "etiqueta": "Instagram",
+          "formato": "square",
+          "imagen": "oferta-1001/instagram.png",
+          "copy": "🔹 Profesional de Apoyo en Gestión de Personas\n🏛️ Servicio de Salud Metropolitano Sur\n📍 Santiago · Metropolitana\n💰 $1.200.000 – $1.500.000 bruto\n⏳ Cierra 30 jun\n\n👉 Postula desde el link en la bio o en estadoemplea.pages.dev\n\n#EmpleoPúblico #Chile #SectorPúblico #ConcursosPúblicos #TrabajoEstatal #EmpleosChile #Postula #Vacantes #Santiago",
+          "enlace": "https://estadoemplea.pages.dev/oferta/1001?utm_source=instagram&utm_medium=social&utm_campaign=destacados",
+          "estado": "pendiente"
+        },
+        "linkedin": {
+          "etiqueta": "LinkedIn",
+          "formato": "horizontal",
+          "imagen": "oferta-1001/linkedin.png",
+          "copy": "Servicio de Salud Metropolitano Sur busca Profesional de Apoyo en Gestión de Personas.\nUbicación: Santiago · Metropolitana. Remuneración: $1.200.000 – $1.500.000 bruto. Postulaciones cierran 30 jun.\n\nRevisa los requisitos y postula aquí: https://estadoemplea.pages.dev/oferta/1001?utm_source=linkedin&utm_medium=social&utm_campaign=destacados\n\n#EmpleoPúblico #Chile #SectorPúblico #ConcursosPúblicos #EmpleoEstatal #Reclutamiento #Santiago",
+          "enlace": "https://estadoemplea.pages.dev/oferta/1001?utm_source=linkedin&utm_medium=social&utm_campaign=destacados",
+          "estado": "pendiente"
+        }
+      }
+    },
+    {
+      "oferta_id": 1002,
+      "cargo": "Ingeniero/a en Prevención de Riesgos",
+      "institucion": "Municipalidad de Valparaíso",
+      "fecha_cierre": "2026-06-25",
+      "dias_restantes": 1,
+      "url_oferta": "https://empleospublicos.cl/x2",
+      "plataformas": {
+        "instagram": {
+          "etiqueta": "Instagram",
+          "formato": "square",
+          "imagen": "oferta-1002/instagram.png",
+          "copy": "🚨 CIERRA MAÑANA\n🔹 Ingeniero/a en Prevención de Riesgos\n🏛️ Municipalidad de Valparaíso\n📍 Valparaíso\n💰 $1.650.000 bruto\n\n👉 Postula desde el link en la bio o en estadoemplea.pages.dev\n\n#EmpleoPúblico #Chile #SectorPúblico #ConcursosPúblicos #TrabajoEstatal #EmpleosChile #Postula #Vacantes #Valparaíso",
+          "enlace": "https://estadoemplea.pages.dev/oferta/1002?utm_source=instagram&utm_medium=social&utm_campaign=destacados",
+          "estado": "pendiente"
+        },
+        "linkedin": {
+          "etiqueta": "LinkedIn",
+          "formato": "horizontal",
+          "imagen": "oferta-1002/linkedin.png",
+          "copy": "Municipalidad de Valparaíso busca Ingeniero/a en Prevención de Riesgos.\nUbicación: Valparaíso. Remuneración: $1.650.000 bruto. Postulaciones CIERRAN MAÑANA.\n\nRevisa los requisitos y postula aquí: https://estadoemplea.pages.dev/oferta/1002?utm_source=linkedin&utm_medium=social&utm_campaign=destacados\n\n#EmpleoPúblico #Chile #SectorPúblico #ConcursosPúblicos #EmpleoEstatal #Reclutamiento #Valparaíso",
+          "enlace": "https://estadoemplea.pages.dev/oferta/1002?utm_source=linkedin&utm_medium=social&utm_campaign=destacados",
+          "estado": "pendiente"
+        }
+      }
+    },
+    {
+      "oferta_id": 1003,
+      "cargo": "Analista de Presupuesto",
+      "institucion": "Subsecretaría de Hacienda",
+      "fecha_cierre": "2026-07-10",
+      "dias_restantes": 16,
+      "url_oferta": "https://empleospublicos.cl/x3",
+      "plataformas": {
+        "instagram": {
+          "etiqueta": "Instagram",
+          "formato": "square",
+          "imagen": "oferta-1003/instagram.png",
+          "copy": "🔹 Analista de Presupuesto\n🏛️ Subsecretaría de Hacienda\n📍 Santiago · Metropolitana\n💰 $2.100.000 – $2.400.000 bruto\n⏳ Cierra 10 jul\n\n👉 Postula desde el link en la bio o en estadoemplea.pages.dev\n\n#EmpleoPúblico #Chile #SectorPúblico #ConcursosPúblicos #TrabajoEstatal #EmpleosChile #Postula #Vacantes #Santiago",
+          "enlace": "https://estadoemplea.pages.dev/oferta/1003?utm_source=instagram&utm_medium=social&utm_campaign=destacados",
+          "estado": "pendiente"
+        },
+        "linkedin": {
+          "etiqueta": "LinkedIn",
+          "formato": "horizontal",
+          "imagen": "oferta-1003/linkedin.png",
+          "copy": "Subsecretaría de Hacienda busca Analista de Presupuesto.\nUbicación: Santiago · Metropolitana. Remuneración: $2.100.000 – $2.400.000 bruto. Postulaciones cierran 10 jul.\n\nRevisa los requisitos y postula aquí: https://estadoemplea.pages.dev/oferta/1003?utm_source=linkedin&utm_medium=social&utm_campaign=destacados\n\n#EmpleoPúblico #Chile #SectorPúblico #ConcursosPúblicos #EmpleoEstatal #Reclutamiento #Santiago",
+          "enlace": "https://estadoemplea.pages.dev/oferta/1003?utm_source=linkedin&utm_medium=social&utm_campaign=destacados",
+          "estado": "pendiente"
+        }
+      }
+    },
+    {
+      "oferta_id": 1004,
+      "cargo": "Trabajador/a Social",
+      "institucion": "Servicio Nacional de la Mujer y la Equidad de Género",
+      "fecha_cierre": "2026-06-24",
+      "dias_restantes": 0,
+      "url_oferta": "https://empleospublicos.cl/x4",
+      "plataformas": {
+        "instagram": {
+          "etiqueta": "Instagram",
+          "formato": "square",
+          "imagen": "oferta-1004/instagram.png",
+          "copy": "🚨 CIERRA HOY\n🔹 Trabajador/a Social\n🏛️ Servicio Nacional de la Mujer y la Equidad de Género\n📍 Concepción · Biobío\n💰 $980.000 bruto\n\n👉 Postula desde el link en la bio o en estadoemplea.pages.dev\n\n#EmpleoPúblico #Chile #SectorPúblico #ConcursosPúblicos #TrabajoEstatal #EmpleosChile #Postula #Vacantes #Concepción",
+          "enlace": "https://estadoemplea.pages.dev/oferta/1004?utm_source=instagram&utm_medium=social&utm_campaign=destacados",
+          "estado": "pendiente"
+        },
+        "linkedin": {
+          "etiqueta": "LinkedIn",
+          "formato": "horizontal",
+          "imagen": "oferta-1004/linkedin.png",
+          "copy": "Servicio Nacional de la Mujer y la Equidad de Género busca Trabajador/a Social.\nUbicación: Concepción · Biobío. Remuneración: $980.000 bruto. Postulaciones CIERRAN HOY.\n\nRevisa los requisitos y postula aquí: https://estadoemplea.pages.dev/oferta/1004?utm_source=linkedin&utm_medium=social&utm_campaign=destacados\n\n#EmpleoPúblico #Chile #SectorPúblico #ConcursosPúblicos #EmpleoEstatal #Reclutamiento #Concepción",
+          "enlace": "https://estadoemplea.pages.dev/oferta/1004?utm_source=linkedin&utm_medium=social&utm_campaign=destacados",
+          "estado": "pendiente"
+        }
+      }
+    }
+  ]
+};
+const LSKEY = "rrss-cola-" + (MANIFEST ? MANIFEST.generado_en : "x");
+
+function loadState(){ try{return JSON.parse(localStorage.getItem(LSKEY)||"{}")}catch(e){return {}} }
+function saveState(s){ localStorage.setItem(LSKEY, JSON.stringify(s)); }
+let state = loadState();
+
+function key(pid,plat){ return pid+":"+plat; }
+
+function setEstado(pid,plat,val){
+  state[key(pid,plat)] = Object.assign({}, state[key(pid,plat)], {estado:val});
+  saveState(state); render();
+}
+function setCopy(pid,plat,txt){
+  state[key(pid,plat)] = Object.assign({}, state[key(pid,plat)], {copy:txt});
+  saveState(state);
+}
+function copyText(pid,plat){
+  const k=key(pid,plat);
+  const t=(state[k]&&state[k].copy!=null)?state[k].copy:document.getElementById("ta-"+k).value;
+  navigator.clipboard.writeText(t).then(()=>toast("Copy copiado ✓"));
+}
+function toast(m){ const e=document.getElementById("sub"); const o=e.textContent; e.textContent=m; setTimeout(()=>e.textContent=o,1400); }
+
+function counts(){
+  let ok=0,no=0,total=0;
+  (MANIFEST?.posts||[]).forEach(p=>Object.keys(p.plataformas).forEach(plat=>{
+    total++; const s=state[key(p.oferta_id,plat)]?.estado;
+    if(s==="aprobado")ok++; else if(s==="rechazado")no++;
+  }));
+  return {ok,no,total};
+}
+
+function exportarAprobados(){
+  const out=[];
+  (MANIFEST?.posts||[]).forEach(p=>Object.keys(p.plataformas).forEach(plat=>{
+    const k=key(p.oferta_id,plat); const st=state[k]||{};
+    if(st.estado==="aprobado"){
+      const base=p.plataformas[plat];
+      out.push({oferta_id:p.oferta_id, plataforma:plat, imagen:base.imagen,
+        enlace:base.enlace, copy:(st.copy!=null?st.copy:base.copy)});
+    }
+  }));
+  const blob=new Blob([JSON.stringify(out,null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="aprobados-"+(MANIFEST?.generado_en||"").slice(0,10)+".json"; a.click();
+}
+
+function zoom(src){ document.getElementById("lbimg").src=src; document.getElementById("lb").style.display="flex"; }
+
+function render(){
+  const app=document.getElementById("app");
+  if(!MANIFEST || !MANIFEST.posts || !MANIFEST.posts.length){
+    app.innerHTML='<div class="empty">No hay posts en esta cola.<br>Marca avisos como <b>destacado</b> en el panel admin y corre <code>python -m social.generar_cola</code>.</div>';
+    return;
+  }
+  document.getElementById("sub").textContent =
+    "Generado "+MANIFEST.generado_en+(MANIFEST.demo?" · (datos de ejemplo)":"");
+  const c=counts();
+  document.getElementById("c-total").textContent=c.total+" posts";
+  document.getElementById("c-ok").textContent=c.ok+" aprobados";
+  document.getElementById("c-no").textContent=c.no+" rechazados";
+
+  app.innerHTML = MANIFEST.posts.map(p=>{
+    const urgente = (typeof p.dias_restantes==="number" && p.dias_restantes<=3);
+    const plats = Object.keys(p.plataformas).map(plat=>{
+      const b=p.plataformas[plat]; const k=key(p.oferta_id,plat);
+      const st=state[k]||{}; const est=st.estado||"pendiente";
+      const copy=(st.copy!=null?st.copy:b.copy);
+      return `<div class="plat">
+        <img src="${b.imagen}" alt="${plat}" onclick="zoom('${b.imagen}')">
+        <div class="side">
+          <div class="ptitle"><span class="dot ${est}"></span>${b.etiqueta} · ${b.formato}</div>
+          <textarea id="ta-${k}" oninput="setCopy(${p.oferta_id},'${plat}',this.value)">${copy.replace(/</g,"&lt;")}</textarea>
+          <a class="link" href="${b.enlace}" target="_blank" rel="noopener">${b.enlace}</a>
+          <div class="row">
+            <button class="b-ok" onclick="setEstado(${p.oferta_id},'${plat}','aprobado')">✓ Aprobar</button>
+            <button class="b-no" onclick="setEstado(${p.oferta_id},'${plat}','rechazado')">✕ Rechazar</button>
+            <button class="b-ghost" onclick="copyText(${p.oferta_id},'${plat}')">⧉ Copiar copy</button>
+            <a class="b-ghost" style="text-decoration:none" href="${b.imagen}" download>⬇ Imagen</a>
+          </div>
+        </div>
+      </div>`;
+    }).join("");
+    return `<div class="post">
+      <div class="post-head">
+        <div>
+          <h2>${p.cargo||"—"}</h2>
+          <div class="meta">${p.institucion||"—"} · cierra ${p.fecha_cierre||"—"}</div>
+        </div>
+        ${urgente?'<span class="badge urgente">Cierra pronto</span>':''}
+      </div>
+      ${plats}
+    </div>`;
+  }).join("");
+}
+render();
+</script>
+</body>
+</html>

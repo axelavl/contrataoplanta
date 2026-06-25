@@ -1054,6 +1054,11 @@ nav {
   display: flex; flex-direction: column; justify-content: center; align-items: flex-end; }
 .row-renta .renta-rango { display: block; font-size: 11px; font-weight: 500; color: var(--texto3); white-space: nowrap; }
 .row-renta .renta-principal { display: block; white-space: nowrap; }
+/* Marca discreta cuando la fuente solo publica renta líquida (no bruta). */
+.renta-tipo-liquida {
+  display: inline-block; margin-left: 4px; font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .3px; color: var(--texto3);
+}
 .btn-fav-row {
   flex: 0 0 36px; width: 28px; height: 28px;
   border-radius: 50%; background: transparent; border: 1.5px solid transparent;

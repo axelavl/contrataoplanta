@@ -175,6 +175,18 @@ def upsert_oferta(db: Session, datos: dict) -> tuple[bool, bool]:
         json.dumps([f.as_dict() for f in _filas_renta], ensure_ascii=False)
         if _filas_renta else None
     )
+
+    # Tipo de renta: la renta informada debe ser BRUTA; si la fuente solo trae
+    # LÍQUIDA debe quedar señalado (en renta_tipo y dentro de renta_texto). Se
+    # respeta el valor que el scraper ya haya determinado (p.ej. PDI / TC).
+    from extraction.renta_tipo import anotar_renta_texto, resolver_tipo_renta
+    renta_tipo = datos.get("renta_tipo") or resolver_tipo_renta(
+        datos.get("renta_texto"), datos.get("descripcion"), datos.get("cargo")
+    )
+    datos = dict(datos)
+    datos["renta_tipo"] = renta_tipo
+    datos["renta_texto"] = anotar_renta_texto(datos.get("renta_texto"), renta_tipo)
+
     params_extra = {"dedup_hash": dedup_hash, "renta_regional": renta_regional_json}
 
     try:
@@ -213,7 +225,7 @@ def upsert_oferta(db: Session, datos: dict) -> tuple[bool, bool]:
                     institucion_id, institucion_nombre, sector, area_profesional,
                     tipo_cargo, nivel,
                     region, ciudad,
-                    renta_bruta_min, renta_bruta_max, renta_texto, renta_regional,
+                    renta_bruta_min, renta_bruta_max, renta_texto, renta_tipo, renta_regional,
                     fecha_publicacion, fecha_cierre,
                     requisitos_texto,
                     activa, es_nueva, detectada_en
@@ -223,7 +235,7 @@ def upsert_oferta(db: Session, datos: dict) -> tuple[bool, bool]:
                     (SELECT id FROM instituciones WHERE id = :institucion_id), :institucion_nombre, :sector, :area_profesional,
                     :tipo_cargo, :nivel,
                     :region, :ciudad,
-                    :renta_bruta_min, :renta_bruta_max, :renta_texto, CAST(:renta_regional AS JSONB),
+                    :renta_bruta_min, :renta_bruta_max, :renta_texto, :renta_tipo, CAST(:renta_regional AS JSONB),
                     :fecha_publicacion, :fecha_cierre,
                     :requisitos_texto,
                     TRUE, TRUE, NOW()
@@ -249,6 +261,7 @@ def upsert_oferta(db: Session, datos: dict) -> tuple[bool, bool]:
                     renta_bruta_min     = COALESCE(:renta_bruta_min, renta_bruta_min),
                     renta_bruta_max     = COALESCE(:renta_bruta_max, renta_bruta_max),
                     renta_texto         = COALESCE(NULLIF(:renta_texto, ''), renta_texto),
+                    renta_tipo          = COALESCE(NULLIF(:renta_tipo, ''), renta_tipo),
                     fecha_publicacion   = COALESCE(:fecha_publicacion, fecha_publicacion),
                     fecha_cierre        = COALESCE(:fecha_cierre, fecha_cierre),
                     requisitos_texto    = COALESCE(NULLIF(:requisitos_texto, ''), requisitos_texto),
@@ -271,6 +284,7 @@ def upsert_oferta(db: Session, datos: dict) -> tuple[bool, bool]:
                 "renta_bruta_min": datos.get("renta_bruta_min"),
                 "renta_bruta_max": datos.get("renta_bruta_max"),
                 "renta_texto": datos.get("renta_texto"),
+                "renta_tipo": datos.get("renta_tipo"),
                 "fecha_publicacion": datos.get("fecha_publicacion"),
                 "fecha_cierre": datos.get("fecha_cierre"),
                 "requisitos_texto": datos.get("requisitos_texto"),

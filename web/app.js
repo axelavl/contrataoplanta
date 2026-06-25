@@ -760,36 +760,47 @@ function ofertaPostulable(oferta) {
 }
 
 // ── Utilidades de formato ──────────────────────────────────────────────────
-function formatRenta(min, max, grado) {
+// La renta que se informa debe ser BRUTA. Cuando la fuente solo publica la
+// LÍQUIDA hay que señalarlo para no inducir a error (la líquida es menor).
+// Por eso solo se anexa la marca " líquida"; el caso bruto se asume por defecto.
+function rentaTipoSufijo(tipo) {
+  return (tipo || '').toLowerCase() === 'liquida' ? ' líquida' : '';
+}
+
+function formatRenta(min, max, grado, tipo) {
   // `min > 0`: 0 no es una renta válida (dato faltante o mal scrapeado), y el
   // `if (min)` anterior lo trataba como ausente — además ignoraba el caso de
   // ofertas que sólo publican el techo (max sin min).
   const tieneMin = min != null && min > 0;
   const tieneMax = max != null && max > 0;
+  const suf = rentaTipoSufijo(tipo);
   if (tieneMin) {
     const minF = '$' + min.toLocaleString('es-CL');
-    if (tieneMax && max !== min) return minF + ' – $' + max.toLocaleString('es-CL');
-    return minF;
+    if (tieneMax && max !== min) return minF + ' – $' + max.toLocaleString('es-CL') + suf;
+    return minF + suf;
   }
-  if (tieneMax) return 'Hasta $' + max.toLocaleString('es-CL');
+  if (tieneMax) return 'Hasta $' + max.toLocaleString('es-CL') + suf;
   if (grado) return 'Grado ' + grado + ' EUS';
   return null;
 }
 
 // Versión HTML para la vista compacta: muestra min/max en dos líneas
 // cuando hay rango, para evitar truncar valores largos en columnas angostas.
-function formatRentaRow(min, max, grado) {
+function formatRentaRow(min, max, grado, tipo) {
   const tieneMin = min != null && min > 0;
   const tieneMax = max != null && max > 0;
+  const sufHtml = rentaTipoSufijo(tipo)
+    ? `<span class="renta-tipo-liquida">líquida</span>`
+    : '';
   if (tieneMin) {
     const minF = '$' + min.toLocaleString('es-CL');
     if (tieneMax && max !== min) {
       const maxF = '$' + max.toLocaleString('es-CL');
-      return `<span class="renta-principal">${minF}</span><span class="renta-rango">hasta ${maxF}</span>`;
+      return `<span class="renta-principal">${minF}</span><span class="renta-rango">hasta ${maxF}</span>${sufHtml}`;
     }
-    return `<span class="renta-principal">${minF}</span>`;
+    return `<span class="renta-principal">${minF}</span>${sufHtml}`;
   }
-  if (tieneMax) return `<span class="renta-principal">hasta $${max.toLocaleString('es-CL')}</span>`;
+  if (tieneMax) return `<span class="renta-principal">hasta $${max.toLocaleString('es-CL')}</span>${sufHtml}`;
   if (grado) return `<span class="renta-principal" style="font-size:11.5px">Grado ${grado} EUS</span>`;
   return null;
 }
@@ -1306,7 +1317,7 @@ function resaltarBusqueda(texto, q) {
 
 function renderCard(oferta) {
   const cargoDisplay = normalizarTituloOferta(oferta.cargo);
-  const renta = formatRenta(oferta.renta_bruta_min, oferta.renta_bruta_max, oferta.grado_eus);
+  const renta = formatRenta(oferta.renta_bruta_min, oferta.renta_bruta_max, oferta.grado_eus, oferta.renta_tipo);
   const plazo = plazoInfo(oferta);
   const tipoCss = tipoClase(oferta.tipo_contrato);
   const tipoLabel = tipoEtiqueta(oferta.tipo_contrato);
@@ -1424,7 +1435,8 @@ function renderRowCompacta(oferta) {
   const tipoCss   = tipoClase(oferta.tipo_contrato);
   const tipoLabel = tipoEtiqueta(oferta.tipo_contrato);
   const regionCompleta = nombreRegionCompleto(oferta.region);
-  const rentaHtml = formatRentaRow(oferta.renta_bruta_min, oferta.renta_bruta_max, oferta.grado_eus);
+  const rentaHtml = formatRentaRow(oferta.renta_bruta_min, oferta.renta_bruta_max, oferta.grado_eus, oferta.renta_tipo);
+  const instLogo = getInstIcon(oferta);
   const favs  = leerFavoritos();
   const esFav = favs.some(f => f.id === oferta.id);
   const jobPosting = buildJobPostingJsonLd(oferta);
@@ -1434,9 +1446,12 @@ function renderRowCompacta(oferta) {
   return `
   <div class="oferta-row${esFav ? ' favorita' : ''}" data-oferta-id="${oferta.id}" role="button" tabindex="0" aria-label="Ver detalle: ${escAttr(cargoDisplay)}">
     <div class="row-main">
-      <div class="row-inst">${escHtml(_aplicarAcronimosForzados(oferta.institucion || '')) || 'Institución pública'}</div>
-      <div class="row-cargo" title="${escAttr(cargoDisplay)}">${escHtml(cargoDisplay)}</div>
-      ${regionCompleta ? `<div class="row-region">🗺 ${escHtml(regionCompleta)}</div>` : ''}
+      <div class="row-logo${instLogo.confiable ? ' row-logo--verificada' : ''}" title="${escAttr(instLogo.fuente)}" aria-hidden="true">${instLogo.html}</div>
+      <div class="row-textcol">
+        <div class="row-inst">${escHtml(_aplicarAcronimosForzados(oferta.institucion || '')) || 'Institución pública'}</div>
+        <div class="row-cargo" title="${escAttr(cargoDisplay)}">${escHtml(cargoDisplay)}</div>
+        ${regionCompleta ? `<div class="row-region">🗺 ${escHtml(regionCompleta)}</div>` : ''}
+      </div>
     </div>
     <div class="row-meta">
       ${tipoLabel ? `<span class="badge ${tipoCss}" style="font-size:10px;white-space:nowrap">${tipoLabel}</span>` : ''}
@@ -2326,7 +2341,8 @@ function normalizarOferta(o) {
     region:       nombreRegionCompleto(o.region) || o.region || '',
     comuna:       ciudadValida(o.ciudad, o.institucion) || '',
     jornada:      jornadaValida(o.jornada) || '',
-    renta:        formatRenta(o.renta_bruta_min, o.renta_bruta_max, o.grado_eus), // string|null
+    renta:        formatRenta(o.renta_bruta_min, o.renta_bruta_max, o.grado_eus), // string|null (el tipo va en rentaTipo)
+    rentaTipo:    o.renta_tipo || null,                                          // 'bruta'|'liquida'|'indeterminada'|null
     rentaRegional: Array.isArray(o.renta_regional) ? o.renta_regional : null,    // [{region,sin_bono,con_bono,notas}]|null
     fechaPublicacion: frescuraTexto(o) || (o.fecha_publicacion ? formatFecha(o.fecha_publicacion) : null),
     fechaCierre:  o.fecha_cierre ? formatFecha(o.fecha_cierre) : null,
@@ -2438,6 +2454,8 @@ async function _abrirModalLegacy(ofertaId) {
   document.getElementById('modal-tipo-contrato').textContent = '—';
   document.getElementById('modal-jornada').textContent = '—';
   document.getElementById('modal-renta').textContent = '—';
+  const _rentaLabelReset = document.getElementById('modal-renta-label');
+  if (_rentaLabelReset) _rentaLabelReset.textContent = '💰 Renta bruta';
   document.getElementById('summary-item-publicacion').hidden = false;
   document.getElementById('summary-item-ubicacion').hidden = false;
   document.getElementById('summary-item-tipo').hidden = false;
@@ -2495,7 +2513,17 @@ async function _abrirModalLegacy(ofertaId) {
     const regionCompleta = nombreRegionCompleto(o.region);
     const ciudad = ciudadValida(o.ciudad, o.institucion);
     const sector = o.sector || '';
+    // En el modal el tipo se indica en la etiqueta (no en el valor) para no
+    // duplicar la marca "líquida".
     const renta = formatRenta(o.renta_bruta_min, o.renta_bruta_max, o.grado_eus);
+    // Etiqueta del resumen: por defecto "Renta bruta"; si la fuente solo trae
+    // líquida, se rotula explícitamente para no inducir a error.
+    const rentaLabelEl = document.getElementById('modal-renta-label');
+    if (rentaLabelEl) {
+      rentaLabelEl.textContent = (o.renta_tipo || '').toLowerCase() === 'liquida'
+        ? '💰 Renta líquida'
+        : '💰 Renta bruta';
+    }
     const detalle = plazoDetalle(o);
 
     // Jerarquía visual del header:

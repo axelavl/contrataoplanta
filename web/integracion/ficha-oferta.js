@@ -229,7 +229,7 @@
     const _vacantesLbl = oferta.numeroVacantes === 0 ? 'No especificado'
       : (oferta.numeroVacantes != null ? String(oferta.numeroVacantes) : '');
     const grid = `<div class="cop-grid">
-      ${kv('Renta bruta', fmtRenta(oferta.renta), true)}
+      ${kv(((oferta.rentaTipo || '').toLowerCase() === 'liquida' ? 'Renta líquida' : 'Renta bruta'), fmtRenta(oferta.renta), true)}
       ${kv('Jornada', oferta.jornada)}
       ${kv('Modalidad', _modalidadLbl)}
       ${kv('Calidad jurídica', _calidadMostrar)}

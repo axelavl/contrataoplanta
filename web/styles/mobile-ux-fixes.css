@@ -1,0 +1,234 @@
+/* ══════════════════════════════════════════════════════════════════════
+   mobile-ux-fixes.css — Ajustes de experiencia móvil + modo oscuro
+   ----------------------------------------------------------------------
+   Capa ADITIVA cargada DESPUÉS de index.css, redesign-overrides.css e
+   integracion/estilos.css. No reemplaza esos archivos: sólo corrige los
+   puntos reportados sin tocar el resto. Si algo molesta, basta con quitar
+   el <link> de index.html y todo vuelve atrás.
+
+   Problemas que resuelve:
+     1. Costura/hueco entre la cinta (.ribbon) y el header al hacer scroll.
+     2. Títulos invisibles en modo oscuro (ficha de oferta y mapa).
+     3. Disposición de las filas de oferta en móvil (chips y acciones
+        saltaban arriba; ahora orden coherente).
+     4. Logos institucionales también en la vista lista.
+     5. Ficha de detalle demasiado alta en móvil (grid 1 col, paddings).
+     6. Acordeón: secciones de la ficha colapsables al tocar el título.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ──────────────────────────────────────────────────────────────────────
+   1 · CINTA + HEADER SIN COSTURA
+   El header se posicionaba con `top: 31/32px` fijo, un número mágico que
+   asumía la altura exacta de la cinta. En móvil la cinta mide distinto
+   (la fuente, el wrap y la barra de estado cambian su alto real), y queda
+   un hueco de 1–3px por el que se ve el contenido al scrollear.
+   `mobile-ux.js` mide la cinta y escribe --ribbon-h con su alto real; acá
+   lo consumimos. El fallback mantiene el comportamiento previo si el JS
+   no cargó.
+   ────────────────────────────────────────────────────────────────────── */
+header nav,
+header {
+  top: var(--ribbon-h, 32px) !important;
+}
+@media (max-width: 600px) {
+  header nav,
+  header {
+    top: var(--ribbon-h, 31px) !important;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   2 · CONTRASTE DE TÍTULOS EN MODO OSCURO
+   La ficha de oferta (.cop-*) y el título del mapa no tenían variante
+   dark: usaban `--azul`, que en oscuro es #0A1426 (casi negro) sobre el
+   fondo oscuro → títulos ilegibles ("no se notan"). Los pasamos al azul
+   claro accesible de marca.
+   ────────────────────────────────────────────────────────────────────── */
+:root[data-theme="dark"] .cop-sec-t,
+:root[data-theme="dark"] .cop-mapx-title {
+  color: var(--navy-text, #7AA1DC);
+}
+:root[data-theme="dark"] .cop-sec-t {
+  border-bottom-color: var(--borde, #2A4068);
+}
+/* Viñetas de las listas de la ficha en dark (eran navy oscuro). */
+:root[data-theme="dark"] .cop-list li::before {
+  background: var(--navy-text, #7AA1DC);
+}
+/* Etiquetas de los campos clave + plazo, un punto más claras en dark. */
+:root[data-theme="dark"] .cop-kv-k,
+:root[data-theme="dark"] .cop-plazo-l,
+:root[data-theme="dark"] .cop-sub h6 {
+  color: var(--texto2, #B8C0D2);
+}
+/* Logos institucionales: tile blanco también en dark para que el logo
+   (diseñado para fondo claro) no se pierda sobre superficie oscura. */
+:root[data-theme="dark"] .oferta-logo img {
+  background: #fff;
+}
+
+/* Labels del buscador y títulos de bloque de filtros: aseguramos lectura
+   en dark sin depender de hardcodes previos. */
+:root[data-theme="dark"] .buscador-form .campo > label,
+:root[data-theme="dark"] .buscador-fila2 .campo > label,
+:root[data-theme="dark"] .filtros-titulo {
+  color: var(--texto2, #B8C0D2);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   3 + 4 · LISTA COMPACTA: LOGO + DISPOSICIÓN
+   Ahora cada fila lleva el logo institucional (markup en app.js:
+   .row-main > .row-logo + .row-textcol). Estilamos el logo y reparamos
+   el orden de los elementos en móvil.
+   ────────────────────────────────────────────────────────────────────── */
+.row-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+}
+.row-textcol {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.row-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 9px;
+  background: var(--bg2);
+  border: 1px solid var(--borde);
+  flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+.row-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 4px;
+  background: #fff;
+}
+.row-logo .sector-icon-fallback,
+.row-logo svg {
+  width: 60%;
+  height: 60%;
+  color: var(--texto3);
+}
+.row-logo--verificada { border-color: rgba(22, 163, 74, 0.45); }
+.row-logo--verificada::after {
+  content: '✓';
+  position: absolute;
+  right: 1px;
+  bottom: 1px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #16A34A;
+  color: #fff;
+  font: 700 8px/13px 'Inter', sans-serif;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,.25);
+}
+
+/* Tabla compacta (desktop): la cabecera "Institución / Cargo" se corre
+   para alinearse con el texto que ahora arranca tras el logo. */
+@media (min-width: 601px) {
+  .oferta-row-header > :nth-child(1) {
+    padding-left: 51px;
+  }
+}
+
+/* Móvil: reparamos el orden. Antes `.row-acciones` (comparar + ♡) tenía
+   `order` por defecto (0) y saltaba ARRIBA A LA IZQUIERDA, encima del
+   cargo. Lo mandamos al final de la segunda línea, alineado a la derecha.
+   Los chips (tipo · plazo · renta) quedan en la segunda línea. */
+@media (max-width: 600px) {
+  .oferta-row {
+    align-items: center;
+  }
+  .oferta-row > .row-main { order: 1; flex: 1 1 100%; }
+  .oferta-row > .row-meta  { order: 2; }
+  .oferta-row > .row-plazo { order: 3; }
+  .oferta-row > .row-renta { order: 4; }
+  .oferta-row > .row-acciones {
+    order: 5;
+    margin-left: auto;
+    flex: 0 0 auto;
+  }
+  /* Logo un punto más chico en pantallas muy angostas. */
+  .row-main .row-cargo { font-size: 14.5px; }
+}
+@media (max-width: 420px) {
+  .row-logo { width: 36px; height: 36px; }
+  .row-main { gap: 9px; }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   5 · FICHA DE DETALLE MÁS COMPACTA EN MÓVIL
+   El grid de datos clave pasaba a 1 columna (<=480px) → 9 filas apiladas
+   = ficha altísima. Lo dejamos en 2 columnas (los valores son cortos) y
+   apretamos paddings/márgenes para reducir el scroll.
+   ────────────────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .cop-grid { grid-template-columns: 1fr 1fr; }
+  /* La renta (primer campo) ocupa el ancho completo: es el dato ancla. */
+  .cop-grid .cop-kv:first-child { grid-column: 1 / -1; }
+}
+@media (max-width: 600px) {
+  .cop-head { padding: 18px 18px 16px; }
+  .cop-cargo { font-size: 19px; margin-bottom: 9px; }
+  .cop-plazo { padding: 11px 18px; }
+  .cop-body { padding: 14px 18px 4px; }
+  .cop-sec { margin-bottom: 14px; }
+  .cop-sec-t { font-size: 14.5px; margin-bottom: 9px; padding-bottom: 7px; }
+  .cop-kv { padding: 9px 12px; }
+  .cop-list li { font-size: 13px; }
+  .cop-actions { padding: 12px 18px; }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   6 · ACORDEÓN DE SECCIONES (sólo móvil)
+   `mobile-ux.js` agrega la clase .cop-accordion al overlay en pantallas
+   chicas y .cop-colapsada a las secciones plegadas. El título se vuelve
+   un botón con chevron; al tocarlo se alterna el contenido.
+   ────────────────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .cop-accordion .cop-sec > .cop-sec-t {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .cop-accordion .cop-sec > .cop-sec-t::after {
+    content: '';
+    flex: none;
+    width: 9px;
+    height: 9px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg);
+    transition: transform .18s ease;
+    opacity: .65;
+    margin-bottom: 3px;
+  }
+  /* Colapsada: rota el chevron y oculta todo menos el título. */
+  .cop-accordion .cop-sec.cop-colapsada > .cop-sec-t::after {
+    transform: rotate(-45deg);
+    margin-bottom: 0;
+    margin-top: 3px;
+  }
+  .cop-accordion .cop-sec.cop-colapsada > .cop-sec-t {
+    margin-bottom: 0;
+    border-bottom-color: transparent;
+  }
+  .cop-accordion .cop-sec.cop-colapsada > :not(.cop-sec-t) {
+    display: none !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cop-accordion .cop-sec > .cop-sec-t::after { transition: none; }
+}
