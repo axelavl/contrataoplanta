@@ -62,6 +62,8 @@ from scrapers import famae as famae_scraper
 from scrapers import laborum as laborum_scraper
 from scrapers import codelco as codelco_scraper
 from scrapers import tribunal_constitucional as tribunal_constitucional_scraper
+from scrapers import senado as senado_scraper
+from scrapers import poder_judicial as poder_judicial_scraper
 from scrapers import fiscalia as fiscalia_scraper
 from scrapers import puertos_empresas as puertos_empresas_scraper
 from scrapers import linkedin_penalolen as linkedin_penalolen_scraper
@@ -133,6 +135,7 @@ _IDS_NUEVO_ESTANDAR: frozenset[int] = frozenset({
     145, 158, 706, 165, 707, 279, 275,
     146, 166, 285, 290, 291, 292, 293, 708, 709,
     132,  # Fundación Integra (aira_integra.py + trabajando.py _EXTRA)
+    135, 138,  # Senado (senado.py) y Poder Judicial (poder_judicial.py)
     # municipios.py (scraper agrupado, un modo por sitio): municipalidades y
     # corporaciones con extracción funcional. Las fuentes spa/bloqueada quedan
     # al genérico (no scrapean nada por ahora). Ver scrapers/municipios.py.
@@ -1148,6 +1151,21 @@ async def main(argv: list[str] | None = None) -> int:
                 await asyncio.to_thread(
                     _run_modulo_ejecutar_sync, "tribunal_constitucional (139)",
                     tribunal_constitucional_scraper.ejecutar
+                )
+            )
+        hay_senado = any(s.get("id") == 135 for s in catalog_sources)
+        if hay_senado:
+            reports.append(
+                await asyncio.to_thread(
+                    _run_modulo_ejecutar_sync, "senado (135)", senado_scraper.ejecutar
+                )
+            )
+        hay_pj = any(s.get("id") == 138 for s in catalog_sources)
+        if hay_pj:
+            reports.append(
+                await asyncio.to_thread(
+                    _run_modulo_ejecutar_sync, "poder_judicial (138)",
+                    poder_judicial_scraper.ejecutar
                 )
             )
         hay_fiscalia = any(s.get("id") == 146 for s in catalog_sources)

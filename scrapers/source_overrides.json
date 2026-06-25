@@ -669,6 +669,64 @@
       "kind": "custom_trabajando",
       "reason": "MIM (Museo Interactivo Mirador) - portal en Trabajando.cl (mim.trabajando.cl); lo maneja scrapers/trabajando.py",
       "notes": "https://mim.trabajando.cl"
+    },
+    {
+      "_comment": "=== Congreso y Poder Judicial — scrapers HTML dedicados (2026-06) ==="
+    },
+    {
+      "id": 135,
+      "status": "active",
+      "kind": "skip",
+      "reason": "Senado - scraper dedicado scrapers/senado.py (sección Transparencia activa/concursos, HTML server-rendered). Excluido del dispatch genérico por id",
+      "notes": "https://www.senado.cl/transparencia/transparencia-activa/concursos"
+    },
+    {
+      "id": 138,
+      "status": "active",
+      "kind": "skip",
+      "reason": "Poder Judicial - scraper dedicado scrapers/poder_judicial.py (Comunicados + edictos PDF, HTML server-rendered). Excluido del dispatch genérico por id",
+      "notes": "https://www.pjud.cl/transparencia/trabaje-con-nosotros"
+    },
+    {
+      "_comment": "=== OMIL (bolsas de empleo sector privado) — fuera de scope, deshabilitadas (2026-06) ==="
+    },
+    {
+      "id": 335,
+      "status": "disabled",
+      "kind": "skip",
+      "reason": "Municipalidad de Combarbalá — portal HiringRoom es bolsa OMIL de sector privado, no concursos públicos. Fuera de scope",
+      "notes": "https://omilcombarbala.hiringroom..."
+    },
+    {
+      "id": 348,
+      "status": "disabled",
+      "kind": "skip",
+      "reason": "Municipalidad de Calle Larga — OMIL en Trabajando.cl (intermediación laboral sector privado). Fuera de scope"
+    },
+    {
+      "id": 370,
+      "status": "disabled",
+      "kind": "skip",
+      "reason": "Municipalidad de San Felipe — OMIL en Trabajando.cl (intermediación laboral sector privado). Fuera de scope"
+    },
+    {
+      "id": 392,
+      "status": "disabled",
+      "kind": "skip",
+      "reason": "Municipalidad de La Reina — portal HiringRoom es bolsa OMIL de sector privado (ofertas 2022-23, no concursos municipales). Fuera de scope",
+      "notes": "https://mlareina.hiringroomcampus.com/"
+    },
+    {
+      "id": 581,
+      "status": "disabled",
+      "kind": "skip",
+      "reason": "Municipalidad de Corral — OMIL en Trabajando.cl (intermediación laboral sector privado). Fuera de scope"
+    },
+    {
+      "id": 669,
+      "status": "disabled",
+      "kind": "skip",
+      "reason": "Corp. de Desarrollo Social de Providencia — OMIL en Trabajando.cl (intermediación laboral sector privado). Fuera de scope"
     }
   ]
 }

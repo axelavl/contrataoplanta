@@ -1,0 +1,55 @@
+tier,id,institucion,sector,plataforma_empleo,requiere_js,dificultad,status_clasif,url_empleo,notas
+1,128,Consejo Nacional de Televisión,Autónomo/Regulador,Sitio propio,No,Media,manual_review,https://www.cntv.cl/trabaja-con-nosotros,
+1,135,Senado de la República,Legislativo,Sitio propio,No,Media,manual_review,https://www.senado.cl/transparencia/transparencia-activa/concursos,Publica concursos en sección de Transparencia del sitio
+1,136,Cámara de Diputados,Legislativo,Sitio propio,No,Media,manual_review,https://www.camara.cl/transparencia/trabaje-con-nosotros,
+1,137,Biblioteca del Congreso Nacional,Legislativo,Sitio propio,No,Media,manual_review,https://www.bcn.cl/concurso_publico/concursos,
+1,138,Poder Judicial de Chile,Judicial,Sitio propio,No,Media,manual_review,https://www.pjud.cl/transparencia/trabaje-con-nosotros,"Publica concursos para jueces, notarios, conservadores y personal administrativo"
+1,140,Tribunal de Defensa de la Libre Competencia,Judicial,Sitio propio,No,Media,manual_review,https://www.tdlc.cl/concursos_publicos/,
+1,141,1er Tribunal Ambiental (Antofagasta),Judicial,Sitio propio,No,Baja,manual_review,https://www.1ta.cl/el-primer-tribunal-ambiental-concurso-7-13/,Poca frecuencia de publicación
+1,142,2do Tribunal Ambiental (Santiago),Judicial,Sitio propio,No,Baja,manual_review,https://tribunalambiental.cl/trabaje-con-nosotros,
+1,143,3er Tribunal Ambiental (Valdivia),Judicial,Sitio propio,No,Baja,manual_review,https://3ta.cl/concursos-publicos-i-tercer-tribunal-ambiental/,
+1,144,Tribunal de Contratación Pública,Judicial,Sitio propio,No,Baja,manual_review,https://www.tcp.gob.cl/trabaje-con-nosotros,Baja frecuencia
+2,380,Municipalidad de Santiago,Municipal,Portal propio + HiringRoom,Sí,Media,js_required,https://www.munistgo.cl/portal-laboral/,Portal Laboral propio con inscripción y seguimiento online. También usa HiringRoom y Trabajando.cl
+2,392,Municipalidad de La Reina,Municipal,HiringRoom,Sí,Media,js_required,https://mlareina.hiringroomcampus.com/,Portal de postulaciones usa plataforma HiringRoom. También Trabajando.cl. Email: arearedlareina@mlareina.cl
+2,398,Municipalidad de Maipú,Municipal,SPA JavaScript,Sí,Muy Alta,js_required,https://www.municipalidadmaipu.cl/concursos-publicos,Portal de concursos en SPA JavaScript. CODEDUC (educación) es entidad separada.
+2,399,Municipalidad de Ñuñoa,Municipal,RecruitK (SPA JS),Sí,Media,js_required,https://www.nunoa.cl/concursos/,Portal de concursos usa RecruitK (JavaScript). También: recruitk.com/mnunoa
+2,632,Municipalidad de Punta Arenas,Municipal,Vue.js SPA,Sí,Media,js_required,https://www.puntaarenas.cl/municipio/ofertas,Portal en Vue.js SPA. APS (salud): apscormupa.cl/postulaciones. Requiere JS.
+2,648,Corporación Municipal de Viña del Mar,Municipal,Reqlut,Sí,Media,js_required,https://www.cmvm.cl,"Corporación mixta (educación, salud, deportes). Portal de postulaciones usa plataforma Reqlut."
+2,649,Corporación Municipal de Quilpué,Municipal,Procit,Sí,Media,js_required,https://cmq.procit.cl/empleos/,Corporación mixta. Usa plataforma Procit para publicar empleos.
+3,335,Municipalidad de Combarbalá,Municipal,HiringRoom,No,Baja,active,https://www.municombarbala.cl/bolsa-de-empleo/,HiringRoom | url via path estandar | link a https://omilcombarbala.hiringroom
+3,348,Municipalidad de Calle Larga,Municipal,Trabajando.cl/OMIL,No,Baja,active,https://callelarga.omil.cl/,Portal OMIL propio en callelarga.omil.cl
+3,370,Municipalidad de San Felipe,Municipal,Trabajando.cl/OMIL,No,Baja,active,http://sanfelipe.omil.cl/,Portal OMIL propio sanfelipe.omil.cl
+3,476,Municipalidad de Pelluhue,Municipal,WordPress,No,Media,experimental,https://munipelluhue.cl,Sitio under construction — verificar en 1-3 meses
+3,581,Municipalidad de Corral,Municipal,Trabajando.cl/OMIL,No,Baja,active,https://www.municipalidadcorral.cl/page/basespostulacioncargoanalistaareasocialppl,Trabajando.cl/OMIL | dominio corregido https://www.municipalidadcorral.cl | link home
+3,643,Corporación Municipal de Desarrollo Social de Iquique,Municipal,WordPress,No,Media,active,http://unisag.cormudesi.cl/unisag/rrhh/curriculum/view/index.phtml?departamento=1,WordPress | meta:wordpress 6.9.4
+3,644,Corporación Municipal de Desarrollo Social de Pozo Almonte,Municipal,WordPress,No,Media,active,https://cormudespa.cl/,Corporacion Municipal Desarrollo Social (SPA?); sin URL dedicada
+3,645,Corporación Municipal de Desarrollo Social de Antofagasta,Municipal,WordPress,No,Media,active,https://www.cmds.cl/trabaja-con-nosotros/,WordPress | meta:wordpress 5.4.19
+3,646,Corporación Municipal de Desarrollo Social de Calama,Municipal,Sitio propio,No,Baja,active,https://www.comdescalama.cl/trabaja-con-nosotros/,Corporación mixta de educación y salud. Publica empleos en sección propia.
+3,647,Corporación Municipal de Valparaíso,Municipal,WordPress,No,Baja,active,https://cmvalparaiso.cl/category/oferta-de-trabajo/,"Corporación mixta (educación, salud, cementerios). Publica activamente ofertas en blog WordPress."
+3,650,Corporación Municipal de Villa Alemana,Municipal,Sitio propio,No,Baja,active,https://www.cmva.cl/trabaja-con-nosotros/,Corporación mixta de educación y salud.
+3,651,Corporación Municipal de Rancagua,Municipal,Sitio propio,No,Media,active,https://www.educormun.cl,Cormun Rancagua - educormun.cl (educacion)
+3,652,Corporación Municipal de San Fernando,Municipal,WordPress,No,Media,active,https://cormusaf.cl/concursos/,Cormusaf San Fernando; probe detecto /concursos/
+3,653,Corporación Municipal de Panguipulli,Municipal,Sitio propio,No,Baja,active,https://cmpanguipulli.com,"Corporación mixta (educación, salud, menores). Cubre toda la red municipal de Panguipulli."
+3,654,Corporación Municipal de Castro,Municipal,WordPress,No,Media,active,https://www.municipalidadcastro.cl/?p=29062,WordPress | meta:powered by wpbakery page builder - 
+3,655,Corporación Municipal de Ancud,Municipal,WordPress,No,Media,active,http://www.corporacionancud.cl/inicio/category/concursos-publicos/,Corporacion Ancud en corporacionancud.cl (distinto al parent)
+3,656,Corporación Municipal de Dalcahue,Municipal,WordPress,No,Media,active,https://www.munidalcahue.cl/portal/,Corporacion Dalcahue comparte sitio con muni
+3,657,Corporación Municipal de Chonchi,Municipal,WordPress,No,Media,active,https://municipalidadchonchi.cl/web/documentos/decreto-convocatoria-consejo-comunal-de-organizaciones-de-la-sociedad-civil/,WordPress | dominio re-encontrado variaciones v2
+3,658,Corporación Municipal de Queilén,Municipal,WordPress,No,Media,active,https://muniqueilen.cl/concursos-publicos/,WordPress | dominio re-encontrado variaciones v2
+3,659,Corporación Municipal de Quellón,Municipal,WordPress,No,Media,active,https://muniquellon.cl/concursos-publicos-2/,WordPress | meta:wordpress 6.9.4
+3,660,Corporación Municipal de Quinchao,Municipal,Sitio propio,No,Media,active,https://corporacionquinchao.cl/transparencia_activa/,Corporacion Quinchao - dominio propio corporacionquinchao.cl
+3,661,Corporación Municipal de Curaco de Vélez,Municipal,WordPress,No,Media,active,https://curacodevelez.cl/web/cat_doc/recepcion-de-antecedentes/,WordPress | dominio re-encontrado variaciones v2
+3,662,Corporación Municipal de Puqueldón,Municipal,WordPress,No,Media,active,https://munipuqueldon.cl/municipio/concursos-publicos/,WordPress | wp-content
+3,663,Corporación Municipal de Punta Arenas,Municipal,Sitio propio,No,Baja,active,https://www.apscormupa.cl/postulaciones,"Corporación mixta (educación, salud, menores). Portal de postulaciones propio activo."
+3,664,Corporación Municipal de Peñalolén,Municipal,Sitio propio,No,Baja,active,https://www.cormup.cl/concursos/,Corporación mixta. Publica activamente concursos en sitio propio.
+3,665,Corporación de Educación de Maipú,Municipal,WordPress,No,Media,active,http://www.codeduc.cl/trabaja-con-nosotros/,WordPress | meta:wordpress 4.9.8
+3,666,Corporación de Desarrollo Social de Pudahuel,Municipal,Sitio propio,No,Baja,active,https://www.codep.cl/portal-laboral/,"Salud, menores y cementerio (no educación). Publica activamente. Email: postulaciones@codep.cl"
+3,667,Corporación de Desarrollo Social de Ñuñoa,Municipal,Sitio propio,No,Baja,active,https://www.cmdsnunoa.cl/trabaja-con-nosotros/,Corporación mixta. Publica activamente.
+3,668,Corporación de Salud y Educación de Las Condes,Municipal,Sitio propio,No,Media,active,https://tcn.corplascondes.cl/,Sitio propio | html estatico
+3,669,Corporación de Desarrollo Social de Providencia,Municipal,Trabajando.cl/OMIL,No,Baja,active,https://cdsprovidencia.trabajando.cl/,Portal Trabajando.cl en cdsprovidencia.trabajando.cl
+3,670,Corporación de Salud y Menores de Conchalí,Municipal,Sitio propio,No,Baja,active,https://coresam.cl/oferta-laboral/,"Corporación mixta (educación, salud, menores). Publica activamente. Email: reclutamiento@coresam.cl"
+3,671,Corporación Municipal de Macul,Municipal,WordPress,No,Media,active,https://www.corpomunimacul.cl/macul-premia-la-creatividad-y-participacion-comunitaria-en-concurso-salud-mental-en-100-palabras/,WordPress | meta:wordpress 6.9.4
+3,672,Corporación Municipal de Melipilla,Municipal,Sitio propio,No,Baja,active,https://corpomelipilla.cl/trabaja-en-la-corpo/,Corporación mixta. Publica activamente en sitio propio.
+3,673,Corporación Municipal de Colina,Municipal,Sitio propio,No,Media,active,https://www.corporacioncolina.cl,Corporación de desarrollo social de Colina.
+3,674,Corporación Municipal de Pirque,Municipal,WordPress,No,Media,active,https://www.corpirque.cl/concursos-publicos/,WordPress | meta:wordpress 6.9.4
+4,67,Junta Nacional de Jardines Infantiles,Ejecutivo Central,empleospublicos.cl,Sí,Alta,js_required,https://www.empleospublicos.cl,Publica en empleospublicos.cl. Sitio propio requiere JS
+4,622,Municipalidad de Coyhaique,Municipal,PHP (transparencia),No,Media,js_required,https://www.coyhaique.cl/transparencia/actos_y_resoluciones/concursos.php,Concursos publicados en sección transparencia. Bases descargables.
