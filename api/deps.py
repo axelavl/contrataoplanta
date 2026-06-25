@@ -169,15 +169,16 @@ def record_failure(ip: str) -> None:
 def client_ip(request: Request) -> str:
     """IP real del cliente considerando ``X-Forwarded-For`` del proxy.
 
-    Tomamos el primer valor del header (cliente original). No es
-    infalsificable si el proxy no sanea, pero en Railway/Cloudflare
-    viene limpio.
+    Tomamos el **último** valor del header: es el que añadió el proxy
+    más cercano (Railway/Cloudflare) y no puede ser falsificado por el
+    cliente. El primer valor lo pone el cliente y es trivialmente
+    spoofeable con ``curl -H 'X-Forwarded-For: 1.2.3.4'``.
     """
     xff = request.headers.get("x-forwarded-for", "")
     if xff:
-        primera = xff.split(",")[0].strip()
-        if primera:
-            return primera
+        ultima = xff.rsplit(",", 1)[-1].strip()
+        if ultima:
+            return ultima
     return (request.client.host if request.client else "unknown") or "unknown"
 
 
