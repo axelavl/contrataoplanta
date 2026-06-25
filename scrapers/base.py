@@ -1055,7 +1055,7 @@ class HttpClient:
             total=HTTP_TIMEOUT_TOTAL,
             connect=HTTP_TIMEOUT_CONNECT,
         )
-        connector = aiohttp.TCPConnector(limit=MAX_CONCURRENCIA_GLOBAL, ssl=False)
+        connector = aiohttp.TCPConnector(limit=MAX_CONCURRENCIA_GLOBAL)
         self._session = aiohttp.ClientSession(
             timeout=timeout,
             connector=connector,
@@ -1184,6 +1184,24 @@ class HttpClient:
                     error_type="redirect_loop",
                     error_detail=str(e),
                 )
+            except aiohttp.ClientConnectorSSLError as e:
+                log.warning("SSLError en %s (intento %s), reintentando sin verificación", url, intento)
+                try:
+                    async with sem:
+                        async with self._session.get(url, params=params, headers=headers, ssl=False) as resp:
+                            body_text = await resp.text(errors="replace")
+                            return HttpFetchResult(
+                                url=url,
+                                final_url=str(resp.url),
+                                status=resp.status,
+                                body=body_text,
+                                headers=dict(resp.headers),
+                            )
+                except Exception:
+                    return HttpFetchResult(
+                        url=url, final_url=url, status=None, body=None,
+                        error_type="ssl_error", error_detail=str(e),
+                    )
             except aiohttp.ClientError as e:
                 log.warning("ClientError %s en %s (intento %s)", e, url, intento)
                 await self._backoff(intento)
