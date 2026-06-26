@@ -71,6 +71,10 @@ mark.cop-hl {
 .cop-why { display: flex; align-items: flex-start; gap: 9px; line-height: 1.5;
   background: var(--acento-l, #FBE4C0); border-bottom: 1px solid #EAD9B6;
   padding: 12px 26px; font-size: 12.5px; color: var(--gold-ink, #5C3A10); }
+/* El atributo `hidden` debe ocultar la franja: sin esto, `display:flex` de
+   arriba lo anula y la franja amarilla se muestra VACÍA (solo fondo+padding)
+   cuando la oferta no tiene motivo de coincidencia. */
+.cop-why[hidden] { display: none; }
 .cop-why svg { flex: none; margin-top: 1px; color: var(--gold-dim, #A66E1B); }
 .cop-qk { display: inline-block; background: #fff; border: 1px solid #EAD9B6; border-radius: 6px; padding: 1px 7px; font-weight: 700; }
 
@@ -124,6 +128,10 @@ mark.cop-hl {
 .cop-apply { background: var(--azul, #142E6B); color: #fff; border: none; border-radius: 11px;
   font-family: var(--font-sans, 'Inter', sans-serif); font-size: 14.5px; font-weight: 700; padding: 13px; cursor: pointer; }
 .cop-apply:hover { background: var(--azul-m, #254BA0); }
+/* En dark, var(--azul) es casi negro (#0A1426) y el botón "Ir al portal"
+   desaparecía sobre el fondo oscuro del modal. Le damos un azul visible. */
+:root[data-theme="dark"] .cop-apply { background: var(--cielo, #3057AA); color: #fff; }
+:root[data-theme="dark"] .cop-apply:hover { background: #3A63C0; }
 .cop-actions-sec { display: flex; gap: 10px; }
 .cop-btn2 { flex: 1; background: var(--blanco, #fff); border: 1.5px solid var(--borde, #E5E1D2); color: var(--texto, #18202F);
   border-radius: 10px; font-family: var(--font-sans, 'Inter', sans-serif); font-size: 13px; font-weight: 600; padding: 10px; cursor: pointer; }
