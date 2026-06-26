@@ -86,15 +86,31 @@ def web_offer(path: str) -> Response:
     El slug se deriva del ``cargo`` y es sólo cosmético para SEO y para
     humanos que lean el URL. El ``id`` es la identidad real.
     """
+    def _oferta_no_disponible() -> HTMLResponse:
+        # La oferta ya no existe (expiró y fue purgada) o el path es inválido.
+        # En vez de un 404 con JSON crudo —que el usuario que abre un enlace
+        # compartido ve como "error"— servimos el SPA con meta neutro y un
+        # aviso, manteniendo el status 404 para crawlers/SEO (no se debe
+        # indexar una oferta muerta). Así el usuario aterriza en el sitio y
+        # puede seguir buscando en vez de toparse con un error.
+        meta = build_offer_meta(None, canonical_url=f"{SITE_URL}/")
+        meta["title"] = "Oferta no disponible — contrata o planta .cl"
+        meta["description"] = (
+            "Esta oferta ya no está publicada (puede haber expirado). "
+            "Explora otras ofertas de empleo público vigentes en el sitio."
+        )
+        html_doc = render_index_with_meta(meta)
+        return HTMLResponse(content=html_doc, status_code=404, headers={"Cache-Control": "no-store"})
+
     match = _OFFER_PATH_RE.match(path.strip())
     if not match:
-        raise HTTPException(status_code=404, detail="Oferta no encontrada")
+        return _oferta_no_disponible()
     oferta_id = int(match.group("id"))
     slug_actual = match.group("slug") or ""
 
     oferta_data = fetch_offer_for_meta(oferta_id)
     if not oferta_data:
-        raise HTTPException(status_code=404, detail="Oferta no encontrada")
+        return _oferta_no_disponible()
 
     slug_canonico = _slugify(oferta_data.get("cargo") or "")
     path_canonico = f"/oferta/{oferta_id}"

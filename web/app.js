@@ -2439,7 +2439,7 @@ function normalizarOferta(o) {
     calidadJuridica: o.calidad_juridica || null,
     estamento: o.estamento || null,
     lugarDesempenio: o.lugar_desempenio || null,
-    shareUrl: (o.id != null ? (location.origin + '/oferta/' + o.id) : (o.url_oferta || null)),
+    shareUrl: (o.id != null ? (location.origin + rutaOferta(o.id, o.cargo)) : (o.url_oferta || null)),
   };
 }
 
@@ -2896,14 +2896,21 @@ function abrirVisorBasesPorId(ofertaId) {
   if (oferta) abrirVisorBases(oferta);
 }
 
+// `rutaOferta(id, cargo)` y `slugificarCargo(cargo)` viven en shared-shell.js
+// (fuente única, cargada antes que app.js) y se usan como globales aquí y en
+// favoritos.js / historial.js. Construyen la ruta canónica /oferta/{id}-{slug}
+// con el mismo slug que `_slugify` del backend, evitando el redirect 301.
+
 // Construye el deep-link a esta oferta dentro del dominio actual.
 // Ventaja vs compartir oferta.url_oferta directo: el receptor ve nuestra
 // previsualización (OG image dinámica) y aterriza en el modal preseleccionado,
-// con un solo click para postular.
+// con un solo click para postular. Se limpian hash y query (filtros propios de
+// la sesión) para que el enlace sea preciso y apunte sólo a la oferta.
 function urlDeepLinkOferta(oferta) {
   const url = new URL(window.location.href);
   url.hash = '';
-  url.pathname = `/oferta/${oferta.id}`;
+  url.search = '';
+  url.pathname = rutaOferta(oferta.id, oferta.cargo);
   return url.toString();
 }
 

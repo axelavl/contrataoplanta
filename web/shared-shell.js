@@ -1,6 +1,26 @@
 (function () {
   'use strict';
 
+  /* ── Ruta canónica de una oferta · fuente única de verdad ──
+     /oferta/{id}-{slug-del-cargo}. El slug DEBE coincidir con `_slugify` del
+     backend (api/services/formatters.py) para que el enlace que compartimos ya
+     sea el CANÓNICO y no dispare el redirect 301 del SSR. Lo usan app.js,
+     favoritos.js e historial.js (todos cargan shared-shell.js antes). */
+  window.slugificarCargo = function (texto) {
+    if (!texto) return '';
+    return String(texto)
+      .normalize('NFKD').replace(/[^\x00-\x7F]/g, '')   // NFKD + descarta no-ASCII (= encode('ascii','ignore'))
+      .replace(/[^a-zA-Z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .toLowerCase()
+      .slice(0, 80)
+      .replace(/-+$/, '');
+  };
+  window.rutaOferta = function (id, cargo) {
+    var slug = window.slugificarCargo(cargo);
+    return '/oferta/' + id + (slug ? '-' + slug : '');
+  };
+
   /* ── Logo fallback robusto · fuente única de verdad ──
      Se registra ANTES de que se carguen los partials y las cards, para
      que el override de `window.imgFavFallback` y `window.imgFavCheckQuality`
