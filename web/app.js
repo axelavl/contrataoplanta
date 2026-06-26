@@ -1758,7 +1758,7 @@ function irPagina(n) {
 // buscar() y setVistaListado() no se repitan.
 const LISTADO_COPYS = {
   vigentes: 'Mostrando concursos vigentes. Revisa los cerrados en la pestaña Cerradas.',
-  destacadas: 'Ofertas destacadas: las que publicamos en nuestras redes sociales (Instagram, TikTok, LinkedIn). Siempre vigentes y elegidas a mano.',
+  destacadas: 'Ofertas destacadas: una selección de las mejores oportunidades vigentes, incluidas las que publicamos en nuestras redes sociales (Instagram, TikTok, LinkedIn). No se aplican los filtros del buscador.',
   cerradas: 'Mostrando convocatorias ya cerradas para consulta e historial. Vuelve a Vigentes para postular.',
 };
 
@@ -1788,35 +1788,43 @@ async function cargarOfertas() {
   renderEsqueletos();
 
   const params = new URLSearchParams({ pagina: estado.pagina, por_pagina: estado.por_pagina, orden: estado.orden });
-  if (estado.q)              params.set('q', estado.q);
-  if (estado.profesion)      params.set('profesion', estado.profesion);
-  if (estado.region && (!Array.isArray(estado.comunas) || estado.comunas.length === 0)) params.set('region', estado.region);
-  if (estado.sector)         params.set('sector', estado.sector);
-  if (estado.nivel)          params.set('nivel', estado.nivel);
-  if (estado.cierra_pronto && estado.vista_listado === 'vigentes')  params.set('cierra_pronto', 'true');
-  if (estado.nuevas)         params.set('nuevas', 'true');
-  if (estado.solo_con_correo) params.set('solo_con_correo', 'true');
-  if (estado.vista_listado === 'destacadas') params.set('destacadas', 'true');
-  if (estado.institucion_id) params.set('institucion', estado.institucion_id);
-  if (estado.renta_min)      params.set('renta_min', estado.renta_min);
-  if (estado.renta_max)      params.set('renta_max', estado.renta_max);
-  if (Array.isArray(estado.comunas) && estado.comunas.length > 0) {
-    params.set('comunas', estado.comunas.join(','));
-  } else if (estado.ciudad) {
-    params.set('ciudad', estado.ciudad);
-  }
-  // Tipos activos: enviar solo cuando es un subconjunto propio del catálogo.
-  // Si están todos activos o ninguno, no filtrar para incluir todos los tipos.
-  const TIPOS_CATALOGO_UI = ['planta','contrata','honorarios','codigo_trabajo','otro','no_informa'];
-  const tiposActivosApi = estado.tipos.flatMap((tipo) => (
-    tipo === 'otro' ? ['otro', 'reemplazo'] : [tipo]
-  ));
-  const tiposUnicosApi = [...new Set(tiposActivosApi)];
-  const tiposCatalogoApi = [...new Set(TIPOS_CATALOGO_UI.flatMap((tipo) => (
-    tipo === 'otro' ? ['otro', 'reemplazo'] : [tipo]
-  )))];
-  if (tiposUnicosApi.length > 0 && tiposUnicosApi.length < tiposCatalogoApi.length) {
-    params.set('tipo', tiposUnicosApi.join(','));
+
+  // La pestaña "Destacadas" es una vitrina curada: muestra TODAS las ofertas
+  // destacadas sin aplicar los filtros activos del buscador (región, sector,
+  // término, etc.). Por eso enviamos solo `destacadas` + paginación/orden.
+  const esDestacadas = estado.vista_listado === 'destacadas';
+  if (esDestacadas) {
+    params.set('destacadas', 'true');
+  } else {
+    if (estado.q)              params.set('q', estado.q);
+    if (estado.profesion)      params.set('profesion', estado.profesion);
+    if (estado.region && (!Array.isArray(estado.comunas) || estado.comunas.length === 0)) params.set('region', estado.region);
+    if (estado.sector)         params.set('sector', estado.sector);
+    if (estado.nivel)          params.set('nivel', estado.nivel);
+    if (estado.cierra_pronto && estado.vista_listado === 'vigentes')  params.set('cierra_pronto', 'true');
+    if (estado.nuevas)         params.set('nuevas', 'true');
+    if (estado.solo_con_correo) params.set('solo_con_correo', 'true');
+    if (estado.institucion_id) params.set('institucion', estado.institucion_id);
+    if (estado.renta_min)      params.set('renta_min', estado.renta_min);
+    if (estado.renta_max)      params.set('renta_max', estado.renta_max);
+    if (Array.isArray(estado.comunas) && estado.comunas.length > 0) {
+      params.set('comunas', estado.comunas.join(','));
+    } else if (estado.ciudad) {
+      params.set('ciudad', estado.ciudad);
+    }
+    // Tipos activos: enviar solo cuando es un subconjunto propio del catálogo.
+    // Si están todos activos o ninguno, no filtrar para incluir todos los tipos.
+    const TIPOS_CATALOGO_UI = ['planta','contrata','honorarios','codigo_trabajo','otro','no_informa'];
+    const tiposActivosApi = estado.tipos.flatMap((tipo) => (
+      tipo === 'otro' ? ['otro', 'reemplazo'] : [tipo]
+    ));
+    const tiposUnicosApi = [...new Set(tiposActivosApi)];
+    const tiposCatalogoApi = [...new Set(TIPOS_CATALOGO_UI.flatMap((tipo) => (
+      tipo === 'otro' ? ['otro', 'reemplazo'] : [tipo]
+    )))];
+    if (tiposUnicosApi.length > 0 && tiposUnicosApi.length < tiposCatalogoApi.length) {
+      params.set('tipo', tiposUnicosApi.join(','));
+    }
   }
 
   try {

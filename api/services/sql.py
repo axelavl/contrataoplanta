@@ -65,7 +65,7 @@ STATUS_LEGACY_MAP = {
 # ofertas que cumplan ``DESTACADAS_AUTO_SQL``. El criterio por defecto son las
 # ofertas con renta bruta publicada (las más "compartibles" y con mejor data).
 # Para cambiar el criterio, editar SÓLO la expresión de abajo (un único lugar).
-DESTACADAS_AUTO = False
+DESTACADAS_AUTO = True
 DESTACADAS_AUTO_SQL = "(o.renta_bruta_min IS NOT NULL OR o.renta_bruta_max IS NOT NULL)"
 
 
