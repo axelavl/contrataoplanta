@@ -127,6 +127,17 @@ header nav {
   background: rgba(232, 168, 32, 0.15) !important;
 }
 
+/* Badge circular del contador de favoritos. shared-shell.js inyecta
+   `<span class="nav-fav-badge">N</span>` en todas las páginas, pero el estilo
+   del círculo vivía solo en index.css, así que en las páginas secundarias
+   (FAQ, Preparación, Capacítate…) el número salía como texto plano. */
+.nav-fav-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px; margin-left: 4px;
+  border-radius: 9px; background: var(--acento, #C88724); color: var(--azul, #0A2E6E);
+  font-size: 11px; font-weight: 700; line-height: 1; vertical-align: middle;
+}
+
 /* ── BREADCRUMB / RUTA DE NAVEGACIÓN ────────────────────────────────── */
 .breadcrumb {
   display: none;
