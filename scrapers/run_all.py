@@ -625,15 +625,18 @@ def _run_empleos_publicos_sync(
     return report
 
 
-def _run_modulo_ejecutar_sync(nombre: str, ejecutar_fn: Any) -> PrecisionReport:
+def _run_modulo_ejecutar_sync(nombre: str, ejecutar_fn: Any, **extra_kwargs: Any) -> PrecisionReport:
     """Corre un scraper del 'nuevo estándar' (módulo auto-contenido con
     ``ejecutar()`` que descubre sus propias fuentes y persiste vía db.database)
     y traduce sus stats a un PrecisionReport para integrarlo al reporte global.
+
+    ``extra_kwargs`` se reenvían a ``ejecutar()`` (p. ej. ``allow_ocr=True``
+    para Carabineros); los módulos que no los acepten no deben recibirlos.
     """
     log.info("Ejecutando %s (módulo ejecutar() nuevo estándar)...", nombre)
     report = PrecisionReport(institucion=nombre)
     try:
-        stats = ejecutar_fn(dry_run=False) or {}
+        stats = ejecutar_fn(dry_run=False, **extra_kwargs) or {}
     except Exception as exc:
         log.exception("Módulo %s falló: %s", nombre, exc)
         report.errores += 1
@@ -951,6 +954,17 @@ async def main(argv: list[str] | None = None) -> int:
             "retry_policy (critical=3h, high=6h, … eventual=168h)."
         ),
     )
+    parser.add_argument(
+        "--ocr",
+        action="store_true",
+        help=(
+            "Habilitar OCR de PDFs escaneados en los scrapers que lo soporten "
+            "(hoy Carabineros, para leer las 'Bases' del concurso escaneadas). "
+            "Lento; requiere el binario tesseract-ocr + tesseract-ocr-spa "
+            "instalado en el sistema. Apagado por defecto; el servicio de "
+            "producción lo activa."
+        ),
+    )
     args = parser.parse_args(argv)
 
     log.info("Inicio run_all gatekeeper %s modo=%s", datetime.now().isoformat(timespec="seconds"), args.mode)
@@ -1074,7 +1088,8 @@ async def main(argv: list[str] | None = None) -> int:
         if hay_carabineros:
             reports.append(
                 await asyncio.to_thread(
-                    _run_modulo_ejecutar_sync, "carabineros (161)", carabineros_scraper.ejecutar
+                    _run_modulo_ejecutar_sync, "carabineros (161)",
+                    carabineros_scraper.ejecutar, allow_ocr=args.ocr,
                 )
             )
         if hay_trabajando:
