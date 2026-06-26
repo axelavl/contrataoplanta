@@ -328,7 +328,13 @@ def recolectar_perfil(page, institucion_id: int, empresa: dict[str, Any],
         vistos.add(item["id_aviso"])
         if not item["cargo"]:
             continue
-        ofertas.append(construir_oferta(item, institucion_id, empresa))
+        oferta = construir_oferta(item, institucion_id, empresa)
+        try:
+            from scrapers.enrich import enriquecer_oferta
+            enriquecer_oferta(oferta, texto_html=oferta.get("descripcion"))
+        except Exception:
+            pass
+        ofertas.append(oferta)
         if max_results and len(ofertas) >= max_results:
             break
     return ofertas

@@ -42,7 +42,7 @@
       modalidad: 'Online · Clave Única',
       duracion: 'A tu ritmo',
       nivel: 'estandar',
-      url: 'https://www.ceacgr.cl/aulavirtual/course/index.php',
+      url: 'https://www.ceacgr.cl/aulavirtual/enrol/index.php?id=679',
       descripcion: 'Si recién entras al Estado, parte por acá: cómo se organiza la administración pública y qué se espera de un funcionario. Es el curso con el que la propia Contraloría pone a todos en la misma página.',
       gratuito: true,
       demo: false
@@ -55,7 +55,7 @@
       modalidad: 'Online · Clave Única',
       duracion: 'A tu ritmo',
       nivel: 'estandar',
-      url: 'https://www.ceacgr.cl/aulavirtual/course/index.php',
+      url: 'https://www.ceacgr.cl/aulavirtual/enrol/index.php?id=727',
       descripcion: 'El reglamento que rige tu día a día en el Estado: ingreso, deberes y derechos, permisos, calificaciones y la carrera funcionaria. Casi obligado si eres planta o contrata.',
       gratuito: true,
       demo: false
@@ -68,7 +68,7 @@
       modalidad: 'Online · Clave Única',
       duracion: 'A tu ritmo',
       nivel: 'estandar',
-      url: 'https://www.ceacgr.cl/aulavirtual/course/index.php',
+      url: 'https://www.ceacgr.cl/aulavirtual/course/index.php?categoryid=202',
       descripcion: 'Cómo actúa legalmente el Estado: el acto administrativo, los plazos de la Ley 19.880, las notificaciones y el control de Contraloría. Te ahorra tropezar con la forma.',
       gratuito: true,
       demo: false
@@ -81,7 +81,7 @@
       modalidad: 'Online · Clave Única',
       duracion: 'A tu ritmo',
       nivel: 'estandar',
-      url: 'https://www.ceacgr.cl/aulavirtual/course/index.php',
+      url: 'https://www.ceacgr.cl/aulavirtual/enrol/index.php?id=707',
       descripcion: 'Dónde está la raya: probidad, conflictos de interés, qué se publica por transparencia y cómo se registran las reuniones de lobby. La base para cuidar tu cargo.',
       gratuito: true,
       demo: false
@@ -94,7 +94,7 @@
       modalidad: 'Online · Clave Única',
       duracion: 'A tu ritmo',
       nivel: 'estandar',
-      url: 'https://www.ceacgr.cl/aulavirtual/course/index.php',
+      url: 'https://www.ceacgr.cl/aulavirtual/enrol/index.php?id=682',
       descripcion: 'Qué cambió con la Ley Karin y qué hacer frente al acoso o la violencia en el trabajo público: prevención, canales de denuncia y el rol de cada quien.',
       gratuito: true,
       demo: false
@@ -107,7 +107,7 @@
       modalidad: 'Online · Clave Única',
       duracion: 'A tu ritmo',
       nivel: 'estandar',
-      url: 'https://www.ceacgr.cl/aulavirtual/course/index.php',
+      url: 'https://www.ceacgr.cl/aulavirtual/enrol/index.php?id=703',
       descripcion: 'Para no ser el eslabón débil: contraseñas, phishing, manejo de datos y resguardo de la información en un servicio público. Sin tecnicismos innecesarios.',
       gratuito: true,
       demo: false
@@ -120,7 +120,7 @@
       modalidad: 'Online · Clave Única',
       duracion: 'A tu ritmo',
       nivel: 'estandar',
-      url: 'https://www.ceacgr.cl/aulavirtual/course/index.php',
+      url: 'https://www.ceacgr.cl/aulavirtual/course/index.php?categoryid=185',
       descripcion: 'Cómo se mueve la plata del Estado: presupuesto, contabilidad gubernamental (NICSP) y rendición de cuentas. Para quien trabaja en finanzas o quiere entenderlas de una vez.',
       gratuito: true,
       demo: false
@@ -133,7 +133,7 @@
       modalidad: 'Online · Clave Única',
       duracion: 'A tu ritmo',
       nivel: 'estandar',
-      url: 'https://www.ceacgr.cl/aulavirtual/course/index.php',
+      url: 'https://www.ceacgr.cl/aulavirtual/course/index.php?categoryid=179',
       descripcion: 'La versión municipal de la inducción: cómo funciona un municipio, qué puede y qué no, y las reglas propias del personal municipal.',
       gratuito: true,
       demo: false

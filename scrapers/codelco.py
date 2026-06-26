@@ -490,7 +490,16 @@ def recolectar(max_results: int | None, delay: float, con_detalle: bool) -> list
             rd = _get(session, it["url"])
             if rd is not None:
                 det = parsear_detalle(rd.text)
-        ofertas.append(construir_oferta(it, det))
+        oferta = construir_oferta(it, det)
+        try:
+            from scrapers.enrich import enriquecer_oferta
+            enriquecer_oferta(
+                oferta,
+                texto_html=det.get("aviso"),
+            )
+        except Exception:
+            logger.debug("  Enriquecimiento no disponible para %s", oferta["cargo"][:40])
+        ofertas.append(oferta)
     return ofertas
 
 

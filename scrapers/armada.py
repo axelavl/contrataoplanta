@@ -433,6 +433,7 @@ def parsear_detalle(html: str) -> dict[str, Any]:
     if m := re.search(r"(Proceso de Selecci[oó]n de .{30,1200}?)(?:Instrucciones|POSTULAR|$)",
                       texto, re.I | re.S):
         d["descripcion"] = limpiar_texto(m.group(1))[:1800]
+    d["texto_detalle"] = texto
     return d
 
 
@@ -613,6 +614,16 @@ def recolectar(max_results: int | None, delay: float, con_detalle: bool,
                         if pdf_datos:
                             logger.info("  Bases PDF: %s", ", ".join(sorted(pdf_datos)))
         o = construir_oferta(it, det)
+        try:
+            from scrapers.enrich import enriquecer_oferta
+            texto_pdf = det.get("texto_pdf")
+            enriquecer_oferta(
+                o,
+                texto_html=det.get("texto_detalle"),
+                texto_detalle=texto_pdf,
+            )
+        except Exception:
+            pass
         # cinturón extra: aunque la card diga abierta, si el plazo ya venció
         if (not incluir_cerrados and o["fecha_cierre"]
                 and o["fecha_cierre"] < hoy):

@@ -2957,7 +2957,7 @@
       "publica_en_empleospublicos": "No",
       "dificultad_scraping": "Media",
       "requiere_js": "No",
-      "notas_tecnicas": "Solo personal civil. Uniformados por vía especial",
+      "notas_tecnicas": null,
       "poblacion_censo2024": null,
       "estado_verificacion": "Por verificar"
     },

@@ -679,6 +679,11 @@ def _procesar_fuente(fuente, session, delay, incluir_cerrados):
         if o["fecha_cierre"] and o["fecha_cierre"] < hoy and not incluir_cerrados:
             omitidas += 1
             continue
+        try:
+            from scrapers.enrich import enriquecer_oferta
+            enriquecer_oferta(o, texto_html=o.get("descripcion"))
+        except Exception:
+            pass
         ofertas.append(o)
     logger.info("  → %d vigentes (%d omitidas por plazo vencido)",
                 len(ofertas), omitidas)

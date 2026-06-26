@@ -289,15 +289,20 @@ def _parsear_detalle(html: str) -> dict[str, Any]:
     main = soup.find("main") or soup.find("article") or soup.body or soup
     texto = main.get_text(" ", strip=True)
     bases = None
+    pdf_urls: list[str] = []
     for a in soup.find_all("a", href=True):
         href = a["href"]
-        if ".pdf" in href.lower() and ("bases" in href.lower() or "concurso" in href.lower()):
-            bases = href
-            break
+        if ".pdf" in href.lower():
+            url_abs = href if href.startswith("http") else BASE + "/" + href.lstrip("/")
+            pdf_urls.append(url_abs)
+            if "bases" in href.lower() or "concurso" in href.lower():
+                bases = url_abs
     return {
         "descripcion": limpiar_texto(texto)[:2000],
+        "texto_completo": texto,
         "fecha_cierre": extraer_cierre(texto),
         "bases_url": bases,
+        "pdf_urls": pdf_urls,
     }
 
 
@@ -327,6 +332,16 @@ def recolectar(max_results: int | None, delay: float, con_detalle: bool,
                 and not incluir_cerrados):
             omitidas += 1
             continue
+        try:
+            from scrapers.enrich import enriquecer_oferta
+            enriquecer_oferta(
+                oferta,
+                texto_html=detalle.get("texto_completo"),
+                pdf_urls=detalle.get("pdf_urls", []),
+                session=session,
+            )
+        except Exception:
+            logger.debug("  Enriquecimiento no disponible para %s", oferta["cargo"][:40])
         ofertas.append(oferta)
         if max_results and len(ofertas) >= max_results:
             break

@@ -525,7 +525,13 @@ def recolectar(max_results: int | None, con_detalle: bool, delay: float) -> list
                         if pdf_datos:
                             logger.info("  Perfil PDF concurso %s: %s",
                                         c["id"], ", ".join(sorted(pdf_datos)))
-        ofertas.append(construir_oferta(c, det))
+        oferta = construir_oferta(c, det)
+        try:
+            from scrapers.enrich import enriquecer_oferta
+            enriquecer_oferta(oferta, texto_html=oferta.get("descripcion"))
+        except Exception:
+            pass
+        ofertas.append(oferta)
         if i % 10 == 0:
             logger.info("  Procesados %d/%d", i, len(cards))
     return ofertas

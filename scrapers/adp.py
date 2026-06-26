@@ -410,6 +410,11 @@ def recolectar(max_results: int | None, incluir_cerrados: bool) -> list[dict]:
                                         o.get("id_externo"), ", ".join(sorted(pdf_datos)))
                 except requests.RequestException as exc:
                     logger.info("  No se pudo descargar PDF ADP: %s", type(exc).__name__)
+        try:
+            from scrapers.enrich import enriquecer_oferta
+            enriquecer_oferta(o, texto_html=o.get("descripcion"))
+        except Exception:
+            pass
         ofertas.append(o)
         if max_results and len(ofertas) >= max_results:
             break
