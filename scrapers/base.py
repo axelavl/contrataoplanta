@@ -174,12 +174,12 @@ def get_pool() -> pg_pool.ThreadedConnectionPool:
         raise RuntimeError("psycopg2 no esta instalado; no se puede abrir el pool PostgreSQL.")
     if _DB_POOL is None:
         _DB_POOL = pg_pool.ThreadedConnectionPool(
-            minconn=int(os.getenv("DB_POOL_MIN", "1")),
-            maxconn=int(os.getenv("DB_POOL_MAX", "5")),
+            minconn=int(os.getenv("DB_POOL_MIN", "2")),
+            maxconn=int(os.getenv("DB_POOL_MAX", "20")),
             **DB_CONFIG,
         )
         log.info("Pool de PostgreSQL inicializado (min=%s, max=%s)",
-                 os.getenv("DB_POOL_MIN", "1"), os.getenv("DB_POOL_MAX", "5"))
+                 os.getenv("DB_POOL_MIN", "2"), os.getenv("DB_POOL_MAX", "20"))
     return _DB_POOL
 
 
@@ -1197,7 +1197,7 @@ class HttpClient:
                                 body=body_text,
                                 headers=dict(resp.headers),
                             )
-                except Exception:
+                except (aiohttp.ClientError, asyncio.TimeoutError, OSError):
                     return HttpFetchResult(
                         url=url, final_url=url, status=None, body=None,
                         error_type="ssl_error", error_detail=str(e),
@@ -2508,8 +2508,9 @@ class LegacyBaseScraper(abc.ABC):
                 )
                 break
 
-        assert last_error is not None
-        raise last_error
+        if last_error is not None:
+            raise last_error
+        raise RuntimeError(f"Request fallido sin error capturado: {url}")
 
     def _enforce_response_size(self, response: "requests.Response", url: str) -> None:
         """Impone MAX_RESPONSE_BYTES sobre el cuerpo de `response`.
