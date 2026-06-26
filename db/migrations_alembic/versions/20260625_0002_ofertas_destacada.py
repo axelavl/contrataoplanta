@@ -13,13 +13,13 @@ las vio en RRSS las reencuentre fácil en el sitio.
 Aditiva y nullable-friendly (default FALSE): aplicar sobre producción no
 afecta filas ni código previo. Idempotente vía ``ADD COLUMN IF NOT EXISTS``.
 
-Además, esta revisión **fusiona los dos heads** que existían en la cadena
-(``20260625_0001_alertas_uniq`` y ``20260625_0001_cursos_cea_enlaces``, ambos
-colgando de ``20260624_0002_snap_renta_tipo``). Sin la fusión, ``alembic
-upgrade head`` —el paso de deploy— fallaría por "multiple head revisions".
+Cuelga de ``20260625_0002_dedup_inst`` (PR #250), que ya fusionó las dos
+cabezas previas (``alertas_uniq`` y ``cursos_cea_enlaces``) en un único head.
+Así la cadena queda lineal y ``alembic upgrade head`` —el paso de deploy—
+resuelve a una sola cabeza.
 
 Revision ID: 20260625_0002_ofertas_destacada
-Revises: 20260625_0001_alertas_uniq, 20260625_0001_cursos_cea_enlaces
+Revises: 20260625_0002_dedup_inst
 Create Date: 2026-06-25
 """
 from __future__ import annotations
@@ -30,10 +30,7 @@ from alembic import op
 
 
 revision: str = "20260625_0002_ofertas_destacada"
-down_revision: Union[str, Sequence[str], None] = (
-    "20260625_0001_alertas_uniq",
-    "20260625_0001_cursos_cea_enlaces",
-)
+down_revision: Union[str, Sequence[str], None] = "20260625_0002_dedup_inst"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

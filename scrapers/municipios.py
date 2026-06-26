@@ -203,7 +203,7 @@ FUENTES: list[dict[str, Any]] = [
      "region": "Valparaíso", "ciudad": "Valparaíso", "modo": "enlaces_detalle",
      "url": "https://cmvalparaiso.cl/trabaja-con-nosotros/",
      "detalle_re": r"/oferta-(?:laboral|trabajo)[^/\"']*"},
-    {"clave": "villalemana", "id": 379, "nombre": "Municipalidad de Villa Alemana",
+    {"clave": "villalemana", "id": 363, "nombre": "Municipalidad de Villa Alemana",
      "region": "Valparaíso", "ciudad": "Villa Alemana", "modo": "enlaces_detalle",
      "url": "https://munivillalemana.gob.cl/ofertas-de-empleos/",
      "detalle_re": r"/ofertas-de-empleos/(?!$)[^/\"']+/?$"},

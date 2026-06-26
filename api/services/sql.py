@@ -273,6 +273,7 @@ def build_ofertas_filters(
     nuevas: bool = False,
     solo_con_correo: bool = False,
     solo_destacadas: bool = False,
+    sin_experiencia: bool = False,
     solo_activas: bool = True,
     closed_only: bool = False,
 ) -> tuple[str, list[Any]]:
@@ -419,5 +420,35 @@ def build_ofertas_filters(
     if nuevas:
         # "Nuevas" = añadidas en las últimas 24 horas (issue #242).
         where.append("COALESCE(o.fecha_scraped, o.detectada_en, o.actualizada_en, o.creada_en) >= NOW() - INTERVAL '24 hours'")
+
+    if sin_experiencia:
+        # "Sin experiencia": ofertas que no exigen experiencia previa. No hay un
+        # campo estructurado confiable (experiencia_anos casi nunca se captura),
+        # así que es best-effort por texto sobre cargo + descripción + requisitos.
+        # Matchea frases que indican que la experiencia NO es obligatoria.
+        # Accent/case-insensitive vía _norm_sql (sin depender de unaccent).
+        texto_oferta = _norm_sql(
+            "COALESCE(o.cargo, '') || ' ' || COALESCE(o.descripcion, '') || ' ' "
+            "|| COALESCE(o.requisitos, o.requisitos_texto, '')"
+        )
+        frases = [
+            "sin experiencia",
+            "no requiere experiencia",
+            "no se requiere experiencia",
+            "no requieren experiencia",
+            "no exige experiencia",
+            "no se exige experiencia",
+            "no requiere experiencia previa",
+            "experiencia no requerida",
+            "experiencia no excluyente",
+            "experiencia no sera requisito",
+            "experiencia deseable",
+            "experiencia no necesaria",
+        ]
+        clauses = [f"{texto_oferta} LIKE %s" for _ in frases]
+        params.extend(_norm_like(f) for f in frases)
+        # Si algún scraper sí pobló los años de experiencia y son 0, también cuenta.
+        clauses.append("o.experiencia_anos = 0")
+        where.append("(" + " OR ".join(clauses) + ")")
 
     return (" WHERE " + " AND ".join(where)) if where else "", params

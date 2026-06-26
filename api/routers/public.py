@@ -170,6 +170,7 @@ def get_ofertas(
     nuevas: bool = Query(False),
     solo_con_correo: bool = Query(False, description="Solo ofertas con correo de postulación/contacto."),
     destacadas: bool = Query(False, description="Solo ofertas destacadas (las que se publican en redes sociales)."),
+    sin_experiencia: bool = Query(False, description="Solo ofertas que no exigen experiencia previa (best-effort por texto)."),
     vista: str = Query("vigentes", pattern="^(vigentes|cerradas|todas)$"),
     orden: str = Query("recientes"),
     pagina: int = Query(1, ge=1),
@@ -195,6 +196,7 @@ def get_ofertas(
         nuevas=nuevas,
         solo_con_correo=solo_con_correo,
         solo_destacadas=destacadas,
+        sin_experiencia=sin_experiencia,
         solo_activas=only_active,
         closed_only=only_closed,
     )
@@ -673,19 +675,40 @@ def get_institucion_estadisticas(institucion_id: int) -> dict[str, Any]:
 
 @router.get("/api/historial")
 def get_historial(
+    q: str | None = Query(None),
     institucion_id: int | None = Query(None),
+    institucion: str | None = Query(None, description="Alias de institucion_id; acepta uno o varios separados por coma."),
     sector: str | None = Query(None),
     region: str | None = Query(None),
     tipo: str | None = Query(None),
+    nivel: str | None = Query(None),
+    profesion: str | None = Query(None),
+    area_profesional: str | None = Query(None),
+    renta_min: int | None = Query(None, ge=0),
+    renta_max: int | None = Query(None, ge=0),
+    ciudad: str | None = Query(None),
+    comunas: str | None = Query(None, description="Lista de comunas separadas por coma"),
+    solo_con_correo: bool = Query(False),
+    sin_experiencia: bool = Query(False),
     pagina: int = Query(1, ge=1),
     por_pagina: int = Query(50, ge=1, le=200),
 ) -> dict[str, Any]:
     pag = Paginacion(pagina=pagina, por_pagina=por_pagina)
     where_sql, params = build_ofertas_filters(
+        q=q,
         region=region,
         sector=sector,
         tipo=tipo,
-        institucion_id=institucion_id,
+        institucion_id=institucion if institucion is not None else institucion_id,
+        nivel=nivel,
+        profesion=profesion,
+        area_profesional=area_profesional,
+        renta_min=renta_min,
+        renta_max=renta_max,
+        ciudad=ciudad,
+        comunas=comunas,
+        solo_con_correo=solo_con_correo,
+        sin_experiencia=sin_experiencia,
         solo_activas=False,
         closed_only=True,
     )
