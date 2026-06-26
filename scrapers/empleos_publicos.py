@@ -626,8 +626,9 @@ class EmpleosPublicosScraper(BaseScraper):
                     exc,
                 )
                 await asyncio.sleep(backoff)
-        assert last_error is not None
-        raise last_error
+        if last_error is not None:
+            raise last_error
+        raise aiohttp.ClientError(f"Request fallido tras {DEFAULT_MAX_ATTEMPTS} intentos: {request.url}")
 
     def _parsear_listado(self, html: str) -> list[dict[str, Any]]:
         soup = BeautifulSoup(html, "html.parser")
