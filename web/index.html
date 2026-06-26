@@ -4,7 +4,7 @@
 <!-- boot.js: theme + js-nav. SIN defer, debe ejecutarse antes del paint
      para evitar flash de tema claro. Externalizado desde `<script>`
      inline para poder declarar CSP `script-src 'self'`. -->
-<script src="boot.js"></script>
+<script src="/boot.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Empleo público en Chile · contrata o planta .cl</title>
@@ -28,14 +28,14 @@
 <!-- Fuentes self-hosted desde web/fonts/. Ver web/styles/fonts.css. Ya no
      hay dependencia con fonts.googleapis.com / fonts.gstatic.com, con lo
      que el CSP puede cerrar `style-src` y `font-src` a `'self'`. -->
-<link rel="stylesheet" href="styles/fonts.css">
+<link rel="stylesheet" href="/styles/fonts.css">
 <!-- Analytics (Umami): activable editando los dos meta tags con el
      URL del script y el website_id de la instancia. Si quedan vacíos,
      `window.track()` queda como no-op y el resto del código sigue
      funcionando. Ver `web/analytics.js`. -->
 <meta name="umami-url" content="">
 <meta name="umami-website-id" content="">
-<script src="analytics.js"></script>
+<script src="/analytics.js"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -66,14 +66,14 @@
   }
 }
 </script>
-<link rel="stylesheet" href="styles/index.css">
-<link rel="stylesheet" href="styles/redesign-overrides.css">
-<link rel="stylesheet" href="styles/integracion/estilos.css">
+<link rel="stylesheet" href="/styles/index.css">
+<link rel="stylesheet" href="/styles/redesign-overrides.css">
+<link rel="stylesheet" href="/styles/integracion/estilos.css">
 <!-- Ajustes de UX móvil + modo oscuro. Va último para sobrescribir lo previo. -->
-<link rel="stylesheet" href="styles/mobile-ux-fixes.css">
-<script defer src="ui-strings.js"></script>
-<script defer src="shared-shell.js"></script>
-<script defer src="nav-mobile.js"></script>
+<link rel="stylesheet" href="/styles/mobile-ux-fixes.css">
+<script defer src="/ui-strings.js"></script>
+<script defer src="/shared-shell.js"></script>
+<script defer src="/nav-mobile.js"></script>
 </head>
 <body data-page="home">
 <a class="skip-link" href="#contenido-principal">Saltar al contenido</a>
@@ -399,7 +399,7 @@
     <div class="widget">
       <div class="widget-header">
         <div class="widget-titulo">📊 En este momento</div>
-        <a href="estadisticas.html" class="widget-ver-todo">Ver todo</a>
+        <a href="/estadisticas.html" class="widget-ver-todo">Ver todo</a>
       </div>
       <div class="widget-body">
         <div class="stat-grid">
@@ -439,7 +439,7 @@
     <div class="widget widget--solo-estadisticas">
       <div class="widget-header">
         <div class="widget-titulo">📈 Histórico mensual</div>
-        <a href="estadisticas.html" class="widget-ver-todo">2025-2026</a>
+        <a href="/estadisticas.html" class="widget-ver-todo">2025-2026</a>
       </div>
       <div class="widget-body">
         <div class="hist-bar-wrap" id="historico-lista">
@@ -723,7 +723,7 @@
 </div>
 
 <!-- ══ JAVASCRIPT ══════════════════════════════════════════════════ -->
-<script src="rich-text.js"></script>
+<script src="/rich-text.js"></script>
 <!-- JS principal en archivo externo (antes era un `<script>` inline
      de ~3 600 líneas). Cargado sync para replicar el timing del
      original: ejecuta antes de nav-mobile.js y antes del
@@ -734,15 +734,15 @@
 <!-- Componentes de integración (vanilla, exponen globals window.*).
      Orden de carga: chile-geo (datos), luego profesiones, ficha-oferta y mapa-chile.
      Deben cargar ANTES de app.js para que los globals existan en su init. -->
-<script src="integracion/chile-geo.js"></script>
-<script src="integracion/profesiones.js"></script>
-<script src="integracion/ficha-oferta.js"></script>
-<script src="integracion/mapa-chile.js"></script>
-<script src="integracion/comparador.js"></script>
-<script src="app.js"></script>
-<script src="ads-config.js"></script>
-<script src="ads.js"></script>
+<script src="/integracion/chile-geo.js"></script>
+<script src="/integracion/profesiones.js"></script>
+<script src="/integracion/ficha-oferta.js"></script>
+<script src="/integracion/mapa-chile.js"></script>
+<script src="/integracion/comparador.js"></script>
+<script src="/app.js"></script>
+<script src="/ads-config.js"></script>
+<script src="/ads.js"></script>
 <!-- Mejoras UX móvil: alto real de la cinta + acordeón de la ficha. -->
-<script defer src="mobile-ux.js"></script>
+<script defer src="/mobile-ux.js"></script>
 </body>
 </html>
