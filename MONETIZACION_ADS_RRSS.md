@@ -41,7 +41,7 @@ más que saturar la página.
   desactivados, esos orígenes no se contactan.
 
 ### Pasos para activarlo
-1. Crea cuenta en Google AdSense y verifica el dominio (`estadoemplea.pages.dev`
+1. Crea cuenta en Google AdSense y verifica el dominio (`contrataoplanta.cl`
    o el dominio propio que uses).
 2. Crea unidades de anuncio y copia el `client` y el `slot id` de cada una.
 3. Rellena `web/ads-config.js` y pon `enabled: true`.

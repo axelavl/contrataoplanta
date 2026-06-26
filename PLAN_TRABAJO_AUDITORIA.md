@@ -1,4 +1,4 @@
-# Plan de trabajo — Auditoría y corrección (estadoemplea / contrata o planta)
+# Plan de trabajo — Auditoría y corrección (contrataoplanta — contrata o planta)
 
 Backlog priorizado del PLAN MAESTRO (14 partes). Orden por dependencias, no por número.
 Estado por ítem: ✅ corregido · 🟡 parcial · ⬜ pendiente · ❓ requiere decisión de contenido.
