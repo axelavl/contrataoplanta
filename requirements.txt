@@ -14,6 +14,10 @@ requests==2.33.1
 # pdfplumber 0.11.9 arrastra pdfminer.six con fix de CVE-2025-64512
 # y CVE-2025-70559.
 pdfplumber==0.11.9
+# OCR opcional (scrapers/carabineros.py --ocr para las Bases escaneadas).
+# Requiere además el binario del sistema `tesseract-ocr` con `tesseract-ocr-spa`.
+# Descomentar si se habilita OCR en el deploy:
+# pytesseract==0.3.13
 # Playwright: navegador headless para scrapers de sitios JS/anti-bot
 # (bcentral=Incapsula, laborum=SPA Navent). OJO: `pip install` instala sólo la
 # librería; el navegador hay que bajarlo aparte en el deploy con:

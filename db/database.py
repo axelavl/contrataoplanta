@@ -120,6 +120,7 @@ def normalizar_datos_oferta(datos: dict) -> dict:
         "region": 80,
         "ciudad": 80,
         "renta_texto": 200,
+        "modalidad": 50,
     }
     for campo, limite in limites.items():
         normalizados[campo] = truncar_texto(normalizados.get(campo), limite)
@@ -162,6 +163,8 @@ def upsert_oferta(db: Session, datos: dict) -> tuple[bool, bool]:
     datos = normalizar_datos_oferta(datos)
     datos.setdefault("institucion_id", None)  # FK a instituciones; NULL si no aplica
     datos.setdefault("url_bases", None)
+    datos.setdefault("modalidad", None)
+    datos.setdefault("horas_semanales", None)
     url_hash = url_a_hash(datos["url_original"])
 
     # Parte 1.8 — llave difusa para detectar la misma oferta entre portales.
@@ -228,7 +231,7 @@ def upsert_oferta(db: Session, datos: dict) -> tuple[bool, bool]:
                     region, ciudad,
                     renta_bruta_min, renta_bruta_max, renta_texto, renta_tipo, renta_regional,
                     fecha_publicacion, fecha_cierre,
-                    requisitos_texto, url_bases,
+                    requisitos_texto, url_bases, modalidad, horas_semanales,
                     activa, es_nueva, detectada_en
                 ) VALUES (
                     :id_externo, :fuente_id, :url_original, :url_hash, :dedup_hash,
@@ -238,7 +241,7 @@ def upsert_oferta(db: Session, datos: dict) -> tuple[bool, bool]:
                     :region, :ciudad,
                     :renta_bruta_min, :renta_bruta_max, :renta_texto, :renta_tipo, CAST(:renta_regional AS JSONB),
                     :fecha_publicacion, :fecha_cierre,
-                    :requisitos_texto, :url_bases,
+                    :requisitos_texto, :url_bases, :modalidad, :horas_semanales,
                     TRUE, TRUE, NOW()
                 )
             """), {**datos, "url_hash": url_hash, **params_extra})
@@ -267,6 +270,8 @@ def upsert_oferta(db: Session, datos: dict) -> tuple[bool, bool]:
                     fecha_cierre        = COALESCE(:fecha_cierre, fecha_cierre),
                     requisitos_texto    = COALESCE(NULLIF(:requisitos_texto, ''), requisitos_texto),
                     url_bases           = COALESCE(NULLIF(:url_bases, ''), url_bases),
+                    modalidad           = COALESCE(NULLIF(:modalidad, ''), modalidad),
+                    horas_semanales     = COALESCE(:horas_semanales, horas_semanales),
                     dedup_hash          = COALESCE(:dedup_hash, dedup_hash),
                     renta_regional      = COALESCE(CAST(:renta_regional AS JSONB), renta_regional),
                     activa              = TRUE,
@@ -291,6 +296,8 @@ def upsert_oferta(db: Session, datos: dict) -> tuple[bool, bool]:
                 "fecha_cierre": datos.get("fecha_cierre"),
                 "requisitos_texto": datos.get("requisitos_texto"),
                 "url_bases": datos.get("url_bases"),
+                "modalidad": datos.get("modalidad"),
+                "horas_semanales": datos.get("horas_semanales"),
                 "dedup_hash": dedup_hash,
                 "renta_regional": renta_regional_json,
                 "h": url_hash
