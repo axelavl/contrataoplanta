@@ -453,6 +453,7 @@ def construir_oferta(item: dict[str, Any], det: dict[str, Any]) -> dict:
         "fecha_publicacion": item.get("fecha_publicacion") or date.today(),
         "fecha_cierre": det.get("fecha_cierre"),
         "requisitos_texto": requisitos,
+        "url_bases": None,
     }
 
 
@@ -492,10 +493,13 @@ def recolectar(max_results: int | None, delay: float, con_detalle: bool) -> list
                 det = parsear_detalle(rd.text)
         oferta = construir_oferta(it, det)
         try:
-            from scrapers.enrich import enriquecer_oferta
+            from scrapers.enrich import enriquecer_oferta, encontrar_pdf_urls
+            pdf_urls = encontrar_pdf_urls(rd.text, it["url"]) if (con_detalle and rd) else []
             enriquecer_oferta(
                 oferta,
                 texto_html=det.get("aviso"),
+                pdf_urls=pdf_urls,
+                session=session,
             )
         except Exception:
             logger.debug("  Enriquecimiento no disponible para %s", oferta["cargo"][:40])

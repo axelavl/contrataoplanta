@@ -639,6 +639,7 @@ def construir_oferta(item, fuente):
         "fecha_publicacion": date.today(),
         "fecha_cierre": item.get("fecha_cierre"),
         "requisitos_texto": item.get("requisitos"),
+        "url_bases": item["url"] if item["url"].lower().endswith(".pdf") else item.get("url_bases"),
     }
 
 

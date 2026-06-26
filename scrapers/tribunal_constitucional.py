@@ -352,6 +352,7 @@ def construir_oferta(item: dict[str, Any], perfil: dict[str, Any],
         "fecha_publicacion": fecha_pub or date.today(),
         "fecha_cierre": perfil.get("fecha_cierre"),
         "requisitos_texto": perfil.get("requisitos"),
+        "url_bases": bases_url,
     }
 
 

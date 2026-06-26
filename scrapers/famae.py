@@ -266,6 +266,7 @@ def construir_oferta(item: dict[str, Any], det: dict[str, Any]) -> dict:
         "fecha_publicacion": date.today(),
         "fecha_cierre": det.get("fecha_cierre"),
         "requisitos_texto": det.get("requisitos_texto"),
+        "url_bases": None,
     }
 
 

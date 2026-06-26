@@ -259,6 +259,7 @@ def construir_oferta(o: dict[str, Any]) -> dict:
         "fecha_publicacion": fecha_pub or date.today(),
         "fecha_cierre": _fecha_ddmmyyyy(str(o.get("validity") or "")),
         "requisitos_texto": None,  # el detalle carga por widget sin endpoint expuesto
+        "url_bases": None,
     }
 
 
