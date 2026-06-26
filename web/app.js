@@ -185,6 +185,16 @@ document.addEventListener('click', function (e) {
       el.setAttribute('aria-expanded', colapsadoObj ? 'false' : 'true');
       break;
     }
+    case 'toggle-desc': {
+      // Expandir/contraer la descripción de la tarjeta.
+      const wrap = el.closest('.oferta-desc-wrap');
+      const desc = wrap && wrap.querySelector('.oferta-desc');
+      if (desc) {
+        const expandida = desc.classList.toggle('expandida');
+        el.textContent = expandida ? 'Ver menos' : 'Ver más';
+      }
+      break;
+    }
     case 'noop':
       // Hace sólo stopPropagation (caso botón "bases no disponibles"
       // dentro de card, que evita que se dispare el click de la card).
@@ -1370,6 +1380,11 @@ function renderCard(oferta) {
   // institución. La "Renta no informada" también se omite — es ruido
   // cuando el dato no está; preferimos ocultar el span.
   const UI = window.UI_STRINGS || {};
+  // Descripción de la tarjeta: texto plano recortado a una altura estándar
+  // (CSS line-clamp) con "ver más" para expandir. Se oculta si no hay datos
+  // (igual que el resto de campos sin contenido).
+  const _descRaw = (oferta.descripcion || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  const _descCard = _descRaw ? escHtml(_descRaw) : '';
   return `
   <div class="oferta-card${esFav ? ' favorita' : ''}${oferta.destacada ? ' destacada' : ''}${plazo.clase ? ' urg-' + plazo.clase : ''}" data-oferta-id="${oferta.id}" role="button" tabindex="0" aria-label="Ver detalle: ${escAttr(cargoDisplay)}">
     <button class="btn-fav-card${esFav ? ' activo' : ''}"
@@ -1408,6 +1423,10 @@ function renderCard(oferta) {
         ? `<span class="oferta-frescura${frescura.startsWith('✨') ? ' frescura-nueva' : ''}">${escHtml(frescura)}</span>`
         : (oferta.fecha_publicacion ? `<span class="oferta-detalle">🗓 Publicada ${formatFecha(oferta.fecha_publicacion)}</span>` : '')}
     </div>
+    ${_descCard ? `<div class="oferta-desc-wrap">
+      <p class="oferta-desc">${_descCard}</p>
+      <button class="oferta-desc-toggle" type="button" data-action="toggle-desc" data-stop-propagation="true" hidden>Ver más</button>
+    </div>` : ''}
     <div class="oferta-footer">
       <div class="oferta-plazo">
         <div class="plazo-dot ${plazo.clase}"></div>
@@ -1421,6 +1440,18 @@ function renderCard(oferta) {
     </div>
     ${jobPosting.markup}
   </div>`;
+}
+
+// Muestra el botón "Ver más" SOLO en las tarjetas cuya descripción excede la
+// altura recortada (line-clamp). Se llama tras pintar la lista.
+function _ajustarDescripciones(scope) {
+  (scope || document).querySelectorAll('.oferta-desc').forEach((p) => {
+    const wrap = p.parentElement;
+    const toggle = wrap && wrap.querySelector('.oferta-desc-toggle');
+    if (!toggle) return;
+    // scrollHeight > clientHeight ⇒ el texto está recortado.
+    toggle.hidden = p.scrollHeight <= p.clientHeight + 2;
+  });
 }
 
 // ── Favorito directo desde tarjeta ────────────────────────────────────────
@@ -1893,6 +1924,7 @@ const itemsHtml = ofertasFiltradas.map((oferta, i) => {
 }).join('');
 
 lista.innerHTML = header + itemsHtml;
+    _ajustarDescripciones(lista);
     if (window.repintarComparar) window.repintarComparar();
     // Paginación
     renderPaginacion(data.total ?? ofertasFiltradas.length, data.paginas ?? 1);

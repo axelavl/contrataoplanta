@@ -900,6 +900,22 @@ nav {
 .oferta-detalle {
   display: flex; align-items: center; gap: 5px;
 }
+
+/* Descripción de la tarjeta: altura estándar recortada a 3 líneas + "ver más".
+   Se expande in-situ al togglear .expandida. El botón sólo aparece (vía JS)
+   cuando el texto realmente excede el recorte. */
+.oferta-desc-wrap { margin: 0 0 10px; }
+.oferta-desc {
+  margin: 0; font-size: 13px; line-height: 1.5; color: var(--texto2);
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+.oferta-desc.expandida { -webkit-line-clamp: unset; overflow: visible; }
+.oferta-desc-toggle {
+  margin-top: 4px; padding: 0; border: none; background: none; cursor: pointer;
+  color: var(--cielo); font: 600 12px/1 'Inter', sans-serif;
+}
+.oferta-desc-toggle:hover { text-decoration: underline; }
 .oferta-detalle svg { opacity: .5; flex-shrink: 0; }
 .oferta-renta {
   font-weight: 700; color: var(--texto);
