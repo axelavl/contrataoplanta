@@ -306,6 +306,7 @@
             <option value="30" selected>Últimos 30 días</option>
             <option value="90">Últimos 90 días</option>
           </select>
+          <button class="btn btn-ghost btn-sm" data-action="export-analitica">⬇ CSV</button>
           <button class="btn btn-ghost btn-sm" data-action="load-analitica">↻ Actualizar</button>
         </div>
       </div>
@@ -322,6 +323,16 @@
       <div class="section-header" style="margin-top:8px"><h2>Tendencia de visitas</h2></div>
       <div class="table-wrap" style="padding:18px;margin-bottom:22px">
         <div id="an-chart" style="min-height:160px"></div>
+      </div>
+
+      <!-- Embudo de conversión -->
+      <div class="section-header" style="margin-top:8px"><h2>Embudo de conversión</h2></div>
+      <p class="text-muted" style="margin:-4px 0 12px;font-size:13px">
+        Cuántos visitantes avanzan desde entrar al sitio hasta postular. Cada barra
+        es el % respecto del total de visitantes del período.
+      </p>
+      <div class="table-wrap" style="padding:18px;margin-bottom:22px">
+        <div id="an-embudo"></div>
       </div>
 
       <!-- Páginas y referidos -->

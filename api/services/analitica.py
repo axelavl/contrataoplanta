@@ -255,6 +255,33 @@ def resumen_interno(dias: int = 30) -> dict[str, Any]:
             [dias],
         )
 
+        # Embudo de conversión: sesiones distintas que llegan a cada paso.
+        # Mide cuánta gente avanza de "visitar" → "ver una oferta" →
+        # "hacer clic en Postular". Las tasas se calculan en el frontend.
+        embudo_row = execute_fetch_one(
+            """
+            SELECT
+                COUNT(DISTINCT sesion)                                            AS visitaron,
+                COUNT(DISTINCT sesion) FILTER (WHERE evento = 'ver_oferta')       AS vieron_oferta,
+                COUNT(DISTINCT sesion) FILTER (WHERE evento = 'click_postular')   AS postularon,
+                COUNT(DISTINCT sesion) FILTER (WHERE evento = 'click_bases')      AS vieron_bases,
+                COUNT(DISTINCT sesion) FILTER (WHERE evento = 'suscribir_alerta') AS se_suscribieron
+            FROM web_eventos
+            WHERE sesion IS NOT NULL AND ts >= NOW() - make_interval(days => %s)
+            """,
+            [dias],
+        ) or {}
+        base = int(embudo_row.get("visitaron") or 0) or 1
+        embudo = [
+            {"paso": "Visitaron el sitio", "sesiones": int(embudo_row.get("visitaron") or 0)},
+            {"paso": "Vieron una oferta", "sesiones": int(embudo_row.get("vieron_oferta") or 0)},
+            {"paso": "Revisaron las bases", "sesiones": int(embudo_row.get("vieron_bases") or 0)},
+            {"paso": "Clic en Postular", "sesiones": int(embudo_row.get("postularon") or 0)},
+            {"paso": "Se suscribieron a alertas", "sesiones": int(embudo_row.get("se_suscribieron") or 0)},
+        ]
+        for paso in embudo:
+            paso["pct"] = round(paso["sesiones"] * 100 / base, 1)
+
         return {
             "disponible": True,
             "dias": dias,
@@ -265,6 +292,7 @@ def resumen_interno(dias: int = 30) -> dict[str, Any]:
             "dispositivos": dispositivos,
             "eventos_top": eventos_top,
             "ofertas_top": ofertas_top,
+            "embudo": embudo,
         }
     except Exception as exc:
         logger.warning(f"[analitica] resumen interno no disponible: {exc}")

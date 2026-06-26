@@ -438,6 +438,35 @@ def admin_analitica(
     return {"dias": dias, "interno": interno, "umami": umami}
 
 
+@router.get(f"/api/{ADMIN_PATH}/analitica/export", tags=["admin"])
+def admin_analitica_export(
+    dias: int = Query(30, ge=1, le=365),
+    _user: str = Depends(_verify_admin_jwt),
+) -> Response:
+    """Exporta la analítica del sitio como CSV (serie diaria + páginas top).
+
+    Pensado para abrir en una planilla: una sección con visitas por día y
+    otra con las páginas más vistas del período.
+    """
+    interno = analitica_resumen_interno(dias)
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow([f"Estadísticas del sitio — últimos {dias} días"])
+    writer.writerow([])
+    writer.writerow(["Fecha", "Páginas vistas", "Visitantes"])
+    for fila in (interno.get("serie") or []):
+        writer.writerow([fila.get("dia", ""), fila.get("vistas", 0), fila.get("visitantes", 0)])
+    writer.writerow([])
+    writer.writerow(["Página", "Vistas"])
+    for fila in (interno.get("top_paginas") or []):
+        writer.writerow([fila.get("path", ""), fila.get("vistas", 0)])
+    return Response(
+        content=buf.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=estadisticas_{dias}d.csv"},
+    )
+
+
 @router.get(f"/api/{ADMIN_PATH}/ofertas", tags=["admin"])
 def admin_ofertas(
     pagina: int = Query(1, ge=1),

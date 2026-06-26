@@ -470,11 +470,13 @@ async function loadAnalitica() {
       });
       document.getElementById('an-chart').innerHTML = '<p class="text-muted">Aún no hay visitas registradas.</p>';
       document.getElementById('an-dispositivos').innerHTML = '<p class="text-muted">—</p>';
+      document.getElementById('an-embudo').innerHTML = '<p class="text-muted">Aún no hay datos del embudo.</p>';
       renderUmami(d.umami || {});
       return;
     }
     renderAnaliticaCards(interno.totales || {});
     renderAnaliticaChart(interno.serie || []);
+    renderEmbudo(interno.embudo || []);
     renderAnaliticaLista('an-paginas', interno.top_paginas || [], 'path', 'vistas');
     renderAnaliticaLista('an-referidos', interno.top_referidos || [], 'host', 'visitas', 'Tráfico directo (sin referido)');
     renderDispositivos(interno.dispositivos || []);
@@ -597,6 +599,43 @@ function renderUmami(umami) {
     <div class="stat-card"><div class="label">Visitas</div><div class="value">${val(s.visits).toLocaleString()}</div></div>
     <div class="stat-card yellow"><div class="label">Rebotes</div><div class="value">${val(s.bounces).toLocaleString()}</div></div>
   `;
+}
+
+function renderEmbudo(pasos) {
+  const cont = document.getElementById('an-embudo');
+  if (!pasos.length || (pasos[0] && !pasos[0].sesiones)) {
+    cont.innerHTML = '<p class="text-muted">Aún no hay suficientes datos para el embudo.</p>';
+    return;
+  }
+  cont.innerHTML = pasos.map((p, i) => {
+    const prev = i > 0 ? pasos[i-1].sesiones : null;
+    const conv = (prev && prev > 0) ? Math.round((p.sesiones/prev)*100) : null;
+    return `<div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px">
+        <span>${escAttr(p.paso)}</span>
+        <span class="text-muted">${(p.sesiones||0).toLocaleString()} · ${p.pct}%${conv!=null?` <span style="color:var(--green)">(${conv}% del paso anterior)</span>`:''}</span>
+      </div>
+      <div style="height:22px;background:var(--surface2);border-radius:5px;overflow:hidden">
+        <div style="height:100%;width:${Math.max(p.pct||0,1)}%;background:linear-gradient(90deg,var(--accent),var(--accent-hover));display:flex;align-items:center;padding-left:8px;color:#fff;font-size:11px;font-weight:600">${p.pct}%</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function exportAnalitica() {
+  const dias = parseInt(document.getElementById('an-dias').value) || 30;
+  try {
+    const r = await fetch(`${API_BASE}/api/${ADMIN_PATH}/analitica/export?dias=${dias}`, {
+      headers: { Authorization: _creds.header }
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `estadisticas_${dias}d.csv`; a.click();
+    URL.revokeObjectURL(url);
+    toast('CSV descargado ✓');
+  } catch (e) { toast('Error: ' + e.message, 'error'); }
 }
 
 // ── OFERTAS ───────────────────────────────────────────────────
@@ -1153,13 +1192,23 @@ async function loadDiagnostico() {
       <span style="font-weight:600;color:${nivelColor}">Sistema ${nivel==='ok'?'en orden':`con ${alertas.length} alerta(s)`}</span>
     </div>`;
 
+    // Acciones directas disponibles para algunas alertas (un clic resuelve).
+    const accionDirecta = {
+      'bulk-desactivar': { action: 'diag-desactivar-vencidas', label: '✓ Desactivar vencidas' },
+      'revalidar-urls':  { action: 'diag-revalidar', label: '↻ Revalidar ahora' },
+    };
+
     // Alertas individuales
     alertas.forEach(a => {
       const bg = {error:'#dc262218',warning:'#d9770618',info:'#1d4ed818'}[a.nivel]||'var(--surface)';
       const co = {error:'var(--red)',warning:'var(--yellow)',info:'#60a5fa'}[a.nivel]||'var(--muted)';
+      const dir = accionDirecta[a.accion];
       html += `<div style="background:${bg};border:1px solid ${co}44;border-radius:var(--radius);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
         <span style="color:${co}">${a.mensaje}</span>
-        <button class="btn btn-ghost btn-sm" data-action="ir-a" data-target="${escAttr(a.accion)}">Ver →</button>
+        <span style="display:flex;gap:6px;white-space:nowrap">
+          ${dir?`<button class="btn btn-primary btn-sm" data-action="${dir.action}">${dir.label}</button>`:''}
+          <button class="btn btn-ghost btn-sm" data-action="ir-a" data-target="${escAttr(a.accion)}">Ver →</button>
+        </span>
       </div>`;
     });
 
@@ -1645,6 +1694,7 @@ document.addEventListener('click', e => {
     case 'logout':             logout(); break;
     case 'load-dashboard':     loadDashboard(); break;
     case 'load-analitica':     loadAnalitica(); break;
+    case 'export-analitica':   exportAnalitica(); break;
     case 'load-diagnostico':   loadDiagnostico(); break;
     case 'export-ofertas':     exportOfertas(); break;
     case 'load-scrapers':      loadScrapers(); break;
@@ -1686,8 +1736,19 @@ document.addEventListener('click', e => {
     case 'run-instancia':      runInstancia(parseInt(d.id), d.nombre||''); break;
     case 'ver-log':            verLog(d.log); break;
     case 'ir-a':               irA(d.target); break;
+    case 'diag-desactivar-vencidas': diagDesactivarVencidas(); break;
+    case 'diag-revalidar':     revalidarUrls(); break;
   }
 });
+
+async function diagDesactivarVencidas() {
+  if (!confirm('¿Desactivar todas las ofertas activas con fecha de cierre ya vencida?')) return;
+  try {
+    const r = await api('/ofertas/bulk-desactivar', { method:'POST', body: JSON.stringify({ fecha_cierre_vencida: true }) });
+    toast(`${r.desactivadas} ofertas vencidas desactivadas ✓`);
+    loadDashboard();
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
 
 document.addEventListener('change', e => {
   // Selección múltiple de ofertas (checkboxes sin data-change)
