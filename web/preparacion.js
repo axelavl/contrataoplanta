@@ -568,14 +568,14 @@
 
   // ── Clasificación por tema (derivada de la fuente, sin duplicar datos) ────
   function temaDe(f) {
-    if (f.indexOf('Ley 19.880') === 0) return 'Procedimiento administrativo';
+    if (f.indexOf('Ley 19.880') === 0) return 'Procedimientos administrativos';
     if (f.indexOf('Estatuto') === 0) return 'Estatuto Administrativo';
     if (f.indexOf('Ley 18.575') === 0) return 'Bases de la Administración';
     if (f.indexOf('Ley 20.880') === 0) return 'Probidad';
     if (f.indexOf('Ley 19.886') === 0) return 'Compras públicas';
     if (f.indexOf('Ley 20.285') === 0) return 'Transparencia';
     if (f.indexOf('Ley 20.730') === 0) return 'Lobby';
-    return 'Contraloría y Estado';
+    return 'Estado';
   }
 
   // Etiqueta cada pregunta con su tema una sola vez.
@@ -658,13 +658,14 @@
     cont.innerHTML =
       '<div class="quiz-config">' +
         '<h3 class="quiz-config-tit">Arma tu simulacro</h3>' +
-        '<p class="quiz-config-lbl">Elige una materia (o todas):</p>' +
+        '<p class="quiz-config-lbl">Elige una materia para enfocarte, o déjalo en «Todas»:</p>' +
         '<div class="quiz-temas">' + chips + '</div>' +
         '<label class="quiz-toggle">' +
           '<input type="checkbox" id="quiz-cr"' + (CONFIG.contrarreloj ? ' checked' : '') + '>' +
-          '<span>Modo contrarreloj · ' + SEGUNDOS + ' s por pregunta</span>' +
+          '<span class="quiz-switch" aria-hidden="true"></span>' +
+          '<span class="quiz-toggle-txt"><strong>Modo contrarreloj</strong> · ' + SEGUNDOS + ' s por pregunta</span>' +
         '</label>' +
-        '<button class="quiz-next quiz-config-start" id="quiz-start">Comenzar (5 preguntas) →</button>' +
+        '<button class="quiz-next quiz-config-start" id="quiz-start">Iniciar cuestionario</button>' +
       '</div>';
 
     Array.prototype.forEach.call(cont.querySelectorAll('.quiz-tema-chip'), function (btn) {

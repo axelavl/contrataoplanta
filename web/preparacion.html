@@ -86,9 +86,17 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .quiz-tema-chip{font-size:13px;font-family:inherit;color:var(--texto2);background:var(--bg);border:1px solid var(--borde);border-radius:20px;padding:7px 14px;cursor:pointer;transition:all .15s}
 .quiz-tema-chip:hover{border-color:var(--cielo)}
 .quiz-tema-chip.is-sel{background:var(--azul);color:var(--blanco);border-color:var(--azul)}
-.quiz-toggle{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--texto);margin:20px 0 8px;cursor:pointer}
-.quiz-toggle input{width:17px;height:17px;accent-color:var(--azul);cursor:pointer}
-.quiz-config-start{margin-top:14px}
+/* Modo contrarreloj: switch en vez de checkbox nativo. */
+.quiz-toggle{display:flex;align-items:center;gap:11px;font-size:14px;color:var(--texto2);margin:22px 0 4px;cursor:pointer;user-select:none}
+.quiz-toggle input{position:absolute;width:1px;height:1px;opacity:0;margin:0}
+.quiz-switch{position:relative;flex:0 0 auto;width:40px;height:23px;border-radius:999px;background:var(--borde);transition:background .18s}
+.quiz-switch::after{content:'';position:absolute;top:2px;left:2px;width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.28);transition:transform .18s}
+.quiz-toggle input:checked + .quiz-switch{background:var(--azul)}
+.quiz-toggle input:checked + .quiz-switch::after{transform:translateX(17px)}
+.quiz-toggle input:focus-visible + .quiz-switch{outline:2px solid var(--cielo);outline-offset:2px}
+.quiz-toggle-txt{line-height:1.35}
+.quiz-toggle-txt strong{font-weight:600;color:var(--texto)}
+.quiz-config-start{margin-top:18px;padding:12px 22px;font-size:14.5px}
 .quiz-resultado{text-align:center;padding:14px 0}
 .quiz-resultado-pct{font-family:'Fraunces',Georgia,serif;font-size:56px;color:var(--azul);line-height:1}
 .quiz-resultado-msg{font-size:15px;color:var(--texto2);margin:8px 0 20px}
@@ -202,7 +210,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 
   <!-- SIMULACRO -->
   <h2 class="sec-titulo">Simulacro: conocimientos del Estado</h2>
-  <p class="sec-sub">Pon a prueba lo que suele medirse en concursos: procedimiento administrativo, Estatuto Administrativo, probidad, compras públicas, transparencia, lobby y organización del Estado. Filtra por ley o activa el modo contrarreloj. Son 5 preguntas que rotan en cada visita, tomadas de un banco de más de 70, con explicación y fuente (ley y artículo) en cada respuesta.</p>
+  <p class="sec-sub">Practica con las preguntas que de verdad aparecen en los concursos del Estado. En cada intento te toca un set nuevo de 5 preguntas, elegidas de un banco de más de 70, sobre las materias que más se evalúan: procedimientos administrativos, Estatuto Administrativo, probidad, compras públicas, transparencia, lobby y organización del Estado. Puedes practicar todas a la vez o concentrarte en una sola, y activar el contrarreloj si quieres medir tu tiempo. Cada respuesta trae una explicación clara y la fuente legal exacta —ley y artículo— que la respalda.</p>
   <div class="quiz-card">
     <div id="quiz-cont"></div>
   </div>
@@ -215,8 +223,8 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
   <div class="cursos-card">
     <span class="cursos-badge">Gratis</span>
     <h3>Cursos y certificaciones del Estado</h3>
-    <p>Reunimos capacitación gratuita de organismos públicos —Contraloría (CEA), ChileCompra, Servicio Civil y SUBDERE— en inducción, Estatuto Administrativo, compras públicas, probidad y más. Puedes filtrar por área, nivel y tipo.</p>
-    <a class="rec-btn" href="cursos.html" style="margin-top:14px;background:#fff;color:var(--azul);font-weight:700">Ver cursos en Capacítate →</a>
+    <p>Reunimos en un solo lugar los cursos y certificaciones gratuitas de organismos del Estado —Contraloría (CEA), ChileCompra, Servicio Civil y SUBDERE— en temas como inducción, Estatuto Administrativo, compras públicas y probidad. Fíltralos por área, nivel y tipo, y elige el que mejor se ajuste a tu camino.</p>
+    <a class="rec-btn" href="cursos.html" style="margin-top:14px;background:#fff;color:var(--azul);font-weight:700">Ver cursos</a>
   </div>
 
   <p class="fuente-nota">
