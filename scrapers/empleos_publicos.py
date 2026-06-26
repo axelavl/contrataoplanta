@@ -1154,7 +1154,41 @@ class EmpleosPublicosScraper(BaseScraper):
         {"privacidad", "privacy", "cookies", "aviso legal", "terminos de uso", "términos de uso"}
     )
 
+    # PDF oficial de bases en el repositorio del portal. empleospublicos publica
+    # las bases (resumidas o completas) como un PDF servido desde
+    # `/Repositoriof/PDFConcursos.../...pdf`, p.ej.:
+    #   /Repositoriof/PDFConcursosResumidos/OtrosEmpleos/Concurso_OtrosEmpleos_141142_23062026_18111.pdf
+    # La ficha lo expone como botón de descarga, pero el enlace puede venir en un
+    # `href`, un `onclick`, un `iframe`/`embed` o una variable de script, así que
+    # lo buscamos sobre el HTML completo (no sólo en los `<a href>`). Acepta el
+    # path relativo o absoluto; `urljoin` lo resuelve contra la ficha.
+    _RE_PDF_BASES_REPO: re.Pattern[str] = re.compile(
+        r"""(?:https?://[^"'\s<>()]+)?/Repositoriof/[^"'\s<>()]+?\.pdf""",
+        re.IGNORECASE,
+    )
+
+    def _extraer_pdf_bases_repositorio(
+        self, soup: BeautifulSoup, fallback_url: str
+    ) -> str | None:
+        """Devuelve el PDF oficial de bases del repositorio si está en la ficha.
+
+        Escanea el HTML completo (href, onclick, iframe/embed, scripts) por el
+        path canónico ``/Repositoriof/...pdf``. Devuelve None si no aparece.
+        """
+        html = str(soup)
+        match = self._RE_PDF_BASES_REPO.search(html)
+        if not match:
+            return None
+        href = match.group(0).replace("&amp;", "&").strip()
+        return urljoin(fallback_url, href)
+
     def _extraer_url_bases(self, soup: BeautifulSoup, fallback_url: str) -> str | None:
+        # Prioridad 0: PDF oficial de bases en el repositorio del portal. Es el
+        # documento que el usuario realmente quiere ("Ver/Descargar bases"); va
+        # antes que cualquier heurística de anchors.
+        repo_pdf = self._extraer_pdf_bases_repositorio(soup, fallback_url)
+        if repo_pdf:
+            return repo_pdf
         anchors = soup.select("a[href]")
         # Pase 1: matchear por hint, en el orden definido. Devolvemos el
         # PRIMER hint que aparezca en el DOM para cada nivel de prioridad.
