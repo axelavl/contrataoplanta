@@ -153,6 +153,7 @@ document.querySelectorAll('nav button').forEach(btn => {
     btn.classList.add('active');
     document.getElementById('tab-' + tab).classList.add('active');
     if (tab === 'ofertas')  loadOfertas(1);
+    else if (tab === 'estadisticas') loadAnalitica();
     else if (tab === 'scrapers') loadScrapers();
     else if (tab === 'fuentes')  loadFuentes();
     else if (tab === 'revision') loadRevision();
@@ -395,12 +396,12 @@ async function loadDashboard() {
 function renderStatCards(d) {
   const t = d.totales||{};
   document.getElementById('stats-grid').innerHTML = `
-    <div class="stat-card blue"><div class="label">Ofertas activas</div><div class="value">${(t.activas||0).toLocaleString()}</div><div class="sub">de ${(t.total||0).toLocaleString()} total</div></div>
+    <div class="stat-card blue"><div class="label">Ofertas publicadas</div><div class="value">${(t.activas||0).toLocaleString()}</div><div class="sub">de ${(t.total||0).toLocaleString()} en total</div></div>
     <div class="stat-card"><div class="label">Instituciones</div><div class="value">${(t.instituciones||0).toLocaleString()}</div></div>
-    <div class="stat-card green"><div class="label">URLs válidas</div><div class="value">${(t.urls_validas||0).toLocaleString()}</div></div>
-    <div class="stat-card red"><div class="label">URLs rotas</div><div class="value">${(t.urls_rotas||0).toLocaleString()}</div></div>
-    <div class="stat-card yellow"><div class="label">Sin validar</div><div class="value">${(t.urls_sin_validar||0).toLocaleString()}</div></div>
-    <div class="stat-card"><div class="label">Revisión pendiente</div><div class="value">${(t.needs_review||0).toLocaleString()}</div></div>
+    <div class="stat-card green"><div class="label">Enlaces que funcionan</div><div class="value">${(t.urls_validas||0).toLocaleString()}</div></div>
+    <div class="stat-card red"><div class="label">Enlaces caídos</div><div class="value">${(t.urls_rotas||0).toLocaleString()}</div></div>
+    <div class="stat-card yellow"><div class="label">Enlaces sin revisar</div><div class="value">${(t.urls_sin_validar||0).toLocaleString()}</div></div>
+    <div class="stat-card"><div class="label">Pendientes de revisión</div><div class="value">${(t.needs_review||0).toLocaleString()}</div></div>
   `;
 }
 
@@ -408,11 +409,11 @@ function renderUrlStats(uv) {
   const g = document.getElementById('url-stats-grid');
   if (!Object.keys(uv).length) { g.innerHTML=''; return; }
   g.innerHTML = `
-    <div class="stat-card green"><div class="label">url_oferta OK</div><div class="value">${(uv.url_oferta_validas||0).toLocaleString()}</div></div>
-    <div class="stat-card red"><div class="label">url_oferta rota</div><div class="value">${(uv.url_oferta_rotas||0).toLocaleString()}</div></div>
-    <div class="stat-card green"><div class="label">url_bases OK</div><div class="value">${(uv.url_bases_validas||0).toLocaleString()}</div></div>
-    <div class="stat-card red"><div class="label">url_bases rota</div><div class="value">${(uv.url_bases_rotas||0).toLocaleString()}</div></div>
-    <div class="stat-card yellow"><div class="label">Sin chequear hoy</div><div class="value">${(uv.sin_chequear_hoy||0).toLocaleString()}</div></div>
+    <div class="stat-card green"><div class="label">Enlace a la oferta OK</div><div class="value">${(uv.url_oferta_validas||0).toLocaleString()}</div></div>
+    <div class="stat-card red"><div class="label">Enlace a la oferta caído</div><div class="value">${(uv.url_oferta_rotas||0).toLocaleString()}</div></div>
+    <div class="stat-card green"><div class="label">Enlace a las bases OK</div><div class="value">${(uv.url_bases_validas||0).toLocaleString()}</div></div>
+    <div class="stat-card red"><div class="label">Enlace a las bases caído</div><div class="value">${(uv.url_bases_rotas||0).toLocaleString()}</div></div>
+    <div class="stat-card yellow"><div class="label">Sin revisar hoy</div><div class="value">${(uv.sin_chequear_hoy||0).toLocaleString()}</div></div>
   `;
 }
 
@@ -440,6 +441,162 @@ function populateSectors(ps) {
     el.innerHTML = `<option value="">Todos los sectores</option>` +
       ss.map(s=>`<option value="${escAttr(s)}"${s===cur?' selected':''}>${s}</option>`).join('');
   });
+}
+
+// ── ESTADÍSTICAS DEL SITIO (analítica) ────────────────────────
+const _AN_EVENTOS_LABEL = {
+  ver_oferta: 'Vieron una oferta', click_postular: 'Clic en “Postular”',
+  click_bases: 'Clic en “Ver bases”', suscribir_alerta: 'Se suscribieron a alertas',
+  buscar: 'Hicieron una búsqueda', filtrar: 'Aplicaron filtros',
+  compartir: 'Compartieron una oferta', ver_curso: 'Vieron un curso',
+  click_curso: 'Clic en un curso', descargar_csv: 'Descargaron CSV',
+  ver_institucion: 'Vieron una institución',
+};
+const _AN_DISPOSITIVO = {
+  movil: '📱 Móvil', escritorio: '💻 Escritorio', tablet: '📲 Tablet', otro: '❓ Otro',
+};
+
+async function loadAnalitica() {
+  const dias = parseInt(document.getElementById('an-dias').value) || 30;
+  const cards = document.getElementById('an-cards');
+  cards.innerHTML = '<div class="stat-card"><div class="label">Cargando…</div><div class="value"><span class="spinner"></span></div></div>';
+  try {
+    const d = await api(`/analitica?dias=${dias}`);
+    const interno = d.interno || {};
+    if (interno.disponible === false) {
+      cards.innerHTML = `<div class="stat-card" style="grid-column:1/-1"><div class="label" style="color:var(--yellow)">Analítica no disponible</div><div class="sub">${interno.warning || 'Aplica las migraciones de la base de datos para empezar a medir el tráfico.'}</div></div>`;
+      ['an-paginas','an-referidos','an-eventos','an-ofertas'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.innerHTML = '<tr class="empty-row"><td colspan="4">Sin datos todavía</td></tr>';
+      });
+      document.getElementById('an-chart').innerHTML = '<p class="text-muted">Aún no hay visitas registradas.</p>';
+      document.getElementById('an-dispositivos').innerHTML = '<p class="text-muted">—</p>';
+      renderUmami(d.umami || {});
+      return;
+    }
+    renderAnaliticaCards(interno.totales || {});
+    renderAnaliticaChart(interno.serie || []);
+    renderAnaliticaLista('an-paginas', interno.top_paginas || [], 'path', 'vistas');
+    renderAnaliticaLista('an-referidos', interno.top_referidos || [], 'host', 'visitas', 'Tráfico directo (sin referido)');
+    renderDispositivos(interno.dispositivos || []);
+    renderEventos(interno.eventos_top || []);
+    renderOfertasVistas(interno.ofertas_top || []);
+    renderUmami(d.umami || {});
+  } catch (e) {
+    cards.innerHTML = `<div class="stat-card" style="grid-column:1/-1"><div class="label" style="color:var(--red)">Error</div><div class="sub">${escAttr(e.message)}</div></div>`;
+  }
+}
+
+function renderAnaliticaCards(t) {
+  document.getElementById('an-cards').innerHTML = `
+    <div class="stat-card blue"><div class="label">Páginas vistas</div><div class="value">${(t.paginas_vistas||0).toLocaleString()}</div><div class="sub">en el período</div></div>
+    <div class="stat-card green"><div class="label">Visitantes</div><div class="value">${(t.visitantes||0).toLocaleString()}</div><div class="sub">aproximado, anónimo</div></div>
+    <div class="stat-card"><div class="label">Vistas hoy</div><div class="value">${(t.vistas_hoy||0).toLocaleString()}</div></div>
+    <div class="stat-card"><div class="label">Visitantes hoy</div><div class="value">${(t.visitantes_hoy||0).toLocaleString()}</div></div>
+    <div class="stat-card yellow"><div class="label">Acciones</div><div class="value">${(t.eventos||0).toLocaleString()}</div><div class="sub">clics y búsquedas</div></div>
+  `;
+}
+
+// Gráfico de líneas en SVG puro (sin librerías: respeta el CSP script-src 'self').
+function renderAnaliticaChart(serie) {
+  const cont = document.getElementById('an-chart');
+  if (!serie.length) { cont.innerHTML = '<p class="text-muted">Aún no hay visitas registradas en el período.</p>'; return; }
+  const W = 760, H = 160, pad = 28;
+  const max = Math.max(1, ...serie.map(p => Math.max(p.vistas||0, p.visitantes||0)));
+  const n = serie.length;
+  const x = i => pad + (n === 1 ? (W-2*pad)/2 : (i*(W-2*pad))/(n-1));
+  const y = v => H - pad - ((v||0)/max)*(H-2*pad);
+  const linea = key => serie.map((p,i) => `${x(i).toFixed(1)},${y(p[key]).toFixed(1)}`).join(' ');
+  const area = `${pad},${H-pad} ${linea('vistas')} ${x(n-1).toFixed(1)},${H-pad}`;
+  // Etiquetas: primera, media y última fecha.
+  const idxs = n <= 1 ? [0] : [0, Math.floor((n-1)/2), n-1];
+  const labels = idxs.map(i => `<text x="${x(i).toFixed(1)}" y="${H-8}" fill="var(--muted)" font-size="10" text-anchor="middle">${(serie[i].dia||'').slice(5)}</text>`).join('');
+  cont.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none" role="img" aria-label="Tendencia de visitas">
+      <polygon points="${area}" fill="#3b82f618"/>
+      <polyline points="${linea('vistas')}" fill="none" stroke="var(--accent)" stroke-width="2"/>
+      <polyline points="${linea('visitantes')}" fill="none" stroke="var(--green)" stroke-width="2" stroke-dasharray="4 3"/>
+      <line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="var(--border)"/>
+      ${labels}
+    </svg>
+    <div style="display:flex;gap:18px;justify-content:center;margin-top:8px;font-size:12px;color:var(--muted)">
+      <span><span style="display:inline-block;width:14px;height:2px;background:var(--accent);vertical-align:middle"></span> Páginas vistas</span>
+      <span><span style="display:inline-block;width:14px;height:0;border-top:2px dashed var(--green);vertical-align:middle"></span> Visitantes</span>
+      <span>Máximo diario: <strong>${max.toLocaleString()}</strong></span>
+    </div>`;
+}
+
+function renderAnaliticaLista(tbodyId, rows, keyLabel, keyVal, vacioLabel) {
+  const tbody = document.getElementById(tbodyId);
+  if (!rows.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="2">Sin datos en el período</td></tr>'; return; }
+  const max = Math.max(1, ...rows.map(r => r[keyVal]||0));
+  tbody.innerHTML = rows.map(r => {
+    const label = r[keyLabel] || vacioLabel || '—';
+    const val = r[keyVal] || 0;
+    const pct = Math.round((val/max)*100);
+    return `<tr>
+      <td style="max-width:280px">
+        <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escAttr(label)}">${escAttr(trunc(label,40))}</div>
+        <div style="height:4px;background:var(--surface2);border-radius:3px;margin-top:5px;overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--accent)"></div></div>
+      </td>
+      <td style="text-align:right;font-weight:600;white-space:nowrap">${val.toLocaleString()}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderDispositivos(rows) {
+  const cont = document.getElementById('an-dispositivos');
+  if (!rows.length) { cont.innerHTML = '<p class="text-muted">Sin datos en el período</p>'; return; }
+  const total = rows.reduce((a,r) => a + (r.vistas||0), 0) || 1;
+  cont.innerHTML = rows.map(r => {
+    const pct = Math.round(((r.vistas||0)/total)*100);
+    return `<div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+        <span>${_AN_DISPOSITIVO[r.dispositivo] || escAttr(r.dispositivo||'—')}</span>
+        <span class="text-muted">${pct}% · ${(r.vistas||0).toLocaleString()}</span>
+      </div>
+      <div style="height:8px;background:var(--surface2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--accent)"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderEventos(rows) {
+  const tbody = document.getElementById('an-eventos');
+  if (!rows.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="2">Sin acciones registradas</td></tr>'; return; }
+  tbody.innerHTML = rows.map(r => `<tr>
+    <td>${escAttr(_AN_EVENTOS_LABEL[r.evento] || r.evento || '—')}</td>
+    <td style="text-align:right;font-weight:600">${(r.total||0).toLocaleString()}</td>
+  </tr>`).join('');
+}
+
+function renderOfertasVistas(rows) {
+  const tbody = document.getElementById('an-ofertas');
+  if (!rows.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="4">Sin vistas de ofertas en el período</td></tr>'; return; }
+  tbody.innerHTML = rows.map(r => `<tr>
+    <td class="text-muted text-small">${r.oferta_id}</td>
+    <td style="max-width:280px"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escAttr(r.cargo)}">${escAttr(trunc(r.cargo,42))}</div></td>
+    <td class="text-small text-muted">${escAttr(trunc(r.institucion||'',26))}</td>
+    <td style="text-align:right;font-weight:600">${(r.vistas||0).toLocaleString()}</td>
+  </tr>`).join('');
+}
+
+function renderUmami(umami) {
+  const wrap = document.getElementById('an-umami-wrap');
+  const cards = document.getElementById('an-umami-cards');
+  if (!umami || !umami.configurado) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  if (umami.error) {
+    cards.innerHTML = `<div class="stat-card" style="grid-column:1/-1"><div class="label" style="color:var(--yellow)">Umami no respondió</div><div class="sub">${escAttr(umami.error)}</div></div>`;
+    return;
+  }
+  const s = umami.stats || {};
+  // Umami v2 devuelve {pageviews:{value,prev}, visitors:{…}, visits:{…}, bounces:{…}, totaltime:{…}}
+  const val = x => (x && typeof x === 'object') ? (x.value ?? 0) : (x ?? 0);
+  cards.innerHTML = `
+    <div class="stat-card blue"><div class="label">Páginas vistas</div><div class="value">${val(s.pageviews).toLocaleString()}</div></div>
+    <div class="stat-card green"><div class="label">Visitantes</div><div class="value">${val(s.visitors).toLocaleString()}</div></div>
+    <div class="stat-card"><div class="label">Visitas</div><div class="value">${val(s.visits).toLocaleString()}</div></div>
+    <div class="stat-card yellow"><div class="label">Rebotes</div><div class="value">${val(s.bounces).toLocaleString()}</div></div>
+  `;
 }
 
 // ── OFERTAS ───────────────────────────────────────────────────
@@ -1487,6 +1644,7 @@ document.addEventListener('click', e => {
   switch (d.action) {
     case 'logout':             logout(); break;
     case 'load-dashboard':     loadDashboard(); break;
+    case 'load-analitica':     loadAnalitica(); break;
     case 'load-diagnostico':   loadDiagnostico(); break;
     case 'export-ofertas':     exportOfertas(); break;
     case 'load-scrapers':      loadScrapers(); break;
@@ -1546,6 +1704,7 @@ document.addEventListener('change', e => {
   if (!el) return;
   switch (el.dataset.change) {
     case 'ofertas':  loadOfertas(1); break;
+    case 'analitica': loadAnalitica(); break;
     case 'scrapers': loadScrapers(); break;
     case 'revision': loadRevision(); break;
     case 'alertas':  loadAlertas(); break;

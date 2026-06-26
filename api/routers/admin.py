@@ -83,6 +83,11 @@ from api.services.meilisearch_svc import (
     configurar_indice as meili_configurar,
     indexar_ofertas as meili_indexar,
 )
+from api.services.analitica import (
+    resumen_interno as analitica_resumen_interno,
+    resumen_umami as analitica_resumen_umami,
+    umami_configurado as analitica_umami_configurado,
+)
 
 # `scrapers.source_status` opcional (tests / entornos minimal)
 try:
@@ -412,6 +417,25 @@ def admin_stats(_user: str = Depends(_verify_admin_jwt)) -> dict[str, Any]:
         "evaluaciones": eval_resumen,
         "url_validez": url_validez,
     }
+
+
+@router.get(f"/api/{ADMIN_PATH}/analitica", tags=["admin"])
+def admin_analitica(
+    dias: int = Query(30, ge=1, le=365),
+    incluir_umami: bool = Query(True),
+    _user: str = Depends(_verify_admin_jwt),
+) -> dict[str, Any]:
+    """Estadísticas de tráfico del sitio: analítica propia + Umami (si está).
+
+    La analítica propia sale de `web_eventos` (beacon de `web/analytics.js`).
+    Umami se consulta solo si está configurado vía env vars; si no, la
+    sección viene con `configurado=false` y el panel la oculta.
+    """
+    interno = analitica_resumen_interno(dias)
+    umami: dict[str, Any] = {"configurado": False}
+    if incluir_umami and analitica_umami_configurado():
+        umami = analitica_resumen_umami(dias)
+    return {"dias": dias, "interno": interno, "umami": umami}
 
 
 @router.get(f"/api/{ADMIN_PATH}/ofertas", tags=["admin"])
