@@ -30,6 +30,7 @@ if (!ADMIN_PATH) {
 
 // ── Estado ─────────────────────────────────────────────────────
 let _creds = null;
+let _rol = 'admin';   // rol del usuario en sesión (admin|editor|lector)
 let _searchTimer = null;
 let _ofertasPagina = 1;
 let _editingId = null;
@@ -50,10 +51,11 @@ function buildAuthHeaderFromToken(token) {
   return 'Bearer ' + token;
 }
 
-function _saveSession(token, expiresAt) {
+function _saveSession(token, expiresAt, rol, usuario) {
   _creds = { header: buildAuthHeaderFromToken(token), token, expiresAt };
+  _rol = rol || 'admin';
   sessionStorage.setItem('_gc', JSON.stringify({
-    token, expiresAt, k: ADMIN_PATH,
+    token, expiresAt, k: ADMIN_PATH, rol: _rol, usuario: usuario || '',
   }));
 }
 
@@ -65,6 +67,7 @@ function _tokenSigueVivo(expiresAt) {
 async function doLogin() {
   const pass = document.getElementById('auth-pass').value;
   if (!pass) return;
+  const usuario = (document.getElementById('auth-user')?.value || '').trim();
   const btn = document.getElementById('auth-btn');
   btn.textContent = 'Verificando…'; btn.disabled = true;
   document.getElementById('auth-error').style.display = 'none';
@@ -72,7 +75,7 @@ async function doLogin() {
     const r = await fetch(`${API_BASE}/api/${ADMIN_PATH}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: pass }),
+      body: JSON.stringify(usuario ? { usuario, password: pass } : { password: pass }),
     });
     if (r.status === 429) {
       document.getElementById('auth-error').textContent = 'Demasiados intentos. Espera 10 minutos.';
@@ -86,7 +89,7 @@ async function doLogin() {
       return;
     }
     const body = await r.json();
-    _saveSession(body.token, body.expires_at);
+    _saveSession(body.token, body.expires_at, body.rol, body.usuario);
     showApp();
   } catch(e) {
     document.getElementById('auth-error').textContent = 'Error de red: ' + e.message;
@@ -107,9 +110,13 @@ async function logout() {
   }
   sessionStorage.removeItem('_gc');
   _creds = null;
+  _rol = 'admin';
+  document.body.classList.remove('rol-lector');
+  const _av = document.getElementById('rol-aviso'); if (_av) _av.remove();
   document.getElementById('app').style.display = 'none';
   document.getElementById('auth-screen').style.display = 'flex';
   document.getElementById('auth-pass').value = '';
+  const _au = document.getElementById('auth-user'); if (_au) _au.value = '';
   document.getElementById('auth-btn').textContent = 'Entrar';
   document.getElementById('auth-btn').disabled = false;
 }
@@ -117,7 +124,30 @@ async function logout() {
 function showApp() {
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
+  aplicarRol();
   loadDashboard();
+}
+
+// Ajusta la UI según el rol: oculta pestañas solo-admin y, para lectores,
+// muestra un aviso de solo lectura. La seguridad real la impone el backend.
+function aplicarRol() {
+  const esAdmin = _rol === 'admin';
+  document.querySelectorAll('nav button[data-rol="admin"]').forEach(b => {
+    b.style.display = esAdmin ? '' : 'none';
+  });
+  document.body.classList.toggle('rol-lector', _rol === 'lector');
+  let aviso = document.getElementById('rol-aviso');
+  if (_rol === 'lector') {
+    if (!aviso) {
+      aviso = document.createElement('div');
+      aviso.id = 'rol-aviso';
+      aviso.style.cssText = 'background:#1d4ed822;color:#60a5fa;border-bottom:1px solid #1d4ed844;padding:6px 24px;font-size:12px;text-align:center';
+      aviso.textContent = '👁️ Modo solo lectura — tu rol no permite hacer cambios.';
+      document.getElementById('app').prepend(aviso);
+    }
+  } else if (aviso) {
+    aviso.remove();
+  }
 }
 
 // ── API helper ─────────────────────────────────────────────────
@@ -160,6 +190,8 @@ document.querySelectorAll('nav button').forEach(btn => {
     else if (tab === 'alertas')  { loadAlertas(); loadEventos(); }
     else if (tab === 'config')   loadConfig();
     else if (tab === 'acciones') loadProcesos();
+    else if (tab === 'programacion') loadScheduler();
+    else if (tab === 'usuarios') loadUsuarios();
     else if (tab === 'cursos')   loadCursos();
   });
 });
@@ -636,6 +668,119 @@ async function exportAnalitica() {
     URL.revokeObjectURL(url);
     toast('CSV descargado ✓');
   } catch (e) { toast('Error: ' + e.message, 'error'); }
+}
+
+// ── USUARIOS DEL PANEL ─────────────────────────────────────────
+let _usuarioEditId = null;
+const _ROL_LABEL = { lector: 'Lector', editor: 'Editor', admin: 'Administrador' };
+
+async function loadUsuarios() {
+  const tbody = document.getElementById('usuarios-tbody');
+  tbody.innerHTML = `<tr class="loading-row"><td colspan="7"><span class="spinner"></span></td></tr>`;
+  try {
+    const d = await api('/usuarios');
+    if (d.warning) { tbody.innerHTML = `<tr class="empty-row"><td colspan="7" style="color:var(--yellow)">${d.warning}</td></tr>`; return; }
+    const us = d.usuarios || [];
+    if (!us.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Sin usuarios. Crea el primero arriba.</td></tr>'; return; }
+    const rolPill = { admin:'blue', editor:'green', lector:'gray' };
+    tbody.innerHTML = us.map(u => `<tr>
+      <td class="text-muted text-small">${u.id}</td>
+      <td><strong>${escAttr(u.usuario)}</strong></td>
+      <td class="text-small text-muted">${escAttr(u.nombre||'—')}</td>
+      <td>${pill(_ROL_LABEL[u.rol]||u.rol, rolPill[u.rol]||'gray')}</td>
+      <td>${u.activo?pill('activo','green'):pill('inactivo','gray')}</td>
+      <td class="text-small text-muted">${u.ultimo_login?fmtDt(u.ultimo_login):'nunca'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-ghost btn-sm" data-action="editar-usuario" data-id="${u.id}" data-usuario="${escAttr(u.usuario)}" data-nombre="${escAttr(u.nombre||'')}" data-rol="${u.rol}" data-activo="${u.activo?1:0}">✏️</button>
+        <button class="btn btn-danger btn-sm" style="margin-left:4px" data-action="borrar-usuario" data-id="${u.id}" data-usuario="${escAttr(u.usuario)}">🗑️</button>
+      </td>
+    </tr>`).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="7" style="color:var(--red)">Error: ${e.message}</td></tr>`;
+  }
+}
+
+function editarUsuario(d) {
+  _usuarioEditId = parseInt(d.id);
+  document.getElementById('us-usuario').value = d.usuario || '';
+  document.getElementById('us-nombre').value = d.nombre || '';
+  document.getElementById('us-password').value = '';
+  document.getElementById('us-rol').value = d.rol || 'editor';
+  document.getElementById('us-usuario').disabled = true;  // el usuario no se renombra
+  document.getElementById('us-cancelar').style.display = '';
+  document.getElementById('tab-usuarios').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function cancelarUsuario() {
+  _usuarioEditId = null;
+  ['us-usuario','us-nombre','us-password'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('us-rol').value = 'editor';
+  document.getElementById('us-usuario').disabled = false;
+  document.getElementById('us-cancelar').style.display = 'none';
+}
+
+async function saveUsuario() {
+  const usuario = document.getElementById('us-usuario').value.trim();
+  const nombre = document.getElementById('us-nombre').value.trim();
+  const password = document.getElementById('us-password').value;
+  const rol = document.getElementById('us-rol').value;
+  try {
+    if (_usuarioEditId) {
+      const body = { nombre, rol };
+      if (password) body.password = password;
+      await api(`/usuarios/${_usuarioEditId}`, { method:'PUT', body:JSON.stringify(body) });
+      toast('Usuario actualizado ✓');
+    } else {
+      if (!usuario || usuario.length < 3) { toast('Usuario muy corto (mín. 3)', 'error'); return; }
+      if (password.length < 8) { toast('Contraseña muy corta (mín. 8)', 'error'); return; }
+      const r = await api('/usuarios', { method:'POST', body:JSON.stringify({ usuario, nombre, password, rol }) });
+      toast(`Usuario ${r.usuario} creado ✓`);
+    }
+    cancelarUsuario();
+    loadUsuarios();
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+async function borrarUsuario(id, usuario) {
+  if (!confirm(`¿Eliminar la cuenta "${usuario}"?`)) return;
+  try { await api(`/usuarios/${id}`, { method:'DELETE' }); toast('Usuario eliminado ✓'); loadUsuarios(); }
+  catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+// ── PROGRAMACIÓN DE RECOLECCIONES ──────────────────────────────
+async function loadScheduler() {
+  const cont = document.getElementById('sched-estado');
+  cont.innerHTML = '<span class="spinner"></span>';
+  try {
+    const d = await api('/scheduler');
+    if (!d.disponible) { cont.innerHTML = `<div style="color:var(--yellow)">${d.warning||'No disponible'}</div>`; return; }
+    const e = d.estado || {};
+    document.getElementById('sched-activo').checked = e.activo === true;
+    document.getElementById('sched-intervalo').value = e.intervalo_horas || 24;
+    document.getElementById('sched-modo').value = e.modo || 'empleos_publicos';
+    document.getElementById('sched-max').value = e.max_offers || 50;
+    const estadoTxt = e.activo
+      ? `<span style="color:var(--green)">● Activa</span> — próxima corrida: <strong>${e.proxima_ejecucion?fmtDt(e.proxima_ejecucion):'—'}</strong>`
+      : '<span class="text-muted">○ Desactivada</span>';
+    cont.innerHTML = `<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;font-size:13px">
+      ${estadoTxt}<br>
+      <span class="text-muted">Última corrida: ${e.ultima_ejecucion?fmtDt(e.ultima_ejecucion):'nunca'}</span>
+    </div>`;
+  } catch(err) { cont.innerHTML = `<div style="color:var(--red)">Error: ${err.message}</div>`; }
+}
+
+async function saveScheduler() {
+  const body = {
+    activo: document.getElementById('sched-activo').checked,
+    intervalo_horas: parseInt(document.getElementById('sched-intervalo').value) || 24,
+    modo: document.getElementById('sched-modo').value,
+    max_offers: parseInt(document.getElementById('sched-max').value) || 50,
+  };
+  try {
+    await api('/scheduler', { method:'PUT', body:JSON.stringify(body) });
+    toast('Programación guardada ✓');
+    loadScheduler();
+  } catch(e) { toast('Error: '+e.message,'error'); }
 }
 
 // ── OFERTAS ───────────────────────────────────────────────────
@@ -1738,6 +1883,13 @@ document.addEventListener('click', e => {
     case 'ir-a':               irA(d.target); break;
     case 'diag-desactivar-vencidas': diagDesactivarVencidas(); break;
     case 'diag-revalidar':     revalidarUrls(); break;
+    case 'load-usuarios':      loadUsuarios(); break;
+    case 'save-usuario':       saveUsuario(); break;
+    case 'cancelar-usuario':   cancelarUsuario(); break;
+    case 'editar-usuario':     editarUsuario(d); break;
+    case 'borrar-usuario':     borrarUsuario(parseInt(d.id), d.usuario||''); break;
+    case 'load-scheduler':     loadScheduler(); break;
+    case 'save-scheduler':     saveScheduler(); break;
   }
 });
 
@@ -1793,12 +1945,13 @@ document.getElementById('auth-btn').addEventListener('click', doLogin);
   const saved = sessionStorage.getItem('_gc');
   if (!saved) return;
   try {
-    const { token, expiresAt, k } = JSON.parse(saved);
+    const { token, expiresAt, k, rol } = JSON.parse(saved);
     if (k !== ADMIN_PATH || !token || !_tokenSigueVivo(expiresAt)) {
       sessionStorage.removeItem('_gc');
       return;
     }
     _creds = { header: buildAuthHeaderFromToken(token), token, expiresAt };
+    _rol = rol || 'admin';
     // Validación rápida contra el servidor: si el token fue revocado o
     // el secreto rotó, /auth/me devuelve 401 y limpiamos.
     try {
@@ -1806,6 +1959,8 @@ document.getElementById('auth-btn').addEventListener('click', doLogin);
         headers: { Authorization: _creds.header },
       });
       if (!r.ok) { sessionStorage.removeItem('_gc'); _creds = null; return; }
+      const me = await r.json().catch(() => ({}));
+      if (me.rol) _rol = me.rol;   // fuente de verdad: el rol firmado del token
     } catch (_) { /* sin red: intentamos usar el token igual */ }
     showApp();
   } catch(e) { sessionStorage.removeItem('_gc'); }

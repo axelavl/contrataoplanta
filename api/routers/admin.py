@@ -49,8 +49,12 @@ from pydantic import BaseModel
 
 from api.deps import (
     ADMIN_PATH,
+    ROLES_VALIDOS,
     SITE_URL,
     _PROJECT_ROOT,
+    hash_password,
+    require_admin as _require_admin,
+    require_editor as _require_editor,
     verify_admin_jwt as _verify_admin_jwt,
 )
 from api.services.db import (
@@ -167,7 +171,7 @@ def admin_audit(
 
 
 @router.post(f"/api/{ADMIN_PATH}/meilisearch/reindexar", tags=["admin"])
-def api_reindexar_meili(_user: str = Depends(_verify_admin_jwt)) -> dict[str, Any]:
+def api_reindexar_meili(_user: str = Depends(_require_editor)) -> dict[str, Any]:
     """Re-indexa todas las ofertas activas en Meilisearch.
 
     Movido bajo el prefijo admin: antes era público y permitía gatillar
@@ -200,7 +204,7 @@ def api_reindexar_meili(_user: str = Depends(_verify_admin_jwt)) -> dict[str, An
 @router.post(f"/api/{ADMIN_PATH}/alertas/enviar", tags=["admin"])
 def api_enviar_alertas_pendientes(
     payload: dict[str, Any] | None = None,
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """
     Procesa y envía alertas pendientes a los suscriptores.
@@ -605,7 +609,7 @@ def admin_ofertas(
 @router.post(f"/api/{ADMIN_PATH}/ofertas/{{oferta_id}}/toggle-activa", tags=["admin"])
 def admin_toggle_activa(
     oferta_id: int,
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Activa o desactiva una oferta."""
     with get_cursor() as (conn, cur):
@@ -626,7 +630,7 @@ def admin_toggle_activa(
 @router.post(f"/api/{ADMIN_PATH}/ofertas/{{oferta_id}}/toggle-destacada", tags=["admin"])
 def admin_toggle_destacada(
     oferta_id: int,
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Marca/desmarca una oferta como destacada (sección de redes sociales).
 
@@ -673,7 +677,7 @@ def admin_listar_cursos(_user: str = Depends(_verify_admin_jwt)) -> dict[str, An
 @router.post(f"/api/{ADMIN_PATH}/cursos", tags=["admin"])
 def admin_crear_curso(
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Crea un curso. Requerido: titulo. `curso_id` se deriva del título si falta."""
     titulo = (payload.get("titulo") or "").strip()
@@ -722,7 +726,7 @@ def admin_crear_curso(
 def admin_editar_curso(
     curso_pk: int,
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Edita un curso. Acepta cualquier subconjunto de los campos del curso."""
     updates = {k: v for k, v in payload.items() if k in set(_CURSO_CAMPOS)}
@@ -757,7 +761,7 @@ def admin_editar_curso(
 @router.delete(f"/api/{ADMIN_PATH}/cursos/{{curso_pk}}", tags=["admin"])
 def admin_borrar_curso(
     curso_pk: int,
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Elimina un curso del directorio."""
     with get_cursor() as (conn, cur):
@@ -784,7 +788,7 @@ def admin_listar_categorias(_user: str = Depends(_verify_admin_jwt)) -> dict[str
 @router.post(f"/api/{ADMIN_PATH}/cursos/categorias", tags=["admin"])
 def admin_crear_categoria(
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     etiqueta = (payload.get("etiqueta") or "").strip()
     if not etiqueta:
@@ -812,7 +816,7 @@ def admin_crear_categoria(
 def admin_editar_categoria(
     cat_id: int,
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Renombra (etiqueta) o reordena/activa una categoría. El slug no se cambia
     para no romper los cursos ya asignados."""
@@ -850,7 +854,7 @@ def admin_editar_categoria(
 @router.delete(f"/api/{ADMIN_PATH}/cursos/categorias/{{cat_id}}", tags=["admin"])
 def admin_borrar_categoria(
     cat_id: int,
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Borra una categoría. Los cursos que la usaban pasan a 'Otros' para no
     quedar huérfanos. 'Otros' no se puede borrar (es el destino de reasignación)."""
@@ -873,7 +877,7 @@ def admin_borrar_categoria(
 def admin_editar_oferta(
     oferta_id: int,
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Edita campos de una oferta.
 
@@ -929,7 +933,7 @@ def admin_editar_oferta(
 @router.post(f"/api/{ADMIN_PATH}/ofertas", tags=["admin"])
 def admin_crear_oferta(
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Crea una oferta manual desde el panel.
 
@@ -996,7 +1000,7 @@ def admin_crear_oferta(
 @router.post(f"/api/{ADMIN_PATH}/ofertas/bulk-marcar-revisadas", tags=["admin"])
 def admin_bulk_marcar_revisadas(
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Marca en bloque ofertas como revisadas (needs_review=FALSE).
 
@@ -1401,7 +1405,7 @@ def admin_scraper_catalog(
 @router.post(f"/api/{ADMIN_PATH}/scraper/run", tags=["admin"])
 async def admin_scraper_run(
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """
     Dispara un scraper en background.
@@ -1553,7 +1557,7 @@ def admin_get_config(
 @router.put(f"/api/{ADMIN_PATH}/config", tags=["admin"])
 def admin_set_config(
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_admin),
 ) -> dict[str, Any]:
     """
     Actualiza configuración editable del sitio.
@@ -1589,7 +1593,7 @@ def admin_set_config(
 @router.post(f"/api/{ADMIN_PATH}/ofertas/bulk-desactivar", tags=["admin"])
 def admin_bulk_desactivar(
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """
     Desactiva en bloque ofertas según criterios.
@@ -1640,7 +1644,7 @@ def admin_bulk_desactivar(
 @router.post(f"/api/{ADMIN_PATH}/urls/revalidar", tags=["admin"])
 async def admin_revalidar_urls(
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """
     Dispara revalidación de URLs en background (llama a validate_offer_urls.py).
@@ -1711,7 +1715,7 @@ def admin_get_fuente(
 def admin_editar_fuente(
     fuente_id: int,
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """
     Edita campos de una institución.
@@ -1742,7 +1746,7 @@ def admin_editar_fuente(
 @router.post(f"/api/{ADMIN_PATH}/fuentes", tags=["admin"])
 def admin_crear_fuente(
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """
     Crea una nueva institución en el catálogo interno.
@@ -1781,7 +1785,7 @@ def admin_crear_fuente(
 @router.delete(f"/api/{ADMIN_PATH}/fuentes/{{fuente_id}}", tags=["admin"])
 def admin_desactivar_fuente(
     fuente_id: int,
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """
     Desactiva una fuente: marca todas sus ofertas activas como cerradas
@@ -1844,7 +1848,7 @@ _OVERRIDE_STATUSES = {"active", "experimental", "manual_review", "js_required",
 def admin_set_override(
     fuente_id: int,
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Fija un override de clasificación para una fuente (persistente en DB).
 
@@ -1869,7 +1873,7 @@ def admin_set_override(
 @router.delete(f"/api/{ADMIN_PATH}/fuentes/{{fuente_id}}/override", tags=["admin"])
 def admin_quitar_override(
     fuente_id: int,
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Elimina el override de una fuente — vuelve a la clasificación automática."""
     with get_cursor() as (conn, cur):
@@ -2006,7 +2010,7 @@ def admin_revision_queue(
 def admin_marcar_revisada(
     oferta_id: int,
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Marca una oferta como revisada (needs_review=FALSE) y guarda una nota opcional."""
     nota = (payload.get("nota") or "").strip()
@@ -2156,7 +2160,7 @@ def admin_suscripciones(
 @router.delete(f"/api/{ADMIN_PATH}/suscripciones/{{sub_id}}", tags=["admin"])
 def admin_eliminar_suscripcion(
     sub_id: int,
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Elimina (o desactiva) una suscripción."""
     with get_cursor() as (conn, cur):
@@ -2174,7 +2178,7 @@ def admin_eliminar_suscripcion(
 @router.post(f"/api/{ADMIN_PATH}/alertas/test-email", tags=["admin"])
 def admin_test_email(
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """
     Envía un email de prueba con las últimas 3 ofertas activas.
@@ -2322,6 +2326,158 @@ def admin_export_ofertas(
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=ofertas.csv"},
     )
+
+
+# ── Admin: gestión de usuarios del panel (solo rol admin) ────────────────────
+
+@router.get(f"/api/{ADMIN_PATH}/usuarios", tags=["admin"])
+def admin_listar_usuarios(_user: str = Depends(_require_admin)) -> dict[str, Any]:
+    """Lista las cuentas del panel (sin exponer el hash de contraseña)."""
+    try:
+        rows = execute_fetch_all(
+            """SELECT id, usuario, nombre, rol, activo, creado_en, ultimo_login
+               FROM admin_usuarios ORDER BY usuario ASC""",
+            [],
+        )
+        return {"usuarios": rows}
+    except Exception as exc:
+        logger.warning(f"[usuarios] tabla no disponible: {exc}")
+        return {
+            "usuarios": [],
+            "warning": "Tabla admin_usuarios no disponible — aplicar `alembic upgrade head`.",
+        }
+
+
+@router.post(f"/api/{ADMIN_PATH}/usuarios", tags=["admin"])
+def admin_crear_usuario(
+    payload: dict[str, Any],
+    _user: str = Depends(_require_admin),
+) -> dict[str, Any]:
+    """Crea una cuenta del panel. Requeridos: usuario, password. rol opcional."""
+    usuario = (payload.get("usuario") or "").strip()
+    password = str(payload.get("password") or "")
+    rol = (payload.get("rol") or "editor").strip()
+    nombre = (payload.get("nombre") or "").strip() or None
+    if not usuario or len(usuario) < 3:
+        raise HTTPException(400, "El usuario debe tener al menos 3 caracteres")
+    if len(password) < 8:
+        raise HTTPException(400, "La contraseña debe tener al menos 8 caracteres")
+    if rol not in ROLES_VALIDOS:
+        raise HTTPException(400, f"rol inválido. Válidos: {list(ROLES_VALIDOS)}")
+    if usuario.lower() == "ops":
+        raise HTTPException(400, "'ops' está reservado para la contraseña maestra")
+    try:
+        with get_cursor() as (conn, cur):
+            cur.execute(
+                """INSERT INTO admin_usuarios (usuario, nombre, password_hash, rol, activo)
+                   VALUES (%s, %s, %s, %s, TRUE)
+                   ON CONFLICT (usuario) DO NOTHING RETURNING id""",
+                [usuario, nombre, hash_password(password), rol],
+            )
+            row = cur.fetchone()
+            if not row:
+                raise HTTPException(409, "Ya existe un usuario con ese nombre")
+            conn.commit()
+            nuevo_id = row["id"] if isinstance(row, dict) else row[0]
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(500, f"No se pudo crear el usuario (¿migración 0003 aplicada?): {exc}") from exc
+    _auditar(_user, "crear_usuario", "usuario", nuevo_id, {"usuario": usuario, "rol": rol})
+    return {"id": nuevo_id, "usuario": usuario, "rol": rol}
+
+
+@router.put(f"/api/{ADMIN_PATH}/usuarios/{{usuario_id}}", tags=["admin"])
+def admin_editar_usuario(
+    usuario_id: int,
+    payload: dict[str, Any],
+    _user: str = Depends(_require_admin),
+) -> dict[str, Any]:
+    """Edita una cuenta: nombre, rol, activo y, opcionalmente, su contraseña."""
+    updates: dict[str, Any] = {}
+    if "nombre" in payload:
+        updates["nombre"] = (payload.get("nombre") or "").strip() or None
+    if "rol" in payload:
+        rol = (payload.get("rol") or "").strip()
+        if rol not in ROLES_VALIDOS:
+            raise HTTPException(400, f"rol inválido. Válidos: {list(ROLES_VALIDOS)}")
+        updates["rol"] = rol
+    if "activo" in payload:
+        updates["activo"] = bool(payload.get("activo"))
+    if payload.get("password"):
+        if len(str(payload["password"])) < 8:
+            raise HTTPException(400, "La contraseña debe tener al menos 8 caracteres")
+        updates["password_hash"] = hash_password(str(payload["password"]))
+    if not updates:
+        raise HTTPException(400, "Sin campos para actualizar")
+    from psycopg2 import sql as _sql
+    set_parts = [_sql.SQL("{} = %s").format(_sql.Identifier(c)) for c in updates]
+    query = _sql.SQL("UPDATE admin_usuarios SET {} WHERE id = %s").format(
+        _sql.SQL(", ").join(set_parts),
+    )
+    with get_cursor() as (conn, cur):
+        cur.execute(query, list(updates.values()) + [usuario_id])
+        if cur.rowcount == 0:
+            raise HTTPException(404, "Usuario no encontrado")
+        conn.commit()
+    _auditar(_user, "editar_usuario", "usuario", usuario_id,
+             {"campos": sorted(k for k in updates if k != "password_hash")})
+    return {"id": usuario_id, "updated": [k for k in updates if k != "password_hash"]}
+
+
+@router.delete(f"/api/{ADMIN_PATH}/usuarios/{{usuario_id}}", tags=["admin"])
+def admin_borrar_usuario(
+    usuario_id: int,
+    _user: str = Depends(_require_admin),
+) -> dict[str, Any]:
+    """Elimina una cuenta del panel."""
+    with get_cursor() as (conn, cur):
+        cur.execute("DELETE FROM admin_usuarios WHERE id = %s", [usuario_id])
+        if cur.rowcount == 0:
+            raise HTTPException(404, "Usuario no encontrado")
+        conn.commit()
+    _auditar(_user, "borrar_usuario", "usuario", usuario_id)
+    return {"id": usuario_id, "deleted": True}
+
+
+# ── Admin: programador de recolecciones (config solo rol admin) ──────────────
+
+@router.get(f"/api/{ADMIN_PATH}/scheduler", tags=["admin"])
+def admin_get_scheduler(_user: str = Depends(_verify_admin_jwt)) -> dict[str, Any]:
+    """Estado actual del programador automático de recolecciones."""
+    from api.services.scheduler import get_estado
+    estado = get_estado()
+    if estado is None:
+        return {
+            "disponible": False,
+            "warning": "Tabla scheduler_state no disponible — aplicar `alembic upgrade head`.",
+        }
+    return {"disponible": True, "estado": estado}
+
+
+@router.put(f"/api/{ADMIN_PATH}/scheduler", tags=["admin"])
+def admin_set_scheduler(
+    payload: dict[str, Any],
+    _user: str = Depends(_require_admin),
+) -> dict[str, Any]:
+    """Configura el programador: activo, intervalo_horas, modo, max_offers."""
+    from api.services.scheduler import set_estado
+    try:
+        estado = set_estado(
+            activo=payload.get("activo") if "activo" in payload else None,
+            intervalo_horas=payload.get("intervalo_horas") if "intervalo_horas" in payload else None,
+            modo=payload.get("modo") if "modo" in payload else None,
+            max_offers=payload.get("max_offers") if "max_offers" in payload else None,
+            usuario=_user,
+        )
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from None
+    except Exception as exc:
+        raise HTTPException(500, f"No se pudo guardar (¿migración 0003 aplicada?): {exc}") from exc
+    _auditar(_user, "config_scheduler", "scheduler", 1, {
+        k: payload.get(k) for k in ("activo", "intervalo_horas", "modo", "max_offers") if k in payload
+    })
+    return {"ok": True, "estado": estado}
 
 
 # ── Fin endpoints admin ────────────────────────────────────────────────────

@@ -236,8 +236,10 @@
   <div class="auth-card">
     <h1>🔒 Panel de gestión</h1>
     <p>EmpleoEstado — acceso solo para el equipo</p>
+    <input id="auth-user" type="text" placeholder="Usuario (opcional)" autocomplete="username">
     <input id="auth-pass" type="password" placeholder="Contraseña de acceso" autocomplete="current-password">
     <button id="auth-btn">Entrar</button>
+    <p class="text-muted" style="font-size:11px;margin-top:10px;color:var(--muted)">Deja el usuario en blanco para entrar con la contraseña maestra.</p>
     <div id="auth-error">Contraseña incorrecta o demasiados intentos</div>
   </div>
 </div>
@@ -260,7 +262,9 @@
     <button data-tab="revision">🔍 Revisión</button>
     <button data-tab="alertas">📧 Alertas por correo</button>
     <button data-tab="acciones">⚡ Herramientas</button>
+    <button data-tab="programacion" data-rol="admin">⏱️ Programación</button>
     <button data-tab="config">⚙️ Ajustes</button>
+    <button data-tab="usuarios" data-rol="admin">👥 Usuarios</button>
     <button data-tab="cursos">🎓 Cursos</button>
   </nav>
   <main>
@@ -826,6 +830,87 @@
         <button id="cc-agregar" class="btn btn-primary">Agregar categoría</button>
       </div>
       <div id="cursos-cats-tabla"></div>
+    </div>
+
+    <!-- Programación de recolecciones -->
+    <div class="tab-panel" id="tab-programacion">
+      <div class="section-header">
+        <h2>Programación automática de recolecciones</h2>
+        <button class="btn btn-ghost btn-sm" data-action="load-scheduler">↻ Actualizar</button>
+      </div>
+      <p class="text-muted" style="margin:-4px 0 16px;font-size:13px">
+        Hace que la propia aplicación dispare la recolección de ofertas cada cierto tiempo,
+        además del proceso del servidor. Si lo dejas apagado, solo corre cuando el servidor
+        lo programa o cuando lo lanzas a mano en «Herramientas».
+      </p>
+      <div class="table-wrap" style="padding:20px;max-width:640px">
+        <div id="sched-estado" style="margin-bottom:16px"></div>
+        <div class="form-group" style="display:flex;align-items:center;gap:10px">
+          <label style="margin:0;white-space:nowrap">Recolección automática</label>
+          <input id="sched-activo" type="checkbox">
+        </div>
+        <div class="form-group">
+          <label>Cada cuántas horas</label>
+          <input id="sched-intervalo" type="number" min="1" max="168" value="24">
+        </div>
+        <div class="form-group">
+          <label>Qué recolectar</label>
+          <select id="sched-modo">
+            <option value="empleos_publicos">EmpleosPublicos (portal central)</option>
+            <option value="all">Corrida completa (todos)</option>
+            <option value="wordpress">Solo sitios WordPress</option>
+            <option value="generic">Solo sitios genéricos</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Máx. ofertas por institución</label>
+          <input id="sched-max" type="number" min="1" max="500" value="50">
+        </div>
+        <button class="btn btn-primary" data-action="save-scheduler">Guardar programación</button>
+      </div>
+    </div>
+
+    <!-- Usuarios del panel -->
+    <div class="tab-panel" id="tab-usuarios">
+      <div class="section-header">
+        <h2>Usuarios del panel</h2>
+        <button class="btn btn-ghost btn-sm" data-action="load-usuarios">↻ Actualizar</button>
+      </div>
+      <p class="text-muted" style="margin:-4px 0 16px;font-size:13px">
+        Cuentas con nombre propio para el equipo. Cada acción queda registrada con su autor.
+        <strong>Roles:</strong> <em>Lector</em> solo mira · <em>Editor</em> también edita contenido ·
+        <em>Administrador</em> además gestiona usuarios, ajustes y la programación.
+        La contraseña maestra sigue funcionando como respaldo (entra como «ops»).
+      </p>
+      <div class="table-wrap" style="padding:20px;max-width:760px;margin-bottom:20px">
+        <h3 style="font-size:14px;font-weight:600;margin-bottom:14px">Crear / actualizar cuenta</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="form-group"><label>Usuario *</label><input id="us-usuario" type="text" placeholder="ej. camila"></div>
+          <div class="form-group"><label>Nombre</label><input id="us-nombre" type="text" placeholder="Camila Pérez"></div>
+          <div class="form-group"><label>Contraseña <span style="font-weight:400;text-transform:none">(mín. 8; vacío = sin cambio)</span></label><input id="us-password" type="password" autocomplete="new-password"></div>
+          <div class="form-group"><label>Rol</label>
+            <select id="us-rol">
+              <option value="lector">Lector (solo ver)</option>
+              <option value="editor" selected>Editor</option>
+              <option value="admin">Administrador</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <button class="btn btn-primary" data-action="save-usuario">Guardar</button>
+          <button class="btn btn-ghost" id="us-cancelar" data-action="cancelar-usuario" style="display:none">Cancelar edición</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>ID</th><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th>Último ingreso</th><th>Acciones</th>
+          </tr></thead>
+          <tbody id="usuarios-tbody">
+            <tr class="loading-row"><td colspan="7"><span class="spinner"></span></td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- Fuentes -->

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import html
 import json
@@ -420,12 +421,32 @@ def on_startup() -> None:
     logger.info("API iniciada (schema gestionado por Alembic)")
 
 
+@app.on_event("startup")
+async def on_startup_scheduler() -> None:
+    # Programador propio de recolecciones (in-app). Vive en cada worker; el
+    # claim atómico en `scheduler_state` evita disparos duplicados. Está
+    # apagado por defecto en la DB (activo=FALSE) y se puede deshabilitar del
+    # todo con SCHEDULER_DISABLED=1 (p. ej. en procesos one-shot / cron).
+    if os.getenv("SCHEDULER_DISABLED", "").strip().lower() in ("1", "true", "yes"):
+        logger.info("Programador in-app deshabilitado por SCHEDULER_DISABLED")
+        return
+    try:
+        from api.services.scheduler import scheduler_loop
+        app.state.scheduler_task = asyncio.create_task(scheduler_loop())
+        logger.info("Programador in-app activo (loop en background)")
+    except Exception as exc:
+        logger.error("No se pudo iniciar el programador in-app: %s", exc)
+
+
 @app.on_event("shutdown")
 def on_shutdown() -> None:
     # Cierra limpiamente las conexiones del pool. Importante al redeploy:
     # sin esto, Railway puede matar el proceso antes de que Postgres libere
     # las conexiones y el contador de max_connections crece sin volver a
     # bajar hasta que Postgres las expira por idle_timeout.
+    task = getattr(app.state, "scheduler_task", None)
+    if task is not None:
+        task.cancel()
     db_pool.close_pool()
 
 
