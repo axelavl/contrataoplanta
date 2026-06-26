@@ -309,6 +309,18 @@ mark.cop-hl {
 }
 .btn-mapa-toggle:hover { border-color: var(--cielo, #1A6BCC); background: var(--bg2, #F4F2EA); }
 .btn-mapa-toggle[aria-expanded="true"] { background: var(--azul, #142E6B); color: #fff; border-color: var(--azul, #142E6B); }
+/* Dark: el color base `var(--azul)` (#0A1426) quedaba casi negro sobre el
+   fondo oscuro y el texto era ilegible. Lo alineamos con el resto de los
+   controles del listado en oscuro: texto claro sobre superficie navy. */
+:root[data-theme="dark"] .btn-mapa-toggle {
+  background: #0F213E;
+  color: var(--text-secondary, #C9D4E5);
+  border-color: var(--border-subtle, #27436D);
+}
+:root[data-theme="dark"] .btn-mapa-toggle:hover {
+  background: #16294A;
+  border-color: var(--acento, #EAB858);
+}
 .mapa-chile-wrap {
   padding: 16px 0 8px;
 }
@@ -499,6 +511,16 @@ mark.cop-hl {
   border: 1px solid var(--cielo, #1A6BCC) !important;
   border-top: 3px solid var(--cielo, #1A6BCC) !important;
   box-shadow: 0 2px 10px rgba(20, 46, 107, 0.08);
+}
+/* Dark: el fondo del widget (--surface-base #12233F) quedaba demasiado cerca
+   del fondo de la página (#081223) y el panel se veía "hueco". Le damos una
+   superficie navy claramente más clara, con el header un punto más alto para
+   que se lea como tarjeta con cabecera. */
+:root[data-theme="dark"] #alertas {
+  background: #15294C;
+}
+:root[data-theme="dark"] #alertas .widget-header {
+  background: #1B3158;
 }
 
 /* ── Vista compacta (lista densa): alineación cabecera ↔ filas ────────
