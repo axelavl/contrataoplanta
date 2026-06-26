@@ -1773,6 +1773,7 @@ async function cargarOfertas() {
   if (estado.cierra_pronto && estado.vista_listado === 'vigentes')  params.set('cierra_pronto', 'true');
   if (estado.nuevas)         params.set('nuevas', 'true');
   if (estado.solo_con_correo) params.set('solo_con_correo', 'true');
+  if (estado.sin_experiencia) params.set('sin_experiencia', 'true');
   if (estado.institucion_id) params.set('institucion', estado.institucion_id);
   if (estado.renta_min)      params.set('renta_min', estado.renta_min);
   if (estado.renta_max)      params.set('renta_max', estado.renta_max);
