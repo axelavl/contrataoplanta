@@ -77,6 +77,7 @@ from api.services.seo import (
 from api.services.regiones import get_comunas, get_regiones
 from api.services.leyes import buscar_ley_bcn, get_ley_institucion
 from api.services.mailcheck import validar_email as mailcheck_validar
+from api.services.analitica import registrar_evento
 from api.services.email_alerts import enviar_alerta_ofertas, enviar_verificacion
 from api.services.meilisearch_svc import (
     autocompletar as meili_autocompletar,
@@ -794,6 +795,59 @@ def crear_alerta(request: Request, payload: AlertaPayload) -> dict[str, Any]:
     if check.get("sugerencia"):
         response["sugerencia_email"] = check["sugerencia"]
     return response
+
+
+# ──────────────────── Analítica interna (beacon de tráfico) ─────────────────
+
+#: Límite holgado y propio para el beacon: una sesión normal genera muchas
+#: vistas, así que no comparte presupuesto con `/api/alertas`.
+_track_rate: dict[str, list[float]] = defaultdict(list)
+_TRACK_RATE_WINDOW = 60
+_TRACK_RATE_MAX = 120
+
+
+def _check_track_rate(request: Request) -> bool:
+    ip = client_ip(request)
+    ahora = _time.time()
+    corte = ahora - _TRACK_RATE_WINDOW
+    hits = _track_rate[ip] = [t for t in _track_rate[ip] if t > corte]
+    if len(hits) >= _TRACK_RATE_MAX:
+        return False
+    _track_rate[ip].append(ahora)
+    return True
+
+
+@router.post("/api/track")
+async def track_evento(request: Request) -> Response:
+    """Registra una vista de página o un evento del sitio (analítica propia).
+
+    Lo llama `web/analytics.js` vía `navigator.sendBeacon`. El cuerpo se
+    parsea a mano (no se declara un modelo de FastAPI) porque el beacon se
+    envía como `text/plain` para evitar el preflight CORS que `sendBeacon`
+    no puede hacer cross-origin.
+
+    No guarda IP ni datos personales; el «visitante único» se aproxima con
+    un hash anónimo que rota a diario. Siempre responde 204 (incluso si se
+    descarta o la tabla aún no existe) para no entorpecer la navegación.
+    """
+    if _check_track_rate(request):
+        try:
+            raw = await request.body()
+            data = json.loads(raw or b"{}")
+            if not isinstance(data, dict):
+                data = {}
+        except Exception:
+            data = {}
+        registrar_evento(
+            tipo=str(data.get("tipo") or "pageview"),
+            path=data.get("path"),
+            evento=data.get("evento"),
+            oferta_id=data.get("oferta_id"),
+            referrer=data.get("ref") or request.headers.get("referer"),
+            user_agent=request.headers.get("user-agent", ""),
+            ip=client_ip(request),
+        )
+    return Response(status_code=204)
 
 
 # ──────────────────── Scraper sources (catálogo + clasificación) ───────────

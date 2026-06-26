@@ -1,6 +1,20 @@
 (function () {
   'use strict';
 
+  /* ── Analítica del sitio · carga única ──
+     shared-shell.js lo cargan ~todas las páginas públicas, así que es el
+     punto ideal para activar la analítica (Umami + beacon propio) en todo
+     el sitio sin tocar 28 HTML. analytics.js trae su propio guard
+     anti-doble-arranque; aquí solo evitamos duplicar el <script> cuando la
+     página ya lo incluye directo (p. ej. index.html). */
+  (function cargarAnalitica() {
+    if (document.querySelector('script[src="/analytics.js"]')) return;
+    var s = document.createElement('script');
+    s.src = '/analytics.js';
+    s.defer = true;
+    document.head.appendChild(s);
+  })();
+
   /* ── Ruta canónica de una oferta · fuente única de verdad ──
      /oferta/{id}-{slug-del-cargo}. El slug DEBE coincidir con `_slugify` del
      backend (api/services/formatters.py) para que el enlace que compartimos ya

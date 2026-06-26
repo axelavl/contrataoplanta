@@ -61,8 +61,15 @@ class Config:
     MEILISEARCH_API_KEY: str = os.getenv("MEILISEARCH_API_KEY", "")
 
     # ── Umami Analytics ──
+    # `UMAMI_SCRIPT_URL` / `UMAMI_WEBSITE_ID` activan el script de tracking en
+    # el frontend. Las siguientes (opcionales) habilitan que el panel admin
+    # consulte la API de Umami para mostrar sus métricas en «Estadísticas».
     UMAMI_SCRIPT_URL: str = os.getenv("UMAMI_SCRIPT_URL", "")
     UMAMI_WEBSITE_ID: str = os.getenv("UMAMI_WEBSITE_ID", "")
+    UMAMI_API_URL: str  = os.getenv("UMAMI_API_URL", "")
+    UMAMI_API_KEY: str  = os.getenv("UMAMI_API_KEY", "")
+    UMAMI_USERNAME: str = os.getenv("UMAMI_USERNAME", "")
+    UMAMI_PASSWORD: str = os.getenv("UMAMI_PASSWORD", "")
 
     # ── Logging ──
     LOG_DIR: str  = os.getenv("LOG_DIR", "logs")
