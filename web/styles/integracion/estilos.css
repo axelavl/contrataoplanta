@@ -521,15 +521,10 @@ mark.cop-hl {
 .resultados-preferencias .ctrl-select--sort { height: 38px; }
 .resultados-preferencias .sort-wrap { height: 38px; align-items: center; }
 
-/* ── Cinta superior en modo oscuro: que destaque como banda propia ────
-   El fondo #050C1A quedaba casi igual al fondo de la página en dark
-   (#0A1426), así que la cinta se "perdía". La subimos a una banda más clara
-   con borde dorado tenue, tan protagonista como en modo claro. */
-:root[data-theme="dark"] .ribbon {
-  background: #16284A;
-  border-bottom: 1px solid rgba(234, 184, 88, 0.22);
-  color: rgba(236, 232, 219, 0.85);
-}
+/* La cinta en modo oscuro (banda #16284A) se movió a redesign-overrides.css
+   —hoja compartida por todas las páginas— para que index y las páginas
+   secundarias se vean iguales. Ver la regla `:root[data-theme="dark"] .ribbon`
+   allí. */
 
 /* ── "Ordenar por": que la opción no se corte (ej. "⏰ Cierra antes") ──
    El select tenía min-width chico y el texto se cortaba con ellipsis. Le
