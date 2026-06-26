@@ -219,6 +219,11 @@ def get_ofertas(
     if q:
         rel_sql, rel_params = build_cargo_relevance(q)
 
+    # En la pestaña "Destacadas" las marcadas a mano (las que se publican en
+    # redes sociales) van SIEMPRE primero; debajo, las incluidas por el
+    # criterio automático (DESTACADAS_AUTO). `destacada` viene de la CTE base.
+    destacadas_prefix = "destacada DESC, " if destacadas else ""
+
     select_sql = f"""
     WITH base AS (
         {ofertas_select_sql()}
@@ -226,7 +231,7 @@ def get_ofertas(
         {where_sql}
     )
     SELECT * FROM base
-    ORDER BY {rel_sql}{order_sql}
+    ORDER BY {destacadas_prefix}{rel_sql}{order_sql}
     LIMIT %s OFFSET %s
     """
     count_sql = f"""
