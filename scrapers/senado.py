@@ -280,6 +280,7 @@ def construir_oferta(item: dict[str, str], detalle: dict[str, Any]) -> dict:
         "fecha_publicacion": detalle.get("fecha_publicacion") or date.today(),
         "fecha_cierre": detalle.get("fecha_cierre"),
         "requisitos_texto": None,
+        "url_bases": detalle.get("bases_url"),
     }
 
 

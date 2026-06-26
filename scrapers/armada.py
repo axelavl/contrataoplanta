@@ -551,6 +551,7 @@ def construir_oferta(item: dict[str, Any], det: dict[str, Any]) -> dict:
         "fecha_publicacion": det.get("fecha_publicacion") or date.today(),
         "fecha_cierre": det.get("fecha_cierre"),
         "requisitos_texto": det.get("requisitos_texto"),  # desde las bases PDF si están disponibles
+        "url_bases": det.get("bases_url"),
     }
 
 

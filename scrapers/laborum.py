@@ -311,6 +311,7 @@ def construir_oferta(item: dict[str, Any], institucion_id: int,
         "fecha_publicacion": date.today(),
         "fecha_cierre": None,  # Laborum no expone cierre; se cierra por ausencia
         "requisitos_texto": item.get("requisitos_texto"),
+        "url_bases": None,
     }
 
 

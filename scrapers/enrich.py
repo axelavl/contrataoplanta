@@ -290,15 +290,8 @@ def enriquecer_oferta(
         for _url, t in textos_pdf:
             textos.append(t)
 
-    # Agregar URL de bases si hay PDF relevante y no se tiene
     if textos_pdf and not oferta.get("url_bases"):
-        desc = oferta.get("descripcion") or ""
-        primera_url = textos_pdf[0][0]
-        if primera_url not in desc:
-            sep = " | " if desc else ""
-            oferta["descripcion"] = _limpiar(
-                desc + sep + f"Bases: {primera_url}"
-            )[:2000]
+        oferta["url_bases"] = textos_pdf[0][0]
 
     if not textos:
         return oferta

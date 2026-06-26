@@ -504,6 +504,7 @@ def construir_oferta(item: dict, fuente: dict) -> dict:
         "fecha_publicacion": date.today(),  # sin fecha publicada: fecha de captura
         "fecha_cierre": item.get("fecha_cierre"),
         "requisitos_texto": item.get("requisitos"),
+        "url_bases": item["url"] if item["url"].lower().endswith(".pdf") else item.get("url_bases"),
     }
 
 

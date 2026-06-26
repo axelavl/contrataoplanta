@@ -316,6 +316,7 @@ def construir_oferta(p: dict[str, Any], form_real: str | None) -> dict:
         "fecha_publicacion": p.get("fecha_publicacion") or date.today(),
         "fecha_cierre": p.get("fecha_cierre"),
         "requisitos_texto": None,  # el perfil del cargo va adjunto como imagen/PDF
+        "url_bases": None,
     }
 
 

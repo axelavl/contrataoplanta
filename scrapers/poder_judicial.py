@@ -303,6 +303,7 @@ def construir_oferta(rec: dict[str, Any]) -> dict:
         "fecha_publicacion": rec.get("fecha_publicacion"),
         "fecha_cierre": rec.get("fecha_cierre"),
         "requisitos_texto": None,
+        "url_bases": rec["url"] if rec["url"].lower().endswith(".pdf") else None,
     }
 
 
