@@ -585,6 +585,16 @@
      hairline dorado tenue los delimita sin romper la estética. */
   border-bottom: 1px solid rgba(242, 194, 106, 0.22);
 }
+/* Cinta en modo oscuro: banda más clara para que destaque (si no, #050C1A
+   queda casi igual al fondo de la página en dark y la cinta se "pierde").
+   Vive acá —hoja compartida por TODAS las páginas— para que index y las
+   páginas secundarias (Preparación, FAQ, Capacítate…) se vean iguales.
+   Antes estaba solo en integracion/estilos.css, que únicamente carga index. */
+:root[data-theme="dark"] .ribbon {
+  background: #16284A;
+  border-bottom: 1px solid rgba(234, 184, 88, 0.22);
+  color: rgba(236, 232, 219, 0.85);
+}
 .ribbon-inner {
   max-width: 1200px;
   margin: 0 auto;
