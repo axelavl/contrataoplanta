@@ -42,10 +42,15 @@ for html in HTMLS:
         if path.startswith('/') and is_ssr_route(path):
             continue
         if path.startswith('/'):
-            candidate = (ROOT / path.lstrip('/')).resolve()
+            # Rutas absolutas: el sitio estático se sirve con `web/` como raíz
+            # (Cloudflare Pages), así que `/faq.html` -> `web/faq.html`. También
+            # pueden existir copias legacy en la raíz del repo. Es válido si el
+            # archivo existe en cualquiera de las dos ubicaciones.
+            rel = path.lstrip('/')
+            existe = (WEB / rel).exists() or (ROOT / rel).exists()
         else:
-            candidate = (html.parent / path).resolve()
-        if not candidate.exists():
+            existe = (html.parent / path).resolve().exists()
+        if not existe:
             errors.append(f'{html.relative_to(ROOT)} -> href="{href}" no existe')
 
 if errors:
