@@ -60,23 +60,52 @@ def _values_clause() -> str:
     return ", ".join(f"({dup}, {can})" for dup, can in _DEDUP)
 
 
+def _solo_si_tiene_institucion_id(tabla: str, sql_interno: str) -> str:
+    """Envuelve `sql_interno` para que solo corra si `tabla.institucion_id`
+    existe en este despliegue.
+
+    Reconciliación de drift de schema: algunas tablas (`scraper_descartes` y las
+    de auditoría) se crearon FUERA de Alembic —vía el viejo `ensure_api_schema()`
+    o `db/schema.sql`— antes de que el schema añadiera `institucion_id`. En esos
+    despliegues (p.ej. Railway) la columna no existe y el UPDATE crudo rompía la
+    migración con `column institucion_id does not exist`, dejando la cadena de
+    Alembic atascada. Saltar la tabla no pierde nada: sin esa columna no hay
+    referencias a repuntar (y el scraper no la usa al registrar descartes).
+    El PL/pgSQL solo planea el cuerpo del IF cuando se ejecuta, así que también
+    tolera que la tabla no exista del todo.
+    """
+    return f"""
+    DO $$
+    BEGIN
+        IF EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_name = '{tabla}' AND column_name = 'institucion_id'
+        ) THEN
+            {sql_interno}
+        END IF;
+    END $$;
+    """
+
+
 def upgrade() -> None:
     values = _values_clause()
     ids_csv = ", ".join(str(i) for i in _DUP_IDS)
 
-    # 1. Repuntar institucion_id de cada duplicado hacia su canónico.
+    # 1. Repuntar institucion_id de cada duplicado hacia su canónico (solo en las
+    #    tablas que tengan la columna en este despliegue — ver helper).
     for tabla in _FK_TABLES:
-        op.execute(
-            f"""
+        op.execute(_solo_si_tiene_institucion_id(tabla, f"""
             UPDATE {tabla} t
             SET institucion_id = m.canonico
             FROM (VALUES {values}) AS m(dup, canonico)
-            WHERE t.institucion_id = m.dup
-            """
-        )
+            WHERE t.institucion_id = m.dup;
+        """))
 
     # 2. Limpiar overrides apuntando a IDs que dejarán de existir (PK, sin FK).
-    op.execute(f"DELETE FROM source_overrides WHERE institucion_id IN ({ids_csv})")
+    op.execute(_solo_si_tiene_institucion_id(
+        "source_overrides",
+        f"DELETE FROM source_overrides WHERE institucion_id IN ({ids_csv});",
+    ))
 
     # 3. Borrar las filas huérfanas del catálogo en la DB.
     op.execute(f"DELETE FROM instituciones WHERE id IN ({ids_csv})")
