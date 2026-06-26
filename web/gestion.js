@@ -533,6 +533,7 @@ function renderOfertasTable(ofertas) {
   tbody.innerHTML = ofertas.map(o => {
     _itemCache[o.id] = o;
     const activa = o.activa !== false;
+    const destacada = o.destacada === true;
     const urlOk  = o.url_oferta_valida;
     const urlIcon = o.url_oferta ? (urlOk===false?'🔴':urlOk===true?'🟢':'⚪') : '<span class="text-muted">—</span>';
     const inst = o.institucion_display || o.institucion_nombre || '<span class="text-muted">—</span>';
@@ -540,7 +541,7 @@ function renderOfertasTable(ofertas) {
       <td><input type="checkbox" class="sel-oferta" data-id="${o.id}"></td>
       <td class="text-muted text-small">${o.id}</td>
       <td style="max-width:220px">
-        <div title="${escAttr(o.cargo)}" style="font-weight:500">${trunc(o.cargo,36)}</div>
+        <div title="${escAttr(o.cargo)}" style="font-weight:500">${destacada?'<span title="Destacada en redes sociales">⭐ </span>':''}${trunc(o.cargo,36)}</div>
         <div class="text-small text-muted" title="${escAttr(inst)}">${trunc(inst,34)}</div>
       </td>
       <td class="text-small text-muted">${trunc(o.sector_real||'',18)}</td>
@@ -550,6 +551,7 @@ function renderOfertasTable(ofertas) {
       <td style="text-align:center" title="${escAttr(o.url_oferta)}">${urlIcon}</td>
       <td style="white-space:nowrap">
         <button class="btn btn-sm ${activa?'btn-danger':'btn-success'}" data-action="toggle-activa" data-id="${o.id}">${activa?'Pausar':'Activar'}</button>
+        <button class="btn btn-sm" style="margin-left:4px${destacada?';background:var(--naran,#f59e0b);color:#fff':''}" data-action="toggle-destacada" data-id="${o.id}" title="${destacada?'Quitar de Destacadas (redes sociales)':'Destacar en redes sociales'}">${destacada?'⭐':'☆'}</button>
         <button class="btn btn-ghost btn-sm" style="margin-left:4px" data-action="open-edit" data-id="${o.id}">✏️</button>
         ${o.url_oferta?`<a href="${escAttr(o.url_oferta)}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" style="margin-left:4px">🔗</a>`:''}
       </td>
@@ -579,6 +581,14 @@ async function toggleActiva(id) {
   try {
     const r = await api(`/ofertas/${id}/toggle-activa`, { method:'POST' });
     toast(`Oferta ${id} → ${r.activa?'activada ✓':'desactivada'}`);
+    loadOfertas(_ofertasPagina);
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+async function toggleDestacada(id) {
+  try {
+    const r = await api(`/ofertas/${id}/toggle-destacada`, { method:'POST' });
+    toast(`Oferta ${id} → ${r.destacada?'destacada en redes ⭐':'quitada de Destacadas'}`);
     loadOfertas(_ofertasPagina);
   } catch(e) { toast('Error: '+e.message,'error'); }
 }
@@ -1507,6 +1517,7 @@ document.addEventListener('click', e => {
     // Acciones por fila (data-id / data-* del elemento)
     case 'pagina':             loadOfertas(parseInt(d.page)); break;
     case 'toggle-activa':      toggleActiva(parseInt(d.id)); break;
+    case 'toggle-destacada':   toggleDestacada(parseInt(d.id)); break;
     case 'open-edit':          openEdit(parseInt(d.id)); break;
     case 'marcar-revisada':    marcarRevisada(parseInt(d.id)); break;
     case 'editar-fuente':      openEditarFuente(parseInt(d.id)); break;

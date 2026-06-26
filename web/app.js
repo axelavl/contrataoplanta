@@ -1354,7 +1354,7 @@ function renderCard(oferta) {
   // cuando el dato no está; preferimos ocultar el span.
   const UI = window.UI_STRINGS || {};
   return `
-  <div class="oferta-card${esFav ? ' favorita' : ''}${plazo.clase ? ' urg-' + plazo.clase : ''}" data-oferta-id="${oferta.id}" role="button" tabindex="0" aria-label="Ver detalle: ${escAttr(cargoDisplay)}">
+  <div class="oferta-card${esFav ? ' favorita' : ''}${oferta.destacada ? ' destacada' : ''}${plazo.clase ? ' urg-' + plazo.clase : ''}" data-oferta-id="${oferta.id}" role="button" tabindex="0" aria-label="Ver detalle: ${escAttr(cargoDisplay)}">
     <button class="btn-fav-card${esFav ? ' activo' : ''}"
       data-id="${oferta.id}"
       data-cargo="${escAttr(cargoDisplay)}"
@@ -1371,6 +1371,7 @@ function renderCard(oferta) {
         <div class="oferta-institucion">${resaltarBusqueda(_aplicarAcronimosForzados(oferta.institucion || ''), estado.q) || 'Institución pública'}</div>
         <div class="oferta-cargo"><span class="oferta-cargo-link">${resaltarBusqueda(cargoDisplay, estado.q)}</span></div>
         <div class="oferta-tipo-wrap">
+          ${oferta.destacada ? `<span class="badge badge-destacada" title="Oferta destacada en nuestras redes sociales">⭐ Destacada</span>` : ''}
           ${oferta.tipo_contrato ? `<span class="badge ${tipoCss}">${tipoLabel}</span>` : ''}
           ${regionCompleta ? `<span class="badge badge-region">🗺 ${escHtml(regionCompleta)}</span>` : ''}
         </div>
@@ -1454,12 +1455,12 @@ function renderRowCompacta(oferta) {
     console.debug('[SEO] JobPosting omitido en row por campos faltantes:', jobPosting.errores, oferta?.id);
   }
   return `
-  <div class="oferta-row${esFav ? ' favorita' : ''}" data-oferta-id="${oferta.id}" role="button" tabindex="0" aria-label="Ver detalle: ${escAttr(cargoDisplay)}">
+  <div class="oferta-row${esFav ? ' favorita' : ''}${oferta.destacada ? ' destacada' : ''}" data-oferta-id="${oferta.id}" role="button" tabindex="0" aria-label="Ver detalle: ${escAttr(cargoDisplay)}">
     <div class="row-main">
       <div class="row-logo${instLogo.confiable ? ' row-logo--verificada' : ''}" title="${escAttr(instLogo.fuente)}" aria-hidden="true">${instLogo.html}</div>
       <div class="row-textcol">
         <div class="row-inst">${escHtml(_aplicarAcronimosForzados(oferta.institucion || '')) || 'Institución pública'}</div>
-        <div class="row-cargo" title="${escAttr(cargoDisplay)}">${escHtml(cargoDisplay)}</div>
+        <div class="row-cargo" title="${escAttr(cargoDisplay)}">${oferta.destacada ? '<span title="Oferta destacada en redes sociales">⭐ </span>' : ''}${escHtml(cargoDisplay)}</div>
         ${regionCompleta ? `<div class="row-region">🗺 ${escHtml(regionCompleta)}</div>` : ''}
       </div>
     </div>
@@ -1580,6 +1581,17 @@ function renderVacio() {
     aplicarSugerencia(BUSQUEDAS_POPULARES[parseInt(btn.dataset.idx, 10)]);
   });
   document.getElementById('btn-estado-alerta')?.addEventListener('click', prellenarAlertaDesdeFiltros);
+}
+
+// Estado vacío específico de la pestaña "Destacadas": no hay filtros que
+// ajustar, simplemente todavía no hay ofertas curadas para redes.
+function renderVacioDestacadas() {
+  document.getElementById('lista-ofertas').innerHTML = `
+    <div class="estado-vacio">
+      ⭐ Aún no hay ofertas destacadas.
+      <p class="estado-mensaje">Acá aparecen las ofertas que publicamos en nuestras redes sociales (Instagram, TikTok, LinkedIn). Vuelve pronto o revisa la pestaña <strong>Vigentes</strong>.</p>
+    </div>`;
+  document.getElementById('paginacion').innerHTML = '';
 }
 
 function aplicarSugerencia(sug) {
@@ -1742,20 +1754,31 @@ function irPagina(n) {
   document.getElementById('lista-ofertas').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+// Copys por pestaña del listado. Centraliza el texto para que init,
+// buscar() y setVistaListado() no se repitan.
+const LISTADO_COPYS = {
+  vigentes: 'Mostrando concursos vigentes. Revisa los cerrados en la pestaña Cerradas.',
+  destacadas: 'Ofertas destacadas: una selección de las mejores oportunidades vigentes, incluidas las que publicamos en nuestras redes sociales (Instagram, TikTok, LinkedIn). No se aplican los filtros del buscador.',
+  cerradas: 'Mostrando convocatorias ya cerradas para consulta e historial. Vuelve a Vigentes para postular.',
+};
+
+// Sincroniza las pestañas (activo + aria-selected) con la vista actual.
+function sincronizarTabsListado(vista) {
+  document.getElementById('estado-listado-tabs')?.setAttribute('data-estado', vista);
+  ['vigentes', 'destacadas', 'cerradas'].forEach((v) => {
+    const tab = document.getElementById('tab-' + v);
+    if (!tab) return;
+    tab.classList.toggle('activo', v === vista);
+    tab.setAttribute('aria-selected', v === vista ? 'true' : 'false');
+  });
+}
+
 function setVistaListado(vista) {
   estado.vista_listado = vista;
   estado.pagina = 1;
-  document.getElementById('estado-listado-tabs')?.setAttribute('data-estado', vista);
-  document.getElementById('tab-vigentes')?.classList.toggle('activo', vista === 'vigentes');
-  document.getElementById('tab-cerradas')?.classList.toggle('activo', vista === 'cerradas');
-  document.getElementById('tab-vigentes')?.setAttribute('aria-selected', vista === 'vigentes' ? 'true' : 'false');
-  document.getElementById('tab-cerradas')?.setAttribute('aria-selected', vista === 'cerradas' ? 'true' : 'false');
+  sincronizarTabsListado(vista);
   const copy = document.getElementById('estado-listado-copy');
-  if (copy) {
-    copy.textContent = vista === 'vigentes'
-      ? 'Mostrando concursos vigentes. Revisa los cerrados en la pestaña Cerradas.'
-      : 'Mostrando convocatorias ya cerradas para consulta e historial. Vuelve a Vigentes para postular.';
-  }
+  if (copy) copy.textContent = LISTADO_COPYS[vista] || LISTADO_COPYS.vigentes;
   actualizarVisibilidadCompartirBusqueda();
   cargarOfertas();
 }
@@ -1765,35 +1788,44 @@ async function cargarOfertas() {
   renderEsqueletos();
 
   const params = new URLSearchParams({ pagina: estado.pagina, por_pagina: estado.por_pagina, orden: estado.orden });
-  if (estado.q)              params.set('q', estado.q);
-  if (estado.profesion)      params.set('profesion', estado.profesion);
-  if (estado.region && (!Array.isArray(estado.comunas) || estado.comunas.length === 0)) params.set('region', estado.region);
-  if (estado.sector)         params.set('sector', estado.sector);
-  if (estado.nivel)          params.set('nivel', estado.nivel);
-  if (estado.cierra_pronto && estado.vista_listado === 'vigentes')  params.set('cierra_pronto', 'true');
-  if (estado.nuevas)         params.set('nuevas', 'true');
-  if (estado.solo_con_correo) params.set('solo_con_correo', 'true');
-  if (estado.sin_experiencia) params.set('sin_experiencia', 'true');
-  if (estado.institucion_id) params.set('institucion', estado.institucion_id);
-  if (estado.renta_min)      params.set('renta_min', estado.renta_min);
-  if (estado.renta_max)      params.set('renta_max', estado.renta_max);
-  if (Array.isArray(estado.comunas) && estado.comunas.length > 0) {
-    params.set('comunas', estado.comunas.join(','));
-  } else if (estado.ciudad) {
-    params.set('ciudad', estado.ciudad);
-  }
-  // Tipos activos: enviar solo cuando es un subconjunto propio del catálogo.
-  // Si están todos activos o ninguno, no filtrar para incluir todos los tipos.
-  const TIPOS_CATALOGO_UI = ['planta','contrata','honorarios','codigo_trabajo','otro','no_informa'];
-  const tiposActivosApi = estado.tipos.flatMap((tipo) => (
-    tipo === 'otro' ? ['otro', 'reemplazo'] : [tipo]
-  ));
-  const tiposUnicosApi = [...new Set(tiposActivosApi)];
-  const tiposCatalogoApi = [...new Set(TIPOS_CATALOGO_UI.flatMap((tipo) => (
-    tipo === 'otro' ? ['otro', 'reemplazo'] : [tipo]
-  )))];
-  if (tiposUnicosApi.length > 0 && tiposUnicosApi.length < tiposCatalogoApi.length) {
-    params.set('tipo', tiposUnicosApi.join(','));
+
+  // La pestaña "Destacadas" es una vitrina curada: muestra TODAS las ofertas
+  // destacadas sin aplicar los filtros activos del buscador (región, sector,
+  // término, etc.). Por eso enviamos solo `destacadas` + paginación/orden.
+  const esDestacadas = estado.vista_listado === 'destacadas';
+  if (esDestacadas) {
+    params.set('destacadas', 'true');
+  } else {
+    if (estado.q)              params.set('q', estado.q);
+    if (estado.profesion)      params.set('profesion', estado.profesion);
+    if (estado.region && (!Array.isArray(estado.comunas) || estado.comunas.length === 0)) params.set('region', estado.region);
+    if (estado.sector)         params.set('sector', estado.sector);
+    if (estado.nivel)          params.set('nivel', estado.nivel);
+    if (estado.cierra_pronto && estado.vista_listado === 'vigentes')  params.set('cierra_pronto', 'true');
+    if (estado.nuevas)         params.set('nuevas', 'true');
+    if (estado.solo_con_correo) params.set('solo_con_correo', 'true');
+    if (estado.sin_experiencia) params.set('sin_experiencia', 'true');
+    if (estado.institucion_id) params.set('institucion', estado.institucion_id);
+    if (estado.renta_min)      params.set('renta_min', estado.renta_min);
+    if (estado.renta_max)      params.set('renta_max', estado.renta_max);
+    if (Array.isArray(estado.comunas) && estado.comunas.length > 0) {
+      params.set('comunas', estado.comunas.join(','));
+    } else if (estado.ciudad) {
+      params.set('ciudad', estado.ciudad);
+    }
+    // Tipos activos: enviar solo cuando es un subconjunto propio del catálogo.
+    // Si están todos activos o ninguno, no filtrar para incluir todos los tipos.
+    const TIPOS_CATALOGO_UI = ['planta','contrata','honorarios','codigo_trabajo','otro','no_informa'];
+    const tiposActivosApi = estado.tipos.flatMap((tipo) => (
+      tipo === 'otro' ? ['otro', 'reemplazo'] : [tipo]
+    ));
+    const tiposUnicosApi = [...new Set(tiposActivosApi)];
+    const tiposCatalogoApi = [...new Set(TIPOS_CATALOGO_UI.flatMap((tipo) => (
+      tipo === 'otro' ? ['otro', 'reemplazo'] : [tipo]
+    )))];
+    if (tiposUnicosApi.length > 0 && tiposUnicosApi.length < tiposCatalogoApi.length) {
+      params.set('tipo', tiposUnicosApi.join(','));
+    }
   }
 
   try {
@@ -1823,6 +1855,7 @@ async function cargarOfertas() {
     _nuevasBaseline(totalContador, params.toString());
 
     if (!ofertasFiltradas.length) {
+      if (estado.vista_listado === 'destacadas') { renderVacioDestacadas(); return; }
       renderVacio();
       return;
     }
@@ -3283,12 +3316,9 @@ function limpiarRentaMax() {
 function buscar() {
   if (estado.vista_listado !== 'vigentes') {
     estado.vista_listado = 'vigentes';
-    document.getElementById('estado-listado-tabs')?.setAttribute('data-estado', 'vigentes');
-    document.getElementById('tab-vigentes')?.classList.add('activo');
-    document.getElementById('tab-cerradas')?.classList.remove('activo');
-    document.getElementById('tab-vigentes')?.setAttribute('aria-selected', 'true');
-    document.getElementById('tab-cerradas')?.setAttribute('aria-selected', 'false');
-    document.getElementById('estado-listado-copy').textContent = 'Mostrando concursos vigentes. Revisa los cerrados en la pestaña Cerradas.';
+    sincronizarTabsListado('vigentes');
+    const copyListado = document.getElementById('estado-listado-copy');
+    if (copyListado) copyListado.textContent = LISTADO_COPYS.vigentes;
   }
   estado.q         = document.getElementById('input-cargo').value.trim();
   estado.region    = document.getElementById('filtro-region').value;
@@ -3798,13 +3828,9 @@ function limpiarTodosLosFiltros() {
   // limpiar filtros implica empezar de cero.
   if (estado.vista_listado !== 'vigentes') {
     estado.vista_listado = 'vigentes';
-    document.getElementById('estado-listado-tabs')?.setAttribute('data-estado', 'vigentes');
-    document.getElementById('tab-vigentes')?.classList.add('activo');
-    document.getElementById('tab-cerradas')?.classList.remove('activo');
-    document.getElementById('tab-vigentes')?.setAttribute('aria-selected', 'true');
-    document.getElementById('tab-cerradas')?.setAttribute('aria-selected', 'false');
+    sincronizarTabsListado('vigentes');
     const copy = document.getElementById('estado-listado-copy');
-    if (copy) copy.innerHTML = 'Mostrando concursos vigentes. Revisa los cerrados en la pestaña <strong>Cerradas</strong>.';
+    if (copy) copy.textContent = LISTADO_COPYS.vigentes;
   }
 
   actualizarVisibilidadCompartirBusqueda();
@@ -3992,15 +4018,15 @@ function restaurarFiltrosDesdeURL() {
     estado.solo_con_correo = params.get('solo_con_correo') === 'true';
     if (params.has('vista')) {
       const vista = params.get('vista');
-      if (vista === 'cerradas' || vista === 'vigentes') estado.vista_listado = vista;
+      if (vista === 'cerradas' || vista === 'vigentes' || vista === 'destacadas') estado.vista_listado = vista;
     }
     // Selectores por data-filtro (el markup usa data-action/data-filtro, no onclick).
     document.querySelector('.filtro-tag[data-filtro="cierra-hoy"]')?.classList.toggle('activo', estado.cierra_pronto);
     document.querySelector('.filtro-tag[data-filtro="nuevos"]')?.classList.toggle('activo', estado.nuevas);
     document.querySelector('.filtro-tag[data-filtro="con-correo"]')?.classList.toggle('activo', estado.solo_con_correo);
-    document.getElementById('estado-listado-tabs')?.setAttribute('data-estado', estado.vista_listado);
-    document.getElementById('tab-vigentes')?.classList.toggle('activo', estado.vista_listado === 'vigentes');
-    document.getElementById('tab-cerradas')?.classList.toggle('activo', estado.vista_listado === 'cerradas');
+    sincronizarTabsListado(estado.vista_listado);
+    const copyListadoInit = document.getElementById('estado-listado-copy');
+    if (copyListadoInit) copyListadoInit.textContent = LISTADO_COPYS[estado.vista_listado] || LISTADO_COPYS.vigentes;
 
     if (params.has('pagina')) {
       const p = parseInt(params.get('pagina'), 10);

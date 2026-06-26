@@ -169,6 +169,7 @@ def get_ofertas(
     cierra_pronto: bool = Query(False),
     nuevas: bool = Query(False),
     solo_con_correo: bool = Query(False, description="Solo ofertas con correo de postulación/contacto."),
+    destacadas: bool = Query(False, description="Solo ofertas destacadas (las que se publican en redes sociales)."),
     sin_experiencia: bool = Query(False, description="Solo ofertas que no exigen experiencia previa (best-effort por texto)."),
     vista: str = Query("vigentes", pattern="^(vigentes|cerradas|todas)$"),
     orden: str = Query("recientes"),
@@ -194,6 +195,7 @@ def get_ofertas(
         cierra_pronto=cierra_pronto,
         nuevas=nuevas,
         solo_con_correo=solo_con_correo,
+        solo_destacadas=destacadas,
         sin_experiencia=sin_experiencia,
         solo_activas=only_active,
         closed_only=only_closed,
@@ -219,6 +221,11 @@ def get_ofertas(
     if q:
         rel_sql, rel_params = build_cargo_relevance(q)
 
+    # En la pestaña "Destacadas" las marcadas a mano (las que se publican en
+    # redes sociales) van SIEMPRE primero; debajo, las incluidas por el
+    # criterio automático (DESTACADAS_AUTO). `destacada` viene de la CTE base.
+    destacadas_prefix = "destacada DESC, " if destacadas else ""
+
     select_sql = f"""
     WITH base AS (
         {ofertas_select_sql()}
@@ -226,7 +233,7 @@ def get_ofertas(
         {where_sql}
     )
     SELECT * FROM base
-    ORDER BY {rel_sql}{order_sql}
+    ORDER BY {destacadas_prefix}{rel_sql}{order_sql}
     LIMIT %s OFFSET %s
     """
     count_sql = f"""

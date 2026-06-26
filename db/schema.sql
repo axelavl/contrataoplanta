@@ -109,6 +109,9 @@ CREATE TABLE IF NOT EXISTS ofertas (
     -- Estado
     activa                  BOOLEAN DEFAULT TRUE,
     es_nueva                BOOLEAN DEFAULT TRUE,
+    -- Curaduría: ofertas destacadas que se publican en redes sociales.
+    -- Alimentan la pestaña pública "Destacadas".
+    destacada               BOOLEAN DEFAULT FALSE,
     vistas                  INTEGER DEFAULT 0,
 
     -- Auditoría
@@ -249,6 +252,7 @@ CREATE INDEX IF NOT EXISTS idx_ofertas_publicacion     ON ofertas(fecha_publicac
 CREATE INDEX IF NOT EXISTS idx_ofertas_fuente          ON ofertas(fuente_id);
 CREATE INDEX IF NOT EXISTS idx_ofertas_institucion     ON ofertas(institucion_id);
 CREATE INDEX IF NOT EXISTS idx_ofertas_nueva           ON ofertas(es_nueva) WHERE es_nueva = TRUE;
+CREATE INDEX IF NOT EXISTS idx_ofertas_destacada       ON ofertas(destacada) WHERE destacada = TRUE;
 CREATE INDEX IF NOT EXISTS idx_ofertas_scraped         ON ofertas(detectada_en DESC);
 
 -- Índice parcial: solo ofertas activas, que son las que se consultan 99% del tiempo
