@@ -112,6 +112,12 @@ mark.cop-hl {
   border-left: 2px solid var(--verde, #2F6E4E); border-bottom: 2px solid var(--verde, #2F6E4E); transform: rotate(-45deg); }
 .cop-objetivo { font-size: 14px; line-height: 1.6; color: var(--texto2, #4B5167); margin: 0;
   background: var(--blanco, #fff); border-left: 3px solid var(--acento, #C88724); border-radius: 0 8px 8px 0; padding: 12px 15px; }
+/* Recorte a una altura estándar (6 líneas) con "Ver más" para expandir. */
+.cop-objetivo.cop-clamp { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; overflow: hidden; }
+.cop-objetivo.cop-clamp.cop-expandida { -webkit-line-clamp: unset; overflow: visible; }
+.cop-desc-toggle { margin-top: 6px; padding: 0; border: none; background: none; cursor: pointer;
+  color: var(--cielo, #1A6BCC); font: 600 12.5px/1 'Inter', system-ui, sans-serif; }
+.cop-desc-toggle:hover { text-decoration: underline; }
 
 .cop-actions { position: sticky; bottom: 0; background: var(--bg, #FDFCF8);
   border-top: 1px solid var(--borde, #E5E1D2); padding: 14px 26px; display: flex; flex-direction: column; gap: 9px; }

@@ -156,6 +156,16 @@
     document.body.appendChild(overlay);
     overlay.querySelector('.cop-close').addEventListener('click', cerrar);
     overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrar(); });
+    // Expandir/contraer texto largo (objetivo) recortado a una altura estándar.
+    overlay.addEventListener('click', (e) => {
+      const btn = e.target.closest && e.target.closest('.cop-desc-toggle');
+      if (!btn) return;
+      const sec = btn.closest('.cop-sec');
+      const p = sec && sec.querySelector('.cop-clamp');
+      if (!p) return;
+      const expandida = p.classList.toggle('cop-expandida');
+      btn.textContent = expandida ? 'Ver menos' : 'Ver más';
+    });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && overlay.classList.contains('is-open')) cerrar(); });
   }
 
@@ -241,7 +251,7 @@
     </div>`;
 
     const objetivo = oferta.objetivo
-      ? `<div class="cop-sec"><div class="cop-sec-t">Objetivo del cargo</div><p class="cop-objetivo">${hl(oferta.objetivo)}</p></div>` : '';
+      ? `<div class="cop-sec"><div class="cop-sec-t">Objetivo del cargo</div><p class="cop-objetivo cop-clamp">${hl(oferta.objetivo)}</p><button class="cop-desc-toggle" type="button" hidden>Ver más</button></div>` : '';
 
     // Correo de contacto (reconocido del texto de la oferta).
     const contacto = oferta.email
@@ -337,6 +347,12 @@
     overlay.classList.add('is-open');
     overlay.scrollTop = 0;
     document.body.style.overflow = 'hidden';
+
+    // Mostrar "Ver más" del objetivo solo si el texto excede el recorte. Se
+    // mide ya con el modal visible (is-open) para tener layout real.
+    const _objP = overlay.querySelector('.cop-objetivo.cop-clamp');
+    const _objBtn = _objP && _objP.parentElement.querySelector('.cop-desc-toggle');
+    if (_objP && _objBtn) _objBtn.hidden = _objP.scrollHeight <= _objP.clientHeight + 2;
   }
 
   function cerrar() {
