@@ -196,6 +196,23 @@ document.addEventListener('click', function (e) {
   }
 });
 
+// ── "Ordenar por": abrir el menú al clickear cualquier parte del recuadro ──
+// El <select> nativo sólo cubre el texto del valor; el label "Ordenar por:"
+// y el chevron tienen pointer-events:none, así que clickearlos no abría el
+// dropdown (sólo enfocaba el select). Delegamos en document: si el click cae
+// dentro de .sort-wrap (y no sobre el propio select), abrimos el menú con
+// showPicker() —fallback a focus en navegadores sin soporte—.
+document.addEventListener('click', function (e) {
+  const wrap = e.target.closest && e.target.closest('.sort-wrap');
+  if (!wrap) return;
+  const sel = wrap.querySelector('select');
+  if (!sel || e.target === sel) return; // click directo en el select: nativo
+  if (typeof sel.showPicker === 'function') {
+    try { sel.showPicker(); return; } catch (_) { /* fuera de user-gesture, etc. */ }
+  }
+  sel.focus();
+});
+
 // ── Base URL de la API: una sola URL, sin cadena de fallbacks ─────────────
 // Backend en Railway. Los dominios de marca (contrataoplanta.cl,
 // estadoemplea.cl, etc.) no existen en DNS — intentarlos sólo producía
