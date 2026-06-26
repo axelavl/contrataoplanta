@@ -657,7 +657,7 @@
     });
     cont.innerHTML =
       '<div class="quiz-config">' +
-        '<h3 class="quiz-config-tit">Arma tu simulacro</h3>' +
+        '<h3 class="quiz-config-tit">Pon a prueba lo que sabes</h3>' +
         '<p class="quiz-config-lbl">Elige una materia para enfocarte, o déjalo en «Todas»:</p>' +
         '<div class="quiz-temas">' + chips + '</div>' +
         '<label class="quiz-toggle">' +
