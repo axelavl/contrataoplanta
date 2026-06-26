@@ -115,6 +115,7 @@ from api.services.seo import (  # noqa: E402
 )
 
 DEFAULT_ALLOW_ORIGINS = [
+    "https://contrataoplanta.cl",
     "https://estadoemplea.pages.dev",
 ]
 
@@ -129,10 +130,12 @@ def _load_allow_origins() -> list[str]:
 
 ALLOW_ORIGINS = _load_allow_origins()
 
-# Dominio público del frontend. Los dominios de marca históricos
-# (contrataoplanta.cl / estadoemplea.cl / empleoestado.cl) ya no resuelven
-# en DNS — si se filtran a un og:image o og:url, el crawler recibe NXDOMAIN
-# y el unfurl no se renderiza. Apuntamos a Cloudflare Pages por defecto.
+# Dominio público del frontend. El dominio de marca es contrataoplanta.cl;
+# Cloudflare Pages además sirve el sitio en estadoemplea.pages.dev, que se
+# mantiene en la allowlist durante la transición para no romper el deploy
+# vigente. Los dominios de marca previos (estadoemplea.cl / empleoestado.cl)
+# ya no resuelven en DNS — si se filtran a un og:image o og:url, el crawler
+# recibe NXDOMAIN y el unfurl no se renderiza.
 # Constantes y helpers de auth + rate limit centralizados en
 # api/deps.py. Los re-exportamos como módulo-level bindings para que
 # los 30+ endpoints admin que siguen viviendo en este archivo puedan
@@ -318,9 +321,10 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOW_ORIGINS,
     # El regex cubre branch previews de Cloudflare Pages del proyecto activo
-    # (`<branch>.estadoemplea.pages.dev`). Los dominios de marca muertos
-    # (contrataoplanta.*, estadoemplea.cl, *.netlify.app) se eliminaron para
-    # evitar permitir orígenes que ya no corresponden a este deploy.
+    # (`<branch>.estadoemplea.pages.dev`). El dominio de marca contrataoplanta.cl
+    # va en la allowlist estática (DEFAULT_ALLOW_ORIGINS). Los dominios muertos
+    # (estadoemplea.cl, *.netlify.app) se mantienen fuera para evitar permitir
+    # orígenes que ya no corresponden a este deploy.
     allow_origin_regex=(
         r"https://([a-z0-9-]+\.)?estadoemplea\.pages\.dev$"
     ),
@@ -369,10 +373,10 @@ _SECURITY_HEADERS = {
         "style-src 'self' 'unsafe-inline'; "
         "font-src 'self' data:; "
         "img-src 'self' data: https:; "
-        "connect-src 'self' https://estadoemplea.pages.dev; "
+        "connect-src 'self' https://contrataoplanta.cl https://estadoemplea.pages.dev; "
         "frame-ancestors 'self'; "
         "base-uri 'self'; "
-        "form-action 'self' https://estadoemplea.pages.dev; "
+        "form-action 'self' https://contrataoplanta.cl https://estadoemplea.pages.dev; "
         "object-src 'none'; "
         "upgrade-insecure-requests"
     ),

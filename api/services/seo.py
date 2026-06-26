@@ -264,7 +264,7 @@ def build_job_posting_jsonld(
         "url": url_oferta,
         "identifier": {
             "@type": "PropertyValue",
-            "name": "estadoemplea",
+            "name": "contrataoplanta",
             "value": str(oferta.get("id") or ""),
         },
         "mainEntityOfPage": canonical_url,
@@ -452,7 +452,7 @@ def build_landing_meta(
 ) -> dict[str, str]:
     """Meta tags de la landing (title, description, og, twitter)."""
     tipo_humano = {"region": "la región de", "sector": "el sector"}.get(tipo, "")
-    title = f"Empleos públicos en {nombre} — estadoemplea"
+    title = f"Empleos públicos en {nombre} — contrataoplanta"
     if total > 0:
         description = (
             f"{total} ofertas activas del sector público chileno en {tipo_humano} "
@@ -593,7 +593,7 @@ def build_landing_itemlist_jsonld(
 def build_offer_meta(oferta: dict[str, Any] | None, canonical_url: str) -> dict[str, str]:
     if not oferta:
         return {
-            "title": "estadoemplea.cl — Empleos públicos vigentes en Chile",
+            "title": "contrataoplanta.cl — Empleos públicos vigentes en Chile",
             "description": "Encuentra empleos públicos en Chile, filtra por institución y revisa oportunidades del sector público.",
             "og_image": DEFAULT_OG_IMAGE,
             "canonical": canonical_url,
@@ -770,7 +770,7 @@ def build_institucion_meta(
     inst: dict[str, Any], total: int, canonical_url: str
 ) -> dict[str, str]:
     nombre = inst.get("nombre") or "Institución pública"
-    title = f"Empleos públicos en {nombre} — estadoemplea"
+    title = f"Empleos públicos en {nombre} — contrataoplanta"
     if total > 0:
         description = (
             f"{total} oferta{'s' if total != 1 else ''} activa{'s' if total != 1 else ''} "

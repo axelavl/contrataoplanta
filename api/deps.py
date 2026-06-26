@@ -56,14 +56,14 @@ def _requerido_env(nombre: str) -> str:
 #: catálogo JSON, etc.) desde cualquier módulo.
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
-#: URL canónica del frontend. Cloudflare Pages por default; los dominios
-#: de marca previos (contrataoplanta.cl / estadoemplea.cl /
-#: empleoestado.cl) ya no resuelven en DNS — si se filtran a un
-#: `og:image` o `og:url`, el crawler recibe NXDOMAIN y el unfurl no
-#: se renderiza.
+#: URL canónica del frontend: el dominio de marca contrataoplanta.cl.
+#: Cloudflare Pages además sirve el sitio en estadoemplea.pages.dev. Los
+#: dominios de marca previos (estadoemplea.cl / empleoestado.cl) ya no
+#: resuelven en DNS — si se filtran a un `og:image` o `og:url`, el crawler
+#: recibe NXDOMAIN y el unfurl no se renderiza.
 SITE_URL = (
-    os.getenv("SITE_URL", "https://estadoemplea.pages.dev")
-    or "https://estadoemplea.pages.dev"
+    os.getenv("SITE_URL", "https://contrataoplanta.cl")
+    or "https://contrataoplanta.cl"
 ).rstrip("/")
 
 #: Path absoluto a `web/index.html` — el template que los endpoints

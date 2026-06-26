@@ -1,12 +1,12 @@
-# Estado Emplea — API Setup
+# contrataoplanta — API Setup
 
 ## Despliegues vigentes
 
-- **Frontend**: `https://estadoemplea.pages.dev` (Cloudflare Pages, servido desde este repo).
+- **Frontend**: `https://contrataoplanta.cl` (dominio de marca; Cloudflare Pages también lo sirve en `https://estadoemplea.pages.dev`, servido desde este repo).
 - **Backend**: `https://contrataoplanta-production.up.railway.app` (Railway, FastAPI `api.main:app`).
 
 El frontend llama al backend directo — sin cadena de fallbacks, sin proxy same-origin.
-Los dominios de marca históricos (`contrataoplanta.cl`, `estadoemplea.cl`, `empleoestado.cl`) **no resuelven**: no los agregues en listas de CORS, `SITE_URL` ni `fetchApi`.
+El dominio de marca es `contrataoplanta.cl`; `estadoemplea.pages.dev` se mantiene en CORS durante la transición. Los dominios de marca antiguos (`estadoemplea.cl`, `empleoestado.cl`) **no resuelven**: no los agregues en listas de CORS, `SITE_URL` ni `fetchApi`.
 
 ## Entrada ASGI
 
@@ -36,10 +36,10 @@ DB_USER=...
 DB_PASSWORD=...
 
 # Sitio/canonicals/links (URL pública del front)
-SITE_URL=https://estadoemplea.pages.dev
+SITE_URL=https://contrataoplanta.cl
 
 # CORS (opcional, CSV). Si no se define, se usan defaults seguros del código.
-CORS_ALLOW_ORIGINS=https://estadoemplea.pages.dev
+CORS_ALLOW_ORIGINS=https://contrataoplanta.cl,https://estadoemplea.pages.dev
 
 # Integraciones
 RESEND_API_KEY=re_xxxxxxxxxxxx

@@ -1,6 +1,6 @@
 {
-  "name": "Estado Emplea",
-  "short_name": "EstadoEmplea",
+  "name": "contrata o planta .cl",
+  "short_name": "contrataoplanta",
   "description": "Buscador de empleo del sector público chileno",
   "lang": "es-CL",
   "start_url": "/",

@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// web/app.js — JavaScript principal del frontend de estadoemplea
+// web/app.js — JavaScript principal del frontend de contrataoplanta
 //
 // Movido desde el <script> inline de web/index.html (que tenía ~3595
 // líneas) por los siguientes motivos:
@@ -214,9 +214,10 @@ document.addEventListener('click', function (e) {
 });
 
 // ── Base URL de la API: una sola URL, sin cadena de fallbacks ─────────────
-// Backend en Railway. Los dominios de marca (contrataoplanta.cl,
-// estadoemplea.cl, etc.) no existen en DNS — intentarlos sólo producía
-// ERR_NAME_NOT_RESOLVED y status 530.
+// Backend en Railway. El frontend vive en contrataoplanta.cl (y en
+// estadoemplea.pages.dev de Cloudflare Pages), pero la API siempre se
+// consume desde Railway: apuntar el fetch al dominio de marca daría
+// ERR_NAME_NOT_RESOLVED / status 530.
 //
 // Overrides:
 //   - window.__API_BASE: fuerza otra base (útil para staging/tests).
