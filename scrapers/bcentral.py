@@ -553,8 +553,6 @@ def construir_oferta(v: dict[str, Any], det: dict[str, Any],
         "fecha_cierre": v["fecha_cierre"],
         # Requisitos detallados provienen de las bases adjuntas (PDF).
         "requisitos_texto": pdf.get("requisitos_texto"),
-        # URL del PDF de bases (no se persiste hoy en upsert_oferta, pero se
-        # exporta y queda disponible para trazabilidad / "Ver bases").
         "url_bases": det.get("url_bases"),
     }
 

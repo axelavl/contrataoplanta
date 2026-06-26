@@ -267,6 +267,7 @@ def construir_oferta(it: dict[str, Any]) -> dict:
         "fecha_publicacion": date.today(),  # el tablero no publica fecha
         "fecha_cierre": None,
         "requisitos_texto": None,  # el detalle requiere cuenta Aira
+        "url_bases": None,
     }
 
 
@@ -327,6 +328,7 @@ def construir_oferta_feed(o: dict[str, Any], board: str) -> dict:
         "fecha_publicacion": fecha_pub,
         "fecha_cierre": None,   # el feed no publica cierre
         "requisitos_texto": None,
+        "url_bases": None,
     }
 
 

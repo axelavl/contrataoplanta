@@ -496,6 +496,7 @@ def _construir_oferta_api(
         "fecha_publicacion": _parse_fecha(item.get("fechaPublicacion")) or date.today(),
         "fecha_cierre": fecha_cierre or _extraer_fecha_cierre(contexto),
         "requisitos_texto": requisitos,
+        "url_bases": None,
     }
 
 
@@ -714,6 +715,7 @@ def _construir_oferta_html(cargo: str, contexto: str, url: str, fuente: dict[str
         "fecha_publicacion": date.today(),
         "fecha_cierre": _extraer_fecha_cierre(contexto),
         "requisitos_texto": None,
+        "url_bases": None,
     }
 
 

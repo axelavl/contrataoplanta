@@ -365,6 +365,7 @@ def construir_oferta(c: dict[str, Any]) -> dict:
         "fecha_publicacion": _fecha(str(c.get("inicio") or "")) or date.today(),
         "fecha_cierre": _fecha(str(c.get("fin") or "")),
         "requisitos_texto": None,  # el perfil del cargo se publica como PDF en la ficha
+        "url_bases": None,
     }
 
 
@@ -393,9 +394,10 @@ def recolectar(max_results: int | None, incluir_cerrados: bool) -> list[dict]:
             omitidas += 1
             continue
         # Si la API expone una URL de PDF (perfil/bases), extraer requisitos/renta.
-        if not o.get("requisitos_texto"):
-            pdf_url = _url_pdf_en_registro(c)
-            if pdf_url:
+        pdf_url = _url_pdf_en_registro(c)
+        if pdf_url:
+            o["url_bases"] = pdf_url
+        if not o.get("requisitos_texto") and pdf_url:
                 try:
                     rp = session.get(pdf_url, timeout=HTTP_TIMEOUT)
                     if rp.ok and rp.content[:5].startswith(b"%PDF"):

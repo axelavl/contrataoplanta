@@ -349,6 +349,7 @@ def construir_oferta_contrata(c: dict[str, Any], perfil: dict[str, Any]) -> dict
         "fecha_publicacion": c["plazo_ini"] or _hoy_cl(),
         "fecha_cierre": c["plazo_fin"],
         "requisitos_texto": perfil.get("requisitos"),
+        "url_bases": c.get("url_pdf"),
     }
 
 
@@ -566,6 +567,7 @@ def construir_oferta(s: dict[str, Any]) -> dict:
         "fecha_publicacion": fecha_pub or _hoy_cl(),
         "fecha_cierre": fecha_cierre,
         "requisitos_texto": None,  # ídem: requisitos viven en las bases escaneadas
+        "url_bases": bases_url,
     }
 
 

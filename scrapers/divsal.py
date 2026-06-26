@@ -354,6 +354,7 @@ def construir_oferta(titulo: str, url: str, campos: dict[str, Any],
         "fecha_publicacion": campos.get("fecha_inicio") or fecha_post or date.today(),
         "fecha_cierre": campos.get("fecha_cierre"),
         "requisitos_texto": campos.get("requisitos"),
+        "url_bases": None,
     }
 
 
@@ -404,21 +405,26 @@ def _limpiar_divi(html: str) -> str:
 def _post_a_oferta(post: dict) -> dict:
     titulo = BeautifulSoup(post.get("title", {}).get("rendered", ""),
                            "html.parser").get_text(" ", strip=True)
-    contenido = BeautifulSoup(_limpiar_divi(post.get("content", {}).get("rendered", "")),
+    html_crudo = post.get("content", {}).get("rendered", "")
+    contenido = BeautifulSoup(_limpiar_divi(html_crudo),
                               "html.parser").get_text(" ", strip=True)
-    # las cards Divi anidan un módulo con admin_label "info" dentro de cada
-    # campo; tras la limpieza queda el token "info :" pegado a los valores
     contenido = re.sub(r"\binfo\s*:\s*", " ", contenido)
     campos = parsear_campos(contenido)
     fecha_post = None
     try:
-        # Normaliza 'Z' → '+00:00' por consistencia con fiscalia.py y para no
-        # depender de Python ≥3.11 (donde fromisoformat ya acepta 'Z').
         fecha_post = datetime.fromisoformat(
             str(post.get("date", "")).replace("Z", "+00:00")).date()
     except ValueError:
         pass
-    return construir_oferta(titulo, post.get("link", ""), campos, fecha_post)
+    oferta = construir_oferta(titulo, post.get("link", ""), campos, fecha_post)
+    try:
+        from scrapers.enrich import encontrar_pdf_urls
+        pdfs = encontrar_pdf_urls(html_crudo, post.get("link", ""))
+        if pdfs:
+            oferta["url_bases"] = pdfs[0]
+    except Exception:
+        pass
+    return oferta
 
 
 # ── Fallback: parseo del HTML de /ofertas-laborales/ ────────────────────────
