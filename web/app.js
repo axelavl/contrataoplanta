@@ -3384,7 +3384,23 @@ function buscar() {
   cargarOfertas();
 }
 
+// Atajos de selección única: activar uno desactiva los demás (no se combinan).
+const ATAJOS_EXCLUSIVOS = ['cierra-hoy', 'nuevos', 'sin-experiencia'];
+
 function toggleFiltro(btn, filtro) {
+  const esAtajo = ATAJOS_EXCLUSIVOS.indexOf(filtro) !== -1;
+  const activando = !btn.classList.contains('activo');
+  if (esAtajo && activando) {
+    // Apaga los otros atajos (clase + estado) antes de encender este.
+    ATAJOS_EXCLUSIVOS.forEach((a) => {
+      if (a === filtro) return;
+      document.querySelector('.filtro-tag[data-filtro="' + a + '"]')?.classList.remove('activo');
+    });
+    estado.cierra_pronto = false;
+    estado.nuevas = false;
+    estado.sin_experiencia = false;
+  }
+
   btn.classList.toggle('activo');
 
   if (filtro === 'cierra-hoy') {
