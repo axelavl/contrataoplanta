@@ -1346,6 +1346,23 @@ function resaltarBusqueda(texto, q) {
   }).join('');
 }
 
+// Etiquetas administrativas que algunas fuentes anteponen al texto de la
+// descripción ("DESCRIPCIÓN DE LA OFERTA:", "FUNCIONES DEL CARGO", etc.).
+// Las quitamos del inicio del resumen para que se lea más natural. Se aplica
+// de forma repetida porque a veces vienen encadenadas.
+const _RE_ENCABEZADOS_DESC = /^(?:descripci[oó]n\s+de\s+la\s+oferta|descripci[oó]n\s+del\s+cargo|descripci[oó]n\s+del\s+puesto|funciones?\s+del\s+cargo|funciones?\s+del\s+puesto|objetivo\s+del\s+cargo|otros\s+antecedentes|antecedentes\s+del\s+cargo|detalle\s+de\s+la\s+oferta|resumen\s+de\s+la\s+oferta)\b[\s:.\-–—]*/i;
+
+function _limpiarEncabezadoDesc(texto) {
+  let t = String(texto || '').trim();
+  // Hasta 3 pasadas por si vienen rótulos encadenados ("DESCRIPCIÓN… FUNCIONES…").
+  for (let i = 0; i < 3; i++) {
+    const limpio = t.replace(_RE_ENCABEZADOS_DESC, '').trim();
+    if (limpio === t) break;
+    t = limpio;
+  }
+  return t;
+}
+
 function renderCard(oferta) {
   const cargoDisplay = normalizarTituloOferta(oferta.cargo);
   const renta = formatRenta(oferta.renta_bruta_min, oferta.renta_bruta_max, oferta.grado_eus, oferta.renta_tipo);
@@ -1377,7 +1394,11 @@ function renderCard(oferta) {
   // Descripción de la tarjeta: texto plano recortado a una altura estándar
   // (CSS line-clamp) con "ver más" para expandir. Se oculta si no hay datos
   // (igual que el resto de campos sin contenido).
-  const _descRaw = (oferta.descripcion || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  let _descRaw = (oferta.descripcion || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  // Quitamos etiquetas/encabezados de relleno al inicio ("DESCRIPCIÓN DE LA
+  // OFERTA:", "FUNCIONES DEL CARGO", "OTROS ANTECEDENTES:", etc.) para que el
+  // resumen se lea más fluido y natural, sin el rótulo administrativo delante.
+  _descRaw = _limpiarEncabezadoDesc(_descRaw);
   const _descCard = _descRaw ? escHtml(_descRaw) : '';
   return `
   <div class="oferta-card${esFav ? ' favorita' : ''}${oferta.destacada ? ' destacada' : ''}${plazo.clase ? ' urg-' + plazo.clase : ''}" data-oferta-id="${oferta.id}" role="button" tabindex="0" aria-label="Ver detalle: ${escAttr(cargoDisplay)}">
