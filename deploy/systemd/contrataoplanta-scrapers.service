@@ -8,8 +8,15 @@ Type=oneshot
 User=APP_USER
 WorkingDirectory=APP_DIR
 EnvironmentFile=APP_DIR/.env
-ExecStart=APP_DIR/venv/bin/python scrapers/run_all.py --mode production
-TimeoutStartSec=1800
+# --ocr: leer las "Bases" escaneadas de Carabineros vía tesseract (instalado por
+# deploy/setup.sh). Si el binario faltara, el scraper degrada sin error.
+ExecStart=APP_DIR/venv/bin/python scrapers/run_all.py --mode production --ocr
+# Tras scrapear, revalida url_oferta / url_bases de las filas recientes para que
+# el frontend habilite "Ver bases" / "Postular" (run_all.py no lo hace solo).
+# El prefijo '-' hace que un fallo de la validación (p. ej. URLs externas
+# intermitentes) no marque como fallida toda la corrida de scrapers.
+ExecStartPost=-APP_DIR/venv/bin/python validate_offer_urls.py --workers 20 --max-edad-h 24
+TimeoutStartSec=2400
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=contrataoplanta-scrapers
