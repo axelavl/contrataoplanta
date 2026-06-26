@@ -55,9 +55,9 @@
 }
 :root[data-theme="dark"] .vista-btn.activo,
 :root[data-theme="dark"] .pag-btn.activo {
-  background: var(--accent) !important;
-  color: #1B2640 !important;
-  border-color: var(--accent) !important;
+  background: var(--cielo, #3057AA) !important;
+  color: #fff !important;
+  border-color: var(--cielo, #3057AA) !important;
 }
 
 /* Cards: menos contorno, mejor jerarquía de cargo/institución/metadata. */
@@ -1348,29 +1348,12 @@ header {
   color: var(--texto) !important;
 }
 
-/* 4) Card hover con indicador de clickeable (flecha sutil) */
+/* .oferta-card necesita position:relative para el botón de favorito absoluto.
+   (Se quitó la flecha "→" de hover/click: se superponía al botón de comparar
+   en la esquina inferior derecha y se veía mal.) */
 .oferta-card {
   position: relative;
 }
-.oferta-card::after {
-  content: '→';
-  position: absolute;
-  right: 18px;
-  bottom: 20px;
-  opacity: 0;
-  transform: translateX(-6px);
-  transition: all 0.2s ease;
-  color: var(--navy);
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 1;
-  pointer-events: none;
-}
-.oferta-card:hover::after {
-  opacity: 0.6;
-  transform: translateX(0);
-}
-:root[data-theme="dark"] .oferta-card::after { color: var(--acento); }
 
 /* 5) Focus visible accesible en todos los controles interactivos */
 *:focus-visible {
@@ -2907,11 +2890,11 @@ header {
   color: #fff;
 }
 :root[data-theme="dark"] .estado-tab.activo {
-  color: var(--azul, #0A2E6E) !important;
-  background: var(--acento, #E8A820) !important;
+  color: #fff !important;
+  background: var(--cielo, #3057AA) !important;
 }
 :root[data-theme="dark"] .estado-listado-tabs::before {
-  background: var(--acento, #E8A820) !important;
+  background: var(--cielo, #3057AA) !important;
 }
 
 /* Filter tags (Cierra pronto / Últimas 48h / Sin experiencia): también
@@ -4289,13 +4272,7 @@ summary:focus-visible,
   color: #6B7A98 !important;
 }
 
-/* ── 13. HOVER ARROW en dark ────────────────────────────────────────── */
-:root[data-theme="dark"] .oferta-card::after {
-  color: #F0CC78 !important;
-}
-:root[data-theme="dark"] .oferta-card:hover::after {
-  opacity: 0.8 !important;
-}
+/* (Se quitó la flecha "→" de hover en las tarjetas; ya no hay ::after.) */
 
 /* ── 14. FAVORITO ICON en dark · más visible ────────────────────────── */
 :root[data-theme="dark"] .btn-fav-card {

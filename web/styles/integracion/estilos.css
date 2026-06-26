@@ -517,11 +517,12 @@ mark.cop-hl {
 .sidebar { position: relative; z-index: 2; }
 
 /* ── Vista compacta (lista densa): alineación cabecera ↔ filas ────────
-   Cada fila tiene .row-acciones con 2 botones (comparar + favorito), pero la
-   cabecera reservaba 36px en la última columna → la columna Renta no calzaba.
-   Igualamos ambos a 72px. */
-.oferta-row-header > :nth-child(5) { flex: 0 0 72px; width: 72px; }
-.row-acciones { flex: 0 0 72px; width: 72px; }
+   Cada fila tiene .row-acciones con 2 botones (comparar 36px + gap 6px +
+   favorito 36px = 78px). Con la columna en 72px los botones se desbordaban
+   hacia la izquierda y tapaban la renta. La subimos a 84px (caben los 78px +
+   aire) e igualamos la 5ª columna del header para que todo calce. */
+.oferta-row-header > :nth-child(5) { flex: 0 0 84px; width: 84px; }
+.row-acciones { flex: 0 0 84px; width: 84px; }
 
 /* Tipo: "Código del Trabajo" se cortaba en 82px ("Código del Tra…"). Ampliamos
    la columna y dejamos que el badge use dos líneas si hace falta. */
