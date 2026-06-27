@@ -13,7 +13,7 @@ una única sentencia atómica:
        SET ultima_ejecucion = NOW(),
            proxima_ejecucion = NOW() + intervalo
      WHERE activo AND proxima_ejecucion <= NOW()
-    RETURNING modo, max_offers;
+    RETURNING modo, limite_fuentes;
 
 Postgres bloquea la fila durante el UPDATE, así que solo un worker recibe
 la fila (y por tanto lanza el proceso); el resto no toca nada.
@@ -40,7 +40,14 @@ _LOG_DIR = _PROJECT_ROOT / "logs" / "admin_runs"
 #: Cada cuánto revisa el loop si toca correr (segundos).
 _TICK_SEG = 60
 
-_MODOS_VALIDOS = {"all", "empleos_publicos", "wordpress", "generic"}
+#: Modos que se traducen a flags REALES de `scrapers/run_all.py`:
+#:  - "completa": corrida completa (`--mode production`).
+#:  - "sin_portal": excluye el portal central (`--skip-empleos-publicos`).
+#: run_all.py no tiene filtro por «kind», así que no ofrecemos eso aquí.
+_MODOS_VALIDOS = {"completa", "sin_portal"}
+
+#: Centinela para distinguir «no se pasó el campo» de «se pasó como None/0».
+_UNSET: Any = object()
 
 
 def get_estado() -> dict[str, Any] | None:
@@ -48,7 +55,7 @@ def get_estado() -> dict[str, Any] | None:
     try:
         from api.services.db import execute_fetch_one
         return execute_fetch_one(
-            """SELECT id, activo, intervalo_horas, modo, max_offers,
+            """SELECT id, activo, intervalo_horas, modo, limite_fuentes,
                       proxima_ejecucion, ultima_ejecucion,
                       actualizado_en, actualizado_por
                FROM scheduler_state WHERE id = 1""",
@@ -64,13 +71,14 @@ def set_estado(
     activo: bool | None = None,
     intervalo_horas: int | None = None,
     modo: str | None = None,
-    max_offers: int | None = None,
+    limite_fuentes: Any = _UNSET,
     usuario: str = "ops",
 ) -> dict[str, Any]:
     """Actualiza la configuración del programador y recalcula la próxima corrida.
 
     Si se activa (o cambia el intervalo), `proxima_ejecucion` se fija a
-    `NOW() + intervalo`. Si se desactiva, se deja en NULL.
+    `NOW() + intervalo`. Si se desactiva, se deja en NULL. `limite_fuentes`
+    nulo o 0 = sin límite (corre todas las instituciones del modo).
     """
     from api.services.db import execute_fetch_one, get_cursor
 
@@ -78,8 +86,6 @@ def set_estado(
         raise ValueError(f"modo inválido: {modo}. Válidos: {sorted(_MODOS_VALIDOS)}")
     if intervalo_horas is not None:
         intervalo_horas = max(1, min(int(intervalo_horas), 168))
-    if max_offers is not None:
-        max_offers = max(1, min(int(max_offers), 500))
 
     sets: list[str] = []
     params: list[Any] = []
@@ -92,9 +98,15 @@ def set_estado(
     if modo is not None:
         sets.append("modo = %s")
         params.append(modo)
-    if max_offers is not None:
-        sets.append("max_offers = %s")
-        params.append(max_offers)
+    if limite_fuentes is not _UNSET:
+        # 0/None/negativo = sin límite (NULL); si no se proporcionó, no se toca.
+        try:
+            lf = int(limite_fuentes) if limite_fuentes not in (None, "") else 0
+        except (TypeError, ValueError):
+            lf = 0
+        lf = None if lf <= 0 else min(lf, 2000)
+        sets.append("limite_fuentes = %s")
+        params.append(lf)
     sets.append("actualizado_en = NOW()")
     sets.append("actualizado_por = %s")
     params.append(usuario)
@@ -121,7 +133,7 @@ def set_estado(
             cur.execute("UPDATE scheduler_state SET proxima_ejecucion = NULL WHERE id = 1")
         conn.commit()
     return execute_fetch_one(
-        """SELECT id, activo, intervalo_horas, modo, max_offers,
+        """SELECT id, activo, intervalo_horas, modo, limite_fuentes,
                   proxima_ejecucion, ultima_ejecucion, actualizado_en, actualizado_por
            FROM scheduler_state WHERE id = 1""",
         [],
@@ -129,7 +141,7 @@ def set_estado(
 
 
 def _claim_due_run() -> dict[str, Any] | None:
-    """Reclama atómicamente una corrida pendiente. Devuelve {modo,max_offers}
+    """Reclama atómicamente una corrida pendiente. Devuelve {modo,limite_fuentes}
     si este worker ganó el claim, o None."""
     try:
         from api.services.db import get_cursor
@@ -142,7 +154,7 @@ def _claim_due_run() -> dict[str, Any] | None:
                  WHERE id = 1 AND activo = TRUE
                    AND proxima_ejecucion IS NOT NULL
                    AND proxima_ejecucion <= NOW()
-                RETURNING modo, max_offers
+                RETURNING modo, limite_fuentes
                 """,
             )
             row = cur.fetchone()
@@ -153,19 +165,25 @@ def _claim_due_run() -> dict[str, Any] | None:
         return None
 
 
-def _lanzar_run_all(modo: str, max_offers: int) -> int | None:
-    """Lanza `run_all.py` en background (mismo patrón que el panel)."""
+def _lanzar_run_all(modo: str, limite_fuentes: int | None) -> int | None:
+    """Lanza `run_all.py` en background usando solo flags que el script soporta.
+
+    `run_all.py` acepta `--mode`, `--limit`, `--ids`, `--skip-empleos-publicos`
+    (no existe `--max` ni `--only-kind`). Por eso los modos se traducen a:
+      - "completa"   → `--mode production`
+      - "sin_portal" → `--mode production --skip-empleos-publicos`
+    y `limite_fuentes` (si se fijó) acota la cantidad de instituciones con
+    `--limit`.
+    """
     _LOG_DIR.mkdir(parents=True, exist_ok=True)
     ahora = datetime.now(tz=timezone.utc)
     log_path = _LOG_DIR / f"scheduler-{modo}_{ahora.strftime('%Y%m%d_%H%M%S')}.log"
     run_all = str(_PROJECT_ROOT / "scrapers" / "run_all.py")
-    cmd = [sys.executable, run_all, "--mode", "production", "--max", str(max_offers)]
-    if modo == "all":
-        pass  # corrida completa
-    elif modo in {"empleos_publicos", "wordpress", "generic"}:
-        cmd += ["--only-kind", modo]
-        if modo != "empleos_publicos":
-            cmd.append("--skip-empleos-publicos")
+    cmd = [sys.executable, run_all, "--mode", "production"]
+    if modo == "sin_portal":
+        cmd.append("--skip-empleos-publicos")
+    if limite_fuentes:
+        cmd += ["--limit", str(int(limite_fuentes))]
     try:
         with open(log_path, "a", encoding="utf-8") as log_f:
             proc = subprocess.Popen(
@@ -204,8 +222,8 @@ async def scheduler_loop() -> None:
             claim = await asyncio.to_thread(_claim_due_run)
             if claim:
                 await asyncio.to_thread(
-                    _lanzar_run_all, claim.get("modo", "empleos_publicos"),
-                    int(claim.get("max_offers") or 50),
+                    _lanzar_run_all, claim.get("modo", "completa"),
+                    claim.get("limite_fuentes"),
                 )
         except asyncio.CancelledError:
             logger.info("[scheduler] loop detenido")

@@ -757,8 +757,8 @@ async function loadScheduler() {
     const e = d.estado || {};
     document.getElementById('sched-activo').checked = e.activo === true;
     document.getElementById('sched-intervalo').value = e.intervalo_horas || 24;
-    document.getElementById('sched-modo').value = e.modo || 'empleos_publicos';
-    document.getElementById('sched-max').value = e.max_offers || 50;
+    document.getElementById('sched-modo').value = e.modo || 'completa';
+    document.getElementById('sched-limite').value = e.limite_fuentes != null ? e.limite_fuentes : '';
     const estadoTxt = e.activo
       ? `<span style="color:var(--green)">● Activa</span> — próxima corrida: <strong>${e.proxima_ejecucion?fmtDt(e.proxima_ejecucion):'—'}</strong>`
       : '<span class="text-muted">○ Desactivada</span>';
@@ -770,11 +770,12 @@ async function loadScheduler() {
 }
 
 async function saveScheduler() {
+  const _lim = parseInt(document.getElementById('sched-limite').value);
   const body = {
     activo: document.getElementById('sched-activo').checked,
     intervalo_horas: parseInt(document.getElementById('sched-intervalo').value) || 24,
     modo: document.getElementById('sched-modo').value,
-    max_offers: parseInt(document.getElementById('sched-max').value) || 50,
+    limite_fuentes: Number.isFinite(_lim) ? _lim : 0,
   };
   try {
     await api('/scheduler', { method:'PUT', body:JSON.stringify(body) });

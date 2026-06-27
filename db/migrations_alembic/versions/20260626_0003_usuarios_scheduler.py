@@ -42,7 +42,7 @@ def upgrade() -> None:
         """
         CREATE TABLE IF NOT EXISTS admin_usuarios (
             id            BIGSERIAL PRIMARY KEY,
-            usuario       VARCHAR(60) NOT NULL UNIQUE,
+            usuario       VARCHAR(60) NOT NULL,
             nombre        VARCHAR(120),
             password_hash VARCHAR(255) NOT NULL,
             rol           VARCHAR(20) NOT NULL DEFAULT 'editor',
@@ -52,8 +52,11 @@ def upgrade() -> None:
         )
         """
     )
+    # Unicidad case-insensitive: el login busca con LOWER(usuario), así que la
+    # restricción debe igualar esa semántica (si no, 'Ana' y 'ana' coexistirían
+    # y el login podría autenticar la fila equivocada).
     op.execute(
-        "CREATE INDEX IF NOT EXISTS idx_admin_usuarios_usuario "
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_admin_usuarios_usuario_lower "
         "ON admin_usuarios (LOWER(usuario))"
     )
 
@@ -63,8 +66,8 @@ def upgrade() -> None:
             id                 INTEGER PRIMARY KEY DEFAULT 1,
             activo             BOOLEAN NOT NULL DEFAULT FALSE,
             intervalo_horas    INTEGER NOT NULL DEFAULT 24,
-            modo               VARCHAR(40) NOT NULL DEFAULT 'empleos_publicos',
-            max_offers         INTEGER NOT NULL DEFAULT 50,
+            modo               VARCHAR(40) NOT NULL DEFAULT 'completa',
+            limite_fuentes     INTEGER,
             proxima_ejecucion  TIMESTAMPTZ,
             ultima_ejecucion   TIMESTAMPTZ,
             actualizado_en     TIMESTAMPTZ NOT NULL DEFAULT NOW(),

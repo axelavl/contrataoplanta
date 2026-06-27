@@ -2371,7 +2371,7 @@ def admin_crear_usuario(
             cur.execute(
                 """INSERT INTO admin_usuarios (usuario, nombre, password_hash, rol, activo)
                    VALUES (%s, %s, %s, %s, TRUE)
-                   ON CONFLICT (usuario) DO NOTHING RETURNING id""",
+                   ON CONFLICT (LOWER(usuario)) DO NOTHING RETURNING id""",
                 [usuario, nombre, hash_password(password), rol],
             )
             row = cur.fetchone()
@@ -2460,14 +2460,14 @@ def admin_set_scheduler(
     payload: dict[str, Any],
     _user: str = Depends(_require_admin),
 ) -> dict[str, Any]:
-    """Configura el programador: activo, intervalo_horas, modo, max_offers."""
-    from api.services.scheduler import set_estado
+    """Configura el programador: activo, intervalo_horas, modo, limite_fuentes."""
+    from api.services.scheduler import set_estado, _UNSET
     try:
         estado = set_estado(
             activo=payload.get("activo") if "activo" in payload else None,
             intervalo_horas=payload.get("intervalo_horas") if "intervalo_horas" in payload else None,
             modo=payload.get("modo") if "modo" in payload else None,
-            max_offers=payload.get("max_offers") if "max_offers" in payload else None,
+            limite_fuentes=payload.get("limite_fuentes") if "limite_fuentes" in payload else _UNSET,
             usuario=_user,
         )
     except ValueError as exc:
@@ -2475,7 +2475,7 @@ def admin_set_scheduler(
     except Exception as exc:
         raise HTTPException(500, f"No se pudo guardar (¿migración 0003 aplicada?): {exc}") from exc
     _auditar(_user, "config_scheduler", "scheduler", 1, {
-        k: payload.get(k) for k in ("activo", "intervalo_horas", "modo", "max_offers") if k in payload
+        k: payload.get(k) for k in ("activo", "intervalo_horas", "modo", "limite_fuentes") if k in payload
     })
     return {"ok": True, "estado": estado}
 
