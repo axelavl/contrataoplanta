@@ -185,6 +185,16 @@ document.addEventListener('click', function (e) {
       el.setAttribute('aria-expanded', colapsadoObj ? 'false' : 'true');
       break;
     }
+    case 'toggle-desc': {
+      // Expande/contrae la descripción recortada de la tarjeta. La flecha
+      // (chevron) rota y el clamp CSS se libera vía `.is-expanded`.
+      var descWrap = el.closest('.oferta-desc-wrap');
+      if (!descWrap) break;
+      var descAbierta = descWrap.classList.toggle('is-expanded');
+      el.setAttribute('aria-expanded', descAbierta ? 'true' : 'false');
+      el.setAttribute('title', descAbierta ? 'Ver menos' : 'Ver más');
+      break;
+    }
     case 'noop':
       // Hace sólo stopPropagation (caso botón "bases no disponibles"
       // dentro de card, que evita que se dispare el click de la card).
@@ -1438,7 +1448,10 @@ function renderCard(oferta) {
         ? `<span class="oferta-frescura${frescura.startsWith('✨') ? ' frescura-nueva' : ''}">${escHtml(frescura)}</span>`
         : (oferta.fecha_publicacion ? `<span class="oferta-detalle">🗓 Publicada ${formatFecha(oferta.fecha_publicacion)}</span>` : '')}
     </div>
-    ${_descCard ? `<p class="oferta-desc">${_descCard}</p>` : ''}
+    ${_descCard ? `<div class="oferta-desc-wrap">
+      <p class="oferta-desc">${_descCard}</p>
+      <button class="oferta-desc-toggle" type="button" data-action="toggle-desc" data-stop-propagation="true" aria-expanded="false" title="Ver más" aria-label="Ver descripción completa" hidden><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+    </div>` : ''}
     <div class="oferta-footer">
       <div class="oferta-plazo">
         <div class="plazo-dot ${plazo.clase}"></div>
@@ -1452,6 +1465,27 @@ function renderCard(oferta) {
     </div>
     ${jobPosting.markup}
   </div>`;
+}
+
+// ── Flecha de "ver más" en la descripción de la tarjeta ───────────────────
+// La flecha sólo tiene sentido cuando el texto recortado (CSS line-clamp)
+// realmente se desborda. Tras pintar la lista medimos cada descripción y
+// mostramos el chevron únicamente en las que tienen contenido oculto. Se
+// difiere con requestAnimationFrame para medir con el layout ya aplicado.
+function _marcarDescripcionesExpandibles() {
+  var aplicar = function () {
+    var wraps = document.querySelectorAll('.oferta-desc-wrap');
+    for (var i = 0; i < wraps.length; i++) {
+      var wrap = wraps[i];
+      if (wrap.classList.contains('is-expanded')) continue;
+      var p = wrap.querySelector('.oferta-desc');
+      var btn = wrap.querySelector('.oferta-desc-toggle');
+      if (!p || !btn) continue;
+      btn.hidden = p.scrollHeight <= p.clientHeight + 2;
+    }
+  };
+  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(aplicar);
+  else aplicar();
 }
 
 // ── Favorito directo desde tarjeta ────────────────────────────────────────
@@ -1924,6 +1958,7 @@ const itemsHtml = ofertasFiltradas.map((oferta, i) => {
 }).join('');
 
 lista.innerHTML = header + itemsHtml;
+    _marcarDescripcionesExpandibles();
     if (window.repintarComparar) window.repintarComparar();
     // Paginación
     renderPaginacion(data.total ?? ofertasFiltradas.length, data.paginas ?? 1);
@@ -3714,6 +3749,9 @@ document.getElementById('lista-ofertas')?.addEventListener('click', (e) => {
 // Accesibilidad: Enter / Space también abren el modal cuando la tarjeta tiene foco.
 document.getElementById('lista-ofertas')?.addEventListener('keydown', (e) => {
   if (e.key !== 'Enter' && e.key !== ' ') return;
+  // Botones internos (favorito, "Ver detalles", chevron de descripción…)
+  // manejan su propia tecla — no abrir el modal por encima de ellos.
+  if (e.target.closest('.btn-fav-card, .btn-fav-row, [data-action]')) return;
   const el = e.target.closest('[data-oferta-id]');
   if (!el) return;
   e.preventDefault();

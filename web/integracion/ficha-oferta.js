@@ -166,6 +166,25 @@
       const expandida = p.classList.toggle('cop-expandida');
       btn.textContent = expandida ? 'Ver menos' : 'Ver más';
     });
+    // Contraer/expandir una sección completa al tocar su título. El chevron
+    // (CSS ::after en .cop-sec-t) rota y el cuerpo se oculta vía .is-collapsed.
+    const _toggleSec = (titulo) => {
+      const sec = titulo.closest('.cop-sec');
+      if (!sec) return;
+      const colapsada = sec.classList.toggle('is-collapsed');
+      titulo.setAttribute('aria-expanded', colapsada ? 'false' : 'true');
+    };
+    overlay.addEventListener('click', (e) => {
+      const titulo = e.target.closest && e.target.closest('.cop-sec-t');
+      if (titulo) _toggleSec(titulo);
+    });
+    overlay.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+      const titulo = e.target.closest && e.target.closest('.cop-sec-t');
+      if (!titulo) return;
+      e.preventDefault();
+      _toggleSec(titulo);
+    });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && overlay.classList.contains('is-open')) cerrar(); });
   }
 
@@ -287,6 +306,14 @@
       sec('Funciones principales', oferta.funciones) +
       sec('Condiciones del cargo', oferta.condiciones) +
       sec('Cómo postular', oferta.comoPostular, true);
+
+    // Cada título de sección es un botón de contraer/expandir (accesible por
+    // teclado). El chevron y el ocultamiento del cuerpo los maneja el CSS.
+    overlay.querySelectorAll('.cop-sec-t').forEach((titulo) => {
+      titulo.setAttribute('role', 'button');
+      titulo.setAttribute('tabindex', '0');
+      titulo.setAttribute('aria-expanded', 'true');
+    });
 
     // acciones
     $('cop-bases').style.display = oferta.basesUrl ? '' : 'none';
