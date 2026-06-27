@@ -21,7 +21,7 @@ campos secundarios):
    estado es ``closing_today``.
 4. Pills de contexto (región/comuna, tipo contractual, remuneración cuando
    existe).
-5. CTA: "Postula en estadoemplea.pages.dev".
+5. CTA: "Postula en contrataoplanta.cl".
 
 Fallbacks:
 
@@ -636,7 +636,7 @@ def _draw_status_pill(
 
 
 def _draw_brand_mark(img: Image.Image, top_left: tuple[int, int], *, size: int = 44) -> int:
-    """Disco navy con anillo dorado + wordmark "estadoemplea"."""
+    """Disco navy con anillo dorado + wordmark "contrataoplanta"."""
     x, y = top_left
     draw = ImageDraw.Draw(img)
     # Disco con anillo dorado (versión simplificada del favicon).
@@ -650,7 +650,7 @@ def _draw_brand_mark(img: Image.Image, top_left: tuple[int, int], *, size: int =
     f_brand = _load("bold", int(size * 0.48))
     f_kicker = _load("regular", int(size * 0.32))
     brand_x = x + size + 14
-    draw.text((brand_x, y + size * 0.06), "estadoemplea", font=f_brand, fill=WHITE)
+    draw.text((brand_x, y + size * 0.06), "contrataoplanta", font=f_brand, fill=WHITE)
     draw.text(
         (brand_x, y + size * 0.60),
         "empleo público · Chile",
@@ -841,7 +841,7 @@ def render_offer_card(oferta: dict[str, Any], fmt: Format = "horizontal") -> byt
     # Dominio al costado del botón, alineado al centro vertical.
     f_domain = _load("regular", 18 if fmt == "horizontal" else 22)
     dom_x = content_left + cta_width + 22
-    dom_text = "estadoemplea.pages.dev"
+    dom_text = "contrataoplanta.cl"
     d.text(
         (dom_x, cta_y + f_cta.size * 0.30),
         dom_text,

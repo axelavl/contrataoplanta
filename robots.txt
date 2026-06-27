@@ -3,5 +3,5 @@ Allow: /web/
 Disallow: /index.html
 Disallow: /instituciones.html
 
-Sitemap: https://estadoemplea.pages.dev/sitemap.xml
+Sitemap: https://contrataoplanta.cl/sitemap.xml
 Sitemap: https://contrataoplanta-production.up.railway.app/sitemap.xml

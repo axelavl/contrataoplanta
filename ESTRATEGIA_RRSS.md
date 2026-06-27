@@ -1,4 +1,4 @@
-# Estrategia RRSS — estadoemplea (Instagram + LinkedIn)
+# Estrategia RRSS — contrataoplanta (Instagram + LinkedIn)
 
 Documento operativo. Define qué publicar, con qué frecuencia, cómo se genera de
 forma semi-automática desde los avisos destacados, y cómo se mide. Complementa
@@ -8,7 +8,7 @@ es la **operación de publicación** y la **automatización del diseño**.
 ## El principio
 
 El objetivo de RRSS no es juntar seguidores: es **mover gente al sitio** (donde se
-monetiza) y **hacer crecer la lista de correos**. La ventaja de estadoemplea es
+monetiza) y **hacer crecer la lista de correos**. La ventaja de contrataoplanta es
 que ya produce el contenido sin escribir: cada aviso es materia prima visual, y
 el sitio ya genera la imagen por oferta. La automatización solo industrializa eso.
 

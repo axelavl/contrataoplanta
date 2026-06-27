@@ -102,7 +102,7 @@ Si falla alguno: aún quedan filas inválidas, volver a
 
 ### Script local — pre-check rápido
 
-Elegir una oferta activa cualquiera de la home (`https://estadoemplea.pages.dev/`)
+Elegir una oferta activa cualquiera de la home (`https://contrataoplanta.cl/`)
 y obtener su id numérico. Luego:
 
 ```bash
@@ -135,7 +135,7 @@ son aceptables si la oferta no tiene esos datos.
 
 ### Google Search Console
 
-Tras verificar ambos dominios (`estadoemplea.pages.dev` y
+Tras verificar ambos dominios (`contrataoplanta.cl` y
 `contrataoplanta-production.up.railway.app`):
 
 1. **Sitemaps → Añadir nuevo** → `https://contrataoplanta-production.up.railway.app/sitemap.xml`
