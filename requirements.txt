@@ -75,3 +75,10 @@ rich==13.7.1
 # ── Generación de imágenes OG/Twitter por oferta ────────────
 # Pillow 12.2.0: fix CVE-2026-25990 (fuzzing) y CVE-2026-40192.
 Pillow==12.2.0
+
+# ── Cliente Claude (clasificación/auditoría con LLM) ────────
+# Usado por classification/anthropic_client.py (cliente real detrás del
+# LLMClient) y scripts/qa/auditoria_llm_clasificacion.py. Requiere
+# ANTHROPIC_API_KEY en el entorno. Import perezoso: el resto del código
+# arranca sin esta librería.
+anthropic==0.69.0
