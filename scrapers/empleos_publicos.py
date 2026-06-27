@@ -213,6 +213,13 @@ BADGE_TEXTS = {
 }
 BAD_CARGO_TEXTS = BUTTON_TEXTS | BADGE_TEXTS
 HEADING_TAGS = ("h2", "h3", "h4", "strong")
+
+# Helper compartido para detectar pasos de postulación por palabras clave
+# (mismo criterio que el resto de scrapers vía enrich).
+try:
+    from extraction.text_sections import extraer_pasos_postulacion
+except Exception:  # pragma: no cover
+    extraer_pasos_postulacion = None  # type: ignore[assignment]
 # Tier CRITICAL: la fuente más densa del país. Damos margen de timeout (la
 # Servicio Civil suele ser lenta en horario peak) y un reintento extra.
 DEFAULT_TIMEOUT = 20
@@ -811,6 +818,18 @@ class EmpleosPublicosScraper(BaseScraper):
             resultado["email_postulacion"] = resultado.get("email_postulacion") or correo
             resultado["email_consultas"] = resultado.get("email_consultas") or correo
 
+        # "Cómo postular": detecta pasos en el texto de la ficha o deja la
+        # instrucción genérica del portal. Se anexa en líneas propias para que
+        # el front lo clasifique como su propia sección.
+        como_postular = self._componer_como_postular(soup, correo=correo)
+        if como_postular:
+            base = resultado.get("descripcion") or ""
+            low = base.lower()
+            if "cómo postular" not in low and "como postular" not in low:
+                resultado["descripcion"] = truncate(
+                    (base + ("\n\n" if base else "") + como_postular), 2000,
+                )
+
         renta_texto = self._extraer_renta_texto(soup, metadata)
         renta_min, renta_max, grado_eus = parse_renta(renta_texto)
         if renta_min is None:
@@ -1051,6 +1070,40 @@ class EmpleosPublicosScraper(BaseScraper):
             if m:
                 return truncate(m.group(0), 200)
         return None
+
+    def _componer_como_postular(
+        self, soup: BeautifulSoup, correo: str | None = None,
+    ) -> str | None:
+        """Arma el bloque "Cómo postular" para la ficha del portal.
+
+        1) Si la institución escribió instrucciones (módulo "Cómo postular" /
+           "Postulación" / "Instrucciones", o el texto libre de la ficha),
+           detecta los pasos por palabras clave (helper compartido).
+        2) Si no hay pasos explícitos, deja una instrucción genérica pero exacta
+           para el portal: postular en línea antes del cierre. Así la sección
+           nunca queda vacía para los avisos de empleospublicos.cl.
+        """
+        fuentes = [
+            self._texto_modulos_ficha(
+                soup,
+                ("como postular", "postulacion", "forma de postulacion",
+                 "instrucciones", "proceso de postulacion"),
+            ),
+            self._texto_seccion_sin_heading(soup.select_one("#lblTexto")),
+            self._texto_seccion_sin_heading(soup.select_one("#lblCondiciones")),
+        ]
+        texto = "\n".join(t for t in fuentes if t)
+        pasos: list[str] = []
+        if extraer_pasos_postulacion is not None and texto:
+            pasos = extraer_pasos_postulacion(texto)
+        if not pasos:
+            pasos = [
+                "Postula en línea en el portal de Empleos Públicos con el botón "
+                "“Postular”, dentro del plazo de la convocatoria."
+            ]
+            if correo:
+                pasos.append(f"Ante dudas o consultas, escribe a {correo}.")
+        return "Cómo postular:\n" + "\n".join(f"- {p}" for p in pasos)
 
     def _componer_descripcion(self, soup: BeautifulSoup) -> str | None:
         funciones = self._extraer_mapa_encabezados(soup.select_one("#lblFunciones"))
