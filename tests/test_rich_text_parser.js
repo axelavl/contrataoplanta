@@ -447,5 +447,28 @@ assert(
   'Sin heading: cascade clasifica por adjetivo "Excluyente" → obligatorios (sin regresión)'
 );
 
+console.log('\n## Cómo postular — llamado a concurso vs pasos reales');
+// El encabezado del llamado NO debe quedar como "Cómo postular".
+const sCall = rt.buildSemanticSections({
+  descripcion: 'Se llama a postulación, hasta el 28 de junio de 2026, para cubrir una '
+    + 'vacante a plazo fijo en el cargo de Especialista, a desempeñarse en el '
+    + 'Departamento de Planificación.',
+  requisitos: '',
+});
+assert(sCall.postulacion.length, 0, 'El llamado "Se llama a postulación…" no cae en postulacion');
+assertInBlock(sCall, 'residual', 'Se llama a postulación', 'El llamado va a residual');
+
+// Pasos reales bajo el encabezado "Cómo postular:" sí caen en postulacion.
+const sPasos = rt.buildSemanticSections({
+  descripcion: 'Cómo postular:\n'
+    + '- Cada postulante deberá completar el Formulario de Postulación Online, adjuntando su Currículum en formato pdf.\n'
+    + '- Recepción de antecedentes hasta el 28 de junio de 2026.\n'
+    + '- Indicar las expectativas de renta líquida.',
+  requisitos: '',
+});
+assert(sPasos.postulacion.length >= 3, true, 'Los 3 pasos reales caen en postulacion');
+assertInBlock(sPasos, 'postulacion', 'Formulario de Postulación Online', 'Paso del formulario en postulacion');
+assertNotInBlock(sPasos, 'condiciones', 'renta líquida', 'El paso de renta líquida NO cae en condiciones');
+
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed > 0 ? 1 : 0);

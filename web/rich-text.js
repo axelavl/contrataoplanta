@@ -55,7 +55,9 @@
     'jornada laboral', 'jornada',
     'lugar de trabajo', 'ubicación', 'ubicacion',
     'vacantes', 'etapas del proceso', 'proceso de selección',
-    'proceso de seleccion', 'dependencia', 'supervisa a'
+    'proceso de seleccion', 'dependencia', 'supervisa a',
+    'cómo postular', 'como postular', 'proceso de postulación',
+    'proceso de postulacion', 'forma de postulación', 'forma de postulacion'
   ];
 
   const HEADER_TOKENS = new Set(KNOWN_HEADERS.map(function (h) { return h.toLowerCase(); }));
@@ -975,6 +977,11 @@
   // ─────────────────────────────────────────────────────────────
   var CONDITIONS_RE = /\b(renta|remuneraci[oó]n|jornada|honorarios|horario|turno|vacante|lugar\s+de\s+desempe[nñ]o|duraci[oó]n|modalidad\s+(presencial|remot|h[ií]brid))\b/i;
   var POSTULATION_RE = /\b(postulaci[oó]n|postular|portal|enviar|adjuntar|plazo|cronograma|etapa|comisi[oó]n|entrevista)\b/i;
+  // Encabezado formal del llamado a concurso ("Se llama a postulación, hasta el
+  // X, para cubrir N vacante(s)…"). NO es un paso para postular ni una
+  // condición: es la apertura del proceso. Se manda a residual para no
+  // contaminar "Cómo postular".
+  var CALL_OPENER_RE = /^\s*se\s+(?:llama|convoca)\s+a\s+(?:postulaci[oó]n|concurso)\b/i;
   var OBJECTIVE_HEADER_RE = /\b(objetivo\s+del\s+cargo|misi[oó]n\s+del\s+cargo)\b/i;
   var BROKEN_FUNCTION_RE = /\b(funciones?\s+de\s+la\s+especialidad\s+tales\s+como|tales\s+como|para)\s*$/i;
 
@@ -1584,6 +1591,14 @@
       }
       if (REQ_CATEGORIES[hint]) {
         _pushReq(hint, s, 0.55);
+        continue;
+      }
+
+      // 3.9 — La frase de llamado a concurso es el encabezado del proceso, no
+      //       un paso para postular ni una condición. A residual para no
+      //       contaminar "Cómo postular" ni "Condiciones del cargo".
+      if (CALL_OPENER_RE.test(s)) {
+        out.residual.push(s);
         continue;
       }
 

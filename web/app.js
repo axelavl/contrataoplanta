@@ -1232,10 +1232,11 @@ function getInstIcon(oferta) {
     };
   }
   const dom = escAttr(resolved.domain);
-  // size=256 → Clearbit devuelve PNG de 256 px, nítido al escalar a 44-128 px.
+  // Fuente primaria = DuckDuckGo ip3 (devuelve el mejor icono del sitio, nítido
+  // al escalar a 44-128 px). Debe coincidir con sources[0] de shared-shell.js.
   // data-attempt=0 inicializa la cadena: si onerror dispara o imgFavCheckQuality
-  // detecta logo diminuto, advance() pasa a apple-touch-icon → Google → etc.
-  const primary = `https://logo.clearbit.com/${dom}?size=256`;
+  // detecta logo diminuto, advance() pasa a Google s2 → apple-touch-icon → etc.
+  const primary = `https://icons.duckduckgo.com/ip3/${dom}.ico`;
   // Repositorio propio: si ya resolvimos un logo bueno para este dominio en una
   // visita anterior (cacheado en localStorage por shared-shell.js), lo usamos
   // como source inicial → se pinta al primer frame, sin parpadeo. data-attempt

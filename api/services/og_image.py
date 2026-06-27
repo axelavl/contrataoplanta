@@ -35,9 +35,9 @@ Fallbacks:
   (ilegible pero nunca rompe el endpoint).
 
 Sin llamadas de red en la ruta crítica por defecto. El logo remoto
-(`logo.clearbit.com`) sólo se intenta si ``OG_FETCH_LOGOS`` está habilitado
-(default: on) y con timeout corto; el resultado queda en un LRU en proceso.
-Cualquier error de red cae silenciosamente al fallback de iniciales.
+(DuckDuckGo ip3 con respaldo en Google s2) sólo se intenta si ``OG_FETCH_LOGOS``
+está habilitado (default: on) y con timeout corto; el resultado queda en un LRU
+en proceso. Cualquier error de red cae silenciosamente al fallback de iniciales.
 """
 from __future__ import annotations
 
@@ -193,24 +193,37 @@ _DOMAIN_RE = re.compile(r"^[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?\.[a-zA-Z]{2,}
 
 
 def _fetch_logo(domain: str) -> Image.Image | None:
-    """Descarga el logo desde Clearbit. Silencioso ante cualquier fallo."""
+    """Descarga el mejor icono del dominio. Silencioso ante cualquier fallo.
+
+    Clearbit (logo.clearbit.com) fue discontinuado por HubSpot en dic-2025;
+    ahora probamos DuckDuckGo ip3 (entrega el mejor icono del sitio, suele ser
+    el apple-touch-icon) y, como respaldo estable, Google s2 a 128 px. Se
+    descartan iconos diminutos (favicons 16/32) que se verían pixelados.
+    """
     if not domain or not _DOMAIN_RE.match(domain):
         return None
     try:
         import requests
-
-        r = requests.get(
-            f"https://logo.clearbit.com/{domain}",
-            params={"size": "256"},
-            timeout=_LOGO_TIMEOUT_S,
-        )
-        if r.status_code != 200 or not r.content:
-            return None
-        logo = Image.open(BytesIO(r.content)).convert("RGBA")
-        return logo
-    except Exception as exc:  # requests, Pillow o red — todos terminan igual
-        logger.debug("OG logo fetch falló para %s: %s", domain, exc)
+    except Exception:
         return None
+    fuentes = (
+        f"https://icons.duckduckgo.com/ip3/{domain}.ico",
+        f"https://www.google.com/s2/favicons?domain={domain}&sz=128",
+    )
+    for url in fuentes:
+        try:
+            r = requests.get(url, timeout=_LOGO_TIMEOUT_S)
+            if r.status_code != 200 or not r.content:
+                continue
+            logo = Image.open(BytesIO(r.content)).convert("RGBA")
+            if max(logo.size) < 40:  # favicon diminuto → siguiente fuente
+                continue
+            return logo
+        except Exception as exc:  # requests, Pillow o red — todos terminan igual
+            logger.debug("OG logo fetch falló para %s vía %s: %s",
+                         domain, url[:46], exc)
+            continue
+    return None
 
 
 @lru_cache(maxsize=512)
