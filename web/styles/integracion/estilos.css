@@ -100,8 +100,21 @@ mark.cop-hl {
 .cop-kv-v.is-renta { font-family: var(--font-serif, 'Fraunces', serif); font-size: 16px; }
 
 .cop-sec { margin-bottom: 18px; }
-.cop-sec-t { font-family: var(--font-serif, 'Fraunces', serif); font-size: 15.5px; font-weight: 600;
-  color: var(--azul, #142E6B); margin: 0 0 11px; padding-bottom: 8px; border-bottom: 1.5px solid var(--borde, #E5E1D2); }
+/* Título de sección = botón de contraer/expandir. Chevron a la derecha que
+   rota; al colapsar (.is-collapsed) se oculta todo el cuerpo de la sección. */
+.cop-sec-t { display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-serif, 'Fraunces', serif); font-size: 15.5px; font-weight: 600;
+  color: var(--azul, #142E6B); margin: 0 0 11px; padding-bottom: 8px;
+  border-bottom: 1.5px solid var(--borde, #E5E1D2);
+  cursor: pointer; user-select: none; -webkit-user-select: none; }
+.cop-sec-t::after { content: ''; flex: 0 0 auto; margin-left: auto;
+  width: 8px; height: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+  transform: translateY(-2px) rotate(45deg); transition: transform .18s ease; opacity: .65; }
+.cop-sec-t:hover::after { opacity: 1; }
+.cop-sec-t:focus-visible { outline: 2px solid var(--azul-m, #254BA0); outline-offset: 3px; border-radius: 4px; }
+.cop-sec.is-collapsed .cop-sec-t { margin-bottom: 0; }
+.cop-sec.is-collapsed .cop-sec-t::after { transform: translateY(2px) rotate(-135deg); }
+.cop-sec.is-collapsed > :not(.cop-sec-t) { display: none; }
 
 /* Subgrupos de requisitos en 2 columnas fluidas (reduce mucho la altura).
    `break-inside: avoid` evita que un subgrupo se parta entre columnas. */

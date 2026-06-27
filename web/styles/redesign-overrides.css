@@ -3253,6 +3253,15 @@ summary:focus-visible,
     min-width: 0;
     font-size: 12.5px;
   }
+  /* El estado ("12 días disponibles") se partía en dos renglones junto al
+     botón. Lo mantenemos en una sola línea; si no cupiera, se recorta con
+     elipsis en vez de apilarse palabra por palabra. */
+  .oferta-plazo .plazo-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
   /* En la columna angosta del footer, la fecha absoluta se apilaba palabra
      por palabra ("· 25 / de / junio…"). En móvil basta el plazo relativo
      ("7 días disponibles" / "Cierra mañana"); la fecha exacta sigue en el

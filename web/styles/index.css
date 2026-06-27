@@ -902,13 +902,28 @@ nav {
 }
 
 /* Descripción breve de la tarjeta: vista previa recortada a una altura
-   estándar (3 líneas). Sin "ver más": el contenido completo se ve en el
-   detalle de la oferta. Se oculta entera si no hay descripción. */
+   compacta (2 líneas) para que la tarjeta ocupe poco alto y se vean varias
+   ofertas en pantalla. El chevron `.oferta-desc-toggle` aparece sólo cuando
+   el texto se desborda y permite expandir/contraer in situ. */
+.oferta-desc-wrap { margin: 0 0 10px; }
 .oferta-desc {
-  margin: 0 0 10px; font-size: 13px; line-height: 1.5; color: var(--texto2);
-  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3;
+  margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--texto2);
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
   overflow: hidden;
 }
+.oferta-desc-wrap.is-expanded .oferta-desc {
+  -webkit-line-clamp: unset; overflow: visible;
+}
+.oferta-desc-toggle {
+  display: flex; align-items: center; justify-content: center;
+  margin: 2px 0 0 auto; width: 28px; height: 22px; padding: 0;
+  border: none; background: none; cursor: pointer;
+  color: var(--texto3); border-radius: 6px;
+  transition: color .15s, background .15s;
+}
+.oferta-desc-toggle:hover { color: var(--azul-m, #254BA0); background: var(--bg2); }
+.oferta-desc-toggle svg { transition: transform .18s ease; }
+.oferta-desc-wrap.is-expanded .oferta-desc-toggle svg { transform: rotate(180deg); }
 .oferta-detalle svg { opacity: .5; flex-shrink: 0; }
 .oferta-renta {
   font-weight: 700; color: var(--texto);

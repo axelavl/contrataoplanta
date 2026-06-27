@@ -185,6 +185,16 @@ document.addEventListener('click', function (e) {
       el.setAttribute('aria-expanded', colapsadoObj ? 'false' : 'true');
       break;
     }
+    case 'toggle-desc': {
+      // Expande/contrae la descripción recortada de la tarjeta. La flecha
+      // (chevron) rota y el clamp CSS se libera vía `.is-expanded`.
+      var descWrap = el.closest('.oferta-desc-wrap');
+      if (!descWrap) break;
+      var descAbierta = descWrap.classList.toggle('is-expanded');
+      el.setAttribute('aria-expanded', descAbierta ? 'true' : 'false');
+      el.setAttribute('title', descAbierta ? 'Ver menos' : 'Ver más');
+      break;
+    }
     case 'noop':
       // Hace sólo stopPropagation (caso botón "bases no disponibles"
       // dentro de card, que evita que se dispare el click de la card).
@@ -1353,11 +1363,17 @@ function resaltarBusqueda(texto, q) {
 // de forma repetida porque a veces vienen encadenadas.
 const _RE_ENCABEZADOS_DESC = /^(?:descripci[oó]n\s+de\s+la\s+oferta|descripci[oó]n\s+del\s+cargo|descripci[oó]n\s+del\s+puesto|funciones?\s+del\s+cargo|funciones?\s+del\s+puesto|objetivo\s+del\s+cargo|otros\s+antecedentes|antecedentes\s+del\s+cargo|detalle\s+de\s+la\s+oferta|resumen\s+de\s+la\s+oferta)\b[\s:.\-–—]*/i;
 
+// Marcador de lista al inicio del texto: "1.", "1.-", "1)", "(1)", "•", "-",
+// "a)"… Lo quitamos del preview para que no empiece con un número suelto
+// ("1. Generar…" → "Generar…"). Sólo afecta el resumen de la tarjeta.
+const _RE_MARCADOR_LISTA_INICIO = /^(?:\(?\d{1,2}\)|\d{1,2}\s*[.\-)]|[a-zA-Z]\)|[-*•·▪◦–—])\s*[.\-–—]?\s+/;
+
 function _limpiarEncabezadoDesc(texto) {
   let t = String(texto || '').trim();
   // Hasta 3 pasadas por si vienen rótulos encadenados ("DESCRIPCIÓN… FUNCIONES…").
   for (let i = 0; i < 3; i++) {
-    const limpio = t.replace(_RE_ENCABEZADOS_DESC, '').trim();
+    let limpio = t.replace(_RE_ENCABEZADOS_DESC, '').trim();
+    limpio = limpio.replace(_RE_MARCADOR_LISTA_INICIO, '').trim();
     if (limpio === t) break;
     t = limpio;
   }
@@ -1371,6 +1387,12 @@ function renderCard(oferta) {
   const tipoCss = tipoClase(oferta.tipo_contrato);
   const tipoLabel = tipoEtiqueta(oferta.tipo_contrato);
   const regionCompleta = nombreRegionCompleto(oferta.region);
+  // Para el chip de región: los nombres oficiales muy largos ("Región de Aysén
+  // del General Carlos Ibáñez del Campo") se partían en dos líneas en la
+  // tarjeta. Si el nombre es largo, usamos la forma canónica corta ("Aysén").
+  const regionChip = regionCompleta.length > 24
+    ? (regionCanonica(oferta.region) || regionCompleta)
+    : regionCompleta;
   const sector  = oferta.sector || '';
   const ciudad  = ciudadValida(oferta.ciudad, oferta.institucion);
   const jornada = jornadaValida(oferta.jornada);
@@ -1421,7 +1443,7 @@ function renderCard(oferta) {
         <div class="oferta-tipo-wrap">
           ${oferta.destacada ? `<span class="badge badge-destacada" title="Oferta destacada en nuestras redes sociales">⭐ Destacada</span>` : ''}
           ${oferta.tipo_contrato ? `<span class="badge ${tipoCss}">${tipoLabel}</span>` : ''}
-          ${regionCompleta ? `<span class="badge badge-region">🗺 ${escHtml(regionCompleta)}</span>` : ''}
+          ${regionChip ? `<span class="badge badge-region">🗺 ${escHtml(regionChip)}</span>` : ''}
         </div>
       </div>
     </div>
@@ -1439,7 +1461,10 @@ function renderCard(oferta) {
         ? `<span class="oferta-frescura${frescura.startsWith('✨') ? ' frescura-nueva' : ''}">${escHtml(frescura)}</span>`
         : (oferta.fecha_publicacion ? `<span class="oferta-detalle">🗓 Publicada ${formatFecha(oferta.fecha_publicacion)}</span>` : '')}
     </div>
-    ${_descCard ? `<p class="oferta-desc">${_descCard}</p>` : ''}
+    ${_descCard ? `<div class="oferta-desc-wrap">
+      <p class="oferta-desc">${_descCard}</p>
+      <button class="oferta-desc-toggle" type="button" data-action="toggle-desc" data-stop-propagation="true" aria-expanded="false" title="Ver más" aria-label="Ver descripción completa" hidden><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+    </div>` : ''}
     <div class="oferta-footer">
       <div class="oferta-plazo">
         <div class="plazo-dot ${plazo.clase}"></div>
@@ -1453,6 +1478,27 @@ function renderCard(oferta) {
     </div>
     ${jobPosting.markup}
   </div>`;
+}
+
+// ── Flecha de "ver más" en la descripción de la tarjeta ───────────────────
+// La flecha sólo tiene sentido cuando el texto recortado (CSS line-clamp)
+// realmente se desborda. Tras pintar la lista medimos cada descripción y
+// mostramos el chevron únicamente en las que tienen contenido oculto. Se
+// difiere con requestAnimationFrame para medir con el layout ya aplicado.
+function _marcarDescripcionesExpandibles() {
+  var aplicar = function () {
+    var wraps = document.querySelectorAll('.oferta-desc-wrap');
+    for (var i = 0; i < wraps.length; i++) {
+      var wrap = wraps[i];
+      if (wrap.classList.contains('is-expanded')) continue;
+      var p = wrap.querySelector('.oferta-desc');
+      var btn = wrap.querySelector('.oferta-desc-toggle');
+      if (!p || !btn) continue;
+      btn.hidden = p.scrollHeight <= p.clientHeight + 2;
+    }
+  };
+  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(aplicar);
+  else aplicar();
 }
 
 // ── Favorito directo desde tarjeta ────────────────────────────────────────
@@ -1495,6 +1541,9 @@ function renderRowCompacta(oferta) {
   const tipoCss   = tipoClase(oferta.tipo_contrato);
   const tipoLabel = tipoEtiqueta(oferta.tipo_contrato);
   const regionCompleta = nombreRegionCompleto(oferta.region);
+  const regionChip = regionCompleta.length > 24
+    ? (regionCanonica(oferta.region) || regionCompleta)
+    : regionCompleta;
   const rentaHtml = formatRentaRow(oferta.renta_bruta_min, oferta.renta_bruta_max, oferta.grado_eus, oferta.renta_tipo);
   const instLogo = getInstIcon(oferta);
   const favs  = leerFavoritos();
@@ -1510,7 +1559,7 @@ function renderRowCompacta(oferta) {
       <div class="row-textcol">
         <div class="row-inst">${escHtml(_aplicarAcronimosForzados(oferta.institucion || '')) || 'Institución pública'}</div>
         <div class="row-cargo" title="${escAttr(cargoDisplay)}">${oferta.destacada ? '<span title="Oferta destacada en redes sociales">⭐ </span>' : ''}${escHtml(cargoDisplay)}</div>
-        ${regionCompleta ? `<div class="row-region">🗺 ${escHtml(regionCompleta)}</div>` : ''}
+        ${regionChip ? `<div class="row-region">🗺 ${escHtml(regionChip)}</div>` : ''}
       </div>
     </div>
     <div class="row-meta">
@@ -1925,6 +1974,7 @@ const itemsHtml = ofertasFiltradas.map((oferta, i) => {
 }).join('');
 
 lista.innerHTML = header + itemsHtml;
+    _marcarDescripcionesExpandibles();
     if (window.repintarComparar) window.repintarComparar();
     // Paginación
     renderPaginacion(data.total ?? ofertasFiltradas.length, data.paginas ?? 1);
@@ -3716,6 +3766,9 @@ document.getElementById('lista-ofertas')?.addEventListener('click', (e) => {
 // Accesibilidad: Enter / Space también abren el modal cuando la tarjeta tiene foco.
 document.getElementById('lista-ofertas')?.addEventListener('keydown', (e) => {
   if (e.key !== 'Enter' && e.key !== ' ') return;
+  // Botones internos (favorito, "Ver detalles", chevron de descripción…)
+  // manejan su propia tecla — no abrir el modal por encima de ellos.
+  if (e.target.closest('.btn-fav-card, .btn-fav-row, [data-action]')) return;
   const el = e.target.closest('[data-oferta-id]');
   if (!el) return;
   e.preventDefault();
