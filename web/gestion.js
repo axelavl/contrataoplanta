@@ -30,6 +30,7 @@ if (!ADMIN_PATH) {
 
 // ── Estado ─────────────────────────────────────────────────────
 let _creds = null;
+let _rol = 'admin';   // rol del usuario en sesión (admin|editor|lector)
 let _searchTimer = null;
 let _ofertasPagina = 1;
 let _editingId = null;
@@ -50,10 +51,11 @@ function buildAuthHeaderFromToken(token) {
   return 'Bearer ' + token;
 }
 
-function _saveSession(token, expiresAt) {
+function _saveSession(token, expiresAt, rol, usuario) {
   _creds = { header: buildAuthHeaderFromToken(token), token, expiresAt };
+  _rol = rol || 'admin';
   sessionStorage.setItem('_gc', JSON.stringify({
-    token, expiresAt, k: ADMIN_PATH,
+    token, expiresAt, k: ADMIN_PATH, rol: _rol, usuario: usuario || '',
   }));
 }
 
@@ -65,6 +67,7 @@ function _tokenSigueVivo(expiresAt) {
 async function doLogin() {
   const pass = document.getElementById('auth-pass').value;
   if (!pass) return;
+  const usuario = (document.getElementById('auth-user')?.value || '').trim();
   const btn = document.getElementById('auth-btn');
   btn.textContent = 'Verificando…'; btn.disabled = true;
   document.getElementById('auth-error').style.display = 'none';
@@ -72,7 +75,7 @@ async function doLogin() {
     const r = await fetch(`${API_BASE}/api/${ADMIN_PATH}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: pass }),
+      body: JSON.stringify(usuario ? { usuario, password: pass } : { password: pass }),
     });
     if (r.status === 429) {
       document.getElementById('auth-error').textContent = 'Demasiados intentos. Espera 10 minutos.';
@@ -86,7 +89,7 @@ async function doLogin() {
       return;
     }
     const body = await r.json();
-    _saveSession(body.token, body.expires_at);
+    _saveSession(body.token, body.expires_at, body.rol, body.usuario);
     showApp();
   } catch(e) {
     document.getElementById('auth-error').textContent = 'Error de red: ' + e.message;
@@ -107,9 +110,13 @@ async function logout() {
   }
   sessionStorage.removeItem('_gc');
   _creds = null;
+  _rol = 'admin';
+  document.body.classList.remove('rol-lector');
+  const _av = document.getElementById('rol-aviso'); if (_av) _av.remove();
   document.getElementById('app').style.display = 'none';
   document.getElementById('auth-screen').style.display = 'flex';
   document.getElementById('auth-pass').value = '';
+  const _au = document.getElementById('auth-user'); if (_au) _au.value = '';
   document.getElementById('auth-btn').textContent = 'Entrar';
   document.getElementById('auth-btn').disabled = false;
 }
@@ -117,7 +124,45 @@ async function logout() {
 function showApp() {
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
+  aplicarRol();
   loadDashboard();
+}
+
+// Ajusta la UI según el rol: oculta pestañas solo-admin y, para lectores,
+// muestra un aviso de solo lectura. La seguridad real la impone el backend.
+function aplicarRol() {
+  const esAdmin = _rol === 'admin';
+  const tabsAdmin = ['programacion', 'usuarios'];
+  document.querySelectorAll('nav button[data-rol="admin"]').forEach(b => {
+    b.style.display = esAdmin ? '' : 'none';
+  });
+  if (!esAdmin) {
+    // Si un admin cerró sesión con una pestaña solo-admin activa y entra un
+    // editor/lector sin recargar, hay que sacarlo de esa pestaña y limpiar lo
+    // ya renderizado (datos de usuarios/programación no deben quedar a la vista).
+    const usuariosTb = document.getElementById('usuarios-tbody');
+    if (usuariosTb) usuariosTb.innerHTML = '';
+    const schedEstado = document.getElementById('sched-estado');
+    if (schedEstado) schedEstado.innerHTML = '';
+    const activa = document.querySelector('.tab-panel.active');
+    if (activa && tabsAdmin.some(t => activa.id === 'tab-' + t)) {
+      const nav = document.querySelector('nav button[data-tab="dashboard"]');
+      if (nav) nav.click();   // vuelve al Resumen (re-aplica active + carga)
+    }
+  }
+  document.body.classList.toggle('rol-lector', _rol === 'lector');
+  let aviso = document.getElementById('rol-aviso');
+  if (_rol === 'lector') {
+    if (!aviso) {
+      aviso = document.createElement('div');
+      aviso.id = 'rol-aviso';
+      aviso.style.cssText = 'background:#1d4ed822;color:#60a5fa;border-bottom:1px solid #1d4ed844;padding:6px 24px;font-size:12px;text-align:center';
+      aviso.textContent = '👁️ Modo solo lectura — tu rol no permite hacer cambios.';
+      document.getElementById('app').prepend(aviso);
+    }
+  } else if (aviso) {
+    aviso.remove();
+  }
 }
 
 // ── API helper ─────────────────────────────────────────────────
@@ -160,6 +205,8 @@ document.querySelectorAll('nav button').forEach(btn => {
     else if (tab === 'alertas')  { loadAlertas(); loadEventos(); }
     else if (tab === 'config')   loadConfig();
     else if (tab === 'acciones') loadProcesos();
+    else if (tab === 'programacion') loadScheduler();
+    else if (tab === 'usuarios') loadUsuarios();
     else if (tab === 'cursos')   loadCursos();
   });
 });
@@ -470,11 +517,13 @@ async function loadAnalitica() {
       });
       document.getElementById('an-chart').innerHTML = '<p class="text-muted">Aún no hay visitas registradas.</p>';
       document.getElementById('an-dispositivos').innerHTML = '<p class="text-muted">—</p>';
+      document.getElementById('an-embudo').innerHTML = '<p class="text-muted">Aún no hay datos del embudo.</p>';
       renderUmami(d.umami || {});
       return;
     }
     renderAnaliticaCards(interno.totales || {});
     renderAnaliticaChart(interno.serie || []);
+    renderEmbudo(interno.embudo || []);
     renderAnaliticaLista('an-paginas', interno.top_paginas || [], 'path', 'vistas');
     renderAnaliticaLista('an-referidos', interno.top_referidos || [], 'host', 'visitas', 'Tráfico directo (sin referido)');
     renderDispositivos(interno.dispositivos || []);
@@ -597,6 +646,157 @@ function renderUmami(umami) {
     <div class="stat-card"><div class="label">Visitas</div><div class="value">${val(s.visits).toLocaleString()}</div></div>
     <div class="stat-card yellow"><div class="label">Rebotes</div><div class="value">${val(s.bounces).toLocaleString()}</div></div>
   `;
+}
+
+function renderEmbudo(pasos) {
+  const cont = document.getElementById('an-embudo');
+  if (!pasos.length || (pasos[0] && !pasos[0].sesiones)) {
+    cont.innerHTML = '<p class="text-muted">Aún no hay suficientes datos para el embudo.</p>';
+    return;
+  }
+  cont.innerHTML = pasos.map((p, i) => {
+    const prev = i > 0 ? pasos[i-1].sesiones : null;
+    const conv = (prev && prev > 0) ? Math.round((p.sesiones/prev)*100) : null;
+    return `<div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px">
+        <span>${escAttr(p.paso)}</span>
+        <span class="text-muted">${(p.sesiones||0).toLocaleString()} · ${p.pct}%${conv!=null?` <span style="color:var(--green)">(${conv}% del paso anterior)</span>`:''}</span>
+      </div>
+      <div style="height:22px;background:var(--surface2);border-radius:5px;overflow:hidden">
+        <div style="height:100%;width:${Math.max(p.pct||0,1)}%;background:linear-gradient(90deg,var(--accent),var(--accent-hover));display:flex;align-items:center;padding-left:8px;color:#fff;font-size:11px;font-weight:600">${p.pct}%</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function exportAnalitica() {
+  const dias = parseInt(document.getElementById('an-dias').value) || 30;
+  try {
+    const r = await fetch(`${API_BASE}/api/${ADMIN_PATH}/analitica/export?dias=${dias}`, {
+      headers: { Authorization: _creds.header }
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `estadisticas_${dias}d.csv`; a.click();
+    URL.revokeObjectURL(url);
+    toast('CSV descargado ✓');
+  } catch (e) { toast('Error: ' + e.message, 'error'); }
+}
+
+// ── USUARIOS DEL PANEL ─────────────────────────────────────────
+let _usuarioEditId = null;
+const _ROL_LABEL = { lector: 'Lector', editor: 'Editor', admin: 'Administrador' };
+
+async function loadUsuarios() {
+  const tbody = document.getElementById('usuarios-tbody');
+  tbody.innerHTML = `<tr class="loading-row"><td colspan="7"><span class="spinner"></span></td></tr>`;
+  try {
+    const d = await api('/usuarios');
+    if (d.warning) { tbody.innerHTML = `<tr class="empty-row"><td colspan="7" style="color:var(--yellow)">${d.warning}</td></tr>`; return; }
+    const us = d.usuarios || [];
+    if (!us.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Sin usuarios. Crea el primero arriba.</td></tr>'; return; }
+    const rolPill = { admin:'blue', editor:'green', lector:'gray' };
+    tbody.innerHTML = us.map(u => `<tr>
+      <td class="text-muted text-small">${u.id}</td>
+      <td><strong>${escAttr(u.usuario)}</strong></td>
+      <td class="text-small text-muted">${escAttr(u.nombre||'—')}</td>
+      <td>${pill(_ROL_LABEL[u.rol]||u.rol, rolPill[u.rol]||'gray')}</td>
+      <td>${u.activo?pill('activo','green'):pill('inactivo','gray')}</td>
+      <td class="text-small text-muted">${u.ultimo_login?fmtDt(u.ultimo_login):'nunca'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-ghost btn-sm" data-action="editar-usuario" data-id="${u.id}" data-usuario="${escAttr(u.usuario)}" data-nombre="${escAttr(u.nombre||'')}" data-rol="${u.rol}" data-activo="${u.activo?1:0}">✏️</button>
+        <button class="btn btn-danger btn-sm" style="margin-left:4px" data-action="borrar-usuario" data-id="${u.id}" data-usuario="${escAttr(u.usuario)}">🗑️</button>
+      </td>
+    </tr>`).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="7" style="color:var(--red)">Error: ${e.message}</td></tr>`;
+  }
+}
+
+function editarUsuario(d) {
+  _usuarioEditId = parseInt(d.id);
+  document.getElementById('us-usuario').value = d.usuario || '';
+  document.getElementById('us-nombre').value = d.nombre || '';
+  document.getElementById('us-password').value = '';
+  document.getElementById('us-rol').value = d.rol || 'editor';
+  document.getElementById('us-usuario').disabled = true;  // el usuario no se renombra
+  document.getElementById('us-cancelar').style.display = '';
+  document.getElementById('tab-usuarios').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function cancelarUsuario() {
+  _usuarioEditId = null;
+  ['us-usuario','us-nombre','us-password'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('us-rol').value = 'editor';
+  document.getElementById('us-usuario').disabled = false;
+  document.getElementById('us-cancelar').style.display = 'none';
+}
+
+async function saveUsuario() {
+  const usuario = document.getElementById('us-usuario').value.trim();
+  const nombre = document.getElementById('us-nombre').value.trim();
+  const password = document.getElementById('us-password').value;
+  const rol = document.getElementById('us-rol').value;
+  try {
+    if (_usuarioEditId) {
+      const body = { nombre, rol };
+      if (password) body.password = password;
+      await api(`/usuarios/${_usuarioEditId}`, { method:'PUT', body:JSON.stringify(body) });
+      toast('Usuario actualizado ✓');
+    } else {
+      if (!usuario || usuario.length < 3) { toast('Usuario muy corto (mín. 3)', 'error'); return; }
+      if (password.length < 8) { toast('Contraseña muy corta (mín. 8)', 'error'); return; }
+      const r = await api('/usuarios', { method:'POST', body:JSON.stringify({ usuario, nombre, password, rol }) });
+      toast(`Usuario ${r.usuario} creado ✓`);
+    }
+    cancelarUsuario();
+    loadUsuarios();
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+async function borrarUsuario(id, usuario) {
+  if (!confirm(`¿Eliminar la cuenta "${usuario}"?`)) return;
+  try { await api(`/usuarios/${id}`, { method:'DELETE' }); toast('Usuario eliminado ✓'); loadUsuarios(); }
+  catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+// ── PROGRAMACIÓN DE RECOLECCIONES ──────────────────────────────
+async function loadScheduler() {
+  const cont = document.getElementById('sched-estado');
+  cont.innerHTML = '<span class="spinner"></span>';
+  try {
+    const d = await api('/scheduler');
+    if (!d.disponible) { cont.innerHTML = `<div style="color:var(--yellow)">${d.warning||'No disponible'}</div>`; return; }
+    const e = d.estado || {};
+    document.getElementById('sched-activo').checked = e.activo === true;
+    document.getElementById('sched-intervalo').value = e.intervalo_horas || 24;
+    document.getElementById('sched-modo').value = e.modo || 'completa';
+    document.getElementById('sched-limite').value = e.limite_fuentes != null ? e.limite_fuentes : '';
+    const estadoTxt = e.activo
+      ? `<span style="color:var(--green)">● Activa</span> — próxima corrida: <strong>${e.proxima_ejecucion?fmtDt(e.proxima_ejecucion):'—'}</strong>`
+      : '<span class="text-muted">○ Desactivada</span>';
+    cont.innerHTML = `<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;font-size:13px">
+      ${estadoTxt}<br>
+      <span class="text-muted">Última corrida: ${e.ultima_ejecucion?fmtDt(e.ultima_ejecucion):'nunca'}</span>
+    </div>`;
+  } catch(err) { cont.innerHTML = `<div style="color:var(--red)">Error: ${err.message}</div>`; }
+}
+
+async function saveScheduler() {
+  const _lim = parseInt(document.getElementById('sched-limite').value);
+  const body = {
+    activo: document.getElementById('sched-activo').checked,
+    intervalo_horas: parseInt(document.getElementById('sched-intervalo').value) || 24,
+    modo: document.getElementById('sched-modo').value,
+    limite_fuentes: Number.isFinite(_lim) ? _lim : 0,
+  };
+  try {
+    await api('/scheduler', { method:'PUT', body:JSON.stringify(body) });
+    toast('Programación guardada ✓');
+    loadScheduler();
+  } catch(e) { toast('Error: '+e.message,'error'); }
 }
 
 // ── OFERTAS ───────────────────────────────────────────────────
@@ -1153,13 +1353,23 @@ async function loadDiagnostico() {
       <span style="font-weight:600;color:${nivelColor}">Sistema ${nivel==='ok'?'en orden':`con ${alertas.length} alerta(s)`}</span>
     </div>`;
 
+    // Acciones directas disponibles para algunas alertas (un clic resuelve).
+    const accionDirecta = {
+      'bulk-desactivar': { action: 'diag-desactivar-vencidas', label: '✓ Desactivar vencidas' },
+      'revalidar-urls':  { action: 'diag-revalidar', label: '↻ Revalidar ahora' },
+    };
+
     // Alertas individuales
     alertas.forEach(a => {
       const bg = {error:'#dc262218',warning:'#d9770618',info:'#1d4ed818'}[a.nivel]||'var(--surface)';
       const co = {error:'var(--red)',warning:'var(--yellow)',info:'#60a5fa'}[a.nivel]||'var(--muted)';
+      const dir = accionDirecta[a.accion];
       html += `<div style="background:${bg};border:1px solid ${co}44;border-radius:var(--radius);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
         <span style="color:${co}">${a.mensaje}</span>
-        <button class="btn btn-ghost btn-sm" data-action="ir-a" data-target="${escAttr(a.accion)}">Ver →</button>
+        <span style="display:flex;gap:6px;white-space:nowrap">
+          ${dir?`<button class="btn btn-primary btn-sm" data-action="${dir.action}">${dir.label}</button>`:''}
+          <button class="btn btn-ghost btn-sm" data-action="ir-a" data-target="${escAttr(a.accion)}">Ver →</button>
+        </span>
       </div>`;
     });
 
@@ -1364,26 +1574,22 @@ document.getElementById('run-mode').addEventListener('change', function() {
   const v = this.value;
   document.getElementById('run-kind').style.display    = v==='kind'       ? '' : 'none';
   document.getElementById('run-inst-id').style.display = v==='institucion'? '' : 'none';
-  document.getElementById('run-experimental-wrap').style.display = v==='all' ? 'flex' : 'none';
 });
 
 async function runScraper() {
   const mode    = document.getElementById('run-mode').value;
   const kind    = document.getElementById('run-kind').value;
   const instId  = document.getElementById('run-inst-id').value;
-  const max     = parseInt(document.getElementById('run-max').value) || 50;
+  const _lim    = parseInt(document.getElementById('run-limite').value);
   const dryRun  = document.getElementById('run-dry').checked;
   const res     = document.getElementById('run-result');
 
-  const payload = { mode, dry_run: dryRun, max };
+  const payload = { mode, dry_run: dryRun };
+  if (Number.isFinite(_lim) && _lim > 0) payload.limite_fuentes = _lim;
   if (mode==='kind')        payload.kind = kind;
   if (mode==='institucion') payload.institucion_id = parseInt(instId);
-  if (mode==='all') {
-    payload.include_experimental = document.getElementById('run-experimental').checked;
-    const aviso = payload.include_experimental
-      ? '¿Lanzar corrida COMPLETA incluyendo fuentes experimentales? Puede tardar bastante.'
-      : '¿Lanzar corrida completa de todos los scrapers activos? Puede tardar varios minutos.';
-    if (!dryRun && !confirm(aviso)) return;
+  if (mode==='all' && !dryRun) {
+    if (!confirm('¿Lanzar corrida completa de todos los scrapers activos? Puede tardar varios minutos.')) return;
   }
 
   res.style.display='block';
@@ -1528,7 +1734,7 @@ async function runInstancia(id, nombre) {
   try {
     const r = await api('/scraper/run', {
       method:'POST',
-      body: JSON.stringify({ mode:'institucion', institucion_id:id, max:100 }),
+      body: JSON.stringify({ mode:'institucion', institucion_id:id }),
     });
     res.innerHTML=`✅ PID: <strong>${r.pid}</strong> · run_id: ${r.run_id??'—'} · inst: ${id}`;
     toast(`Scraper inst. ${id} iniciado ✓`);
@@ -1645,6 +1851,7 @@ document.addEventListener('click', e => {
     case 'logout':             logout(); break;
     case 'load-dashboard':     loadDashboard(); break;
     case 'load-analitica':     loadAnalitica(); break;
+    case 'export-analitica':   exportAnalitica(); break;
     case 'load-diagnostico':   loadDiagnostico(); break;
     case 'export-ofertas':     exportOfertas(); break;
     case 'load-scrapers':      loadScrapers(); break;
@@ -1686,8 +1893,26 @@ document.addEventListener('click', e => {
     case 'run-instancia':      runInstancia(parseInt(d.id), d.nombre||''); break;
     case 'ver-log':            verLog(d.log); break;
     case 'ir-a':               irA(d.target); break;
+    case 'diag-desactivar-vencidas': diagDesactivarVencidas(); break;
+    case 'diag-revalidar':     revalidarUrls(); break;
+    case 'load-usuarios':      loadUsuarios(); break;
+    case 'save-usuario':       saveUsuario(); break;
+    case 'cancelar-usuario':   cancelarUsuario(); break;
+    case 'editar-usuario':     editarUsuario(d); break;
+    case 'borrar-usuario':     borrarUsuario(parseInt(d.id), d.usuario||''); break;
+    case 'load-scheduler':     loadScheduler(); break;
+    case 'save-scheduler':     saveScheduler(); break;
   }
 });
+
+async function diagDesactivarVencidas() {
+  if (!confirm('¿Desactivar todas las ofertas activas con fecha de cierre ya vencida?')) return;
+  try {
+    const r = await api('/ofertas/bulk-desactivar', { method:'POST', body: JSON.stringify({ fecha_cierre_vencida: true }) });
+    toast(`${r.desactivadas} ofertas vencidas desactivadas ✓`);
+    loadDashboard();
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
 
 document.addEventListener('change', e => {
   // Selección múltiple de ofertas (checkboxes sin data-change)
@@ -1732,12 +1957,13 @@ document.getElementById('auth-btn').addEventListener('click', doLogin);
   const saved = sessionStorage.getItem('_gc');
   if (!saved) return;
   try {
-    const { token, expiresAt, k } = JSON.parse(saved);
+    const { token, expiresAt, k, rol } = JSON.parse(saved);
     if (k !== ADMIN_PATH || !token || !_tokenSigueVivo(expiresAt)) {
       sessionStorage.removeItem('_gc');
       return;
     }
     _creds = { header: buildAuthHeaderFromToken(token), token, expiresAt };
+    _rol = rol || 'admin';
     // Validación rápida contra el servidor: si el token fue revocado o
     // el secreto rotó, /auth/me devuelve 401 y limpiamos.
     try {
@@ -1745,6 +1971,8 @@ document.getElementById('auth-btn').addEventListener('click', doLogin);
         headers: { Authorization: _creds.header },
       });
       if (!r.ok) { sessionStorage.removeItem('_gc'); _creds = null; return; }
+      const me = await r.json().catch(() => ({}));
+      if (me.rol) _rol = me.rol;   // fuente de verdad: el rol firmado del token
     } catch (_) { /* sin red: intentamos usar el token igual */ }
     showApp();
   } catch(e) { sessionStorage.removeItem('_gc'); }

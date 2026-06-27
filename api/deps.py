@@ -80,7 +80,14 @@ ADMIN_PASSWORD = _requerido_env("ADMIN_PASSWORD")
 ADMIN_JWT_SECRET = _requerido_env("ADMIN_JWT_SECRET")
 ADMIN_JWT_TTL_SEG = int(os.getenv("ADMIN_JWT_TTL_SEG", "43200"))  # 12h default
 ADMIN_JWT_ALG = "HS256"
-ADMIN_JWT_USER = "ops"  # usuario lógico único por ahora
+ADMIN_JWT_USER = "ops"  # usuario lógico de la contraseña maestra (respaldo)
+
+#: Roles del panel, de menor a mayor privilegio. `lector` solo ve;
+#: `editor` además modifica contenido (ofertas, fuentes, cursos, alertas,
+#: recolecciones); `admin` además gestiona usuarios, ajustes y la
+#: programación automática.
+ROLES_VALIDOS = ("lector", "editor", "admin")
+_ROL_RANK = {"lector": 1, "editor": 2, "admin": 3}
 # Prefijo secreto de las rutas de administración. Con JWT activo es
 # defense-in-depth, no la barrera principal.
 ADMIN_PATH = os.getenv("ADMIN_PATH", "_gestion_ops").strip("/")
@@ -190,19 +197,94 @@ def client_ip(request: Request) -> str:
 _revoked_jti: dict[str, float] = {}
 
 
-def create_admin_token(user: str = ADMIN_JWT_USER) -> dict[str, Any]:
-    """Emite un JWT de admin. Devuelve ``{token, expires_at, jti}``."""
+def create_admin_token(user: str = ADMIN_JWT_USER, rol: str = "admin") -> dict[str, Any]:
+    """Emite un JWT de admin. Devuelve ``{token, expires_at, jti}``.
+
+    El rol viaja firmado en el token, así la verificación no necesita
+    consultar la base de datos en cada request.
+    """
+    if rol not in ROLES_VALIDOS:
+        rol = "editor"
     ahora = datetime.now(tz=timezone.utc)
     exp_dt = ahora + timedelta(seconds=ADMIN_JWT_TTL_SEG)
     jti = secrets.token_urlsafe(12)
     payload = {
         "sub": user,
+        "rol": rol,
         "jti": jti,
         "iat": int(ahora.timestamp()),
         "exp": int(exp_dt.timestamp()),
     }
     token = jwt.encode(payload, ADMIN_JWT_SECRET, algorithm=ADMIN_JWT_ALG)
-    return {"token": token, "expires_at": payload["exp"], "jti": jti}
+    return {"token": token, "expires_at": payload["exp"], "jti": jti, "rol": rol}
+
+
+# ── Hashing de contraseñas de usuarios admin (pbkdf2, stdlib) ─────
+
+def hash_password(password: str, *, iteraciones: int = 240_000) -> str:
+    """Hashea una contraseña con PBKDF2-HMAC-SHA256 (sin dependencias).
+
+    Formato: ``pbkdf2_sha256$<iteraciones>$<salt_hex>$<hash_hex>``.
+    """
+    import hashlib
+    salt = secrets.token_bytes(16)
+    dk = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, iteraciones)
+    return f"pbkdf2_sha256${iteraciones}${salt.hex()}${dk.hex()}"
+
+
+def verify_password(password: str, stored: str) -> bool:
+    """Verifica una contraseña contra un hash generado por `hash_password`."""
+    import hashlib
+    try:
+        algo, iter_s, salt_hex, hash_hex = (stored or "").split("$")
+        if algo != "pbkdf2_sha256":
+            return False
+        dk = hashlib.pbkdf2_hmac(
+            "sha256", password.encode("utf-8"),
+            bytes.fromhex(salt_hex), int(iter_s),
+        )
+        return secrets.compare_digest(dk.hex(), hash_hex)
+    except (ValueError, AttributeError):
+        return False
+
+
+def autenticar_usuario(usuario: str, password: str) -> dict[str, Any] | None:
+    """Valida usuario+contraseña contra `admin_usuarios`.
+
+    Devuelve ``{usuario, rol, nombre}`` si las credenciales son válidas y la
+    cuenta está activa; ``None`` si no. Defensivo: si la tabla no existe
+    (migración sin aplicar) devuelve ``None`` sin romper el login maestro.
+    """
+    usuario = (usuario or "").strip()
+    if not usuario or not password:
+        return None
+    try:
+        from api.services.db import get_cursor
+        with get_cursor() as (conn, cur):
+            cur.execute(
+                "SELECT id, usuario, nombre, password_hash, rol, activo "
+                "FROM admin_usuarios WHERE LOWER(usuario) = LOWER(%s)",
+                [usuario],
+            )
+            row = cur.fetchone()
+            if not row:
+                return None
+            row = dict(row)
+            if not row.get("activo") or not verify_password(password, row.get("password_hash", "")):
+                return None
+            cur.execute(
+                "UPDATE admin_usuarios SET ultimo_login = NOW() WHERE id = %s",
+                [row["id"]],
+            )
+            conn.commit()
+        rol = row.get("rol") if row.get("rol") in ROLES_VALIDOS else "editor"
+        return {"usuario": row["usuario"], "rol": rol, "nombre": row.get("nombre")}
+    except Exception as exc:  # noqa: BLE001 — degradación intencional
+        import logging
+        logging.getLogger("api.deps").warning(
+            "autenticar_usuario degradado (%s): %s", type(exc).__name__, exc
+        )
+        return None
 
 
 def verify_admin_jwt(request: Request) -> str:
@@ -240,13 +322,87 @@ def verify_admin_jwt(request: Request) -> str:
         raise HTTPException(status_code=401, detail="Sesión revocada")
 
     user = str(payload.get("sub") or "")
-    if user != ADMIN_JWT_USER:
+    if not user:
         raise HTTPException(status_code=401, detail="Token inválido")
-    # Guardamos el jti en el request para que /logout pueda revocarlo sin
-    # re-decodificar.
+    # El rol viaja firmado en el token. Tokens antiguos (anteriores a los
+    # usuarios con rol) no lo traen → se asumen admin para no romper sesiones.
+    rol = payload.get("rol") or "admin"
+    if rol not in ROLES_VALIDOS:
+        rol = "lector"
+    # Para cuentas nominales (admin_usuarios), la BD es la fuente de verdad del
+    # rol y del estado activo: así un cambio de rol o una desactivación surten
+    # efecto en el próximo request, sin esperar a que expire el JWT (12h). El
+    # usuario maestro «ops» (contraseña maestra) no tiene fila y se salta esto.
+    if user != ADMIN_JWT_USER:
+        activo, rol_db = _estado_usuario_admin(user)
+        if activo is False:
+            raise HTTPException(status_code=401, detail="Cuenta deshabilitada o eliminada")
+        if activo is True and rol_db:
+            rol = rol_db
+        # activo is None → BD no disponible: se conserva el rol firmado del
+        # token (degradación intencional, igual que el denylist de jti).
+    # Guardamos jti/exp/rol en el request para /logout y para las
+    # dependencias de rol (require_editor / require_admin).
     request.state.admin_jti = jti
     request.state.admin_exp = int(payload.get("exp") or 0)
+    request.state.admin_rol = rol
+    request.state.admin_user = user
     return user
+
+
+def require_rol(*roles_permitidos: str):
+    """Construye una dependencia FastAPI que exige uno de los roles dados.
+
+    Reutiliza `verify_admin_jwt` (autentica) y luego compara el rol del
+    token. Uso: ``Depends(require_editor)`` / ``Depends(require_admin)``.
+    """
+    minimo = min((_ROL_RANK.get(r, 99) for r in roles_permitidos), default=99)
+
+    def _dep(request: Request) -> str:
+        user = verify_admin_jwt(request)
+        rol = getattr(request.state, "admin_rol", "lector")
+        if _ROL_RANK.get(rol, 0) < minimo:
+            raise HTTPException(
+                status_code=403,
+                detail="No tienes permisos para esta acción. Pide a un administrador que ajuste tu rol.",
+            )
+        return user
+
+    return _dep
+
+
+#: Modifica contenido: ofertas, fuentes, cursos, alertas, recolecciones.
+require_editor = require_rol("editor", "admin")
+#: Gestión sensible: usuarios, ajustes del sitio y programación automática.
+require_admin = require_rol("admin")
+
+
+def _estado_usuario_admin(usuario: str) -> tuple[bool | None, str | None]:
+    """Estado vigente de una cuenta nominal en `admin_usuarios`.
+
+    Devuelve ``(activo, rol)``:
+    - ``(True, rol)``  — existe y está activa; `rol` es el actual en la BD.
+    - ``(False, None)`` — eliminada o desactivada → se debe rechazar.
+    - ``(None, None)``  — la BD no respondió: degradar (conservar el token).
+    """
+    try:
+        from api.services.db import get_cursor
+        with get_cursor() as (_, cur):
+            cur.execute(
+                "SELECT rol, activo FROM admin_usuarios WHERE LOWER(usuario) = LOWER(%s)",
+                [usuario],
+            )
+            row = cur.fetchone()
+        if row is None:
+            return (False, None)
+        row = dict(row)
+        if not row.get("activo"):
+            return (False, None)
+        rol = row.get("rol") if row.get("rol") in ROLES_VALIDOS else "lector"
+        return (True, rol)
+    except Exception as exc:  # noqa: BLE001 — degradación intencional
+        _auth_store_warn_once(exc)
+        return (None, None)
 
 
 def _jti_revocado(jti: str) -> bool:
