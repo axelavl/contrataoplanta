@@ -826,9 +826,17 @@ class EmpleosPublicosScraper(BaseScraper):
             base = resultado.get("descripcion") or ""
             low = base.lower()
             if "cómo postular" not in low and "como postular" not in low:
-                resultado["descripcion"] = truncate(
-                    (base + ("\n\n" if base else "") + como_postular), 2000,
-                )
+                # Reservamos espacio para el bloque "Cómo postular": recortamos
+                # PRIMERO la descripción base, así la sección siempre llega
+                # completa al front aunque la ficha traiga funciones muy largas
+                # (de lo contrario el truncado final la cortaba por el extremo).
+                sep = "\n\n" if base else ""
+                margen = 2000 - len(como_postular) - len(sep)
+                if margen <= 0:
+                    resultado["descripcion"] = como_postular[:2000]
+                else:
+                    base_cap = truncate(base, margen) if base else ""
+                    resultado["descripcion"] = base_cap + sep + como_postular
 
         renta_texto = self._extraer_renta_texto(soup, metadata)
         renta_min, renta_max, grado_eus = parse_renta(renta_texto)

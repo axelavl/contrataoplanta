@@ -148,3 +148,20 @@ def test_parsear_detalle_anexa_como_postular():
     oferta = {"url_oferta": _FICHA_URL, "cargo": "Técnico", "descripcion": None}
     resultado = sc._parsear_detalle(soup, oferta)
     assert "Cómo postular:" in (resultado.get("descripcion") or "")
+
+
+def test_como_postular_sobrevive_descripcion_larga():
+    """Aunque la base (funciones) sea muy larga, el bloque "Cómo postular" no
+    se corta: se reserva su espacio antes de truncar a 2000."""
+    sc = _scraper()
+    # Ficha con un objetivo larguísimo (> 2000 chars) y sin instrucciones →
+    # usa el fallback genérico del portal.
+    largo = "Apoyar la ejecución del programa. " * 80  # ~2640 chars
+    ficha = f'<html><body><span id="lblFunciones"><h3>Objetivo del cargo</h3><p>{largo}</p></span></body></html>'
+    soup = BeautifulSoup(ficha, "html.parser")
+    oferta = {"url_oferta": _FICHA_URL, "cargo": "Analista", "descripcion": None}
+    resultado = sc._parsear_detalle(soup, oferta)
+    desc = resultado.get("descripcion") or ""
+    assert len(desc) <= 2000
+    assert "Cómo postular:" in desc
+    assert "portal de Empleos Públicos" in desc
