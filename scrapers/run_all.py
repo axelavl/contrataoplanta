@@ -336,6 +336,7 @@ def _build_discovery_catalog(
     *,
     limit: int | None = None,
     skip_empleos_publicos: bool = False,
+    only_kind: str | None = None,
 ) -> list[dict[str, Any]]:
     bundle = loader.load(prefer_json=True)
     items = [
@@ -348,6 +349,16 @@ def _build_discovery_catalog(
             inst for inst in items
             if "empleospublicos.cl" not in str(inst.get("url_empleo", ""))
         ]
+    if only_kind:
+        # Filtrar por ScraperKind clasificado ANTES de aplicar --limit, para que
+        # `--only-kind wordpress --limit 10` devuelva 10 wordpress y no 10 del
+        # catálogo completo de los que casi ninguno sea wordpress.
+        def _kind_de(inst: dict[str, Any]) -> str:
+            try:
+                return classify_source(inst).kind.value
+            except Exception:
+                return ""
+        items = [inst for inst in items if _kind_de(inst) == only_kind]
     return items[:limit] if limit else items
 
 
@@ -940,6 +951,20 @@ async def main(argv: list[str] | None = None) -> int:
         help="Lista de IDs de instituciones separados por coma para correr solo esas (ej: 315,387,562).",
     )
     parser.add_argument(
+        "--id",
+        type=int,
+        help="Atajo para correr una sola institución por ID (equivale a --ids con un valor).",
+    )
+    parser.add_argument(
+        "--only-kind",
+        type=str,
+        help=(
+            "Correr solo las fuentes cuyo ScraperKind (clasificación de "
+            "source_status) coincida (ej: wordpress, empleos_publicos, "
+            "custom_trabajando). Se aplica antes de --limit."
+        ),
+    )
+    parser.add_argument(
         "--skip-empleos-publicos",
         action="store_true",
         help="Excluir instituciones cuya url_empleo apunta a empleospublicos.cl (útil para probar scrapers de portales propios).",
@@ -983,16 +1008,34 @@ async def main(argv: list[str] | None = None) -> int:
     loader = CatalogLoader(json_path=args.catalog_json, xlsx_path=args.catalog_xlsx)
     fuentes_index = _load_fuentes_index()
     audit_store = AuditStore()
+    # Validar --only-kind contra los ScraperKind conocidos (evita un filtro
+    # silencioso que no calza con nada y "corre 0 fuentes" sin avisar).
+    only_kind = getattr(args, "only_kind", None)
+    if only_kind:
+        _kinds_validos = {k.value for k in ScraperKind}
+        if only_kind not in _kinds_validos:
+            parser.error(
+                f"--only-kind inválido: {only_kind!r}. Válidos: {sorted(_kinds_validos)}"
+            )
+
     catalog_sources = _build_discovery_catalog(
         loader,
         limit=args.limit,
         skip_empleos_publicos=getattr(args, "skip_empleos_publicos", False),
+        only_kind=only_kind,
     )
-    # Filtrar por IDs específicos si se indica --ids
+    if only_kind:
+        log.info("--only-kind=%s activo: %d fuentes tras filtrar por kind.", only_kind, len(catalog_sources))
+
+    # Filtrar por IDs específicos si se indica --ids / --id
+    target_ids: set[int] = set()
     if getattr(args, "ids", None):
-        target_ids = {int(x.strip()) for x in args.ids.split(",") if x.strip()}
+        target_ids |= {int(x.strip()) for x in args.ids.split(",") if x.strip()}
+    if getattr(args, "id", None):
+        target_ids.add(int(args.id))
+    if target_ids:
         catalog_sources = [s for s in catalog_sources if s.get("id") in target_ids]
-        log.info("--ids activo: filtrando a %d instituciones: %s", len(catalog_sources), sorted(target_ids))
+        log.info("--ids/--id activo: filtrando a %d instituciones: %s", len(catalog_sources), sorted(target_ids))
 
     # ── Filtrado por cooldown de retry_policy ──────────────────────────────
     cooldown_reason_by_inst: dict[int, str] = {}

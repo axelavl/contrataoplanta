@@ -132,9 +132,24 @@ function showApp() {
 // muestra un aviso de solo lectura. La seguridad real la impone el backend.
 function aplicarRol() {
   const esAdmin = _rol === 'admin';
+  const tabsAdmin = ['programacion', 'usuarios'];
   document.querySelectorAll('nav button[data-rol="admin"]').forEach(b => {
     b.style.display = esAdmin ? '' : 'none';
   });
+  if (!esAdmin) {
+    // Si un admin cerró sesión con una pestaña solo-admin activa y entra un
+    // editor/lector sin recargar, hay que sacarlo de esa pestaña y limpiar lo
+    // ya renderizado (datos de usuarios/programación no deben quedar a la vista).
+    const usuariosTb = document.getElementById('usuarios-tbody');
+    if (usuariosTb) usuariosTb.innerHTML = '';
+    const schedEstado = document.getElementById('sched-estado');
+    if (schedEstado) schedEstado.innerHTML = '';
+    const activa = document.querySelector('.tab-panel.active');
+    if (activa && tabsAdmin.some(t => activa.id === 'tab-' + t)) {
+      const nav = document.querySelector('nav button[data-tab="dashboard"]');
+      if (nav) nav.click();   // vuelve al Resumen (re-aplica active + carga)
+    }
+  }
   document.body.classList.toggle('rol-lector', _rol === 'lector');
   let aviso = document.getElementById('rol-aviso');
   if (_rol === 'lector') {
@@ -1559,26 +1574,22 @@ document.getElementById('run-mode').addEventListener('change', function() {
   const v = this.value;
   document.getElementById('run-kind').style.display    = v==='kind'       ? '' : 'none';
   document.getElementById('run-inst-id').style.display = v==='institucion'? '' : 'none';
-  document.getElementById('run-experimental-wrap').style.display = v==='all' ? 'flex' : 'none';
 });
 
 async function runScraper() {
   const mode    = document.getElementById('run-mode').value;
   const kind    = document.getElementById('run-kind').value;
   const instId  = document.getElementById('run-inst-id').value;
-  const max     = parseInt(document.getElementById('run-max').value) || 50;
+  const _lim    = parseInt(document.getElementById('run-limite').value);
   const dryRun  = document.getElementById('run-dry').checked;
   const res     = document.getElementById('run-result');
 
-  const payload = { mode, dry_run: dryRun, max };
+  const payload = { mode, dry_run: dryRun };
+  if (Number.isFinite(_lim) && _lim > 0) payload.limite_fuentes = _lim;
   if (mode==='kind')        payload.kind = kind;
   if (mode==='institucion') payload.institucion_id = parseInt(instId);
-  if (mode==='all') {
-    payload.include_experimental = document.getElementById('run-experimental').checked;
-    const aviso = payload.include_experimental
-      ? '¿Lanzar corrida COMPLETA incluyendo fuentes experimentales? Puede tardar bastante.'
-      : '¿Lanzar corrida completa de todos los scrapers activos? Puede tardar varios minutos.';
-    if (!dryRun && !confirm(aviso)) return;
+  if (mode==='all' && !dryRun) {
+    if (!confirm('¿Lanzar corrida completa de todos los scrapers activos? Puede tardar varios minutos.')) return;
   }
 
   res.style.display='block';
@@ -1723,7 +1734,7 @@ async function runInstancia(id, nombre) {
   try {
     const r = await api('/scraper/run', {
       method:'POST',
-      body: JSON.stringify({ mode:'institucion', institucion_id:id, max:100 }),
+      body: JSON.stringify({ mode:'institucion', institucion_id:id }),
     });
     res.innerHTML=`✅ PID: <strong>${r.pid}</strong> · run_id: ${r.run_id??'—'} · inst: ${id}`;
     toast(`Scraper inst. ${id} iniciado ✓`);

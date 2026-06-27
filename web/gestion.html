@@ -600,9 +600,6 @@
             <option value="kind">Por tipo (kind)</option>
             <option value="institucion">Por institución ID</option>
           </select>
-          <label id="run-experimental-wrap" style="display:none;align-items:center;gap:6px;color:var(--muted);cursor:pointer">
-            <input id="run-experimental" type="checkbox"> Incluir experimentales
-          </label>
           <select id="run-kind" style="display:none">
             <option value="wordpress">WordPress</option>
             <option value="generic">Generic</option>
@@ -612,7 +609,7 @@
             <option value="custom_playwright">Playwright</option>
           </select>
           <input id="run-inst-id" type="number" placeholder="ID institución" style="display:none;width:160px">
-          <input id="run-max" type="number" value="50" min="1" max="500" style="width:100px" title="Máx. ofertas">
+          <input id="run-limite" type="number" min="1" max="2000" style="width:170px" placeholder="Máx. instituciones" title="Opcional: limita cuántas instituciones se procesan (--limit)">
           <label style="display:flex;align-items:center;gap:6px;color:var(--muted);cursor:pointer">
             <input id="run-dry" type="checkbox"> Simular (no guarda nada)
           </label>

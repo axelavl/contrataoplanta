@@ -1412,44 +1412,53 @@ async def admin_scraper_run(
 
     Body (JSON):
       - mode: "all" | "empleos_publicos" | "institucion" | "kind"
-      - institucion_id: int   (para mode=institucion)
-      - kind: str             (para mode=kind, ej. "wordpress")
-      - include_experimental: bool (para mode=all, default false)
-      - dry_run: bool         (default false)
-      - max: int              (máx ofertas, default 50)
+      - institucion_id: int    (para mode=institucion)
+      - kind: str              (para mode=kind, ej. "wordpress")
+      - dry_run: bool          (default false → corre como --evaluate-only)
+      - limite_fuentes: int    (opcional; máx. instituciones, → --limit)
     """
     import subprocess, sys as _sys, shlex
 
     mode       = payload.get("mode", "empleos_publicos")
     dry_run    = bool(payload.get("dry_run", False))
-    max_offers = int(payload.get("max", 50))
+    # `limite_fuentes` (opcional) acota la cantidad de instituciones (--limit).
+    # Compat: versiones viejas del panel mandaban `max` (que run_all no soporta).
+    limite     = payload.get("limite_fuentes", payload.get("limite"))
+    try:
+        limite = int(limite) if limite not in (None, "") else 0
+    except (TypeError, ValueError):
+        limite = 0
 
-    # Construir comando
+    # Construir comando con flags REALES de run_all.py: --mode, --limit, --ids,
+    # --id, --only-kind, --skip-empleos-publicos, --evaluate-only. (No existen
+    # --max, --dry-run ni --include-experimental.)
     python = _sys.executable
     run_all = str(_PROJECT_ROOT / "scrapers" / "run_all.py")
 
-    cmd = [python, run_all, "--mode", "production", "--max", str(max_offers)]
+    cmd = [python, run_all, "--mode", "production"]
     if dry_run:
-        cmd.append("--dry-run")
+        # run_all no tiene --dry-run; --evaluate-only hace discovery+evaluación
+        # SIN extraer ni persistir ofertas → equivale a una simulación.
+        cmd.append("--evaluate-only")
+    if limite > 0:
+        cmd += ["--limit", str(limite)]
 
     if mode == "all":
-        # Corrida completa: todos los kinds runnables + el batch de
-        # EmpleosPublicos, igual que el timer de systemd.
-        if payload.get("include_experimental"):
-            cmd.append("--include-experimental")
+        # Corrida completa: run_all decide qué corre según el gatekeeper
+        # (status=active); el conjunto experimental lo gobierna la evaluación.
+        pass
     elif mode == "empleos_publicos":
         cmd += ["--only-kind", "empleos_publicos"]
     elif mode == "institucion":
         inst_id = payload.get("institucion_id")
         if not inst_id:
             raise HTTPException(400, "institucion_id es requerido para mode=institucion")
-        cmd += ["--id", str(inst_id), "--skip-empleos-publicos"]
+        cmd += ["--id", str(int(inst_id)), "--skip-empleos-publicos"]
     elif mode == "kind":
         kind = str(payload.get("kind", "wordpress"))
-        # `kind` se pasa como argumento a run_all.py (`--only-kind <kind>`).
-        # Sin validar, un valor como "--alguna-flag" se colaría como flag
-        # arbitraria del subproceso (argument injection). Lo restringimos a
-        # los valores conocidos del enum ScraperKind.
+        # `kind` se pasa como `--only-kind <kind>`. Sin validar, un valor como
+        # "--alguna-flag" se colaría como flag arbitraria (argument injection).
+        # Lo restringimos a los valores conocidos del enum ScraperKind.
         try:
             from scrapers.source_status import ScraperKind
             _kinds_validos = {k.value for k in ScraperKind}
@@ -1493,7 +1502,7 @@ async def admin_scraper_run(
         pass  # tabla puede no existir
 
     _auditar(_user, "scraper_run", "proceso", proc.pid, {
-        "mode": mode, "dry_run": dry_run, "max": max_offers,
+        "mode": mode, "dry_run": dry_run, "limite_fuentes": limite or None,
         "run_id": run_id, "log": proceso.log_path.name,
     })
     return {
