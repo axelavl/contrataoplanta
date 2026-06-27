@@ -11,6 +11,22 @@ SECTION_PATTERNS = [
     r"responsabilidades",
 ]
 
+# Encabezados de OTRAS secciones: cortan la ventana de funciones para no
+# arrastrar pasos de postulación, requisitos o documentos como si fueran
+# funciones del cargo.
+_STOP_HEADER_RE = re.compile(
+    r"^\s*(?:c[oó]mo\s+postular|proceso\s+de\s+postulaci[oó]n|requisitos|"
+    r"documentos|antecedentes|condiciones|beneficios|renta|remuneraci[oó]n|"
+    r"etapas|calendario|formaci[oó]n|experiencia|competencias|perfil)\b",
+    re.I)
+
+
+def _es_encabezado_corte(linea: str) -> bool:
+    """True si la línea parece el encabezado de otra sección (corta la ventana)."""
+    if len(linea.split()) > 8:
+        return False
+    return linea.rstrip().endswith(":") or bool(_STOP_HEADER_RE.search(linea))
+
 
 def extract_functions(text: str) -> list[str]:
     normalized = text.replace("\r", "\n")
@@ -18,7 +34,11 @@ def extract_functions(text: str) -> list[str]:
     matches: list[str] = []
     for idx, line in enumerate(lines):
         if any(re.search(pattern, line, flags=re.IGNORECASE) for pattern in SECTION_PATTERNS):
-            window = lines[idx + 1 : idx + 8]
+            window: list[str] = []
+            for w in lines[idx + 1 : idx + 9]:
+                if _es_encabezado_corte(w):
+                    break  # llegó otra sección → dejar de acumular funciones
+                window.append(w)
             bullets = [w for w in window if len(w.split()) >= 2]
             matches.extend(bullets)
     seen = set()
