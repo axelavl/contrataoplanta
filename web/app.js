@@ -1362,11 +1362,17 @@ function resaltarBusqueda(texto, q) {
 // de forma repetida porque a veces vienen encadenadas.
 const _RE_ENCABEZADOS_DESC = /^(?:descripci[oó]n\s+de\s+la\s+oferta|descripci[oó]n\s+del\s+cargo|descripci[oó]n\s+del\s+puesto|funciones?\s+del\s+cargo|funciones?\s+del\s+puesto|objetivo\s+del\s+cargo|otros\s+antecedentes|antecedentes\s+del\s+cargo|detalle\s+de\s+la\s+oferta|resumen\s+de\s+la\s+oferta)\b[\s:.\-–—]*/i;
 
+// Marcador de lista al inicio del texto: "1.", "1.-", "1)", "(1)", "•", "-",
+// "a)"… Lo quitamos del preview para que no empiece con un número suelto
+// ("1. Generar…" → "Generar…"). Sólo afecta el resumen de la tarjeta.
+const _RE_MARCADOR_LISTA_INICIO = /^(?:\(?\d{1,2}\)|\d{1,2}\s*[.\-)]|[a-zA-Z]\)|[-*•·▪◦–—])\s*[.\-–—]?\s+/;
+
 function _limpiarEncabezadoDesc(texto) {
   let t = String(texto || '').trim();
   // Hasta 3 pasadas por si vienen rótulos encadenados ("DESCRIPCIÓN… FUNCIONES…").
   for (let i = 0; i < 3; i++) {
-    const limpio = t.replace(_RE_ENCABEZADOS_DESC, '').trim();
+    let limpio = t.replace(_RE_ENCABEZADOS_DESC, '').trim();
+    limpio = limpio.replace(_RE_MARCADOR_LISTA_INICIO, '').trim();
     if (limpio === t) break;
     t = limpio;
   }
@@ -1380,6 +1386,12 @@ function renderCard(oferta) {
   const tipoCss = tipoClase(oferta.tipo_contrato);
   const tipoLabel = tipoEtiqueta(oferta.tipo_contrato);
   const regionCompleta = nombreRegionCompleto(oferta.region);
+  // Para el chip de región: los nombres oficiales muy largos ("Región de Aysén
+  // del General Carlos Ibáñez del Campo") se partían en dos líneas en la
+  // tarjeta. Si el nombre es largo, usamos la forma canónica corta ("Aysén").
+  const regionChip = regionCompleta.length > 24
+    ? (regionCanonica(oferta.region) || regionCompleta)
+    : regionCompleta;
   const sector  = oferta.sector || '';
   const ciudad  = ciudadValida(oferta.ciudad, oferta.institucion);
   const jornada = jornadaValida(oferta.jornada);
@@ -1430,7 +1442,7 @@ function renderCard(oferta) {
         <div class="oferta-tipo-wrap">
           ${oferta.destacada ? `<span class="badge badge-destacada" title="Oferta destacada en nuestras redes sociales">⭐ Destacada</span>` : ''}
           ${oferta.tipo_contrato ? `<span class="badge ${tipoCss}">${tipoLabel}</span>` : ''}
-          ${regionCompleta ? `<span class="badge badge-region">🗺 ${escHtml(regionCompleta)}</span>` : ''}
+          ${regionChip ? `<span class="badge badge-region">🗺 ${escHtml(regionChip)}</span>` : ''}
         </div>
       </div>
     </div>
@@ -1528,6 +1540,9 @@ function renderRowCompacta(oferta) {
   const tipoCss   = tipoClase(oferta.tipo_contrato);
   const tipoLabel = tipoEtiqueta(oferta.tipo_contrato);
   const regionCompleta = nombreRegionCompleto(oferta.region);
+  const regionChip = regionCompleta.length > 24
+    ? (regionCanonica(oferta.region) || regionCompleta)
+    : regionCompleta;
   const rentaHtml = formatRentaRow(oferta.renta_bruta_min, oferta.renta_bruta_max, oferta.grado_eus, oferta.renta_tipo);
   const instLogo = getInstIcon(oferta);
   const favs  = leerFavoritos();
@@ -1543,7 +1558,7 @@ function renderRowCompacta(oferta) {
       <div class="row-textcol">
         <div class="row-inst">${escHtml(_aplicarAcronimosForzados(oferta.institucion || '')) || 'Institución pública'}</div>
         <div class="row-cargo" title="${escAttr(cargoDisplay)}">${oferta.destacada ? '<span title="Oferta destacada en redes sociales">⭐ </span>' : ''}${escHtml(cargoDisplay)}</div>
-        ${regionCompleta ? `<div class="row-region">🗺 ${escHtml(regionCompleta)}</div>` : ''}
+        ${regionChip ? `<div class="row-region">🗺 ${escHtml(regionChip)}</div>` : ''}
       </div>
     </div>
     <div class="row-meta">

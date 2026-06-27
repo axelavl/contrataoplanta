@@ -117,8 +117,8 @@
   const kv = (k, v, isRenta) => v ? `<div class="cop-kv"><div class="cop-kv-k">${k}</div><div class="cop-kv-v${isRenta ? ' is-renta' : ''}">${escHtml(v)}</div></div>` : '';
   const sub = (t, items) => (items && items.length)
     ? `<div class="cop-sub"><h6>${t}</h6><ul class="cop-list">${items.map((x) => `<li>${hl(x)}</li>`).join('')}</ul></div>` : '';
-  const sec = (t, items, check) => (items && items.length)
-    ? `<div class="cop-sec"><div class="cop-sec-t">${t}</div><ul class="cop-list${check ? ' is-check' : ''}">${items.map((x) => `<li>${hl(x)}</li>`).join('')}</ul></div>` : '';
+  const sec = (t, items, check, collapsed) => (items && items.length)
+    ? `<div class="cop-sec${collapsed ? ' is-collapsed' : ''}"><div class="cop-sec-t">${t}</div><ul class="cop-list${check ? ' is-check' : ''}">${items.map((x) => `<li>${hl(x)}</li>`).join('')}</ul></div>` : '';
 
   const ICONO_VERIF = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 11 4.6-2.5 8-6 8-11V5l-8-3Z" opacity=".22"/><path d="m9.5 12 1.8 1.8 3.4-3.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
@@ -283,7 +283,7 @@
       sub('Deseables', rq.deseables);
     // Los subgrupos fluyen en 2 columnas (.cop-subgrid) para reducir la altura.
     const requisitos = reqInner
-      ? `<div class="cop-sec"><div class="cop-sec-t">Requisitos para postular</div><div class="cop-subgrid">${reqInner}</div></div>` : '';
+      ? `<div class="cop-sec is-collapsed"><div class="cop-sec-t">Requisitos para postular</div><div class="cop-subgrid">${reqInner}</div></div>` : '';
 
     // Parte 6.6 — tabla compacta de renta por región (solo si el backend la
     // entregó parseada; si no, queda el campo "Renta bruta" del grid).
@@ -292,7 +292,7 @@
     const _thS = 'padding:6px 8px;border-bottom:1px solid var(--borde,#e5e5e5);color:var(--texto3,#6b7280);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.4px';
     const _tdS = 'padding:6px 8px;border-bottom:1px solid var(--borde,#eee);font-size:13px';
     const rentaTabla = _rentaReg.length
-      ? `<div class="cop-sec"><div class="cop-sec-t">Renta por región</div>`
+      ? `<div class="cop-sec is-collapsed"><div class="cop-sec-t">Renta por región</div>`
         + `<table style="width:100%;border-collapse:collapse;margin-top:4px">`
         + `<thead><tr><th style="${_thS};text-align:left">Región</th><th style="${_thS};text-align:right">Sin bono</th><th style="${_thS};text-align:right">Con bono</th></tr></thead>`
         + `<tbody>` + _rentaReg.map((r) =>
@@ -302,17 +302,22 @@
         + `</tbody></table></div>`
       : '';
 
+    // Las secciones largas arrancan colapsadas: la primera pantalla muestra
+    // cargo + plazo + resumen (grid) + contacto + objetivo sin scroll, y el
+    // resto se expande tocando su título.
     $('cop-body').innerHTML = grid + rentaTabla + contacto + objetivo + requisitos +
-      sec('Funciones principales', oferta.funciones) +
-      sec('Condiciones del cargo', oferta.condiciones) +
-      sec('Cómo postular', oferta.comoPostular, true);
+      sec('Funciones principales', oferta.funciones, false, true) +
+      sec('Condiciones del cargo', oferta.condiciones, false, true) +
+      sec('Cómo postular', oferta.comoPostular, true, true);
 
     // Cada título de sección es un botón de contraer/expandir (accesible por
     // teclado). El chevron y el ocultamiento del cuerpo los maneja el CSS.
     overlay.querySelectorAll('.cop-sec-t').forEach((titulo) => {
+      const sec = titulo.closest('.cop-sec');
+      const colapsada = sec && sec.classList.contains('is-collapsed');
       titulo.setAttribute('role', 'button');
       titulo.setAttribute('tabindex', '0');
-      titulo.setAttribute('aria-expanded', 'true');
+      titulo.setAttribute('aria-expanded', colapsada ? 'false' : 'true');
     });
 
     // acciones
