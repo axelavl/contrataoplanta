@@ -329,6 +329,18 @@ def verify_admin_jwt(request: Request) -> str:
     rol = payload.get("rol") or "admin"
     if rol not in ROLES_VALIDOS:
         rol = "lector"
+    # Para cuentas nominales (admin_usuarios), la BD es la fuente de verdad del
+    # rol y del estado activo: así un cambio de rol o una desactivación surten
+    # efecto en el próximo request, sin esperar a que expire el JWT (12h). El
+    # usuario maestro «ops» (contraseña maestra) no tiene fila y se salta esto.
+    if user != ADMIN_JWT_USER:
+        activo, rol_db = _estado_usuario_admin(user)
+        if activo is False:
+            raise HTTPException(status_code=401, detail="Cuenta deshabilitada o eliminada")
+        if activo is True and rol_db:
+            rol = rol_db
+        # activo is None → BD no disponible: se conserva el rol firmado del
+        # token (degradación intencional, igual que el denylist de jti).
     # Guardamos jti/exp/rol en el request para /logout y para las
     # dependencias de rol (require_editor / require_admin).
     request.state.admin_jti = jti
@@ -363,6 +375,34 @@ def require_rol(*roles_permitidos: str):
 require_editor = require_rol("editor", "admin")
 #: Gestión sensible: usuarios, ajustes del sitio y programación automática.
 require_admin = require_rol("admin")
+
+
+def _estado_usuario_admin(usuario: str) -> tuple[bool | None, str | None]:
+    """Estado vigente de una cuenta nominal en `admin_usuarios`.
+
+    Devuelve ``(activo, rol)``:
+    - ``(True, rol)``  — existe y está activa; `rol` es el actual en la BD.
+    - ``(False, None)`` — eliminada o desactivada → se debe rechazar.
+    - ``(None, None)``  — la BD no respondió: degradar (conservar el token).
+    """
+    try:
+        from api.services.db import get_cursor
+        with get_cursor() as (_, cur):
+            cur.execute(
+                "SELECT rol, activo FROM admin_usuarios WHERE LOWER(usuario) = LOWER(%s)",
+                [usuario],
+            )
+            row = cur.fetchone()
+        if row is None:
+            return (False, None)
+        row = dict(row)
+        if not row.get("activo"):
+            return (False, None)
+        rol = row.get("rol") if row.get("rol") in ROLES_VALIDOS else "lector"
+        return (True, rol)
+    except Exception as exc:  # noqa: BLE001 — degradación intencional
+        _auth_store_warn_once(exc)
+        return (None, None)
 
 
 def _jti_revocado(jti: str) -> bool:

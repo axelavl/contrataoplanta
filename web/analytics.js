@@ -41,6 +41,7 @@
     'ver-bases': 'click_bases',
     'search': 'buscar',
     'search-autocomplete': 'buscar',
+    'alert-subscribe': 'suscribir_alerta',
     'whatsapp': 'compartir', 'linkedin': 'compartir',
     'instagram': 'compartir', 'copiar': 'compartir'
   };

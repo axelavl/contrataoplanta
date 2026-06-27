@@ -3534,8 +3534,9 @@ async function enviarAlerta() {
       // Limpiar el formulario
       document.getElementById('alerta-email').value = '';
       document.getElementById('alerta-keywords').value = '';
-      // Umami: track alert subscription
-      trackUmami('alert-subscribe', { region: region || 'todas', frecuencia });
+      // Trackeo: dispara Umami + el beacon interno (window.track), para que
+      // el embudo de conversión del panel cuente las suscripciones.
+      (window.track || trackUmami)('alert-subscribe', { region: region || 'todas', frecuencia });
       // Show email typo suggestion if any
       if (data.sugerencia_email) {
         const sugDiv = document.getElementById('mailcheck-suggestion');
