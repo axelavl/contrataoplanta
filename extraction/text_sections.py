@@ -96,10 +96,20 @@ def extraer_pasos_postulacion(texto: str, max_pasos: int = 6) -> list[str]:
     """
     if not texto:
         return []
+    # Candidatos = líneas (tras reunir las envueltas); además partimos cada línea
+    # en oraciones, así un párrafo de texto libre (HTML) con varios pasos pegados
+    # también se separa, no solo el formato "un paso por renglón" del PDF.
+    candidatos: list[str] = []
+    for cruda in unir_lineas_envueltas(texto).split("\n"):
+        s = cruda.strip()
+        if not s:
+            continue
+        oraciones = re.split(r"(?<=[.])\s+(?=[A-ZÁÉÍÓÚ¿¡¿])", s)
+        candidatos.extend(oraciones if len(oraciones) > 1 else [s])
     pasos: list[str] = []
     vistos: set[str] = set()
-    for cruda in unir_lineas_envueltas(texto).split("\n"):
-        s = _limpiar(cruda)
+    for cand in candidatos:
+        s = _limpiar(cand)
         s = re.sub(r"^[-*•·▪◦–—]\s+", "", s).strip()  # quita viñeta inicial
         if not (12 <= len(s) <= 240):
             continue

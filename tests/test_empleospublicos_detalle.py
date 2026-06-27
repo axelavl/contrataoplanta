@@ -103,3 +103,48 @@ def test_url_bases_sin_pdf_repositorio_no_inventa_enlace():
     sc = _scraper()
     soup = BeautifulSoup(_FICHA_SIN_PDF_REPO, "html.parser")
     assert sc._extraer_url_bases(soup, _FICHA_URL) is None
+
+
+# ── "Cómo postular" en la ficha del portal ───────────────────────────────────
+_FICHA_CON_INSTRUCCIONES = """
+<html><body>
+<span id="lblTexto">Los interesados deberán hacer llegar sus antecedentes
+(currículum vitae) adjuntando su CV en formato PDF. Recepción de antecedentes:
+hasta el 30 de julio de 2026. En caso de dudas o consultas, escribir al correo
+seleccion@minsegpres.cl.</span>
+</body></html>
+"""
+
+_FICHA_SIN_INSTRUCCIONES = """
+<html><body>
+<h3>Objetivo del cargo</h3><p>Apoyar la ejecución del programa.</p>
+</body></html>
+"""
+
+
+def test_como_postular_detecta_pasos_en_texto_ficha():
+    sc = _scraper()
+    soup = BeautifulSoup(_FICHA_CON_INSTRUCCIONES, "html.parser")
+    bloque = sc._componer_como_postular(soup)
+    assert bloque.startswith("Cómo postular:")
+    assert "hacer llegar sus antecedentes" in bloque.lower()
+    assert "Recepción de antecedentes" in bloque
+    # No cae al genérico cuando hay pasos reales.
+    assert "botón" not in bloque
+
+
+def test_como_postular_fallback_generico_del_portal():
+    sc = _scraper()
+    soup = BeautifulSoup(_FICHA_SIN_INSTRUCCIONES, "html.parser")
+    bloque = sc._componer_como_postular(soup, correo="rrhh@inst.cl")
+    assert "Cómo postular:" in bloque
+    assert "portal de Empleos Públicos" in bloque
+    assert "rrhh@inst.cl" in bloque
+
+
+def test_parsear_detalle_anexa_como_postular():
+    sc = _scraper()
+    soup = BeautifulSoup(_FICHA_INLINE, "html.parser")
+    oferta = {"url_oferta": _FICHA_URL, "cargo": "Técnico", "descripcion": None}
+    resultado = sc._parsear_detalle(soup, oferta)
+    assert "Cómo postular:" in (resultado.get("descripcion") or "")
