@@ -12,8 +12,8 @@
    espacios quedan como placeholder (no se rompe nada).
    ────────────────────────────────────────────────────────────────────────── */
 window.ADS_CONFIG = {
-  enabled: false,                       // ← pon true cuando tengas tu ID
-  client: '',                           // ← 'ca-pub-XXXXXXXXXXXXXXXX'
+  enabled: true,                        // ← activo: carga el loader de AdSense
+  client: 'ca-pub-9396873058904461',    // ← tu publisher ID de AdSense
   // Mapea cada ubicación del sitio a un "slot id" de AdSense:
   slots: {
     resultados: '',                     // banner bajo resultados (index)
