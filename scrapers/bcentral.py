@@ -451,12 +451,63 @@ def _texto_pdf(binario: bytes, max_paginas: int = 10) -> str:
         return ""
 
 
+# ── Reconstrucción de líneas "envueltas" del PDF ────────────────────────────
+# pdfplumber parte un mismo ítem en dos renglones cuando no cabe en el ancho de
+# página. Sin reunirlos, un requisito como
+#   "- Título profesional de Ingeniería Civil Industrial, Civil Informática,
+#      Ejecución en Computación o Informática, o carrera profesional afín de al
+#      menos 8 semestres de duración."
+# se trataba como DOS requisitos y la parte de los títulos (la más importante)
+# se perdía o se reclasificaba, dejando huérfano "o carrera profesional afín…".
+_RE_BULLET_INICIO = re.compile(
+    r"^\s*(?:[-*•·▪◦‣∙]|[–—]|\(?\d{1,2}[.)]|[a-zA-Z]\))\s+")
+_RE_ENCABEZADO_SECCION = re.compile(
+    r"^\s*(?:los\s+|las\s+)?(?:requisitos|funciones|deseables?|documentos|"
+    r"antecedentes|perfil|competencias|formaci[oó]n|experiencia|condiciones|"
+    r"objetivo|conocimientos|habilidades|remuneraci[oó]n|renta)\b[^\n]{0,60}:?\s*$",
+    re.I)
+_RE_CONECTOR_INICIO = re.compile(
+    r"^(?:o|y|u|e|de|del|en|con|para|que|a|al|la|las|los|el|por|su|sus)\b", re.I)
+
+
+def _unir_lineas_envueltas(texto: str) -> str:
+    """Une renglones partidos por ancho de página al ítem (bullet) que continúan.
+
+    Conservador: solo fusiona cuando la línea previa NO termina como oración
+    (sin '.'/':' final) y la actual parece continuación —empieza en minúscula o
+    con un conector ("o carrera…", "y experiencia…")— o la previa terminó en
+    coma/punto y coma. Nunca fusiona bullets nuevos ni encabezados de sección.
+    """
+    out: list[str] = []
+    for cruda in (texto or "").replace("\r", "\n").split("\n"):
+        s = cruda.strip()
+        if not s:
+            out.append("")
+            continue
+        es_bullet = bool(_RE_BULLET_INICIO.match(s))
+        es_encab = bool(_RE_ENCABEZADO_SECCION.match(s))
+        prev_idx = len(out) - 1
+        while prev_idx >= 0 and not out[prev_idx].strip():
+            prev_idx -= 1
+        prev = out[prev_idx].rstrip() if prev_idx >= 0 else ""
+        if prev and not es_bullet and not es_encab and not prev.endswith((".", ":")):
+            continuacion = (s[:1].islower() or bool(_RE_CONECTOR_INICIO.match(s))
+                            or prev.endswith((",", ";", "/")))
+            if continuacion:
+                out[prev_idx] = prev + " " + s
+                continue
+        out.append(cruda.rstrip())
+    return "\n".join(out)
+
+
 def parsear_pdf_bases(texto: str) -> dict[str, Any]:
     """De las bases en texto saca requisitos_texto, renta y funciones."""
     out: dict[str, Any] = {}
     if not texto or len(texto) < 80:
         return out
 
+    # Reúne ítems partidos en dos renglones antes de extraer requisitos/funciones.
+    texto = _unir_lineas_envueltas(texto)
     plano = limpiar_texto(texto)
 
     # Requisitos (exigibles + deseables + documentos a presentar)

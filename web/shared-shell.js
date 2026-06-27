@@ -99,11 +99,16 @@
 
     function sourcesFor(domain) {
       var enc = encodeURIComponent(domain);
+      // Cadena ordenada por fiabilidad. Clearbit (logo.clearbit.com) fue
+      // discontinuado por HubSpot en dic-2025 y hoy devuelve errores, así que
+      // dejó de ser la fuente primaria. DuckDuckGo entrega el mejor icono del
+      // sitio (suele ser el apple-touch-icon, 60-180 px) y Google s2 @128 es un
+      // respaldo muy estable; al final probamos los assets propios del dominio.
       return [
-        'https://logo.clearbit.com/' + enc + '?size=256',
+        'https://icons.duckduckgo.com/ip3/' + domain + '.ico',
+        'https://www.google.com/s2/favicons?domain=' + enc + '&sz=128',
         'https://' + domain + '/apple-touch-icon.png',
         'https://' + domain + '/apple-touch-icon-precomposed.png',
-        'https://www.google.com/s2/favicons?domain=' + enc + '&sz=128',
         'https://' + domain + '/favicon.ico'
       ];
     }
@@ -169,7 +174,8 @@
     // Persistimos en localStorage el último source que SÍ pasó el chequeo de
     // calidad por dominio. `window.__logoCacheGet` lo consume app.js para
     // pintar el logo correcto desde el primer frame.
-    var LOGO_CACHE_KEY = 'cop_logo_cache_v1';
+    // v2: invalida cachés previos que apuntaban a logo.clearbit.com (discontinuado).
+    var LOGO_CACHE_KEY = 'cop_logo_cache_v2';
     function cacheRead() {
       try { return JSON.parse(localStorage.getItem(LOGO_CACHE_KEY) || '{}') || {}; }
       catch (e) { return {}; }
