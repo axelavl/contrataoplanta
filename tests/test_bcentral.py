@@ -8,7 +8,25 @@ sobreviva en ``requisitos_texto``.
 """
 from __future__ import annotations
 
-from scrapers.bcentral import _unir_lineas_envueltas, parsear_pdf_bases
+from scrapers.bcentral import (
+    _extraer_pasos_postulacion,
+    _unir_lineas_envueltas,
+    construir_oferta,
+    parsear_pdf_bases,
+)
+
+
+# Recuadro de postulación tal como aparece en las bases (cada paso en su línea).
+PDF_POSTULACION = """\
+La primera pre-selección de los candidatos se realizará en consideración a la
+información manifestada en el currículum vitae (CV).
+Para favorecer la entrega de información será requisito excluyente completar el
+siguiente formulario de postulación: Formulario de Postulación Online
+Recepción de antecedentes: hasta el 28 de junio de 2026
+En caso de dudas o consultas, escribirnos al siguiente correo: atracciontalentos@bcentral.cl
+Se deberá indicar expectativas de renta líquida.
+Cada postulante deberá completar el Formulario de Postulación Online, adjuntando su Currículum en formato pdf.
+"""
 
 
 # Texto tal como pdfplumber lo entrega: el bullet de títulos parte en 2 líneas.
@@ -59,3 +77,39 @@ class TestParsearPdfBases:
         assert "Ejecución en Computación" in req
         # El requisito completo, no el fragmento huérfano.
         assert "afín de al menos 8 semestres" in req
+
+
+class TestPasosPostulacion:
+    def test_extrae_pasos_clave(self):
+        pasos = _extraer_pasos_postulacion(PDF_POSTULACION)
+        joined = " || ".join(pasos)
+        assert any("Formulario de Postulación Online" in p for p in pasos)
+        assert any("Recepción de antecedentes" in p for p in pasos)
+        assert any("expectativas de renta" in p.lower() for p in pasos)
+        assert any("atracciontalentos@bcentral.cl" in p for p in pasos)
+        # No arrastra la frase de la pre-selección (no es un paso para postular).
+        assert "pre-selección" not in joined.lower()
+
+    def test_no_pasos_sin_senales(self):
+        assert _extraer_pasos_postulacion("Texto sin nada relevante para postular.") == []
+
+    def test_descripcion_incluye_bloque_como_postular(self):
+        v = {
+            "concurso": 3399,
+            "cargo": "Especialista en Integraciones de Sistemas SAP",
+            "url": "https://www.bcentral.cl/x",
+            "descripcion": "Se llama a postulación, hasta el 28 de junio de 2026, "
+                           "para cubrir una vacante a plazo fijo en el cargo de "
+                           "Especialista en Integraciones de Sistemas SAP.",
+            "nivel_estructura": "16",
+            "vacantes": 1,
+            "tipo": "Plazo fijo",
+            "fecha_cierre": None,
+        }
+        pdf = parsear_pdf_bases(PDF_POSTULACION + "\n" + PDF_BASES_3399)
+        oferta = construir_oferta(v, {}, pdf)
+        desc = oferta["descripcion"] or ""
+        assert "Cómo postular:" in desc
+        assert "Formulario de Postulación Online" in desc
+        # El bloque va en líneas propias (no en el viejo formato " | ").
+        assert "\nCómo postular:\n- " in desc

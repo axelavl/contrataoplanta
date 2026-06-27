@@ -466,17 +466,17 @@ _RE_ENCABEZADO_SECCION = re.compile(
     r"antecedentes|perfil|competencias|formaci[oó]n|experiencia|condiciones|"
     r"objetivo|conocimientos|habilidades|remuneraci[oó]n|renta)\b[^\n]{0,60}:?\s*$",
     re.I)
-_RE_CONECTOR_INICIO = re.compile(
-    r"^(?:o|y|u|e|de|del|en|con|para|que|a|al|la|las|los|el|por|su|sus)\b", re.I)
 
 
 def _unir_lineas_envueltas(texto: str) -> str:
     """Une renglones partidos por ancho de página al ítem (bullet) que continúan.
 
     Conservador: solo fusiona cuando la línea previa NO termina como oración
-    (sin '.'/':' final) y la actual parece continuación —empieza en minúscula o
-    con un conector ("o carrera…", "y experiencia…")— o la previa terminó en
-    coma/punto y coma. Nunca fusiona bullets nuevos ni encabezados de sección.
+    (sin '.'/':' final) y la actual es claramente una continuación —empieza en
+    MINÚSCULA ("o carrera…", "y experiencia…", "a SAP S/4HANA")— o la previa
+    terminó en coma/punto y coma. Una línea que empieza en mayúscula se trata
+    como ítem/oración nueva, así no funde pasos distintos como "Recepción de
+    antecedentes…" con "En caso de dudas…". Nunca fusiona bullets ni encabezados.
     """
     out: list[str] = []
     for cruda in (texto or "").replace("\r", "\n").split("\n"):
@@ -491,8 +491,7 @@ def _unir_lineas_envueltas(texto: str) -> str:
             prev_idx -= 1
         prev = out[prev_idx].rstrip() if prev_idx >= 0 else ""
         if prev and not es_bullet and not es_encab and not prev.endswith((".", ":")):
-            continuacion = (s[:1].islower() or bool(_RE_CONECTOR_INICIO.match(s))
-                            or prev.endswith((",", ";", "/")))
+            continuacion = s[:1].islower() or prev.endswith((",", ";", "/"))
             if continuacion:
                 out[prev_idx] = prev + " " + s
                 continue
@@ -500,8 +499,50 @@ def _unir_lineas_envueltas(texto: str) -> str:
     return "\n".join(out)
 
 
+# Señales de un "paso para postular" dentro de las bases (formulario online,
+# recepción de antecedentes, adjuntar CV, expectativas de renta, dudas/consultas).
+_RE_PASO_POSTULACION = re.compile(
+    r"(formulario\s+de\s+postulaci[oó]n"
+    r"|recepci[oó]n\s+de\s+antecedentes"
+    r"|adjunt\w*\s+(?:su\s+)?(?:curr[ií]cul\w+|cv)"
+    r"|expectativas?\s+de\s+renta"
+    r"|completar\s+el\s+(?:siguiente\s+)?formulario"
+    r"|dudas?\s+o\s+consultas?"
+    r"|enviar\s+(?:sus\s+)?antecedentes)",
+    re.I)
+
+
+def _extraer_pasos_postulacion(texto: str) -> list[str]:
+    """Extrae del PDF de bases los pasos concretos para postular.
+
+    Trabaja por líneas (tras reunir las envueltas) porque en las bases del Banco
+    Central los pasos viven en renglones propios (recuadro verde), no separados
+    por puntos. Devuelve hasta 6 pasos limpios y deduplicados.
+    """
+    if not texto:
+        return []
+    pasos: list[str] = []
+    vistos: set[str] = set()
+    for cruda in _unir_lineas_envueltas(texto).split("\n"):
+        s = limpiar_texto(cruda)
+        s = re.sub(r"^[-*•·▪◦–—]\s+", "", s).strip()  # quita viñeta inicial
+        if not (12 <= len(s) <= 240):
+            continue
+        if not _RE_PASO_POSTULACION.search(s):
+            continue
+        clave = s.lower()
+        if clave in vistos:
+            continue
+        vistos.add(clave)
+        pasos.append(s.rstrip(" .") + ".")
+        if len(pasos) >= 6:
+            break
+    return pasos
+
+
 def parsear_pdf_bases(texto: str) -> dict[str, Any]:
-    """De las bases en texto saca requisitos_texto, renta y funciones."""
+    """De las bases en texto saca requisitos_texto, renta, funciones y pasos
+    para postular."""
     out: dict[str, Any] = {}
     if not texto or len(texto) < 80:
         return out
@@ -509,6 +550,11 @@ def parsear_pdf_bases(texto: str) -> dict[str, Any]:
     # Reúne ítems partidos en dos renglones antes de extraer requisitos/funciones.
     texto = _unir_lineas_envueltas(texto)
     plano = limpiar_texto(texto)
+
+    # Pasos para postular (formulario online, recepción de antecedentes, etc.).
+    pasos = _extraer_pasos_postulacion(texto)
+    if pasos:
+        out["postulacion"] = pasos
 
     # Requisitos (exigibles + deseables + documentos a presentar)
     if extract_requirements is not None:
@@ -565,17 +611,26 @@ def construir_oferta(v: dict[str, Any], det: dict[str, Any],
     cargo = v["cargo"]
     pdf = pdf or {}
 
-    desc_partes = [v["descripcion"]]
+    # Descripción en LÍNEAS (no " | "): cada sección rotulada en su propio
+    # renglón permite que el front (rich-text) detecte los encabezados y
+    # clasifique funciones / cómo postular en su sección, en vez de fundir todo
+    # en un párrafo ambiguo.
+    desc_partes = [limpiar_texto(v["descripcion"])]
     if v.get("nivel_estructura"):
         desc_partes.append(f"Nivel {v['nivel_estructura']} de la estructura de cargos")
     vac = det.get("vacantes") or v.get("vacantes")
     if vac:
         desc_partes.append(f"Vacantes: {vac}")
     if det.get("gerencia"):
-        desc_partes.append(f"Gerencia: {det['gerencia']}")
+        desc_partes.append(limpiar_texto(f"Gerencia: {det['gerencia']}"))
     if pdf.get("funciones"):
-        desc_partes.append(f"Funciones: {pdf['funciones']}")
-    descripcion = limpiar_texto(" | ".join(p for p in desc_partes if p))
+        desc_partes.append(limpiar_texto(f"Funciones: {pdf['funciones']}"))
+    # Pasos para postular: encabezado + viñetas en líneas propias.
+    pasos = pdf.get("postulacion") or []
+    if pasos:
+        desc_partes.append(
+            "Cómo postular:\n" + "\n".join(f"- {limpiar_texto(p)}" for p in pasos))
+    descripcion = "\n".join(p for p in desc_partes if p)
 
     tipo = v.get("tipo") or det.get("tipo") or "Indefinido"
     if "definido" in tipo.lower() and "inde" not in tipo.lower():
