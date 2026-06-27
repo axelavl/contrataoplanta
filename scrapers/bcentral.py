@@ -100,6 +100,13 @@ except Exception:  # pragma: no cover
     extract_requirements = None  # type: ignore[assignment]
     extract_salary = None  # type: ignore[assignment]
 
+# Helpers compartidos (reunir líneas envueltas + pasos para postular). Viven en
+# extraction/ para que TODOS los scrapers (vía enrich) los reutilicen.
+from extraction.text_sections import (  # noqa: E402
+    extraer_pasos_postulacion as _extraer_pasos_postulacion,
+    unir_lineas_envueltas as _unir_lineas_envueltas,
+)
+
 if STANDALONE:
 
     class _Cfg:
@@ -449,95 +456,6 @@ def _texto_pdf(binario: bytes, max_paginas: int = 10) -> str:
         logger.info("  PDF ilegible (cifrado/escaneado/corrupto): %s",
                     type(exc).__name__)
         return ""
-
-
-# ── Reconstrucción de líneas "envueltas" del PDF ────────────────────────────
-# pdfplumber parte un mismo ítem en dos renglones cuando no cabe en el ancho de
-# página. Sin reunirlos, un requisito como
-#   "- Título profesional de Ingeniería Civil Industrial, Civil Informática,
-#      Ejecución en Computación o Informática, o carrera profesional afín de al
-#      menos 8 semestres de duración."
-# se trataba como DOS requisitos y la parte de los títulos (la más importante)
-# se perdía o se reclasificaba, dejando huérfano "o carrera profesional afín…".
-_RE_BULLET_INICIO = re.compile(
-    r"^\s*(?:[-*•·▪◦‣∙]|[–—]|\(?\d{1,2}[.)]|[a-zA-Z]\))\s+")
-_RE_ENCABEZADO_SECCION = re.compile(
-    r"^\s*(?:los\s+|las\s+)?(?:requisitos|funciones|deseables?|documentos|"
-    r"antecedentes|perfil|competencias|formaci[oó]n|experiencia|condiciones|"
-    r"objetivo|conocimientos|habilidades|remuneraci[oó]n|renta)\b[^\n]{0,60}:?\s*$",
-    re.I)
-
-
-def _unir_lineas_envueltas(texto: str) -> str:
-    """Une renglones partidos por ancho de página al ítem (bullet) que continúan.
-
-    Conservador: solo fusiona cuando la línea previa NO termina como oración
-    (sin '.'/':' final) y la actual es claramente una continuación —empieza en
-    MINÚSCULA ("o carrera…", "y experiencia…", "a SAP S/4HANA")— o la previa
-    terminó en coma/punto y coma. Una línea que empieza en mayúscula se trata
-    como ítem/oración nueva, así no funde pasos distintos como "Recepción de
-    antecedentes…" con "En caso de dudas…". Nunca fusiona bullets ni encabezados.
-    """
-    out: list[str] = []
-    for cruda in (texto or "").replace("\r", "\n").split("\n"):
-        s = cruda.strip()
-        if not s:
-            out.append("")
-            continue
-        es_bullet = bool(_RE_BULLET_INICIO.match(s))
-        es_encab = bool(_RE_ENCABEZADO_SECCION.match(s))
-        prev_idx = len(out) - 1
-        while prev_idx >= 0 and not out[prev_idx].strip():
-            prev_idx -= 1
-        prev = out[prev_idx].rstrip() if prev_idx >= 0 else ""
-        if prev and not es_bullet and not es_encab and not prev.endswith((".", ":")):
-            continuacion = s[:1].islower() or prev.endswith((",", ";", "/"))
-            if continuacion:
-                out[prev_idx] = prev + " " + s
-                continue
-        out.append(cruda.rstrip())
-    return "\n".join(out)
-
-
-# Señales de un "paso para postular" dentro de las bases (formulario online,
-# recepción de antecedentes, adjuntar CV, expectativas de renta, dudas/consultas).
-_RE_PASO_POSTULACION = re.compile(
-    r"(formulario\s+de\s+postulaci[oó]n"
-    r"|recepci[oó]n\s+de\s+antecedentes"
-    r"|adjunt\w*\s+(?:su\s+)?(?:curr[ií]cul\w+|cv)"
-    r"|expectativas?\s+de\s+renta"
-    r"|completar\s+el\s+(?:siguiente\s+)?formulario"
-    r"|dudas?\s+o\s+consultas?"
-    r"|enviar\s+(?:sus\s+)?antecedentes)",
-    re.I)
-
-
-def _extraer_pasos_postulacion(texto: str) -> list[str]:
-    """Extrae del PDF de bases los pasos concretos para postular.
-
-    Trabaja por líneas (tras reunir las envueltas) porque en las bases del Banco
-    Central los pasos viven en renglones propios (recuadro verde), no separados
-    por puntos. Devuelve hasta 6 pasos limpios y deduplicados.
-    """
-    if not texto:
-        return []
-    pasos: list[str] = []
-    vistos: set[str] = set()
-    for cruda in _unir_lineas_envueltas(texto).split("\n"):
-        s = limpiar_texto(cruda)
-        s = re.sub(r"^[-*•·▪◦–—]\s+", "", s).strip()  # quita viñeta inicial
-        if not (12 <= len(s) <= 240):
-            continue
-        if not _RE_PASO_POSTULACION.search(s):
-            continue
-        clave = s.lower()
-        if clave in vistos:
-            continue
-        vistos.add(clave)
-        pasos.append(s.rstrip(" .") + ".")
-        if len(pasos) >= 6:
-            break
-    return pasos
 
 
 def parsear_pdf_bases(texto: str) -> dict[str, Any]:
