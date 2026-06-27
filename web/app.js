@@ -1423,6 +1423,18 @@ function renderCard(oferta) {
   // OFERTA:", "FUNCIONES DEL CARGO", "OTROS ANTECEDENTES:", etc.) para que el
   // resumen se lea más fluido y natural, sin el rótulo administrativo delante.
   _descRaw = _limpiarEncabezadoDesc(_descRaw);
+  // Tope de caracteres del resumen de la tarjeta. El CSS line-clamp limita la
+  // ALTURA visible, pero el texto completo igual entraba al DOM y al expandir
+  // "ver más" algunas descripciones quedaban en un muro larguísimo. Lo acotamos
+  // a un preview breve (cortando en la última palabra para no partir a la mitad);
+  // el texto íntegro vive en el modal de detalle ("Ver detalles").
+  const _DESC_CARD_MAX = 240;
+  if (_descRaw.length > _DESC_CARD_MAX) {
+    let _cut = _descRaw.slice(0, _DESC_CARD_MAX);
+    const _lastSpace = _cut.lastIndexOf(' ');
+    if (_lastSpace > _DESC_CARD_MAX * 0.6) _cut = _cut.slice(0, _lastSpace);
+    _descRaw = _cut.trimEnd().replace(/[.,;:]+$/, '') + '…';
+  }
   const _descCard = _descRaw ? escHtml(_descRaw) : '';
   return `
   <div class="oferta-card${esFav ? ' favorita' : ''}${oferta.destacada ? ' destacada' : ''}${plazo.clase ? ' urg-' + plazo.clase : ''}" data-oferta-id="${oferta.id}" role="button" tabindex="0" aria-label="Ver detalle: ${escAttr(cargoDisplay)}">
