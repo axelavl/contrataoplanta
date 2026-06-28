@@ -1428,7 +1428,7 @@ function renderCard(oferta) {
   // "ver más" algunas descripciones quedaban en un muro larguísimo. Lo acotamos
   // a un preview breve (cortando en la última palabra para no partir a la mitad);
   // el texto íntegro vive en el modal de detalle ("Ver detalles").
-  const _DESC_CARD_MAX = 240;
+  const _DESC_CARD_MAX = 150;
   if (_descRaw.length > _DESC_CARD_MAX) {
     let _cut = _descRaw.slice(0, _DESC_CARD_MAX);
     const _lastSpace = _cut.lastIndexOf(' ');
