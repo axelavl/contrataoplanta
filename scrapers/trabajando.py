@@ -330,10 +330,20 @@ def _api_detalle(
 
 
 def _html_a_texto(texto: str | None) -> str:
-    """HTML de la API -> texto plano legible."""
+    """HTML de la API -> texto plano legible.
+
+    `<br>` es auto-cerrante (`<br>`, `<br/>`, `<br />`) y NO lo cubre el regex
+    de tags de cierre: antes se eliminaba sin dejar salto de línea, así que las
+    viñetas separadas por `<br>` quedaban pegadas ("…sistemas.-Ingeniería…") y
+    el parser semántico del frontend (rich-text.js) no podía aislar encabezados
+    ("Funciones Principales", "Perfil deseado") ni viñetas → metía el perfil en
+    "Objetivo del cargo" y perdía las funciones. Lo convertimos explícitamente
+    a `\n` ANTES de quitar el resto de tags para preservar la estructura.
+    """
     if not texto:
         return ""
-    texto = re.sub(r"</(p|li|ul|ol|div|br|h[1-6])>", "\n", texto, flags=re.I)
+    texto = re.sub(r"<br\s*/?>", "\n", texto, flags=re.I)
+    texto = re.sub(r"</(p|li|ul|ol|div|h[1-6])>", "\n", texto, flags=re.I)
     texto = re.sub(r"<li[^>]*>", "- ", texto, flags=re.I)
     texto = re.sub(r"<[^>]+>", "", texto)
     texto = unescape(texto)
