@@ -2771,11 +2771,20 @@ async function _abrirModalLegacy(ofertaId) {
   document.getElementById('modal-plazo-label').textContent = '—';
   document.getElementById('modal-plazo-fecha').textContent = '';
 
+  let o;
   try {
     const resp = await _fetchOfertaDetalle(ofertaId);
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const o = await resp.json();
+    o = await resp.json();
+  } catch (err) {
+    // El fetch (o el parseo) falló: corresponde el panel de error
+    // (404 = oferta retirada; 5xx/red = transitorio, con "Reintentar").
+    console.error('Error cargando detalle (fetch):', err);
+    _mostrarErrorDetalle(ofertaId, err);
+    return;
+  }
 
+  try {
     const tipoCss  = tipoClase(o.tipo_contrato);
     const tipoLabel = tipoEtiqueta(o.tipo_contrato);
     const regionCompleta = nombreRegionCompleto(o.region);
@@ -2847,6 +2856,13 @@ async function _abrirModalLegacy(ofertaId) {
     // textos cortos (<= umbral) se muestran completos sin truncar.
     // rich-text.js devuelve "" cuando sólo quedan subtítulos huérfanos,
     // así que aquí sólo vemos contenido realmente renderizable.
+    // Bloque de texto enriquecido + secciones semánticas: es la parte más
+    // dependiente de los datos de la oferta y la más propensa a lanzar
+    // (rich-text / buildSemanticSections). La aislamos para que un fallo aquí
+    // NO tumbe el modal entero — cabecera, CTA "postular", bases, favorito y
+    // compartir igual se renderizan (antes, una excepción acá mostraba
+    // "No se pudo obtener el detalle" aunque los datos sí estaban).
+    try {
     const desc = o.descripcion || '';
     const descHtml = formatRichText(desc, {
       truncate: true,
@@ -2955,6 +2971,18 @@ async function _abrirModalLegacy(ofertaId) {
       _toggleSection('modal-data-warning', true);
       document.getElementById('modal-data-warning-text').textContent = warnings[0];
     }
+    } catch (errTexto) {
+      // Datos OK pero el render del texto/secciones falló: ocultamos esas
+      // secciones (para no dejar nada a medias) y seguimos con el resto del
+      // modal. Logueamos el error real para diagnóstico.
+      console.error('[detalle] fallo al renderizar texto/secciones (datos OK):', errTexto, ofertaId);
+      const _ftEl = document.getElementById('modal-descripcion');
+      const _ftSec = _ftEl ? _ftEl.closest('.modal-seccion') : null;
+      if (_ftSec) _ftSec.hidden = true;
+      ['modal-funciones-wrap', 'modal-condiciones-wrap', 'modal-objetivo-wrap',
+       'modal-postulacion-wrap', 'modal-residual-wrap', 'modal-requisitos-wrap',
+       'modal-data-warning'].forEach((id) => _toggleSection(id, false));
+    }
 
     // Botón postular — gateado primero por flag backend, luego por validación cliente.
     const btnPostular = document.getElementById('modal-btn-postular');
@@ -3003,7 +3031,9 @@ async function _abrirModalLegacy(ofertaId) {
     configurarCompartir(o);
 
   } catch (err) {
-    console.error('Error cargando detalle:', err);
+    // Último recurso: falló el render de la parte simple (cabecera/resumen/
+    // botones) pese a tener datos. Es muy raro tras aislar el texto enriquecido.
+    console.error('Error mostrando detalle (datos cargados):', err);
     _mostrarErrorDetalle(ofertaId, err);
   }
 }
