@@ -30,12 +30,13 @@ Cuando existan, se agregan:
 - `descripcion` → `description`.
 
 `employmentType` se emite **siempre**: se mapea `tipo_contrato` al vocabulario
-schema.org (`honorarios`→`CONTRACTOR`, `reemplazo`/`suplencia`→`TEMPORARY`,
-`práctica`→`INTERN`, resto → `FULL_TIME`) y, ante un tipo vacío o desconocido,
-usa `FULL_TIME` como default (el sector público chileno es jornada completa
-salvo honorarios). Esto evita el warning *"Falta el campo employmentType"* de
-Search Console. El mapeo es idéntico en el SSR (`api/services/seo.py`) y en el
-cliente (`web/app.js`).
+schema.org por **substring/categoría** (no por clave exacta, para tolerar
+etiquetas combinadas como `Honorarios (suma alzada)` o `Código del Trabajo
+(Reemplazo)`): `honorario`→`CONTRACTOR`, `reemplazo`/`suplencia`→`TEMPORARY`,
+`práctica`→`INTERN`, resto → `FULL_TIME` (incluye el caso vacío o desconocido,
+porque el sector público chileno es jornada completa salvo honorarios). Esto
+evita el warning *"Falta el campo employmentType"* de Search Console. El mapeo
+es idéntico en el SSR (`api/services/seo.py`) y en el cliente (`web/app.js`).
 
 > `streetAddress` y `postalCode` (sub-campos de `jobLocation.address`) y
 > `baseSalary` siguen siendo opcionales y se omiten cuando no hay dato real:

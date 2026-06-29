@@ -276,26 +276,23 @@ def build_job_posting_jsonld(
         "directApply": False,
     }
 
-    tipo = (oferta.get("tipo_contrato") or "").strip().upper().replace(" ", "_")
-    # Mapeo conservador al vocabulario de schema.org. El empleo del sector
-    # público chileno es a jornada completa salvo honorarios/reemplazos, así
-    # que ante un tipo desconocido o vacío usamos FULL_TIME como default
-    # razonable. Google recomienda incluir `employmentType`; omitirlo dispara
-    # un warning de datos estructurados en Search Console.
-    mapeo = {
-        "PLANTA": "FULL_TIME",
-        "CONTRATA": "FULL_TIME",
-        "CODIGO_TRABAJO": "FULL_TIME",
-        "CÓDIGO_TRABAJO": "FULL_TIME",
-        "CODIGO_DEL_TRABAJO": "FULL_TIME",
-        "CÓDIGO_DEL_TRABAJO": "FULL_TIME",
-        "HONORARIOS": "CONTRACTOR",
-        "REEMPLAZO": "TEMPORARY",
-        "SUPLENCIA": "TEMPORARY",
-        "PRACTICA": "INTERN",
-        "PRÁCTICA": "INTERN",
-    }
-    data["employmentType"] = mapeo.get(tipo, "FULL_TIME")
+    # Mapeo conservador al vocabulario de schema.org. Se normaliza por
+    # substring/categoría —no por clave exacta— porque el dato puede venir con
+    # calificativos o etiquetas combinadas ("Honorarios (suma alzada)",
+    # "Código del Trabajo (Reemplazo)"). El empleo del sector público chileno
+    # es a jornada completa salvo honorarios/reemplazos, así que ante un tipo
+    # desconocido o vacío usamos FULL_TIME como default razonable. Google
+    # recomienda incluir `employmentType`; omitirlo dispara un warning de datos
+    # estructurados en Search Console.
+    tipo = (oferta.get("tipo_contrato") or "").strip().lower()
+    if "honorario" in tipo:
+        data["employmentType"] = "CONTRACTOR"
+    elif "reemplazo" in tipo or "suplencia" in tipo:
+        data["employmentType"] = "TEMPORARY"
+    elif "practica" in tipo or "práctica" in tipo:
+        data["employmentType"] = "INTERN"
+    else:
+        data["employmentType"] = "FULL_TIME"
 
     jornada = (oferta.get("jornada") or "").strip()
     if jornada:

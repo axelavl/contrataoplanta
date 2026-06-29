@@ -748,24 +748,18 @@ function buildJobPostingJsonLd(oferta) {
 
   if (oferta?.jornada) payload.workHours = oferta.jornada;
   // Mapeo conservador al vocabulario schema.org (mismo criterio que el SSR
-  // en api/services/seo.py). El sector público es jornada completa salvo
-  // honorarios/reemplazos: ante tipo desconocido o vacío usamos FULL_TIME
-  // como default para no omitir employmentType (warning de Search Console).
-  const TIPO_EMPLEO = {
-    "PLANTA": "FULL_TIME",
-    "CONTRATA": "FULL_TIME",
-    "CODIGO_TRABAJO": "FULL_TIME",
-    "CÓDIGO_TRABAJO": "FULL_TIME",
-    "CODIGO_DEL_TRABAJO": "FULL_TIME",
-    "CÓDIGO_DEL_TRABAJO": "FULL_TIME",
-    "HONORARIOS": "CONTRACTOR",
-    "REEMPLAZO": "TEMPORARY",
-    "SUPLENCIA": "TEMPORARY",
-    "PRACTICA": "INTERN",
-    "PRÁCTICA": "INTERN"
-  };
-  const tipoNorm = (oferta?.tipo_contrato || '').trim().toUpperCase().replace(/ /g, '_');
-  payload.employmentType = TIPO_EMPLEO[tipoNorm] || "FULL_TIME";
+  // en api/services/seo.py). Se normaliza por substring/categoría —no por
+  // clave exacta— porque el dato puede venir con calificativos o etiquetas
+  // combinadas ("Honorarios (suma alzada)", "Código del Trabajo (Reemplazo)").
+  // El sector público es jornada completa salvo honorarios/reemplazos: ante
+  // un tipo desconocido o vacío usamos FULL_TIME como default para no omitir
+  // employmentType (warning de Search Console).
+  const _tipo = (oferta?.tipo_contrato || '').toLowerCase();
+  let _empType = 'FULL_TIME';
+  if (_tipo.includes('honorario')) _empType = 'CONTRACTOR';
+  else if (_tipo.includes('reemplazo') || _tipo.includes('suplencia')) _empType = 'TEMPORARY';
+  else if (_tipo.includes('practica') || _tipo.includes('práctica')) _empType = 'INTERN';
+  payload.employmentType = _empType;
   if (oferta?.descripcion) payload.description = oferta.descripcion;
 
   return { valido: true, markup: jsonLdScript(payload), errores: [] };
@@ -1387,7 +1381,10 @@ const _RE_ENCABEZADOS_DESC = /^(?:descripci[oó]n\s+(?:de\s+la\s+oferta|del\s+ca
 // empieza directamente con instrucciones de cómo postular ("Postula en línea
 // en el portal de Empleos Públicos…"), es texto genérico casi idéntico en
 // todas las ofertas. No aporta como resumen, así que preferimos ocultarlo.
-const _RE_POSTULACION_BOILERPLATE = /^(?:postul(?:a|ar|e|en|aci[oó]n)|para\s+postular|deber[aá]n?\s+postular|las?\s+postulaci[oó]n|el\s+proceso\s+de\s+postul|ingresa(?:r|ndo)?\s+(?:a|al|en)\b)/i;
+// Cada alternativa termina en \b para anclar a palabra completa: así
+// "Postulante debe contar…" (resumen legítimo) NO se confunde con el verbo
+// "postula", que sí indica boilerplate ("Postula en línea…").
+const _RE_POSTULACION_BOILERPLATE = /^(?:postul(?:a|ar|e|en|aci[oó]n(?:es)?)\b|para\s+postular\b|deber[aá]n?\s+postular\b|las?\s+postulaci[oó]n(?:es)?\b|el\s+proceso\s+de\s+postulaci[oó]n\b|ingresa(?:r|ndo)?\s+(?:a|al|en)\b)/i;
 
 // Marcador de lista al inicio del texto: "1.", "1.-", "1)", "(1)", "•", "-",
 // "a)"… Lo quitamos del preview para que no empiece con un número suelto
