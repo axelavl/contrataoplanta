@@ -48,6 +48,41 @@
 })();
 
 // ═══════════════════════════════════════════════════════════════
+// Fallback de rutaOferta / slugificarCargo (fuente real: shared-shell.js)
+//
+// shared-shell.js define estas globales, PERO se carga con `defer` mientras
+// app.js y ficha-oferta.js no — y ambos las llaman al renderizar el detalle
+// (configurarCompartir → urlDeepLinkOferta). Si shared-shell.js aún no corrió
+// (o no cargó), `rutaOferta` quedaba `undefined` y el bare reference lanzaba
+// `ReferenceError`, tumbando TODO el modal de detalle para cualquier oferta
+// ("No se pudo obtener el detalle" al abrir un enlace compartido).
+//
+// Definimos un fallback IDÉNTICO (mismo slug que `_slugify` del backend, para
+// no disparar el redirect 301) sólo si no existen. Si shared-shell.js corre
+// después, sobrescribe con la misma lógica: no cambia el comportamiento.
+// ═══════════════════════════════════════════════════════════════
+(function () {
+  if (typeof window.slugificarCargo !== 'function') {
+    window.slugificarCargo = function (texto) {
+      if (!texto) return '';
+      return String(texto)
+        .normalize('NFKD').replace(/[^\x00-\x7F]/g, '')
+        .replace(/[^a-zA-Z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .toLowerCase()
+        .slice(0, 80)
+        .replace(/-+$/, '');
+    };
+  }
+  if (typeof window.rutaOferta !== 'function') {
+    window.rutaOferta = function (id, cargo) {
+      var slug = window.slugificarCargo(cargo);
+      return '/oferta/' + id + (slug ? '-' + slug : '');
+    };
+  }
+})();
+
+// ═══════════════════════════════════════════════════════════════
 // Dispatcher de clicks con `data-action`
 //
 // Reemplaza los 31 `onclick="funcion()"` inline que había en HTML y
