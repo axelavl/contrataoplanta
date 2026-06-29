@@ -756,8 +756,14 @@ function buildJobPostingJsonLd(oferta) {
   // employmentType (warning de Search Console).
   const _tipo = (oferta?.tipo_contrato || '').toLowerCase();
   const _jornada = (oferta?.jornada || '').toLowerCase();
-  const _esPartTime = ['part time', 'part-time', 'parcial', 'media jornada', 'por hora']
+  let _esPartTime = ['part time', 'part-time', 'parcial', 'media jornada', 'por hora']
     .some(s => _tipo.includes(s) || _jornada.includes(s));
+  // Jornadas con horas semanales numéricas ("22 hrs / semana"): bajo la
+  // jornada legal completa chilena (44 hrs) ⇒ part-time.
+  if (!_esPartTime) {
+    const _mh = _jornada.match(/(\d{1,2})\s*(?:hrs?\.?|horas?)\s*\/?\s*semanal?/);
+    if (_mh && +_mh[1] > 0 && +_mh[1] < 44) _esPartTime = true;
+  }
   let _empType = 'FULL_TIME';
   if (_tipo.includes('honorario')) _empType = 'CONTRACTOR';
   else if (['reemplazo', 'suplencia', 'plazo fijo', 'plazo definido', 'transitori'].some(s => _tipo.includes(s))) _empType = 'TEMPORARY';
@@ -2570,6 +2576,67 @@ function normalizarOferta(o) {
 
 // Punto de entrada del detalle. Si el componente FichaOferta está cargado,
 // usa la ficha nueva; si no (o si falla), cae al modal legacy (#modal).
+// Fetch del detalle con reintento ante fallos transitorios (5xx o error de
+// red). Cubre el cold-start del backend en Railway al abrir un link
+// compartido en frío, que hacía fallar la primera carga del detalle. NO
+// reintenta en respuestas 4xx (p.ej. 404: la oferta ya no existe) — esas son
+// definitivas y se devuelven tal cual para que la UI muestre el mensaje justo.
+async function _fetchOfertaDetalle(ofertaId, { reintentos = 2, esperaMs = 600 } = {}) {
+  let ultimoError = null;
+  for (let intento = 0; intento <= reintentos; intento++) {
+    try {
+      const resp = await fetchApi(`/api/ofertas/${ofertaId}`);
+      if (resp.status >= 500 && intento < reintentos) {
+        await new Promise((r) => setTimeout(r, esperaMs * (intento + 1)));
+        continue;
+      }
+      return resp;
+    } catch (err) {
+      ultimoError = err;
+      if (intento < reintentos) {
+        await new Promise((r) => setTimeout(r, esperaMs * (intento + 1)));
+        continue;
+      }
+      throw ultimoError;
+    }
+  }
+  throw ultimoError || new Error('No se pudo cargar la oferta');
+}
+
+// Pinta el estado de error del modal legacy: oculta el cuerpo/acciones (para
+// no dejar el placeholder a medias) y muestra un mensaje claro con la acción
+// adecuada. Distingue 404 (oferta retirada, sin reintento) de fallos
+// transitorios (ofrece "Reintentar").
+function _mostrarErrorDetalle(ofertaId, err) {
+  const overlay = document.getElementById('modal');
+  if (!overlay) return;
+  const es404 = /\b404\b/.test(String(err && err.message));
+  const setText = (id, t) => { const el = document.getElementById(id); if (el) el.textContent = t; };
+  // Cabecera: limpia datos de placeholder.
+  setText('modal-kicker', '');
+  const instEl = document.getElementById('modal-institucion');
+  if (instEl) { instEl.textContent = ''; instEl.hidden = true; }
+  setText('modal-cargo', '');
+  const badges = document.getElementById('modal-badges');
+  if (badges) badges.innerHTML = '';
+  // Oculta cuerpo y acciones; muestra el panel de error.
+  const body = overlay.querySelector('.modal-body');
+  const actions = overlay.querySelector('.modal-actions');
+  if (body) body.hidden = true;
+  if (actions) actions.hidden = true;
+  setText('modal-error-titulo', es404 ? 'Esta oferta ya no está disponible' : 'No pudimos cargar el detalle');
+  setText('modal-error-texto', es404
+    ? 'Es posible que el proceso de postulación haya cerrado o que la oferta haya sido retirada.'
+    : 'Puede ser un problema temporal de conexión. Inténtalo de nuevo en unos segundos.');
+  const retry = document.getElementById('modal-error-retry');
+  if (retry) {
+    retry.hidden = es404;
+    retry.onclick = () => _abrirModalLegacy(ofertaId);
+  }
+  const panel = document.getElementById('modal-error-panel');
+  if (panel) panel.hidden = false;
+}
+
 async function abrirModal(ofertaId) {
   window.track?.('offer-view', { id: ofertaId });
   if (window.FichaOferta) {
@@ -2596,7 +2663,7 @@ function _toggleCompararFicha(id) {
 }
 
 async function abrirFichaOferta(ofertaId) {
-  const resp = await fetchApi(`/api/ofertas/${ofertaId}`);
+  const resp = await _fetchOfertaDetalle(ofertaId);
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   const o = await resp.json();
   let favs = [];
@@ -2625,6 +2692,14 @@ async function _abrirModalLegacy(ofertaId) {
   overlay.classList.add('open');
   window.__updateBackToTopVisibility?.();
   document.body.style.overflow = 'hidden';
+  // Restaura el layout normal por si venimos de un estado de error previo
+  // (reintento o reapertura): cuerpo/acciones visibles, panel de error oculto.
+  const _bodyRestore = overlay.querySelector('.modal-body');
+  const _actionsRestore = overlay.querySelector('.modal-actions');
+  const _errPanelRestore = document.getElementById('modal-error-panel');
+  if (_bodyRestore) _bodyRestore.hidden = false;
+  if (_actionsRestore) _actionsRestore.hidden = false;
+  if (_errPanelRestore) _errPanelRestore.hidden = true;
   _instalarFocusTrap();
   _instalarSwipeCierre();
   // Foco inicial en el botón principal cuando esté disponible
@@ -2693,7 +2768,7 @@ async function _abrirModalLegacy(ofertaId) {
   document.getElementById('modal-plazo-fecha').textContent = '';
 
   try {
-    const resp = await fetchApi(`/api/ofertas/${ofertaId}`);
+    const resp = await _fetchOfertaDetalle(ofertaId);
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const o = await resp.json();
 
@@ -2925,10 +3000,7 @@ async function _abrirModalLegacy(ofertaId) {
 
   } catch (err) {
     console.error('Error cargando detalle:', err);
-    document.getElementById('modal-kicker').textContent = 'Error al cargar';
-    const _instElErr = document.getElementById('modal-institucion');
-    if (_instElErr) { _instElErr.textContent = ''; _instElErr.hidden = true; }
-    document.getElementById('modal-cargo').textContent = 'No se pudo obtener el detalle de la oferta.';
+    _mostrarErrorDetalle(ofertaId, err);
   }
 }
 

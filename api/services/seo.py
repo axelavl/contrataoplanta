@@ -290,6 +290,13 @@ def build_job_posting_jsonld(
         s in tipo or s in jornada_lower
         for s in ("part time", "part-time", "parcial", "media jornada", "por hora")
     )
+    # Jornadas con horas semanales numéricas ("22 hrs / semana", "30 horas
+    # semanales" — ver `horas_semanales` en api/services/sql.py): bajo la
+    # jornada legal completa chilena (44 hrs) ⇒ part-time.
+    if not _es_part_time:
+        m_horas = re.search(r"(\d{1,2})\s*(?:hrs?\.?|horas?)\s*/?\s*semanal?", jornada_lower)
+        if m_horas and 0 < int(m_horas.group(1)) < 44:
+            _es_part_time = True
     if "honorario" in tipo:
         data["employmentType"] = "CONTRACTOR"
     elif any(s in tipo for s in ("reemplazo", "suplencia", "plazo fijo", "plazo definido", "transitori")):

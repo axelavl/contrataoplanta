@@ -1832,6 +1832,26 @@ footer {
   position: sticky; bottom: 0;
   border-radius: 0 0 var(--r-l) var(--r-l);
 }
+/* Estado de error del modal de detalle (fetch fallido). Reemplaza
+   .modal-body + .modal-actions con un mensaje claro y acciones. */
+.modal-error-panel {
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; gap: 12px;
+  padding: 40px 24px 32px;
+}
+.modal-error-icon { font-size: 40px; line-height: 1; }
+.modal-error-titulo {
+  font-family: 'Lora', Georgia, serif;
+  font-size: 21px; color: var(--azul); margin: 0;
+}
+.modal-error-texto {
+  font-size: 14px; color: var(--texto2);
+  max-width: 42ch; margin: 0; line-height: 1.5;
+}
+.modal-error-acciones {
+  display: flex; flex-direction: column; gap: 10px;
+  width: 100%; max-width: 320px; margin-top: 6px;
+}
 .modal-actions-secondary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));

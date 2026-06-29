@@ -629,6 +629,18 @@
         </button>
       </div>
     </div>
+    <!-- Estado de error: se muestra (y oculta .modal-body/.modal-actions)
+         cuando el detalle no se pudo cargar. Distingue 404 (oferta retirada)
+         de fallos transitorios de conexión/backend. -->
+    <div class="modal-error-panel" id="modal-error-panel" role="alert" hidden>
+      <div class="modal-error-icon" aria-hidden="true">⚠️</div>
+      <h2 class="modal-error-titulo" id="modal-error-titulo">No pudimos cargar el detalle</h2>
+      <p class="modal-error-texto" id="modal-error-texto">Puede ser un problema temporal. Inténtalo de nuevo en unos segundos.</p>
+      <div class="modal-error-acciones">
+        <button class="btn-modal-primary" id="modal-error-retry" type="button">Reintentar</button>
+        <a class="btn-modal-sec" href="/">Volver al listado</a>
+      </div>
+    </div>
   </div>
 </div>
 
