@@ -755,10 +755,14 @@ function buildJobPostingJsonLd(oferta) {
   // un tipo desconocido o vacío usamos FULL_TIME como default para no omitir
   // employmentType (warning de Search Console).
   const _tipo = (oferta?.tipo_contrato || '').toLowerCase();
+  const _jornada = (oferta?.jornada || '').toLowerCase();
+  const _esPartTime = ['part time', 'part-time', 'parcial', 'media jornada', 'por hora']
+    .some(s => _tipo.includes(s) || _jornada.includes(s));
   let _empType = 'FULL_TIME';
   if (_tipo.includes('honorario')) _empType = 'CONTRACTOR';
-  else if (_tipo.includes('reemplazo') || _tipo.includes('suplencia')) _empType = 'TEMPORARY';
-  else if (_tipo.includes('practica') || _tipo.includes('práctica')) _empType = 'INTERN';
+  else if (['reemplazo', 'suplencia', 'plazo fijo', 'plazo definido', 'transitori'].some(s => _tipo.includes(s))) _empType = 'TEMPORARY';
+  else if (_tipo.includes('practica') || _tipo.includes('práctica') || _tipo.includes('pasant')) _empType = 'INTERN';
+  else if (_esPartTime) _empType = 'PART_TIME';
   payload.employmentType = _empType;
   if (oferta?.descripcion) payload.description = oferta.descripcion;
 

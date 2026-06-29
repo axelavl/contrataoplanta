@@ -285,12 +285,19 @@ def build_job_posting_jsonld(
     # recomienda incluir `employmentType`; omitirlo dispara un warning de datos
     # estructurados en Search Console.
     tipo = (oferta.get("tipo_contrato") or "").strip().lower()
+    jornada_lower = (oferta.get("jornada") or "").strip().lower()
+    _es_part_time = any(
+        s in tipo or s in jornada_lower
+        for s in ("part time", "part-time", "parcial", "media jornada", "por hora")
+    )
     if "honorario" in tipo:
         data["employmentType"] = "CONTRACTOR"
-    elif "reemplazo" in tipo or "suplencia" in tipo:
+    elif any(s in tipo for s in ("reemplazo", "suplencia", "plazo fijo", "plazo definido", "transitori")):
         data["employmentType"] = "TEMPORARY"
-    elif "practica" in tipo or "práctica" in tipo:
+    elif "practica" in tipo or "práctica" in tipo or "pasant" in tipo:
         data["employmentType"] = "INTERN"
+    elif _es_part_time:
+        data["employmentType"] = "PART_TIME"
     else:
         data["employmentType"] = "FULL_TIME"
 

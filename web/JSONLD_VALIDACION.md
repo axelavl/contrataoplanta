@@ -32,9 +32,11 @@ Cuando existan, se agregan:
 `employmentType` se emite **siempre**: se mapea `tipo_contrato` al vocabulario
 schema.org por **substring/categoría** (no por clave exacta, para tolerar
 etiquetas combinadas como `Honorarios (suma alzada)` o `Código del Trabajo
-(Reemplazo)`): `honorario`→`CONTRACTOR`, `reemplazo`/`suplencia`→`TEMPORARY`,
-`práctica`→`INTERN`, resto → `FULL_TIME` (incluye el caso vacío o desconocido,
-porque el sector público chileno es jornada completa salvo honorarios). Esto
+(Reemplazo)`): `honorario`→`CONTRACTOR`; `reemplazo`/`suplencia`/`plazo fijo`/
+`plazo definido`/`transitori`→`TEMPORARY`; `práctica`/`pasant`→`INTERN`; señal
+part-time en `tipo_contrato` o `jornada` (`part time`/`parcial`/`media jornada`/
+`por hora`)→`PART_TIME`; resto → `FULL_TIME` (incluye el caso vacío o
+desconocido, porque el sector público chileno es jornada completa). Esto
 evita el warning *"Falta el campo employmentType"* de Search Console. El mapeo
 es idéntico en el SSR (`api/services/seo.py`) y en el cliente (`web/app.js`).
 
