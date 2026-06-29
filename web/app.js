@@ -48,6 +48,41 @@
 })();
 
 // ═══════════════════════════════════════════════════════════════
+// Fallback de rutaOferta / slugificarCargo (fuente real: shared-shell.js)
+//
+// shared-shell.js define estas globales, PERO se carga con `defer` mientras
+// app.js y ficha-oferta.js no — y ambos las llaman al renderizar el detalle
+// (configurarCompartir → urlDeepLinkOferta). Si shared-shell.js aún no corrió
+// (o no cargó), `rutaOferta` quedaba `undefined` y el bare reference lanzaba
+// `ReferenceError`, tumbando TODO el modal de detalle para cualquier oferta
+// ("No se pudo obtener el detalle" al abrir un enlace compartido).
+//
+// Definimos un fallback IDÉNTICO (mismo slug que `_slugify` del backend, para
+// no disparar el redirect 301) sólo si no existen. Si shared-shell.js corre
+// después, sobrescribe con la misma lógica: no cambia el comportamiento.
+// ═══════════════════════════════════════════════════════════════
+(function () {
+  if (typeof window.slugificarCargo !== 'function') {
+    window.slugificarCargo = function (texto) {
+      if (!texto) return '';
+      return String(texto)
+        .normalize('NFKD').replace(/[^\x00-\x7F]/g, '')
+        .replace(/[^a-zA-Z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .toLowerCase()
+        .slice(0, 80)
+        .replace(/-+$/, '');
+    };
+  }
+  if (typeof window.rutaOferta !== 'function') {
+    window.rutaOferta = function (id, cargo) {
+      var slug = window.slugificarCargo(cargo);
+      return '/oferta/' + id + (slug ? '-' + slug : '');
+    };
+  }
+})();
+
+// ═══════════════════════════════════════════════════════════════
 // Dispatcher de clicks con `data-action`
 //
 // Reemplaza los 31 `onclick="funcion()"` inline que había en HTML y
@@ -747,7 +782,29 @@ function buildJobPostingJsonLd(oferta) {
   }
 
   if (oferta?.jornada) payload.workHours = oferta.jornada;
-  if (oferta?.tipo_contrato) payload.employmentType = oferta.tipo_contrato.toUpperCase();
+  // Mapeo conservador al vocabulario schema.org (mismo criterio que el SSR
+  // en api/services/seo.py). Se normaliza por substring/categoría —no por
+  // clave exacta— porque el dato puede venir con calificativos o etiquetas
+  // combinadas ("Honorarios (suma alzada)", "Código del Trabajo (Reemplazo)").
+  // El sector público es jornada completa salvo honorarios/reemplazos: ante
+  // un tipo desconocido o vacío usamos FULL_TIME como default para no omitir
+  // employmentType (warning de Search Console).
+  const _tipo = (oferta?.tipo_contrato || '').toLowerCase();
+  const _jornada = (oferta?.jornada || '').toLowerCase();
+  let _esPartTime = ['part time', 'part-time', 'parcial', 'media jornada', 'por hora']
+    .some(s => _tipo.includes(s) || _jornada.includes(s));
+  // Jornadas con horas semanales numéricas ("22 hrs / semana"): bajo la
+  // jornada legal completa chilena (44 hrs) ⇒ part-time.
+  if (!_esPartTime) {
+    const _mh = _jornada.match(/(\d{1,2})\s*(?:hrs?\.?|horas?)\s*\/?\s*semanal?/);
+    if (_mh && +_mh[1] > 0 && +_mh[1] < 44) _esPartTime = true;
+  }
+  let _empType = 'FULL_TIME';
+  if (_tipo.includes('honorario')) _empType = 'CONTRACTOR';
+  else if (['reemplazo', 'suplencia', 'plazo fijo', 'plazo definido', 'transitori'].some(s => _tipo.includes(s))) _empType = 'TEMPORARY';
+  else if (_tipo.includes('practica') || _tipo.includes('práctica') || _tipo.includes('pasant')) _empType = 'INTERN';
+  else if (_esPartTime) _empType = 'PART_TIME';
+  payload.employmentType = _empType;
   if (oferta?.descripcion) payload.description = oferta.descripcion;
 
   return { valido: true, markup: jsonLdScript(payload), errores: [] };
@@ -1361,8 +1418,18 @@ function resaltarBusqueda(texto, q) {
 // Etiquetas administrativas que algunas fuentes anteponen al texto de la
 // descripción ("DESCRIPCIÓN DE LA OFERTA:", "FUNCIONES DEL CARGO", etc.).
 // Las quitamos del inicio del resumen para que se lea más natural. Se aplica
-// de forma repetida porque a veces vienen encadenadas.
-const _RE_ENCABEZADOS_DESC = /^(?:descripci[oó]n\s+de\s+la\s+oferta|descripci[oó]n\s+del\s+cargo|descripci[oó]n\s+del\s+puesto|funciones?\s+del\s+cargo|funciones?\s+del\s+puesto|objetivo\s+del\s+cargo|otros\s+antecedentes|antecedentes\s+del\s+cargo|detalle\s+de\s+la\s+oferta|resumen\s+de\s+la\s+oferta)\b[\s:.\-–—]*/i;
+// de forma repetida porque a veces vienen encadenadas y sin puntuación
+// ("FUNCIONES PRINCIPALES ACTIVIDADES RESULTADO FINAL ESPERADO DE LA FUNCIÓN…").
+const _RE_ENCABEZADOS_DESC = /^(?:descripci[oó]n\s+(?:de\s+la\s+oferta|del\s+cargo|del\s+puesto|general|del\s+empleo)|(?:principales\s+)?funciones?(?:\s+(?:del\s+cargo|del\s+puesto|principales|generales|y\s+actividades))?|actividades(?:\s+principales|\s+del\s+cargo)?|tareas(?:\s+principales|\s+del\s+cargo)?|objetivo(?:s)?(?:\s+(?:del\s+cargo|del\s+puesto|general(?:es)?))?|misi[oó]n\s+del\s+cargo|prop[oó]sito(?:\s+(?:del\s+cargo|principal|del\s+puesto))?|resultado(?:s)?\s+(?:final(?:es)?\s+)?esperado(?:s)?(?:\s+de\s+la\s+funci[oó]n|\s+del\s+cargo)?|perfil(?:\s+(?:del\s+cargo|del\s+puesto|requerido|ocupacional))?|requisitos(?:\s+(?:del\s+cargo|generales|m[ií]nimos|de\s+postulaci[oó]n))?|competencias(?:\s+(?:requeridas|del\s+cargo))?|antecedentes(?:\s+(?:del\s+cargo|generales))?|otros\s+antecedentes|detalle\s+de\s+la\s+oferta|resumen\s+de\s+la\s+oferta|c[oó]mo\s+postular|forma\s+de\s+postul(?:ar|aci[oó]n)|modo\s+de\s+postul(?:ar|aci[oó]n)|instrucciones\s+de\s+postulaci[oó]n)\b[\s:.\-–—]*/i;
+
+// Boilerplate de postulación: cuando, tras limpiar el encabezado, el resumen
+// empieza directamente con instrucciones de cómo postular ("Postula en línea
+// en el portal de Empleos Públicos…"), es texto genérico casi idéntico en
+// todas las ofertas. No aporta como resumen, así que preferimos ocultarlo.
+// Cada alternativa termina en \b para anclar a palabra completa: así
+// "Postulante debe contar…" (resumen legítimo) NO se confunde con el verbo
+// "postula", que sí indica boilerplate ("Postula en línea…").
+const _RE_POSTULACION_BOILERPLATE = /^(?:postul(?:a|ar|e|en|aci[oó]n(?:es)?)\b|para\s+postular\b|deber[aá]n?\s+postular\b|las?\s+postulaci[oó]n(?:es)?\b|el\s+proceso\s+de\s+postulaci[oó]n\b|ingresa(?:r|ndo)?\s+(?:a|al|en)\b)/i;
 
 // Marcador de lista al inicio del texto: "1.", "1.-", "1)", "(1)", "•", "-",
 // "a)"… Lo quitamos del preview para que no empiece con un número suelto
@@ -1371,8 +1438,9 @@ const _RE_MARCADOR_LISTA_INICIO = /^(?:\(?\d{1,2}\)|\d{1,2}\s*[.\-)]|[a-zA-Z]\)|
 
 function _limpiarEncabezadoDesc(texto) {
   let t = String(texto || '').trim();
-  // Hasta 3 pasadas por si vienen rótulos encadenados ("DESCRIPCIÓN… FUNCIONES…").
-  for (let i = 0; i < 3; i++) {
+  // Hasta 5 pasadas por si vienen rótulos encadenados sin puntuación
+  // ("FUNCIONES PRINCIPALES ACTIVIDADES RESULTADO FINAL ESPERADO…").
+  for (let i = 0; i < 5; i++) {
     let limpio = t.replace(_RE_ENCABEZADOS_DESC, '').trim();
     limpio = limpio.replace(_RE_MARCADOR_LISTA_INICIO, '').trim();
     if (limpio === t) break;
@@ -1423,6 +1491,9 @@ function renderCard(oferta) {
   // OFERTA:", "FUNCIONES DEL CARGO", "OTROS ANTECEDENTES:", etc.) para que el
   // resumen se lea más fluido y natural, sin el rótulo administrativo delante.
   _descRaw = _limpiarEncabezadoDesc(_descRaw);
+  // Si el resumen queda como puras instrucciones de postulación ("Cómo
+  // postular: Postula en línea…"), es ruido genérico: no lo mostramos.
+  if (_RE_POSTULACION_BOILERPLATE.test(_descRaw)) _descRaw = '';
   // Tope de caracteres del resumen de la tarjeta. El CSS line-clamp limita la
   // ALTURA visible, pero el texto completo igual entraba al DOM y al expandir
   // "ver más" algunas descripciones quedaban en un muro larguísimo. Lo acotamos
@@ -2540,6 +2611,67 @@ function normalizarOferta(o) {
 
 // Punto de entrada del detalle. Si el componente FichaOferta está cargado,
 // usa la ficha nueva; si no (o si falla), cae al modal legacy (#modal).
+// Fetch del detalle con reintento ante fallos transitorios (5xx o error de
+// red). Cubre el cold-start del backend en Railway al abrir un link
+// compartido en frío, que hacía fallar la primera carga del detalle. NO
+// reintenta en respuestas 4xx (p.ej. 404: la oferta ya no existe) — esas son
+// definitivas y se devuelven tal cual para que la UI muestre el mensaje justo.
+async function _fetchOfertaDetalle(ofertaId, { reintentos = 2, esperaMs = 600 } = {}) {
+  let ultimoError = null;
+  for (let intento = 0; intento <= reintentos; intento++) {
+    try {
+      const resp = await fetchApi(`/api/ofertas/${ofertaId}`);
+      if (resp.status >= 500 && intento < reintentos) {
+        await new Promise((r) => setTimeout(r, esperaMs * (intento + 1)));
+        continue;
+      }
+      return resp;
+    } catch (err) {
+      ultimoError = err;
+      if (intento < reintentos) {
+        await new Promise((r) => setTimeout(r, esperaMs * (intento + 1)));
+        continue;
+      }
+      throw ultimoError;
+    }
+  }
+  throw ultimoError || new Error('No se pudo cargar la oferta');
+}
+
+// Pinta el estado de error del modal legacy: oculta el cuerpo/acciones (para
+// no dejar el placeholder a medias) y muestra un mensaje claro con la acción
+// adecuada. Distingue 404 (oferta retirada, sin reintento) de fallos
+// transitorios (ofrece "Reintentar").
+function _mostrarErrorDetalle(ofertaId, err) {
+  const overlay = document.getElementById('modal');
+  if (!overlay) return;
+  const es404 = /\b404\b/.test(String(err && err.message));
+  const setText = (id, t) => { const el = document.getElementById(id); if (el) el.textContent = t; };
+  // Cabecera: limpia datos de placeholder.
+  setText('modal-kicker', '');
+  const instEl = document.getElementById('modal-institucion');
+  if (instEl) { instEl.textContent = ''; instEl.hidden = true; }
+  setText('modal-cargo', '');
+  const badges = document.getElementById('modal-badges');
+  if (badges) badges.innerHTML = '';
+  // Oculta cuerpo y acciones; muestra el panel de error.
+  const body = overlay.querySelector('.modal-body');
+  const actions = overlay.querySelector('.modal-actions');
+  if (body) body.hidden = true;
+  if (actions) actions.hidden = true;
+  setText('modal-error-titulo', es404 ? 'Esta oferta ya no está disponible' : 'No pudimos cargar el detalle');
+  setText('modal-error-texto', es404
+    ? 'Es posible que el proceso de postulación haya cerrado o que la oferta haya sido retirada.'
+    : 'Puede ser un problema temporal de conexión. Inténtalo de nuevo en unos segundos.');
+  const retry = document.getElementById('modal-error-retry');
+  if (retry) {
+    retry.hidden = es404;
+    retry.onclick = () => _abrirModalLegacy(ofertaId);
+  }
+  const panel = document.getElementById('modal-error-panel');
+  if (panel) panel.hidden = false;
+}
+
 async function abrirModal(ofertaId) {
   window.track?.('offer-view', { id: ofertaId });
   if (window.FichaOferta) {
@@ -2566,7 +2698,11 @@ function _toggleCompararFicha(id) {
 }
 
 async function abrirFichaOferta(ofertaId) {
-  const resp = await fetchApi(`/api/ofertas/${ofertaId}`);
+  // Un solo intento: es la ruta primaria (ficha-oferta.js carga antes que
+  // app.js). El presupuesto de reintentos vive en la ruta legacy de fallback,
+  // que además muestra el panel de error; así no se apilan dos budgets de
+  // reintento (ficha + legacy) y el error aparece sin esperas largas.
+  const resp = await _fetchOfertaDetalle(ofertaId, { reintentos: 0 });
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   const o = await resp.json();
   let favs = [];
@@ -2595,6 +2731,14 @@ async function _abrirModalLegacy(ofertaId) {
   overlay.classList.add('open');
   window.__updateBackToTopVisibility?.();
   document.body.style.overflow = 'hidden';
+  // Restaura el layout normal por si venimos de un estado de error previo
+  // (reintento o reapertura): cuerpo/acciones visibles, panel de error oculto.
+  const _bodyRestore = overlay.querySelector('.modal-body');
+  const _actionsRestore = overlay.querySelector('.modal-actions');
+  const _errPanelRestore = document.getElementById('modal-error-panel');
+  if (_bodyRestore) _bodyRestore.hidden = false;
+  if (_actionsRestore) _actionsRestore.hidden = false;
+  if (_errPanelRestore) _errPanelRestore.hidden = true;
   _instalarFocusTrap();
   _instalarSwipeCierre();
   // Foco inicial en el botón principal cuando esté disponible
@@ -2662,11 +2806,20 @@ async function _abrirModalLegacy(ofertaId) {
   document.getElementById('modal-plazo-label').textContent = '—';
   document.getElementById('modal-plazo-fecha').textContent = '';
 
+  let o;
   try {
-    const resp = await fetchApi(`/api/ofertas/${ofertaId}`);
+    const resp = await _fetchOfertaDetalle(ofertaId);
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const o = await resp.json();
+    o = await resp.json();
+  } catch (err) {
+    // El fetch (o el parseo) falló: corresponde el panel de error
+    // (404 = oferta retirada; 5xx/red = transitorio, con "Reintentar").
+    console.error('Error cargando detalle (fetch):', err);
+    _mostrarErrorDetalle(ofertaId, err);
+    return;
+  }
 
+  try {
     const tipoCss  = tipoClase(o.tipo_contrato);
     const tipoLabel = tipoEtiqueta(o.tipo_contrato);
     const regionCompleta = nombreRegionCompleto(o.region);
@@ -2738,6 +2891,13 @@ async function _abrirModalLegacy(ofertaId) {
     // textos cortos (<= umbral) se muestran completos sin truncar.
     // rich-text.js devuelve "" cuando sólo quedan subtítulos huérfanos,
     // así que aquí sólo vemos contenido realmente renderizable.
+    // Bloque de texto enriquecido + secciones semánticas: es la parte más
+    // dependiente de los datos de la oferta y la más propensa a lanzar
+    // (rich-text / buildSemanticSections). La aislamos para que un fallo aquí
+    // NO tumbe el modal entero — cabecera, CTA "postular", bases, favorito y
+    // compartir igual se renderizan (antes, una excepción acá mostraba
+    // "No se pudo obtener el detalle" aunque los datos sí estaban).
+    try {
     const desc = o.descripcion || '';
     const descHtml = formatRichText(desc, {
       truncate: true,
@@ -2846,6 +3006,18 @@ async function _abrirModalLegacy(ofertaId) {
       _toggleSection('modal-data-warning', true);
       document.getElementById('modal-data-warning-text').textContent = warnings[0];
     }
+    } catch (errTexto) {
+      // Datos OK pero el render del texto/secciones falló: ocultamos esas
+      // secciones (para no dejar nada a medias) y seguimos con el resto del
+      // modal. Logueamos el error real para diagnóstico.
+      console.error('[detalle] fallo al renderizar texto/secciones (datos OK):', errTexto, ofertaId);
+      const _ftEl = document.getElementById('modal-descripcion');
+      const _ftSec = _ftEl ? _ftEl.closest('.modal-seccion') : null;
+      if (_ftSec) _ftSec.hidden = true;
+      ['modal-funciones-wrap', 'modal-condiciones-wrap', 'modal-objetivo-wrap',
+       'modal-postulacion-wrap', 'modal-residual-wrap', 'modal-requisitos-wrap',
+       'modal-data-warning'].forEach((id) => _toggleSection(id, false));
+    }
 
     // Botón postular — gateado primero por flag backend, luego por validación cliente.
     const btnPostular = document.getElementById('modal-btn-postular');
@@ -2894,11 +3066,10 @@ async function _abrirModalLegacy(ofertaId) {
     configurarCompartir(o);
 
   } catch (err) {
-    console.error('Error cargando detalle:', err);
-    document.getElementById('modal-kicker').textContent = 'Error al cargar';
-    const _instElErr = document.getElementById('modal-institucion');
-    if (_instElErr) { _instElErr.textContent = ''; _instElErr.hidden = true; }
-    document.getElementById('modal-cargo').textContent = 'No se pudo obtener el detalle de la oferta.';
+    // Último recurso: falló el render de la parte simple (cabecera/resumen/
+    // botones) pese a tener datos. Es muy raro tras aislar el texto enriquecido.
+    console.error('Error mostrando detalle (datos cargados):', err);
+    _mostrarErrorDetalle(ofertaId, err);
   }
 }
 

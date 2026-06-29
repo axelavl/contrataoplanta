@@ -836,7 +836,10 @@ nav {
   text-align: center;
   box-shadow: 0 1px 4px rgba(0,0,0,.25);
 }
-.oferta-meta { flex: 1 1 auto; min-width: 0; max-width: 100%; }
+/* padding-right reserva el espacio del corazón de favorito (.btn-fav-card,
+   absolute top/right 14px, ~30px de ancho) para que la institución y el
+   cargo no queden por debajo del botón en títulos largos. */
+.oferta-meta { flex: 1 1 auto; min-width: 0; max-width: 100%; padding-right: 38px; }
 .oferta-institucion {
   font-size: 12px; font-weight: 700;
   color: var(--azul); margin-bottom: 5px;
@@ -1828,6 +1831,30 @@ footer {
   background: var(--blanco);
   position: sticky; bottom: 0;
   border-radius: 0 0 var(--r-l) var(--r-l);
+}
+/* Estado de error del modal de detalle (fetch fallido). Reemplaza
+   .modal-body + .modal-actions con un mensaje claro y acciones. */
+.modal-error-panel {
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; gap: 12px;
+  padding: 40px 24px 32px;
+}
+/* La regla de display:flex de arriba gana sobre el [hidden]{display:none} del
+   navegador, así que el atributo hidden no bastaría para ocultar el panel.
+   Override explícito (mismo patrón que otros componentes con display propio). */
+.modal-error-panel[hidden] { display: none; }
+.modal-error-icon { font-size: 40px; line-height: 1; }
+.modal-error-titulo {
+  font-family: 'Lora', Georgia, serif;
+  font-size: 21px; color: var(--azul); margin: 0;
+}
+.modal-error-texto {
+  font-size: 14px; color: var(--texto2);
+  max-width: 42ch; margin: 0; line-height: 1.5;
+}
+.modal-error-acciones {
+  display: flex; flex-direction: column; gap: 10px;
+  width: 100%; max-width: 320px; margin-top: 6px;
 }
 .modal-actions-secondary {
   display: grid;

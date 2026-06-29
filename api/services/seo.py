@@ -276,20 +276,37 @@ def build_job_posting_jsonld(
         "directApply": False,
     }
 
-    tipo = (oferta.get("tipo_contrato") or "").strip().upper()
-    if tipo:
-        # Mapeo conservador al vocabulario de schema.org — si no reconocemos
-        # el tipo, lo omitimos (en vez de inventar un valor inválido).
-        mapeo = {
-            "PLANTA": "FULL_TIME",
-            "CONTRATA": "FULL_TIME",
-            "CODIGO_TRABAJO": "FULL_TIME",
-            "CÓDIGO_TRABAJO": "FULL_TIME",
-            "HONORARIOS": "CONTRACTOR",
-            "REEMPLAZO": "TEMPORARY",
-        }
-        if tipo in mapeo:
-            data["employmentType"] = mapeo[tipo]
+    # Mapeo conservador al vocabulario de schema.org. Se normaliza por
+    # substring/categoría —no por clave exacta— porque el dato puede venir con
+    # calificativos o etiquetas combinadas ("Honorarios (suma alzada)",
+    # "Código del Trabajo (Reemplazo)"). El empleo del sector público chileno
+    # es a jornada completa salvo honorarios/reemplazos, así que ante un tipo
+    # desconocido o vacío usamos FULL_TIME como default razonable. Google
+    # recomienda incluir `employmentType`; omitirlo dispara un warning de datos
+    # estructurados en Search Console.
+    tipo = (oferta.get("tipo_contrato") or "").strip().lower()
+    jornada_lower = (oferta.get("jornada") or "").strip().lower()
+    _es_part_time = any(
+        s in tipo or s in jornada_lower
+        for s in ("part time", "part-time", "parcial", "media jornada", "por hora")
+    )
+    # Jornadas con horas semanales numéricas ("22 hrs / semana", "30 horas
+    # semanales" — ver `horas_semanales` en api/services/sql.py): bajo la
+    # jornada legal completa chilena (44 hrs) ⇒ part-time.
+    if not _es_part_time:
+        m_horas = re.search(r"(\d{1,2})\s*(?:hrs?\.?|horas?)\s*/?\s*semanal?", jornada_lower)
+        if m_horas and 0 < int(m_horas.group(1)) < 44:
+            _es_part_time = True
+    if "honorario" in tipo:
+        data["employmentType"] = "CONTRACTOR"
+    elif any(s in tipo for s in ("reemplazo", "suplencia", "plazo fijo", "plazo definido", "transitori")):
+        data["employmentType"] = "TEMPORARY"
+    elif "practica" in tipo or "práctica" in tipo or "pasant" in tipo:
+        data["employmentType"] = "INTERN"
+    elif _es_part_time:
+        data["employmentType"] = "PART_TIME"
+    else:
+        data["employmentType"] = "FULL_TIME"
 
     jornada = (oferta.get("jornada") or "").strip()
     if jornada:
