@@ -2663,7 +2663,11 @@ function _toggleCompararFicha(id) {
 }
 
 async function abrirFichaOferta(ofertaId) {
-  const resp = await _fetchOfertaDetalle(ofertaId);
+  // Un solo intento: es la ruta primaria (ficha-oferta.js carga antes que
+  // app.js). El presupuesto de reintentos vive en la ruta legacy de fallback,
+  // que además muestra el panel de error; así no se apilan dos budgets de
+  // reintento (ficha + legacy) y el error aparece sin esperas largas.
+  const resp = await _fetchOfertaDetalle(ofertaId, { reintentos: 0 });
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   const o = await resp.json();
   let favs = [];
