@@ -1839,6 +1839,10 @@ footer {
   text-align: center; gap: 12px;
   padding: 40px 24px 32px;
 }
+/* La regla de display:flex de arriba gana sobre el [hidden]{display:none} del
+   navegador, así que el atributo hidden no bastaría para ocultar el panel.
+   Override explícito (mismo patrón que otros componentes con display propio). */
+.modal-error-panel[hidden] { display: none; }
 .modal-error-icon { font-size: 40px; line-height: 1; }
 .modal-error-titulo {
   font-family: 'Lora', Georgia, serif;
