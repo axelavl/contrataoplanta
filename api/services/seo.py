@@ -276,20 +276,26 @@ def build_job_posting_jsonld(
         "directApply": False,
     }
 
-    tipo = (oferta.get("tipo_contrato") or "").strip().upper()
-    if tipo:
-        # Mapeo conservador al vocabulario de schema.org — si no reconocemos
-        # el tipo, lo omitimos (en vez de inventar un valor inválido).
-        mapeo = {
-            "PLANTA": "FULL_TIME",
-            "CONTRATA": "FULL_TIME",
-            "CODIGO_TRABAJO": "FULL_TIME",
-            "CÓDIGO_TRABAJO": "FULL_TIME",
-            "HONORARIOS": "CONTRACTOR",
-            "REEMPLAZO": "TEMPORARY",
-        }
-        if tipo in mapeo:
-            data["employmentType"] = mapeo[tipo]
+    tipo = (oferta.get("tipo_contrato") or "").strip().upper().replace(" ", "_")
+    # Mapeo conservador al vocabulario de schema.org. El empleo del sector
+    # público chileno es a jornada completa salvo honorarios/reemplazos, así
+    # que ante un tipo desconocido o vacío usamos FULL_TIME como default
+    # razonable. Google recomienda incluir `employmentType`; omitirlo dispara
+    # un warning de datos estructurados en Search Console.
+    mapeo = {
+        "PLANTA": "FULL_TIME",
+        "CONTRATA": "FULL_TIME",
+        "CODIGO_TRABAJO": "FULL_TIME",
+        "CÓDIGO_TRABAJO": "FULL_TIME",
+        "CODIGO_DEL_TRABAJO": "FULL_TIME",
+        "CÓDIGO_DEL_TRABAJO": "FULL_TIME",
+        "HONORARIOS": "CONTRACTOR",
+        "REEMPLAZO": "TEMPORARY",
+        "SUPLENCIA": "TEMPORARY",
+        "PRACTICA": "INTERN",
+        "PRÁCTICA": "INTERN",
+    }
+    data["employmentType"] = mapeo.get(tipo, "FULL_TIME")
 
     jornada = (oferta.get("jornada") or "").strip()
     if jornada:

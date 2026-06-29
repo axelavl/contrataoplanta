@@ -747,7 +747,25 @@ function buildJobPostingJsonLd(oferta) {
   }
 
   if (oferta?.jornada) payload.workHours = oferta.jornada;
-  if (oferta?.tipo_contrato) payload.employmentType = oferta.tipo_contrato.toUpperCase();
+  // Mapeo conservador al vocabulario schema.org (mismo criterio que el SSR
+  // en api/services/seo.py). El sector público es jornada completa salvo
+  // honorarios/reemplazos: ante tipo desconocido o vacío usamos FULL_TIME
+  // como default para no omitir employmentType (warning de Search Console).
+  const TIPO_EMPLEO = {
+    "PLANTA": "FULL_TIME",
+    "CONTRATA": "FULL_TIME",
+    "CODIGO_TRABAJO": "FULL_TIME",
+    "CÓDIGO_TRABAJO": "FULL_TIME",
+    "CODIGO_DEL_TRABAJO": "FULL_TIME",
+    "CÓDIGO_DEL_TRABAJO": "FULL_TIME",
+    "HONORARIOS": "CONTRACTOR",
+    "REEMPLAZO": "TEMPORARY",
+    "SUPLENCIA": "TEMPORARY",
+    "PRACTICA": "INTERN",
+    "PRÁCTICA": "INTERN"
+  };
+  const tipoNorm = (oferta?.tipo_contrato || '').trim().toUpperCase().replace(/ /g, '_');
+  payload.employmentType = TIPO_EMPLEO[tipoNorm] || "FULL_TIME";
   if (oferta?.descripcion) payload.description = oferta.descripcion;
 
   return { valido: true, markup: jsonLdScript(payload), errores: [] };
