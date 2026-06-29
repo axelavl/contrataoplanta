@@ -1379,8 +1379,15 @@ function resaltarBusqueda(texto, q) {
 // Etiquetas administrativas que algunas fuentes anteponen al texto de la
 // descripción ("DESCRIPCIÓN DE LA OFERTA:", "FUNCIONES DEL CARGO", etc.).
 // Las quitamos del inicio del resumen para que se lea más natural. Se aplica
-// de forma repetida porque a veces vienen encadenadas.
-const _RE_ENCABEZADOS_DESC = /^(?:descripci[oó]n\s+de\s+la\s+oferta|descripci[oó]n\s+del\s+cargo|descripci[oó]n\s+del\s+puesto|funciones?\s+del\s+cargo|funciones?\s+del\s+puesto|objetivo\s+del\s+cargo|otros\s+antecedentes|antecedentes\s+del\s+cargo|detalle\s+de\s+la\s+oferta|resumen\s+de\s+la\s+oferta)\b[\s:.\-–—]*/i;
+// de forma repetida porque a veces vienen encadenadas y sin puntuación
+// ("FUNCIONES PRINCIPALES ACTIVIDADES RESULTADO FINAL ESPERADO DE LA FUNCIÓN…").
+const _RE_ENCABEZADOS_DESC = /^(?:descripci[oó]n\s+(?:de\s+la\s+oferta|del\s+cargo|del\s+puesto|general|del\s+empleo)|(?:principales\s+)?funciones?(?:\s+(?:del\s+cargo|del\s+puesto|principales|generales|y\s+actividades))?|actividades(?:\s+principales|\s+del\s+cargo)?|tareas(?:\s+principales|\s+del\s+cargo)?|objetivo(?:s)?(?:\s+(?:del\s+cargo|del\s+puesto|general(?:es)?))?|misi[oó]n\s+del\s+cargo|prop[oó]sito(?:\s+(?:del\s+cargo|principal|del\s+puesto))?|resultado(?:s)?\s+(?:final(?:es)?\s+)?esperado(?:s)?(?:\s+de\s+la\s+funci[oó]n|\s+del\s+cargo)?|perfil(?:\s+(?:del\s+cargo|del\s+puesto|requerido|ocupacional))?|requisitos(?:\s+(?:del\s+cargo|generales|m[ií]nimos|de\s+postulaci[oó]n))?|competencias(?:\s+(?:requeridas|del\s+cargo))?|antecedentes(?:\s+(?:del\s+cargo|generales))?|otros\s+antecedentes|detalle\s+de\s+la\s+oferta|resumen\s+de\s+la\s+oferta|c[oó]mo\s+postular|forma\s+de\s+postul(?:ar|aci[oó]n)|modo\s+de\s+postul(?:ar|aci[oó]n)|instrucciones\s+de\s+postulaci[oó]n)\b[\s:.\-–—]*/i;
+
+// Boilerplate de postulación: cuando, tras limpiar el encabezado, el resumen
+// empieza directamente con instrucciones de cómo postular ("Postula en línea
+// en el portal de Empleos Públicos…"), es texto genérico casi idéntico en
+// todas las ofertas. No aporta como resumen, así que preferimos ocultarlo.
+const _RE_POSTULACION_BOILERPLATE = /^(?:postul(?:a|ar|e|en|aci[oó]n)|para\s+postular|deber[aá]n?\s+postular|las?\s+postulaci[oó]n|el\s+proceso\s+de\s+postul|ingresa(?:r|ndo)?\s+(?:a|al|en)\b)/i;
 
 // Marcador de lista al inicio del texto: "1.", "1.-", "1)", "(1)", "•", "-",
 // "a)"… Lo quitamos del preview para que no empiece con un número suelto
@@ -1389,8 +1396,9 @@ const _RE_MARCADOR_LISTA_INICIO = /^(?:\(?\d{1,2}\)|\d{1,2}\s*[.\-)]|[a-zA-Z]\)|
 
 function _limpiarEncabezadoDesc(texto) {
   let t = String(texto || '').trim();
-  // Hasta 3 pasadas por si vienen rótulos encadenados ("DESCRIPCIÓN… FUNCIONES…").
-  for (let i = 0; i < 3; i++) {
+  // Hasta 5 pasadas por si vienen rótulos encadenados sin puntuación
+  // ("FUNCIONES PRINCIPALES ACTIVIDADES RESULTADO FINAL ESPERADO…").
+  for (let i = 0; i < 5; i++) {
     let limpio = t.replace(_RE_ENCABEZADOS_DESC, '').trim();
     limpio = limpio.replace(_RE_MARCADOR_LISTA_INICIO, '').trim();
     if (limpio === t) break;
@@ -1441,6 +1449,9 @@ function renderCard(oferta) {
   // OFERTA:", "FUNCIONES DEL CARGO", "OTROS ANTECEDENTES:", etc.) para que el
   // resumen se lea más fluido y natural, sin el rótulo administrativo delante.
   _descRaw = _limpiarEncabezadoDesc(_descRaw);
+  // Si el resumen queda como puras instrucciones de postulación ("Cómo
+  // postular: Postula en línea…"), es ruido genérico: no lo mostramos.
+  if (_RE_POSTULACION_BOILERPLATE.test(_descRaw)) _descRaw = '';
   // Tope de caracteres del resumen de la tarjeta. El CSS line-clamp limita la
   // ALTURA visible, pero el texto completo igual entraba al DOM y al expandir
   // "ver más" algunas descripciones quedaban en un muro larguísimo. Lo acotamos

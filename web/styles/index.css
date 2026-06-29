@@ -836,7 +836,10 @@ nav {
   text-align: center;
   box-shadow: 0 1px 4px rgba(0,0,0,.25);
 }
-.oferta-meta { flex: 1 1 auto; min-width: 0; max-width: 100%; }
+/* padding-right reserva el espacio del corazón de favorito (.btn-fav-card,
+   absolute top/right 14px, ~30px de ancho) para que la institución y el
+   cargo no queden por debajo del botón en títulos largos. */
+.oferta-meta { flex: 1 1 auto; min-width: 0; max-width: 100%; padding-right: 38px; }
 .oferta-institucion {
   font-size: 12px; font-weight: 700;
   color: var(--azul); margin-bottom: 5px;
