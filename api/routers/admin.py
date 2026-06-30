@@ -888,7 +888,7 @@ def admin_editar_oferta(
     """
     CAMPOS_PERMITIDOS = {
         "cargo", "descripcion", "fecha_cierre", "activa", "estado", "region",
-        "tipo_contrato", "renta_bruta_min", "renta_bruta_max",
+        "sector", "tipo_contrato", "renta_bruta_min", "renta_bruta_max",
         "url_oferta", "url_bases",
     }
     updates = {k: v for k, v in payload.items() if k in CAMPOS_PERMITIDOS}

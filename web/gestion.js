@@ -961,7 +961,7 @@ function openCrearOferta() {
   document.getElementById('edit-institucion-group').style.display = '';
   document.getElementById('edit-save-btn').textContent = 'Crear';
   ['edit-cargo','edit-institucion','edit-descripcion','edit-fecha-cierre','edit-region',
-   'edit-tipo-contrato','edit-renta-min','edit-renta-max','edit-url-oferta','edit-url-bases']
+   'edit-tipo-contrato','edit-sector','edit-renta-min','edit-renta-max','edit-url-oferta','edit-url-bases']
     .forEach(id => { document.getElementById(id).value = ''; });
   document.getElementById('edit-estado').value = 'activa';
   document.getElementById('edit-modal').classList.add('open');
@@ -981,6 +981,7 @@ function openEdit(id, o) {
   document.getElementById('edit-estado').value = o.estado||'activa';
   document.getElementById('edit-region').value = o.region||'';
   document.getElementById('edit-tipo-contrato').value = o.tipo_contrato||'';
+  document.getElementById('edit-sector').value = o.sector||'';
   document.getElementById('edit-renta-min').value = o.renta_bruta_min??'';
   document.getElementById('edit-renta-max').value = o.renta_bruta_max??'';
   document.getElementById('edit-url-oferta').value = o.url_oferta||'';
@@ -1001,6 +1002,7 @@ async function saveEdit() {
     estado:        document.getElementById('edit-estado').value,
     region:        document.getElementById('edit-region').value||null,
     tipo_contrato: document.getElementById('edit-tipo-contrato').value||null,
+    sector:        document.getElementById('edit-sector').value||null,
     renta_bruta_min: parseInt(document.getElementById('edit-renta-min').value)||null,
     renta_bruta_max: parseInt(document.getElementById('edit-renta-max').value)||null,
     url_oferta:    document.getElementById('edit-url-oferta').value.trim()||null,
