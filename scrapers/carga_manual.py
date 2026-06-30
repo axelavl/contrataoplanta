@@ -3,18 +3,25 @@ ContrataOPlanta.cl — Carga manual de ofertas desde publicaciones de LinkedIn u
 otros canales informales.
 
 Recibe el texto de la publicación (copiar/pegar de LinkedIn) y opcionalmente
-un PDF de perfil de cargo. Auto-detecta: institución, cargo, fecha de cierre,
-URL de postulación, modalidad, renta, requisitos, etc.
+un PDF o imágenes del perfil de cargo. Auto-detecta: institución, cargo,
+fecha de cierre, URL de postulación, modalidad, renta, requisitos, etc.
+
+Las imágenes se procesan con Tesseract OCR (español). Soporta múltiples
+imágenes que se concatenan en orden (típico de capturas de LinkedIn con
+el perfil de cargo en varias páginas).
 
 Uso:
     # Solo texto (interactivo)
     python scrapers/carga_manual.py
 
+    # Con imágenes del perfil de cargo (una o varias)
+    python scrapers/carga_manual.py --imagen perfil_p1.png perfil_p2.png
+
     # Con PDF adjunto
     python scrapers/carga_manual.py --pdf perfil_cargo.pdf
 
     # No interactivo: texto desde archivo
-    python scrapers/carga_manual.py --texto publicacion.txt --pdf perfil.pdf
+    python scrapers/carga_manual.py --texto publicacion.txt --imagen perfil.jpg
 
     # Dry-run (no persiste, solo muestra lo detectado)
     python scrapers/carga_manual.py --dry-run
@@ -229,6 +236,85 @@ def extraer_de_publicacion(texto: str) -> dict[str, Any]:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# Extracción desde perfil de cargo (texto ya extraído de PDF o imagen)
+# ══════════════════════════════════════════════════════════════════════════════
+def _extraer_campos_perfil(texto: str) -> dict[str, Any]:
+    """Extrae campos estructurados del texto de un perfil de cargo."""
+    if not texto.strip():
+        return {}
+
+    resultado: dict[str, Any] = {}
+
+    # Tablas clave-valor del perfil de cargo.
+    # El separador puede ser ":", "|", o simplemente espacios (OCR a veces
+    # pierde el separador en tablas, dejando "Cargo Asesor técnico").
+    # También soporta formato multi-línea del OCR de capturas de pantalla:
+    #   RENTA BRUTA\n$2.000.000\nMODALIDAD ESTAMENTO\nHonorarios Profesional
+    patrones_kv = {
+        "cargo": r"(?:Nombre\s+del\s+cargo|Cargo)\s*[:\|]?\s+(.+)",
+        "dependencia": r"(?:Dependencia|Unidad/?Programa)\s*[:\|]?\s+(.+)",
+        "modalidad": r"(?:Modalidad|Tipo\s+de\s+contrato|Calidad\s+jur[ií]dica)\s*[:\|]?\s+(.+)",
+        "horario": r"(?:Horario|Jornada)\s*[:\|]?\s+(.+)",
+        "vacantes": r"(?:N[°º]\s*(?:de\s+)?vacantes?|Vacantes?)\s*[:\|]?\s*(\d+)",
+        "renta_texto": r"(?:Remuneraci[oó]n\s+(?:bruta|l[ií]quida)|Renta|Sueldo)\s*[:\|]?\s+(.+)",
+        "inicio_funciones": r"(?:Inicio\s+de\s+funciones|Fecha\s+de\s+inicio)\s*[:\|]?\s+(.+)",
+    }
+    for campo, patron in patrones_kv.items():
+        m = re.search(patron, texto, re.I)
+        if m:
+            valor = limpiar_texto(m.group(1))
+            if len(valor) >= 3:
+                resultado[campo] = valor
+
+    # Formato OCR multi-línea (capturas de pantalla / perfiles de cargo):
+    #   RENTA BRUTA\n$2.000.000\nMODALIDAD ESTAMENTO\nContrata Profesionales\nVACANTES UBICACIÓN\n1
+    if not resultado.get("renta_texto"):
+        m = re.search(r"RENTA\s+(?:BRUTA|L[ÍI]QUIDA)\s*\n+\s*(\$\s*[\d.,]+)", texto)
+        if m:
+            resultado["renta_texto"] = limpiar_texto(m.group(1))
+    if not resultado.get("modalidad"):
+        m = re.search(r"MODALIDAD\s+(?:ESTAMENTO\s*)?\n+\s*(Contrata|Honorarios?|Planta|C[oó]digo\s+del\s+Trabajo)", texto, re.I)
+        if m:
+            resultado["modalidad"] = limpiar_texto(m.group(1))
+    if not resultado.get("vacantes"):
+        m = re.search(r"VACANTES?\s*(?:UBICACI[ÓO]N)?\s*\n+\s*(\d+)", texto)
+        if m:
+            resultado["vacantes"] = m.group(1)
+
+    # Requisitos — sección completa
+    m = re.search(
+        r"(?:REQUISITOS\s+(?:M[ÍI]NIMOS|ESPEC[ÍI]FICOS)|[IVX]+\.\-?\s*REQUISITOS)"
+        r"\s*(?:PARA\s+EL\s+CARGO)?\s*\n([\s\S]*?)(?=\n\s*(?:[IVX]+\.\-|COMPETENCIAS|FUNCIONES|DOCUMENTOS|$))",
+        texto, re.I,
+    )
+    if m:
+        resultado["requisitos_texto"] = limpiar_texto(m.group(1))[:2000]
+
+    # Descripción/funciones
+    m = re.search(
+        r"(?:FUNCIONES\s+PRINCIPALES|OBJETIVOS\s+DEL\s+CARGO|[IVX]+\.\-?\s*OBJETIVOS|"
+        r"[IVX]+\.\-?\s*FUNCIONES)"
+        r"\s*\n([\s\S]*?)(?=\n\s*(?:[IVX]+\.\-|REQUISITOS|COMPETENCIAS|DOCUMENTOS|$))",
+        texto, re.I,
+    )
+    if m:
+        resultado["descripcion"] = limpiar_texto(m.group(1))[:2000]
+
+    # Renta numérica — buscar en renta_texto o en texto completo
+    renta_src = resultado.get("renta_texto") or texto
+    m_renta = re.search(r"\$\s*([\d.]+(?:\.\d{3})*)", renta_src)
+    if m_renta:
+        try:
+            resultado["renta_bruta"] = int(m_renta.group(1).replace(".", ""))
+            if not resultado.get("renta_texto"):
+                resultado["renta_texto"] = m_renta.group(0)
+        except ValueError:
+            pass
+
+    return resultado
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # Extracción desde PDF de perfil de cargo
 # ══════════════════════════════════════════════════════════════════════════════
 def extraer_de_pdf(ruta: str | Path) -> dict[str, Any]:
@@ -247,54 +333,45 @@ def extraer_de_pdf(ruta: str | Path) -> dict[str, Any]:
         with pdfplumber.open(str(ruta)) as pdf:
             texto = "\n".join(page.extract_text() or "" for page in pdf.pages)
 
-    if not texto.strip():
+    return _extraer_campos_perfil(texto)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Extracción desde imágenes (OCR con Tesseract)
+# ══════════════════════════════════════════════════════════════════════════════
+def extraer_de_imagenes(rutas: list[str | Path]) -> dict[str, Any]:
+    """Extrae campos de una o más imágenes del perfil de cargo vía OCR."""
+    try:
+        from PIL import Image
+        import pytesseract
+    except ImportError:
+        logger.warning("Instalar: pip install Pillow pytesseract + apt install tesseract-ocr tesseract-ocr-spa")
         return {}
 
-    resultado: dict[str, Any] = {}
+    fragmentos = []
+    for ruta in rutas:
+        ruta = Path(ruta)
+        if not ruta.exists():
+            logger.warning("Imagen no encontrada: %s", ruta)
+            continue
+        try:
+            img = Image.open(ruta)
+            # Pre-proceso: convertir a escala de grises para mejorar OCR
+            if img.mode != "L":
+                img = img.convert("L")
+            texto = pytesseract.image_to_string(img, lang="spa")
+            fragmentos.append(texto)
+            logger.info("  OCR %s: %d caracteres extraídos", ruta.name, len(texto))
+        except Exception as exc:
+            logger.warning("  Error OCR en %s: %s", ruta.name, exc)
 
-    # Tablas clave-valor del perfil de cargo
-    patrones_kv = {
-        "cargo": r"(?:Nombre\s+del\s+cargo|Cargo)\s*[:\|]\s*(.+)",
-        "dependencia": r"(?:Dependencia|Unidad/Programa)\s*[:\|]\s*(.+)",
-        "modalidad": r"(?:Modalidad|Tipo\s+de\s+contrato|Calidad\s+jurídica)\s*[:\|]\s*(.+)",
-        "horario": r"(?:Horario|Jornada)\s*[:\|]\s*(.+)",
-        "vacantes": r"(?:N[°º]\s*(?:de\s+)?vacantes?|Vacantes?)\s*[:\|]\s*(\d+)",
-        "renta_texto": r"(?:Remuneración\s+(?:bruta|líquida)|Renta|Sueldo)\s*[:\|]\s*(.+)",
-        "inicio_funciones": r"(?:Inicio\s+de\s+funciones|Fecha\s+de\s+inicio)\s*[:\|]\s*(.+)",
-    }
-    for campo, patron in patrones_kv.items():
-        m = re.search(patron, texto, re.I)
-        if m:
-            resultado[campo] = limpiar_texto(m.group(1))
+    texto_completo = "\n".join(fragmentos)
+    if not texto_completo.strip():
+        logger.warning("OCR no extrajo texto de las imágenes")
+        return {}
 
-    # Requisitos — sección completa
-    m = re.search(
-        r"(?:REQUISITOS\s+(?:MÍNIMOS|ESPECÍFICOS)|V\.\-?\s*REQUISITOS)"
-        r"\s*(?:PARA\s+EL\s+CARGO)?\s*\n([\s\S]*?)(?=\n\s*(?:[IVX]+\.\-|COMPETENCIAS|FUNCIONES|DOCUMENTOS|$))",
-        texto, re.I,
-    )
-    if m:
-        resultado["requisitos_texto"] = limpiar_texto(m.group(1))[:2000]
-
-    # Descripción/funciones
-    m = re.search(
-        r"(?:FUNCIONES\s+PRINCIPALES|OBJETIVOS\s+DEL\s+CARGO|III\.\-?\s*OBJETIVOS)"
-        r"\s*\n([\s\S]*?)(?=\n\s*(?:[IVX]+\.\-|REQUISITOS|COMPETENCIAS|DOCUMENTOS|$))",
-        texto, re.I,
-    )
-    if m:
-        resultado["descripcion"] = limpiar_texto(m.group(1))[:2000]
-
-    # Renta numérica
-    if resultado.get("renta_texto"):
-        m_renta = re.search(r"\$\s*([\d.]+(?:\.\d{3})*)", resultado["renta_texto"])
-        if m_renta:
-            try:
-                resultado["renta_bruta"] = int(m_renta.group(1).replace(".", ""))
-            except ValueError:
-                pass
-
-    return resultado
+    logger.info("Texto OCR total: %d caracteres", len(texto_completo))
+    return _extraer_campos_perfil(texto_completo)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -303,8 +380,15 @@ def extraer_de_pdf(ruta: str | Path) -> dict[str, Any]:
 def construir_oferta(pub: dict, pdf: dict, catalogo: list[dict]) -> dict[str, Any]:
     """Combina datos de publicación y PDF en una oferta lista para BD."""
 
-    # Prioridad: PDF tiene datos más estructurados, publicación tiene fecha/URL
-    cargo = pdf.get("cargo") or pub.get("cargo") or ""
+    # Prioridad: publicación tiene cargo/institución limpios (texto copiado);
+    # PDF/OCR complementa con renta, requisitos, funciones, modalidad.
+    # Solo usar cargo del PDF/OCR si la publicación no lo tiene o si el del
+    # PDF/OCR es sustancialmente más largo (más específico).
+    cargo_pub = pub.get("cargo") or ""
+    cargo_pdf = pdf.get("cargo") or ""
+    cargo = cargo_pub if len(cargo_pub) >= len(cargo_pdf) else cargo_pdf
+    if not cargo:
+        cargo = cargo_pub or cargo_pdf
     inst_nombre = pub.get("institucion_nombre") or ""
 
     # Buscar en catálogo
@@ -454,6 +538,7 @@ def mostrar_oferta(oferta: dict, editable: bool = True) -> dict:
 # Entry point
 # ══════════════════════════════════════════════════════════════════════════════
 def ejecutar(texto: str, pdf_path: str | None = None,
+             imagenes: list[str] | None = None,
              dry_run: bool = False, export: str | None = None,
              no_interactivo: bool = False) -> dict:
     """Punto de entrada principal."""
@@ -463,9 +548,13 @@ def ejecutar(texto: str, pdf_path: str | None = None,
     pub = extraer_de_publicacion(texto)
     logger.info("Publicación: %s", {k: v for k, v in pub.items() if v})
 
-    # 2. Extraer de PDF (si existe)
+    # 2. Extraer de PDF o imágenes (si existen)
     pdf = {}
-    if pdf_path:
+    if imagenes:
+        pdf = extraer_de_imagenes(imagenes)
+        logger.info("Imagen OCR: %s", {k: (v[:60] + "...") if isinstance(v, str) and len(v) > 60 else v
+                                        for k, v in pdf.items() if v})
+    elif pdf_path:
         pdf = extraer_de_pdf(pdf_path)
         logger.info("PDF: %s", {k: (v[:60] + "...") if isinstance(v, str) and len(v) > 60 else v
                                  for k, v in pdf.items() if v})
@@ -526,6 +615,8 @@ if __name__ == "__main__":
                    help="Archivo con el texto de la publicación (si no, se pide por stdin)")
     p.add_argument("--pdf", type=str, default=None,
                    help="PDF de perfil de cargo adjunto")
+    p.add_argument("--imagen", nargs="+", default=None,
+                   help="Imagen(es) del perfil de cargo (PNG, JPG). OCR con Tesseract")
     p.add_argument("--dry-run", action="store_true",
                    help="No persistir, solo mostrar lo detectado")
     p.add_argument("--export", type=str, default=None,
@@ -557,6 +648,7 @@ if __name__ == "__main__":
     ejecutar(
         texto=texto,
         pdf_path=args.pdf,
+        imagenes=args.imagen,
         dry_run=args.dry_run,
         export=args.export,
         no_interactivo=args.no_interactivo,
