@@ -191,19 +191,6 @@ UNIVERSIDADES: list[dict[str, Any]] = [
         "verificado": False,
     },
     {
-        "id": 246,
-        "nombre": "Universidad de La Frontera",
-        "sigla": "UFRO",
-        "region": "La Araucanía",
-        "ciudad": "Temuco",
-        "urls": [
-            "https://extranet.ufro.cl/concursos/ver_tipo_administrativo.php",
-            "https://personas.ufro.cl/servicio/convocatorias/",
-        ],
-        "notas": "Dos portales: extranet (administrativo) y personas (convocatorias)",
-        "verificado": False,
-    },
-    {
         "id": 252,
         "nombre": "Universidad de Tarapacá",
         "sigla": "UTA",
@@ -223,16 +210,6 @@ UNIVERSIDADES: list[dict[str, Any]] = [
         "ciudad": "Antofagasta",
         "urls": ["https://trabajosua.uantof.cl/"],
         "notas": "Portal propio. PDF en 'Documentos > BASES'",
-        "verificado": False,
-    },
-    {
-        "id": 251,
-        "nombre": "Universidad Arturo Prat",
-        "sigla": "UNAP",
-        "region": "Tarapacá",
-        "ciudad": "Iquique",
-        "urls": ["http://portal.unap.cl/kb/dewey/app/sispartime/llamado.php"],
-        "notas": "PHP legacy (sispartime). PDF en 'perfil'. HTTP (no HTTPS)",
         "verificado": False,
     },
     {

@@ -71,6 +71,7 @@ from scrapers import aira_integra as aira_integra_scraper
 from scrapers import adp as adp_scraper
 from scrapers import universidades as universidades_scraper
 from scrapers import universidades_wp as universidades_wp_scraper
+from scrapers import universidades_portal as universidades_portal_scraper
 from scrapers.runtime_inventory import (
     build_runtime_scraper,
     iter_legacy_rows,
@@ -142,8 +143,9 @@ _IDS_NUEVO_ESTANDAR: frozenset[int] = frozenset({
     # corporaciones con extracción funcional. Las fuentes spa/bloqueada quedan
     # al genérico (no scrapean nada por ahora). Ver scrapers/municipios.py.
     345, 363, 382, 384, 385, 401, 407, 409, 416, 419, 456, 527, 537, 580, 647, 670, 676,
-    # universidades.py + universidades_wp.py (scrapers agrupados de universidades)
+    # universidades.py + universidades_wp.py + universidades_portal.py (scrapers agrupados)
     # 254 (UTEM) → trabajando.py; 258/259 (UOH/UAysén) → universidades_wp.py
+    # 251 (UNAP) / 246 (UFRO) → universidades_portal.py
     243, 244, 245, 246, 248, 251, 252, 253, 255, 258, 259,
 })
 
@@ -1288,7 +1290,7 @@ async def main(argv: list[str] | None = None) -> int:
                     _run_modulo_ejecutar_sync, "adp (130)", adp_scraper.ejecutar
                 )
             )
-        _IDS_UNIVERSIDADES = {243, 244, 245, 246, 248, 251, 252, 253, 255}  # 254→trabajando, 258/259→universidades_wp
+        _IDS_UNIVERSIDADES = {243, 244, 245, 248, 252, 253, 255}  # 254→trabajando, 258/259→universidades_wp, 246/251→universidades_portal
         hay_universidades = any(s.get("id") in _IDS_UNIVERSIDADES for s in catalog_sources)
         if hay_universidades:
             reports.append(
@@ -1302,6 +1304,14 @@ async def main(argv: list[str] | None = None) -> int:
             reports.append(
                 await asyncio.to_thread(
                     _run_modulo_ejecutar_sync, "universidades_wp", universidades_wp_scraper.ejecutar
+                )
+            )
+        _IDS_UNIVERSIDADES_PORTAL = {251, 246}
+        hay_uni_portal = any(s.get("id") in _IDS_UNIVERSIDADES_PORTAL for s in catalog_sources)
+        if hay_uni_portal:
+            reports.append(
+                await asyncio.to_thread(
+                    _run_modulo_ejecutar_sync, "universidades_portal", universidades_portal_scraper.ejecutar
                 )
             )
 

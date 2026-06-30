@@ -348,9 +348,9 @@
     {
       "id": 246,
       "status": "active",
-      "kind": "generic",
-      "reason": "Universidad de La Frontera — portal propio, cubierto por scrapers/universidades.py",
-      "notes": "https://extranet.ufro.cl/concursos/ (administrativo) + https://personas.ufro.cl/servicio/convocatorias/"
+      "kind": "skip",
+      "reason": "Universidad de La Frontera — portal propio, cubierto por scrapers/universidades_portal.py (ufro_tabla)",
+      "notes": "https://extranet.ufro.cl/concursos/ver_tipo_administrativo.php"
     },
     {
       "id": 247,
@@ -382,9 +382,9 @@
     },
     {
       "id": 251,
-      "status": "experimental",
-      "kind": "generic",
-      "reason": "Universidad Arturo Prat — portal PHP legacy (sispartime/llamado.php), puede no ser parseable",
+      "status": "active",
+      "kind": "skip",
+      "reason": "Universidad Arturo Prat — portal PHP legacy, cubierto por scrapers/universidades_portal.py (unap_sispartime)",
       "notes": "http://portal.unap.cl/kb/dewey/app/sispartime/llamado.php"
     },
     {
