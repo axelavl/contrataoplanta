@@ -404,9 +404,9 @@
     {
       "id": 254,
       "status": "active",
-      "kind": "generic",
-      "reason": "Universidad Tecnológica Metropolitana — portal empleos.utem.cl propio",
-      "notes": "https://empleos.utem.cl/"
+      "kind": "custom_trabajando",
+      "reason": "UTEM — empleos.utem.cl es plataforma Trabajando.cl (id_dominio=3836), lo cubre trabajando.py",
+      "notes": "https://empleos.utem.cl/ (plataforma Trabajando con dominio propio)"
     },
     {
       "id": 255,

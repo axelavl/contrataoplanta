@@ -7,7 +7,7 @@ define en UNIVERSIDADES con su URL, selectores y patrones. Cubre:
   - U. de Aysén (259)         — uaysen.cl/trabaja-con-nosotros
   - U. del Bío-Bío (248)     — ubiobio.cl/concursos
   - U. de Valparaíso (244)   — cyl.uv.cl/cargos
-  - UTEM (254)               — empleos.utem.cl
+  - UTEM (254)               — empleos.utem.cl [→ trabajando.py, plataforma Trabajando]
   - U. de Atacama (253)      — pregrado.uda.cl/.../concurso-academico
   - U. de La Frontera (246)  — extranet.ufro.cl/concursos/
   - U. de Tarapacá (252)     — uta.cl/transparencia/.../concursos/
@@ -193,16 +193,8 @@ UNIVERSIDADES: list[dict[str, Any]] = [
         "notas": "PDFs en 'Bases' (movilidad interna profesional)",
         "verificado": False,
     },
-    {
-        "id": 254,
-        "nombre": "Universidad Tecnológica Metropolitana",
-        "sigla": "UTEM",
-        "region": "Metropolitana de Santiago",
-        "ciudad": "Santiago",
-        "urls": ["https://empleos.utem.cl/"],
-        "notas": "Portal propio",
-        "verificado": False,
-    },
+    # UTEM (254) removida: empleos.utem.cl corre plataforma Trabajando.cl →
+    # la cubre scrapers/trabajando.py con id_dominio=3836.
     {
         "id": 253,
         "nombre": "Universidad de Atacama",

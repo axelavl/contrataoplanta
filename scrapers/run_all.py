@@ -142,7 +142,8 @@ _IDS_NUEVO_ESTANDAR: frozenset[int] = frozenset({
     # al genérico (no scrapean nada por ahora). Ver scrapers/municipios.py.
     345, 363, 382, 384, 385, 401, 407, 409, 416, 419, 456, 527, 537, 580, 647, 670, 676,
     # universidades.py (scraper agrupado, portales propios de universidades del Estado)
-    243, 244, 245, 246, 248, 251, 252, 253, 254, 255, 258, 259,
+    # 254 (UTEM) va por trabajando.py (empleos.utem.cl es plataforma Trabajando)
+    243, 244, 245, 246, 248, 251, 252, 253, 255, 258, 259,
 })
 
 
@@ -1286,7 +1287,7 @@ async def main(argv: list[str] | None = None) -> int:
                     _run_modulo_ejecutar_sync, "adp (130)", adp_scraper.ejecutar
                 )
             )
-        _IDS_UNIVERSIDADES = {243, 244, 245, 246, 248, 251, 252, 253, 254, 255, 258, 259}
+        _IDS_UNIVERSIDADES = {243, 244, 245, 246, 248, 251, 252, 253, 255, 258, 259}  # 254 (UTEM) → trabajando.py
         hay_universidades = any(s.get("id") in _IDS_UNIVERSIDADES for s in catalog_sources)
         if hay_universidades:
             reports.append(

@@ -164,6 +164,30 @@ _EXTRA_SOURCES: list[dict[str, Any]] = [
         "region": "Nacional",
         "url_empleo": "https://integra.trabajando.cl",
     },
+    {
+        # USACH: el catálogo apunta a ddp.usach.cl (portal propio), pero también
+        # publica en usach.trabajando.cl. universidades.py cubre los portales
+        # propios (honorarios + académicos); este entry cubre el de Trabajando.
+        "id": 243,
+        "nombre": "Universidad de Santiago de Chile",
+        "sigla": "USACH",
+        "sector": "Universidad/Educación",
+        "region": "Metropolitana de Santiago",
+        "url_empleo": "https://usach.trabajando.cl/",
+    },
+    {
+        # UTEM: empleos.utem.cl corre la plataforma Trabajando.cl con dominio
+        # propio. No es subdominio de trabajando.cl, así que necesita el flag
+        # plataforma + id_dominio fijo (auto-detección inestable en dominio propio).
+        "id": 254,
+        "nombre": "Universidad Tecnológica Metropolitana",
+        "sigla": "UTEM",
+        "sector": "Universidad/Educación",
+        "region": "Metropolitana de Santiago",
+        "url_empleo": "https://empleos.utem.cl/",
+        "plataforma": "trabajando",
+        "id_dominio": 3836,
+    },
 ]
 
 
@@ -190,7 +214,7 @@ def _filter_trabajando(
     seen_ids: set[int] = set()
     for fuente in list(instituciones) + _EXTRA_SOURCES:
         url = (fuente.get("url_empleo") or "").lower()
-        if "trabajando.cl" not in url:
+        if "trabajando.cl" not in url and fuente.get("plataforma") != "trabajando":
             continue
         if fuente.get("id") in _IDS_EXCLUIDOS:
             continue
@@ -519,7 +543,7 @@ def _recolectar_via_api(
     session = requests.Session()
     session.headers.update(_api_headers(base))
 
-    id_dominio = _detectar_id_dominio(session, base)
+    id_dominio = fuente.get("id_dominio") or _detectar_id_dominio(session, base)
     if not id_dominio:
         logger.info("  No se detectó idDominio en %s; se usará fallback HTML", base)
         return None
