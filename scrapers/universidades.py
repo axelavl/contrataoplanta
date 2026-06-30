@@ -3,8 +3,8 @@ EmpleoEstado.cl — Scraper multi-universidad para portales propios de
 universidades del Estado de Chile. Config-driven: cada universidad se
 define en UNIVERSIDADES con su URL, selectores y patrones. Cubre:
 
-  - U. de O'Higgins (258)    — uoh.cl/trabaja-con-nosotros
-  - U. de Aysén (259)         — uaysen.cl/trabaja-con-nosotros
+  - U. de O'Higgins (258)    — uoh.cl/trabaja-con-nosotros [→ universidades_wp.py]
+  - U. de Aysén (259)         — uaysen.cl/trabaja-con-nosotros [→ universidades_wp.py]
   - U. del Bío-Bío (248)     — ubiobio.cl/concursos
   - U. de Valparaíso (244)   — cyl.uv.cl/cargos
   - UTEM (254)               — empleos.utem.cl [→ trabajando.py, plataforma Trabajando]
@@ -153,26 +153,8 @@ _KW_PDF_BASES = re.compile(
 # ══════════════════════════════════════════════════════════════════════════════
 
 UNIVERSIDADES: list[dict[str, Any]] = [
-    {
-        "id": 258,
-        "nombre": "Universidad de O'Higgins",
-        "sigla": "UOH",
-        "region": "O'Higgins",
-        "ciudad": "Rancagua",
-        "urls": ["https://www.uoh.cl/trabaja-con-nosotros/"],
-        "notas": "Portal propio, PDFs en 'descargar bases concurso'",
-        "verificado": False,
-    },
-    {
-        "id": 259,
-        "nombre": "Universidad de Aysén",
-        "sigla": "UAYSEN",
-        "region": "Aysén",
-        "ciudad": "Coyhaique",
-        "urls": ["https://uaysen.cl/trabaja-con-nosotros/"],
-        "notas": "PDFs en 'Bases de concurso' y 'Anexos'",
-        "verificado": False,
-    },
+    # UOH (258) y UAysén (259) removidas: portales WordPress con CPT/posts →
+    # las cubre scrapers/universidades_wp.py (API REST WP + parseo de estado).
     {
         "id": 248,
         "nombre": "Universidad del Bío-Bío",

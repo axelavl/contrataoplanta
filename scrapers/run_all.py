@@ -70,6 +70,7 @@ from scrapers import linkedin_penalolen as linkedin_penalolen_scraper
 from scrapers import aira_integra as aira_integra_scraper
 from scrapers import adp as adp_scraper
 from scrapers import universidades as universidades_scraper
+from scrapers import universidades_wp as universidades_wp_scraper
 from scrapers.runtime_inventory import (
     build_runtime_scraper,
     iter_legacy_rows,
@@ -141,8 +142,8 @@ _IDS_NUEVO_ESTANDAR: frozenset[int] = frozenset({
     # corporaciones con extracción funcional. Las fuentes spa/bloqueada quedan
     # al genérico (no scrapean nada por ahora). Ver scrapers/municipios.py.
     345, 363, 382, 384, 385, 401, 407, 409, 416, 419, 456, 527, 537, 580, 647, 670, 676,
-    # universidades.py (scraper agrupado, portales propios de universidades del Estado)
-    # 254 (UTEM) va por trabajando.py (empleos.utem.cl es plataforma Trabajando)
+    # universidades.py + universidades_wp.py (scrapers agrupados de universidades)
+    # 254 (UTEM) → trabajando.py; 258/259 (UOH/UAysén) → universidades_wp.py
     243, 244, 245, 246, 248, 251, 252, 253, 255, 258, 259,
 })
 
@@ -1287,12 +1288,20 @@ async def main(argv: list[str] | None = None) -> int:
                     _run_modulo_ejecutar_sync, "adp (130)", adp_scraper.ejecutar
                 )
             )
-        _IDS_UNIVERSIDADES = {243, 244, 245, 246, 248, 251, 252, 253, 255, 258, 259}  # 254 (UTEM) → trabajando.py
+        _IDS_UNIVERSIDADES = {243, 244, 245, 246, 248, 251, 252, 253, 255}  # 254→trabajando, 258/259→universidades_wp
         hay_universidades = any(s.get("id") in _IDS_UNIVERSIDADES for s in catalog_sources)
         if hay_universidades:
             reports.append(
                 await asyncio.to_thread(
                     _run_modulo_ejecutar_sync, "universidades", universidades_scraper.ejecutar
+                )
+            )
+        _IDS_UNIVERSIDADES_WP = {258, 259}
+        hay_uni_wp = any(s.get("id") in _IDS_UNIVERSIDADES_WP for s in catalog_sources)
+        if hay_uni_wp:
+            reports.append(
+                await asyncio.to_thread(
+                    _run_modulo_ejecutar_sync, "universidades_wp", universidades_wp_scraper.ejecutar
                 )
             )
 

@@ -432,16 +432,16 @@
     {
       "id": 258,
       "status": "active",
-      "kind": "generic",
-      "reason": "Universidad de O'Higgins — portal propio, cubierto por scrapers/universidades.py",
-      "notes": "https://www.uoh.cl/trabaja-con-nosotros/ — PDFs en 'descargar bases concurso'"
+      "kind": "wordpress",
+      "reason": "UOH — WordPress listado_html, cubierto por scrapers/universidades_wp.py",
+      "notes": "https://www.uoh.cl/trabaja-con-nosotros/ → posts /concurso/<slug>"
     },
     {
       "id": 259,
       "status": "active",
-      "kind": "generic",
-      "reason": "Universidad de Aysén — portal propio, cubierto por scrapers/universidades.py",
-      "notes": "https://uaysen.cl/trabaja-con-nosotros/ — PDFs en 'Bases de concurso' y 'Anexos'"
+      "kind": "wordpress",
+      "reason": "UAysén — WordPress CPT REST (/wp-json/wp/v2/concursos), cubierto por scrapers/universidades_wp.py",
+      "notes": "https://uaysen.cl/wp-json/wp/v2/concursos — estados en título [Publicación]/[Cierre]"
     },
     {
       "_comment": "=== CFTs Estatales ==="
