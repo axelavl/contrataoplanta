@@ -252,7 +252,7 @@ def get_ofertas(
         "pagina": pag.pagina,
         "por_pagina": pag.por_pagina,
         "paginas": paginas,
-        "ofertas": [serialize_offer(row) for row in rows],
+        "ofertas": [serialize_offer(row, truncate=True) for row in rows],
     }
 
 
@@ -734,7 +734,7 @@ def get_historial(
         "pagina": pag.pagina,
         "por_pagina": pag.por_pagina,
         "paginas": paginas,
-        "historial": [serialize_offer(row) for row in rows],
+        "historial": [serialize_offer(row, truncate=True) for row in rows],
     }
 
 

@@ -26,6 +26,7 @@ except ImportError:
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, Response, RedirectResponse
 from pydantic import BaseModel
 
@@ -340,6 +341,8 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
 )
 
+app.add_middleware(GZipMiddleware, minimum_size=500)
+
 
 # ── Security headers middleware ───────────────────────────────────────────
 # Añade los mismos headers que sirve Cloudflare Pages (`web/_headers`) en
@@ -391,16 +394,16 @@ async def add_security_headers(request: Request, call_next):
         # setdefault para no sobrescribir si un endpoint ya los setea
         # (ej: un iframe embebible podría querer X-Frame-Options distinto).
         response.headers.setdefault(name, value)
-    # Datos que reflejan el estado vivo del scraping (estadísticas, listado de
-    # ofertas) NO deben servirse desde caché del navegador/CDN: si no, al
-    # revisitar el sitio se ve "actualizado hace X" o un listado viejo aunque
-    # los scrapers ya corrieron. `no-cache` obliga a revalidar contra el
-    # servidor en cada visita (permite 304 si nada cambió). Endpoints
-    # cacheables a propósito (imágenes OG) setean su propio Cache-Control antes,
-    # y este setdefault no los pisa.
+    # Datos vivos (ofertas, estadísticas) toleran un stale breve: max-age=60
+    # sirve la respuesta cacheada durante 1 minuto; stale-while-revalidate=300
+    # permite servir la copia vieja hasta 5 min más mientras revalida en
+    # background. Así la vuelta al sitio es instantánea sin mostrar datos de
+    # horas atrás. Endpoints con su propio Cache-Control (OG images) no se pisan.
     path = request.url.path
     if path == "/api/estadisticas" or path.startswith("/api/ofertas"):
-        response.headers.setdefault("Cache-Control", "no-cache, must-revalidate")
+        response.headers.setdefault(
+            "Cache-Control", "public, max-age=60, stale-while-revalidate=300"
+        )
     return response
 
 

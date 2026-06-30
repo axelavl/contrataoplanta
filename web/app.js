@@ -328,11 +328,7 @@ async function fetchApi(path, options = {}) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
   try {
-    // `cache: 'no-store'`: nunca usar la caché HTTP del navegador para los
-    // datos de la API. Garantiza ver siempre las ofertas/estadísticas más
-    // recientes en cada visita (antes el browser podía servir una respuesta
-    // cacheada de horas atrás). Se puede sobrescribir vía `options`.
-    const resp = await fetch(url, { cache: 'no-store', ...options, signal: controller.signal });
+    const resp = await fetch(url, { ...options, signal: controller.signal });
     clearTimeout(timeoutId);
     return resp;
   } catch (err) {
@@ -5161,14 +5157,16 @@ function host_clickFichaDesdePanel(host) {
   });
 }
 
-// Carga inicial
+// Carga inicial — sync setup primero, luego requests en paralelo
 initAutocompletarInstitucion();
 _initIntegracion();
-cargarOfertas();
-cargarEstadisticas();
-cargarResumenFuentes();
-mostrarUltimaActualizacion();
-cargarSiteConfig();
+Promise.all([
+  cargarOfertas(),
+  cargarEstadisticas(),
+  cargarResumenFuentes(),
+  mostrarUltimaActualizacion(),
+  cargarSiteConfig(),
+]);
 setInterval(mostrarUltimaActualizacion, 5 * 60 * 1000); // refresco cada 5 min
 
 // ── Parte 10 — Aviso de nuevas ofertas sin F5 ─────────────────────────────
