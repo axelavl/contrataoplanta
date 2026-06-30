@@ -327,15 +327,15 @@
     {
       "id": 243,
       "status": "active",
-      "kind": "custom_trabajando",
-      "reason": "USACH — publica en usach.trabajando.cl + portales propios usach.cl (honorarios y académicos)",
-      "notes": "https://usach.trabajando.cl/ (Trabajando.cl) + scrapers/universidades.py cubre portales propios"
+      "kind": "skip",
+      "reason": "USACH — cubierto por trabajando.py (usach.trabajando.cl) + universidades_tabla.py (honorarios + académicos en usach.cl)",
+      "notes": "trabajando.py + universidades_tabla.py (modos tabla y pdf_nombre)"
     },
     {
       "id": 244,
       "status": "active",
-      "kind": "generic",
-      "reason": "Universidad de Valparaíso — portal cyl.uv.cl/cargos propio",
+      "kind": "skip",
+      "reason": "Universidad de Valparaíso — cubierto por scrapers/universidades_tabla.py (modo joomla)",
       "notes": "https://cyl.uv.cl/cargos"
     },
     {
@@ -390,9 +390,9 @@
     {
       "id": 252,
       "status": "active",
-      "kind": "generic",
-      "reason": "Universidad de Tarapacá — portal propio, cubierto por scrapers/universidades.py",
-      "notes": "https://www.uta.cl/transparencia/actosyresoluciones_d/concursos/2026/ (transparencia con resoluciones)"
+      "kind": "skip",
+      "reason": "Universidad de Tarapacá — cubierto por scrapers/universidades_tabla.py (modo transparencia)",
+      "notes": "https://www.uta.cl/transparencia/actosyresoluciones_d/concursos/2026/"
     },
     {
       "id": 253,

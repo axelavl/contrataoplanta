@@ -165,16 +165,8 @@ UNIVERSIDADES: list[dict[str, Any]] = [
         "notas": "PDF al hacer click en título de oferta",
         "verificado": False,
     },
-    {
-        "id": 244,
-        "nombre": "Universidad de Valparaíso",
-        "sigla": "UV",
-        "region": "Valparaíso",
-        "ciudad": "Valparaíso",
-        "urls": ["https://cyl.uv.cl/cargos"],
-        "notas": "PDFs en 'Bases' (movilidad interna profesional)",
-        "verificado": False,
-    },
+    # UV (244) removida: portal Joomla cyl.uv.cl/cargos →
+    # la cubre scrapers/universidades_tabla.py (modo joomla).
     # UTEM (254) removida: empleos.utem.cl corre plataforma Trabajando.cl →
     # la cubre scrapers/trabajando.py con id_dominio=3836.
     {
@@ -190,18 +182,8 @@ UNIVERSIDADES: list[dict[str, Any]] = [
         "notas": "PDF en 'ver resolución'. Dos portales: académico y general",
         "verificado": False,
     },
-    {
-        "id": 252,
-        "nombre": "Universidad de Tarapacá",
-        "sigla": "UTA",
-        "region": "Arica y Parinacota",
-        "ciudad": "Arica",
-        "urls": [
-            "https://www.uta.cl/transparencia/actosyresoluciones_d/concursos/2026/",
-        ],
-        "notas": "Transparencia: directorio con resoluciones por año",
-        "verificado": False,
-    },
+    # UTA (252) removida: portal transparencia →
+    # la cubre scrapers/universidades_tabla.py (modo transparencia).
     {
         "id": 245,
         "nombre": "Universidad de Antofagasta",
@@ -224,20 +206,9 @@ UNIVERSIDADES: list[dict[str, Any]] = [
         "notas": "Joomla legacy (umceold). Puede estar obsoleto",
         "verificado": False,
     },
-    {
-        "id": 243,
-        "nombre": "Universidad de Santiago de Chile",
-        "sigla": "USACH",
-        "region": "Metropolitana de Santiago",
-        "ciudad": "Santiago",
-        "urls": [
-            "https://www.usach.cl/procesos-seleccion-honorarios",
-            "https://www.usach.cl/concurso-publico-contratacion-academicas-y-academicos",
-        ],
-        "notas": "Dos secciones: honorarios y concursos académicos. PDFs en 'bases'/'ver aquí'. "
-                 "También publica en usach.trabajando.cl (cubierto por trabajando.py)",
-        "verificado": False,
-    },
+    # USACH (243) removida: portales propios usach.cl (honorarios + académicos) →
+    # los cubre scrapers/universidades_tabla.py (modos tabla y pdf_nombre).
+    # Trabajando.cl de USACH cubierto por scrapers/trabajando.py.
 ]
 
 
