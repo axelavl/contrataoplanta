@@ -294,6 +294,14 @@
       <div class="stats-grid" id="url-stats-grid"></div>
 
       <div class="section-header" style="margin-top:24px">
+        <h2>⭐ Ofertas destacadas</h2>
+        <button class="btn btn-ghost btn-sm" data-action="ver-destacadas">Ver todas →</button>
+      </div>
+      <div class="stats-grid" id="destacadas-stats-grid">
+        <div class="stat-card"><div class="label">Cargando…</div><div class="value"><span class="spinner"></span></div></div>
+      </div>
+
+      <div class="section-header" style="margin-top:24px">
         <h2>Estado general del sistema</h2>
         <button class="btn btn-ghost btn-sm" data-action="load-diagnostico">↻ Verificar</button>
       </div>
@@ -426,6 +434,11 @@
           <option value="true">Pendientes de revisión</option>
           <option value="false">Ya revisadas</option>
         </select>
+        <select id="f-destacada" data-change="ofertas">
+          <option value="">Destacadas: todas</option>
+          <option value="true">⭐ Solo destacadas</option>
+          <option value="false">Sin destacar</option>
+        </select>
         <label style="display:flex;align-items:center;gap:6px;color:var(--muted);cursor:pointer;font-size:13px">
           <input id="f-sin-renta" type="checkbox" data-change="ofertas"> Sin renta
         </label>
@@ -434,6 +447,8 @@
         <span id="sel-count" class="text-small" style="color:var(--accent);font-weight:600"></span>
         <button class="btn btn-danger btn-sm" data-action="bulk-sel-desactivar">Desactivar seleccionadas</button>
         <button class="btn btn-success btn-sm" data-action="bulk-sel-revisadas">Marcar revisadas</button>
+        <button class="btn btn-sm" style="background:#f59e0b;color:#fff" data-action="bulk-sel-destacar">⭐ Destacar</button>
+        <button class="btn btn-ghost btn-sm" data-action="bulk-sel-quitar-destacada">☆ Quitar destacada</button>
         <button class="btn btn-ghost btn-sm" data-action="bulk-sel-limpiar">Limpiar selección</button>
       </div>
       <div class="table-wrap">

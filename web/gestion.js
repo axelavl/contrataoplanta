@@ -437,7 +437,23 @@ async function loadDashboard() {
   } catch(e) {
     toast('Error stats: ' + e.message, 'error');
   }
+  loadDestacadasStats();
   loadDiagnostico();
+}
+
+async function loadDestacadasStats() {
+  const g = document.getElementById('destacadas-stats-grid');
+  if (!g) return;
+  try {
+    const d = await api('/destacadas/stats');
+    g.innerHTML = `
+      <div class="stat-card yellow"><div class="label">⭐ Marcadas manualmente</div><div class="value">${(d.manual||0).toLocaleString()}</div></div>
+      <div class="stat-card"><div class="label">Auto (con renta publicada)</div><div class="value">${d.auto_activo?(d.auto||0).toLocaleString():'Desactivado'}</div><div class="sub">${d.auto_activo?'Se suman en la pestaña pública':'Solo manuales en pestaña pública'}</div></div>
+      <div class="stat-card blue"><div class="label">Total ofertas activas</div><div class="value">${(d.total_activas||0).toLocaleString()}</div></div>
+    `;
+  } catch(e) {
+    g.innerHTML = `<div class="stat-card"><div class="label">Error</div><div class="sub">${e.message}</div></div>`;
+  }
 }
 
 function renderStatCards(d) {
@@ -826,12 +842,14 @@ async function loadOfertas(pag=1) {
   const cHasta = document.getElementById('f-cierre-hasta').value;
   const nrev   = document.getElementById('f-needs-review').value;
   const sinRenta = document.getElementById('f-sin-renta').checked;
+  const dest = document.getElementById('f-destacada').value;
   if (instId) p.set('institucion_id', instId);
   if (estado) p.set('estado', estado);
   if (cDesde) p.set('cierre_desde', cDesde);
   if (cHasta) p.set('cierre_hasta', cHasta);
   if (nrev)   p.set('needs_review', nrev);
   if (sinRenta) p.set('sin_renta', 'true');
+  if (dest) p.set('destacada', dest);
 
   _limpiarSeleccion();
   const tbody = document.getElementById('ofertas-tbody');
@@ -879,6 +897,13 @@ async function bulkSeleccionadas(accion) {
     try {
       const r = await api('/ofertas/bulk-marcar-revisadas', { method:'POST', body: JSON.stringify({ ids }) });
       toast(`${r.marcadas} ofertas marcadas como revisadas ✓`);
+      loadOfertas(_ofertasPagina);
+    } catch(e) { toast('Error: '+e.message,'error'); }
+  } else if (accion === 'destacar' || accion === 'quitar-destacada') {
+    const dest = accion === 'destacar';
+    try {
+      const r = await api('/ofertas/bulk-destacar', { method:'POST', body: JSON.stringify({ ids, destacada: dest }) });
+      toast(`${r.afectadas} oferta(s) ${dest ? 'destacadas ⭐' : 'quitadas de destacadas'}`);
       loadOfertas(_ofertasPagina);
     } catch(e) { toast('Error: '+e.message,'error'); }
   }
@@ -1409,6 +1434,17 @@ async function loadDiagnostico() {
   }
 }
 
+function verDestacadas() {
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  const btn = document.querySelector('[data-tab=ofertas]');
+  if (btn) btn.classList.add('active');
+  const panel = document.getElementById('tab-ofertas');
+  if (panel) panel.classList.add('active');
+  document.getElementById('f-destacada').value = 'true';
+  loadOfertas(1);
+}
+
 function irA(accion) {
   const tabMap = {
     'bulk-desactivar':'acciones','revalidar-urls':'acciones','revision':'revision',
@@ -1874,9 +1910,11 @@ document.addEventListener('click', e => {
     case 'crear-fuente':       openCrearFuente(); break;
     case 'nueva-oferta':       openCrearOferta(); break;
     case 'load-eventos':       loadEventos(); break;
-    case 'bulk-sel-desactivar': bulkSeleccionadas('desactivar'); break;
-    case 'bulk-sel-revisadas':  bulkSeleccionadas('revisadas'); break;
-    case 'bulk-sel-limpiar':    _limpiarSeleccion(); break;
+    case 'bulk-sel-desactivar':      bulkSeleccionadas('desactivar'); break;
+    case 'bulk-sel-revisadas':       bulkSeleccionadas('revisadas'); break;
+    case 'bulk-sel-destacar':        bulkSeleccionadas('destacar'); break;
+    case 'bulk-sel-quitar-destacada': bulkSeleccionadas('quitar-destacada'); break;
+    case 'bulk-sel-limpiar':         _limpiarSeleccion(); break;
     case 'close-modal':        closeModal(); break;
     case 'save-edit':          saveEdit(); break;
     case 'close-fuente-modal': closeFuenteModal(); break;
@@ -1894,6 +1932,7 @@ document.addEventListener('click', e => {
     case 'desactivar-sub':     desactivarSub(parseInt(d.id), d.email); break;
     case 'run-instancia':      runInstancia(parseInt(d.id), d.nombre||''); break;
     case 'ver-log':            verLog(d.log); break;
+    case 'ver-destacadas':     verDestacadas(); break;
     case 'ir-a':               irA(d.target); break;
     case 'diag-desactivar-vencidas': diagDesactivarVencidas(); break;
     case 'diag-revalidar':     revalidarUrls(); break;

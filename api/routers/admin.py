@@ -487,6 +487,7 @@ def admin_ofertas(
     cierre_hasta: date | None = Query(None),
     needs_review: bool | None = Query(None),
     sin_renta: bool | None = Query(None, description="true: sin renta_bruta_min ni max"),
+    destacada: str | None = Query(None, description="true/false: filtrar por destacada"),
     orden: str = Query("reciente", description="reciente|cierre|cargo|renta"),
     _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
@@ -552,6 +553,11 @@ def admin_ofertas(
 
     if sin_renta is True:
         conditions.append("o.renta_bruta_min IS NULL AND o.renta_bruta_max IS NULL")
+
+    if destacada == "true":
+        conditions.append("COALESCE(o.destacada, FALSE) = TRUE")
+    elif destacada == "false":
+        conditions.append("COALESCE(o.destacada, FALSE) = FALSE")
 
     where_clause = ("WHERE " + " AND ".join(conditions)) if conditions else ""
 
@@ -1018,6 +1024,55 @@ def admin_bulk_marcar_revisadas(
         conn.commit()
     _auditar(_user, "bulk_marcar_revisadas", "ofertas", None, {"marcadas": count})
     return {"marcadas": count}
+
+
+@router.post(f"/api/{ADMIN_PATH}/ofertas/bulk-destacar", tags=["admin"])
+def admin_bulk_destacar(
+    payload: dict[str, Any],
+    _user: str = Depends(_require_editor),
+) -> dict[str, Any]:
+    """Marca/desmarca en bloque ofertas como destacadas.
+
+    Body: { ids: list[int], destacada: bool }
+    """
+    ids = [int(i) for i in (payload.get("ids") or []) if str(i).isdigit()]
+    if not ids:
+        raise HTTPException(400, "ids es requerido")
+    nuevo = bool(payload.get("destacada", True))
+    with get_cursor() as (conn, cur):
+        cur.execute(
+            "UPDATE ofertas SET destacada=%s, actualizada_en=NOW() WHERE id = ANY(%s)",
+            [nuevo, ids],
+        )
+        count = cur.rowcount
+        conn.commit()
+    _auditar(_user, "bulk_destacar", "ofertas", None,
+             {"destacada": nuevo, "afectadas": count})
+    return {"afectadas": count, "destacada": nuevo}
+
+
+@router.get(f"/api/{ADMIN_PATH}/destacadas/stats", tags=["admin"])
+def admin_destacadas_stats(
+    _user: str = Depends(_verify_admin_jwt),
+) -> dict[str, Any]:
+    """Estadísticas de ofertas destacadas y criterio auto."""
+    from api.services.sql import DESTACADAS_AUTO, DESTACADAS_AUTO_SQL
+    manual = execute_fetch_one(
+        "SELECT COUNT(*) AS n FROM ofertas WHERE activa AND COALESCE(destacada, FALSE) = TRUE", []
+    )
+    auto = execute_fetch_one(
+        f"SELECT COUNT(*) AS n FROM ofertas WHERE activa AND {DESTACADAS_AUTO_SQL}", []
+    ) if DESTACADAS_AUTO else {"n": 0}
+    total_activas = execute_fetch_one(
+        "SELECT COUNT(*) AS n FROM ofertas WHERE activa", []
+    )
+    return {
+        "manual": int((manual or {}).get("n", 0)),
+        "auto": int((auto or {}).get("n", 0)),
+        "total_activas": int((total_activas or {}).get("n", 0)),
+        "auto_activo": DESTACADAS_AUTO,
+        "auto_criterio": "Ofertas con renta bruta publicada" if DESTACADAS_AUTO else None,
+    }
 
 
 @router.get(f"/api/{ADMIN_PATH}/scraper-runs", tags=["admin"])
