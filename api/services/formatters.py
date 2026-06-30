@@ -43,7 +43,7 @@ _CATALOG_PATH = _PROJECT_ROOT / "repositorio_instituciones_publicas_chile.json"
 #: Dominios que son *portales intermediarios* (empleospublicos.cl, etc.)
 #: y por eso no representan el sitio oficial de la institución. Se
 #: excluyen de la resolución del dominio oficial para que
-#: `logo.clearbit.com` no termine buscando el logo de un portal.
+#: los proveedores de logos no terminen buscando el logo de un portal.
 _PORTAL_DOMAINS_LOWER = {
     "empleospublicos.cl", "www.empleospublicos.cl",
     "trabajando.com", "www.trabajando.com",
@@ -213,7 +213,7 @@ def _extract_root_domain(url: str | None) -> str | None:
         return None
     if host in _PORTAL_DOMAINS_LOWER:
         return None
-    # Remueve www. para que logo.clearbit.com tenga mejor hit rate.
+    # Remueve www. para que DuckDuckGo ip3 y Google s2 tengan mejor hit rate.
     return host[4:] if host.startswith("www.") else host
 
 

@@ -1129,6 +1129,78 @@ const DOMINIOS_INSTITUCIONALES_REFERENCIA = [
   ['comision nacional de riego', 'cnr.gob.cl'],
   ['serviu', 'minvu.cl'],
   ['instituto nacional de deportes', 'ind.cl'],
+  ['instituto nacional de derechos humanos', 'indh.cl'],
+  ['instituto de salud publica', 'ispch.gob.cl'],
+  ['instituto antartico', 'inach.cl'],
+  ['instituto forestal', 'infor.cl'],
+  ['instituto de investigaciones agropecuarias', 'inia.cl'],
+  ['instituto nacional de propiedad industrial', 'inapi.cl'],
+  // Agencias y comisiones
+  ['agencia de calidad de la educacion', 'agenciaeducacion.cl'],
+  ['agencia nacional de investigacion', 'anid.cl'],
+  ['agencia nacional de ciberseguridad', 'anci.gob.cl'],
+  ['comision chilena de energia nuclear', 'cchen.cl'],
+  ['comision chilena del cobre', 'cochilco.cl'],
+  ['comision nacional de energia', 'cne.cl'],
+  ['comision nacional de acreditacion', 'cnachile.cl'],
+  ['consejo de defensa del estado', 'cde.cl'],
+  ['consejo nacional de television', 'cntv.cl'],
+  ['consejo nacional de educacion', 'cned.cl'],
+  ['consejo para la transparencia', 'cplt.cl'],
+  ['chilevalora', 'chilevalora.cl'],
+  ['prochile', 'prochile.cl'],
+  // Legislativo y control
+  ['biblioteca del congreso', 'bcn.cl'],
+  ['camara de diputados', 'camara.cl'],
+  ['senado', 'senado.cl'],
+  ['tribunal constitucional', 'tribunalconstitucional.cl'],
+  ['tribunal de defensa de la libre competencia', 'tdlc.cl'],
+  ['tribunal ambiental', 'tribunalambiental.cl'],
+  // Defensorías
+  ['defensoria penal publica', 'dpp.cl'],
+  ['defensoria de los derechos de la ninez', 'defensorianinez.cl'],
+  ['defensoria del contribuyente', 'dedecon.cl'],
+  // Servicios adicionales
+  ['servicio medico legal', 'sml.gob.cl'],
+  ['servicio nacional de migraciones', 'serviciomigraciones.cl'],
+  ['servicio de evaluacion ambiental', 'sea.gob.cl'],
+  ['servicio nacional del patrimonio cultural', 'patrimoniocultural.gob.cl'],
+  ['servicio nacional de prevencion y respuesta ante desastres', 'senapred.cl'],
+  ['servicio de biodiversidad', 'sbap.gob.cl'],
+  ['servicio civil', 'serviciocivil.cl'],
+  ['registro civil', 'registrocivil.cl'],
+  ['fondo de solidaridad e inversion social', 'fosis.gob.cl'],
+  ['fosis', 'fosis.gob.cl'],
+  ['cenabast', 'cenabast.cl'],
+  // Direcciones MOP
+  ['direccion de vialidad', 'vialidad.cl'],
+  ['direccion general del territorio maritimo', 'directemar.cl'],
+  ['direccion general de relaciones economicas', 'direcon.gob.cl'],
+  ['direccion general de movilizacion', 'dgmn.cl'],
+  ['junta de aeronautica civil', 'jac.gob.cl'],
+  ['oficina de estudios y politicas agrarias', 'odepa.gob.cl'],
+  // FF.AA. y defensa
+  ['ejercito de chile', 'ejercito.cl'],
+  ['armada de chile', 'armada.cl'],
+  ['fuerza aerea de chile', 'fach.mil.cl'],
+  ['estado mayor conjunto', 'emco.mil.cl'],
+  ['capredena', 'capredena.gob.cl'],
+  // Empresas del Estado
+  ['enami', 'enami.cl'],
+  ['empresa nacional de mineria', 'enami.cl'],
+  ['enaer', 'enaer.cl'],
+  ['asmar', 'asmar.cl'],
+  ['famae', 'famae.cl'],
+  ['polla', 'polla.cl'],
+  ['zofri', 'zofri.cl'],
+  ['empresa portuaria valparaiso', 'puertovalparaiso.cl'],
+  ['empresa portuaria san antonio', 'puertosanantonio.com'],
+  // Secretarías generales
+  ['secretaria general de gobierno', 'msgg.gob.cl'],
+  ['secretaria general de la presidencia', 'minsegpres.gob.cl'],
+  // Fundaciones
+  ['fundacion prodemu', 'prodemu.cl'],
+  ['parque metropolitano', 'parquemet.cl'],
   // Universidades estatales
   ['universidad de chile', 'uchile.cl'],
   ['universidad de santiago', 'usach.cl'],
@@ -1258,15 +1330,15 @@ const SECTOR_SVG_PATHS = {
 
 function sectorDeNombre(nombre) {
   const n = (nombre || '').toLowerCase();
-  if (/municipalidad|municipal|muni\./.test(n)) return 'municipal';
-  if (/hospital|salud|clinic|consultori|cesfam|servicio\s+de\s+salud/.test(n)) return 'salud';
-  if (/universidad|instituto\s+profesional|centro\s+de\s+formaci/.test(n)) return 'universidad';
-  if (/colegio|escuela|liceo|educaci/.test(n)) return 'educacion';
-  if (/poder\s+judicial|juzgado|corte|fiscal|tribunal/.test(n)) return 'judicial';
-  if (/fuerzas|armada|ej[ée]rcito|carabineros|pdi|gendarmer|bomberos/.test(n)) return 'ffaa';
-  if (/gobierno\s+regional|intendencia|gore/.test(n)) return 'regional';
-  if (/empresa|banco|metro|tvn|codelco|enap|enami|correos/.test(n)) return 'empresa';
-  if (/ministerio|subsecretar|superintendencia|servicio\s+de|direcci[óo]n\s+general/.test(n)) return 'ejecutivo';
+  if (/municipalidad|municipal|muni\.|corporaci[óo]n\s+(?:de\s+(?:desarrollo|educaci|salud)|municipal)/.test(n)) return 'municipal';
+  if (/hospital|salud|clinic|consultori|cesfam|servicio\s+de\s+salud|cenabast|seremi\s+de\s+salud/.test(n)) return 'salud';
+  if (/universidad|instituto\s+profesional|centro\s+de\s+formaci|cft\s+estatal/.test(n)) return 'universidad';
+  if (/colegio|escuela|liceo|educaci|servicio\s+local\s+de\s+educaci/.test(n)) return 'educacion';
+  if (/poder\s+judicial|juzgado|corte|fiscal|tribunal|defensor[íi]a|registro\s+civil/.test(n)) return 'judicial';
+  if (/fuerzas|armada|ej[ée]rcito|carabineros|pdi|gendarmer|bomberos|fuerza\s+a[ée]rea|famae|asmar|enaer|emco/.test(n)) return 'ffaa';
+  if (/gobierno\s+regional|intendencia|gore|delegaci[óo]n\s+presidencial/.test(n)) return 'regional';
+  if (/empresa|banco|metro|tvn|codelco|enap|enami|correos|portuari|polla|zofri/.test(n)) return 'empresa';
+  if (/ministerio|subsecretar|superintendencia|servicio\s+(?:de|nacional|civil)|direcci[óo]n|agencia|comisi[óo]n|consejo|contralor|secretar[íi]a\s+general/.test(n)) return 'ejecutivo';
   return 'default';
 }
 
@@ -1289,11 +1361,10 @@ function getInstIcon(oferta) {
     };
   }
   const dom = escAttr(resolved.domain);
-  // Fuente primaria = DuckDuckGo ip3 (devuelve el mejor icono del sitio, nítido
-  // al escalar a 44-128 px). Debe coincidir con sources[0] de shared-shell.js.
-  // data-attempt=0 inicializa la cadena: si onerror dispara o imgFavCheckQuality
-  // detecta logo diminuto, advance() pasa a Google s2 → apple-touch-icon → etc.
-  const primary = `https://icons.duckduckgo.com/ip3/${dom}.ico`;
+  // Fuente primaria = logo local pre-cacheado en /logos/ (CDN, instantáneo).
+  // Debe coincidir con sources[0] de shared-shell.js → si el local falla (404),
+  // advance() pasa a DuckDuckGo → Google s2 → apple-touch-icon → etc.
+  const primary = `/logos/${dom}.png`;
   // Repositorio propio: si ya resolvimos un logo bueno para este dominio en una
   // visita anterior (cacheado en localStorage por shared-shell.js), lo usamos
   // como source inicial → se pinta al primer frame, sin parpadeo. data-attempt
@@ -1303,7 +1374,7 @@ function getInstIcon(oferta) {
     const cached = (typeof window !== 'undefined' && window.__logoCacheGet)
       ? window.__logoCacheGet(resolved.domain) : null;
     if (cached) inicial = cached;
-  } catch (_) { /* sin caché: usamos Clearbit */ }
+  } catch (_) { /* sin caché: usamos logo local */ }
   return {
     html: `<img src="${escAttr(inicial)}" data-domain="${dom}" data-attempt="0" alt="Logo de ${escAttr(institucionNombre)}" loading="lazy" decoding="async">`,
     confiable: Boolean(resolved.confiable),

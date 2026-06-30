@@ -12,15 +12,17 @@ Qué hace:
   2. Resuelve el dominio de cada institución desde `sitio_web`
      (descarta portales intermediarios tipo empleospublicos.cl).
   3. Por cada dominio único intenta, en orden:
-        a) https://logo.clearbit.com/{dominio}?size=256
-        b) https://www.google.com/s2/favicons?domain={dominio}&sz=128
+        a) DuckDuckGo ip3 (mejor ícono del sitio, 60-180 px)
+        b) Google s2 favicons @128 px
+        c) apple-touch-icon del dominio
+        d) apple-touch-icon-precomposed
      y guarda el resultado en web/logos/{dominio}.png
   4. Escribe web/logos/manifest.json = { "dominio": "archivo.png", ... }
-     con los que sí se descargaron. El frontend usará ese manifest para
-     decidir cuándo servir el logo local (y caer a Clearbit si falta).
+     con los que sí se descargaron. El frontend sirve logos locales desde
+     /logos/ antes de intentar fuentes externas.
 
-Es idempotente: salta los que ya existen salvo --force. No usa dependencias
-externas (solo stdlib).
+Valida calidad: rechaza imágenes menores a 40 px (favicons diminutos).
+Es idempotente: salta los que ya existen salvo --force.
 
 Uso:
     python scripts/descargar_logos.py --dry-run            # solo listar
@@ -28,7 +30,7 @@ Uso:
     python scripts/descargar_logos.py --workers 8          # descarga real
     python scripts/descargar_logos.py --force              # re-descargar todo
 
-NOTA: requiere salida a internet hacia logo.clearbit.com y google.com.
+NOTA: requiere salida a internet hacia icons.duckduckgo.com y google.com.
 """
 from __future__ import annotations
 
@@ -77,10 +79,32 @@ def dominio_de(sitio_web: str | None) -> str | None:
 
 
 def fuentes(dominio: str) -> list[str]:
+    # Clearbit fue discontinuado por HubSpot en dic-2025. DuckDuckGo ip3
+    # devuelve el mejor ícono del sitio (apple-touch-icon, 60-180 px) y
+    # es la fuente primaria del frontend (shared-shell.js). Google s2 es
+    # respaldo estable. Los assets directos del dominio son último recurso.
+    enc = dominio
     return [
-        f"https://logo.clearbit.com/{dominio}?size=256",
-        f"https://www.google.com/s2/favicons?domain={dominio}&sz=128",
+        f"https://icons.duckduckgo.com/ip3/{enc}.ico",
+        f"https://www.google.com/s2/favicons?domain={enc}&sz=128",
+        f"https://{dominio}/apple-touch-icon.png",
+        f"https://{dominio}/apple-touch-icon-precomposed.png",
     ]
+
+
+MIN_LOGO_PX = 40  # Bajo esto se ve pixelado al escalar a 44×44 (card) o 56×56 (detalle).
+
+
+def _check_image_quality(data: bytes) -> bool:
+    """Rechaza imágenes diminutas (favicons 16×16 / 32×32)."""
+    try:
+        from PIL import Image
+        from io import BytesIO
+        img = Image.open(BytesIO(data))
+        return max(img.size) >= MIN_LOGO_PX
+    except Exception:
+        # Sin Pillow: aceptar todo lo que pese más de 200 bytes.
+        return len(data) >= 200
 
 
 def descargar(dominio: str, destino: Path, timeout: float = 12.0) -> bool:
@@ -91,8 +115,9 @@ def descargar(dominio: str, destino: Path, timeout: float = 12.0) -> bool:
                 if resp.status != 200:
                     continue
                 data = resp.read()
-            # Un favicon "vacío"/placeholder suele pesar muy poco; lo descartamos.
             if len(data) < 200:
+                continue
+            if not _check_image_quality(data):
                 continue
             destino.write_bytes(data)
             return True
