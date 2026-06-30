@@ -326,10 +326,10 @@
     },
     {
       "id": 243,
-      "status": "experimental",
-      "kind": "generic",
-      "reason": "USACH — URL de empleo no es un enlace válido, se usará sitio_web como fallback",
-      "notes": "URL original era un título de página, no una URL"
+      "status": "active",
+      "kind": "custom_trabajando",
+      "reason": "USACH — publica en usach.trabajando.cl + portales propios usach.cl (honorarios y académicos)",
+      "notes": "https://usach.trabajando.cl/ (Trabajando.cl) + scrapers/universidades.py cubre portales propios"
     },
     {
       "id": 244,
@@ -340,17 +340,17 @@
     },
     {
       "id": 245,
-      "status": "experimental",
-      "kind": "generic",
-      "reason": "Universidad de Antofagasta — URL apunta a intranet/asp, puede no responder externamente",
-      "notes": "https://intranetua.uantof.cl/academicos/pages/academicos.asp?ID=concurso2018"
+      "status": "active",
+      "kind": "skip",
+      "reason": "Universidad de Antofagasta — portal propio trabajosua.uantof.cl, cubierto por scrapers/universidades.py",
+      "notes": "https://trabajosua.uantof.cl/ (portal nuevo, reemplaza intranet vieja)"
     },
     {
       "id": 246,
       "status": "active",
       "kind": "generic",
-      "reason": "Universidad de La Frontera — portal personas.ufro.cl propio",
-      "notes": "https://personas.ufro.cl/servicio/convocatorias/"
+      "reason": "Universidad de La Frontera — portal propio, cubierto por scrapers/universidades.py",
+      "notes": "https://extranet.ufro.cl/concursos/ (administrativo) + https://personas.ufro.cl/servicio/convocatorias/"
     },
     {
       "id": 247,
@@ -391,15 +391,15 @@
       "id": 252,
       "status": "active",
       "kind": "generic",
-      "reason": "Universidad de Tarapacá — portal RRHH propio en zapahuira.uta.cl",
-      "notes": "https://zapahuira.uta.cl/negocio/RRHH/MantLaboral/"
+      "reason": "Universidad de Tarapacá — portal propio, cubierto por scrapers/universidades.py",
+      "notes": "https://www.uta.cl/transparencia/actosyresoluciones_d/concursos/2026/ (transparencia con resoluciones)"
     },
     {
       "id": 253,
       "status": "active",
       "kind": "generic",
-      "reason": "Universidad de Atacama — portal uda.cl/concursos-publicos propio",
-      "notes": "https://uda.cl/concursos-publicos/"
+      "reason": "Universidad de Atacama — portal propio, cubierto por scrapers/universidades.py",
+      "notes": "https://pregrado.uda.cl/index.php/concurso-academico/ (académico) + https://uda.cl/concursos-publicos/ (general)"
     },
     {
       "id": 254,
@@ -433,15 +433,15 @@
       "id": 258,
       "status": "active",
       "kind": "generic",
-      "reason": "Universidad de O'Higgins — portal uoh.cl/trabaja-con-nosotros propio",
-      "notes": "https://www.uoh.cl/trabaja-con-nosotros/"
+      "reason": "Universidad de O'Higgins — portal propio, cubierto por scrapers/universidades.py",
+      "notes": "https://www.uoh.cl/trabaja-con-nosotros/ — PDFs en 'descargar bases concurso'"
     },
     {
       "id": 259,
       "status": "active",
       "kind": "generic",
-      "reason": "Universidad de Aysén — portal uaysen.cl/trabaja-con-nosotros propio",
-      "notes": "https://uaysen.cl/trabaja-con-nosotros/"
+      "reason": "Universidad de Aysén — portal propio, cubierto por scrapers/universidades.py",
+      "notes": "https://uaysen.cl/trabaja-con-nosotros/ — PDFs en 'Bases de concurso' y 'Anexos'"
     },
     {
       "_comment": "=== CFTs Estatales ==="
