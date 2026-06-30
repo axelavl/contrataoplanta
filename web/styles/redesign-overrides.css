@@ -2914,6 +2914,19 @@ header {
   width: auto;
   min-width: 100%;
 }
+:root[data-theme="dark"] .autocomplete-dropdown {
+  background: #0F213E;
+  border-color: var(--border-subtle);
+}
+:root[data-theme="dark"] .autocomplete-item {
+  color: var(--text-secondary);
+  border-bottom-color: var(--border-subtle);
+}
+:root[data-theme="dark"] .autocomplete-item:hover,
+:root[data-theme="dark"] .autocomplete-item.seleccionado {
+  background: rgba(26, 107, 204, 0.15);
+  color: var(--accent);
+}
 .comunas-selector {
   position: relative;
 }
