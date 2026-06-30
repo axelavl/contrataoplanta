@@ -1220,6 +1220,58 @@ const DOMINIOS_INSTITUCIONALES_REFERENCIA = [
   ['universidad de playa ancha', 'upla.cl'],
   ['universidad tecnologica metropolitana', 'utem.cl'],
   ['universidad metropolitana de ciencias de la educacion', 'umce.cl'],
+  // Gobiernos Regionales
+  ['gobierno regional de antofagasta', 'goreantofagasta.cl'],
+  ['gobierno regional de arica', 'gorearicayparinacota.cl'],
+  ['gobierno regional de atacama', 'goreatacama.cl'],
+  ['gobierno regional de aysen', 'goreaysen.cl'],
+  ['gobierno regional de biobio', 'gorebiobio.cl'],
+  ['gobierno regional de coquimbo', 'gorecoquimbo.cl'],
+  ['gobierno regional de la araucania', 'gorearaucania.cl'],
+  ['gobierno regional de los lagos', 'goreloslagos.cl'],
+  ['gobierno regional de los rios', 'goredelosrios.cl'],
+  ['gobierno regional de magallanes', 'goremagallanes.cl'],
+  ['gobierno regional de maule', 'goremaule.cl'],
+  ['gobierno regional metropolitana', 'gobiernosantiago.cl'],
+  ['gobierno regional de nuble', 'goredenuble.cl'],
+  ['gobierno regional de ohiggins', 'goreohiggins.cl'],
+  ['gobierno regional de tarapaca', 'goretarapaca.gov.cl'],
+  ['gobierno regional de valparaiso', 'gobiernovalparaiso.cl'],
+  // Hospitales
+  ['hospital barros luco', 'hospitalbarrosluco.gob.cl'],
+  ['hospital san borja arriaran', 'hcsba.cl'],
+  ['hospital calvo mackenna', 'calvomackenna.cl'],
+  ['hospital militar', 'hospitalmilitar.cl'],
+  ['hospital roberto del rio', 'hrrio.cl'],
+  ['hospital san juan de dios', 'hsjd.redsalud.gob.cl'],
+  ['hospital sotero del rio', 'hospitalsoterodelrio.cl'],
+  ['hospital del salvador', 'hsalvador.cl'],
+  // Corporaciones municipales
+  ['corporacion municipal de valparaiso', 'cmvalparaiso.cl'],
+  ['corporacion municipal de vina del mar', 'cmvm.cl'],
+  ['corporacion municipal de villa alemana', 'cmva.cl'],
+  ['corporacion municipal de rancagua', 'educormun.cl'],
+  ['corporacion municipal de punta arenas', 'apscormupa.cl'],
+  ['corporacion municipal de antofagasta', 'cmds.cl'],
+  ['corporacion municipal de iquique', 'cormudesi.cl'],
+  ['corporacion municipal de calama', 'comdescalama.cl'],
+  ['corporacion municipal de penalolen', 'cormup.cl'],
+  ['corporacion municipal de colina', 'corporacioncolina.cl'],
+  ['corporacion municipal de macul', 'corpomunimacul.cl'],
+  // Asistencia Judicial
+  ['corporacion de asistencia judicial', 'cajmetro.cl'],
+  // Empresas portuarias
+  ['empresa portuaria de arica', 'puertoarica.cl'],
+  ['empresa portuaria antofagasta', 'anfport.cl'],
+  ['empresa portuaria coquimbo', 'puertocoquimbo.cl'],
+  ['empresa portuaria iquique', 'epi.cl'],
+  ['empresa portuaria talcahuano', 'puertotalcahuano.cl'],
+  // Otros servicios frecuentes
+  ['ministerio publico', 'fiscaliadechile.cl'],
+  ['bienes nacionales', 'bienesnacionales.cl'],
+  ['museo interactivo mirador', 'mim.cl'],
+  ['invest chile', 'investchile.gob.cl'],
+  ['ingresa', 'ingresa.cl'],
 ];
 
 // Cache de resolución para evitar recalcular en cada renderCard.
@@ -1242,11 +1294,10 @@ function dominioDesdeUrl(url) {
 function dominioInstitucionalPorNombre(nombreInstitucion) {
   const key = comunaNormalizada(nombreInstitucion || '');
   if (!key) return '';
-  // Preferimos la coincidencia más larga para evitar falsos positivos cortos
-  // (p. ej. "ministerio" choca con muchos, pero "ministerio de salud" es preciso).
   let best = null;
   for (const [needle, domain] of DOMINIOS_INSTITUCIONALES_REFERENCIA) {
-    if (key.includes(needle) && (!best || needle.length > best.needle.length)) {
+    if ((key.includes(needle) || (key.length >= 8 && needle.includes(key))) &&
+        (!best || needle.length > best.needle.length)) {
       best = { needle, domain };
     }
   }

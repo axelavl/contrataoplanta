@@ -14,14 +14,16 @@ Qué hace:
   3. Por cada dominio único intenta, en orden:
         a) DuckDuckGo ip3 (mejor ícono del sitio, 60-180 px)
         b) Google s2 favicons @128 px
-        c) apple-touch-icon del dominio
-        d) apple-touch-icon-precomposed
+        c) gstatic faviconV2 (alternativa Google con fallback interno)
+        d) apple-touch-icon del dominio (con y sin www.)
+        e) apple-touch-icon-precomposed
+        f) favicon.ico (con y sin www.)
      y guarda el resultado en web/logos/{dominio}.png
   4. Escribe web/logos/manifest.json = { "dominio": "archivo.png", ... }
      con los que sí se descargaron. El frontend sirve logos locales desde
      /logos/ antes de intentar fuentes externas.
 
-Valida calidad: rechaza imágenes menores a 40 px (favicons diminutos).
+Valida calidad: acepta imágenes ≥ 16 px (umbral bajo para maximizar cobertura).
 Es idempotente: salta los que ya existen salvo --force.
 
 Uso:
@@ -79,20 +81,20 @@ def dominio_de(sitio_web: str | None) -> str | None:
 
 
 def fuentes(dominio: str) -> list[str]:
-    # Clearbit fue discontinuado por HubSpot en dic-2025. DuckDuckGo ip3
-    # devuelve el mejor ícono del sitio (apple-touch-icon, 60-180 px) y
-    # es la fuente primaria del frontend (shared-shell.js). Google s2 es
-    # respaldo estable. Los assets directos del dominio son último recurso.
     enc = dominio
     return [
         f"https://icons.duckduckgo.com/ip3/{enc}.ico",
         f"https://www.google.com/s2/favicons?domain={enc}&sz=128",
+        f"https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://{enc}&size=128",
         f"https://{dominio}/apple-touch-icon.png",
+        f"https://www.{dominio}/apple-touch-icon.png",
         f"https://{dominio}/apple-touch-icon-precomposed.png",
+        f"https://{dominio}/favicon.ico",
+        f"https://www.{dominio}/favicon.ico",
     ]
 
 
-MIN_LOGO_PX = 40  # Bajo esto se ve pixelado al escalar a 44×44 (card) o 56×56 (detalle).
+MIN_LOGO_PX = 16  # Aceptamos incluso favicons 32×32 — mejor que el ícono genérico.
 
 
 def _check_image_quality(data: bytes) -> bool:

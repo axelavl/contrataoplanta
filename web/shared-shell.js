@@ -52,7 +52,7 @@
      quedamos con recuadros vacíos ni con emojis.
      Logos locales se generan con scripts/descargar_logos.py. */
   (function registerLogoFallback() {
-    var MIN_LOGO_PX = 40; // Bajo esto el logo se ve pixelado al subir a 44×44.
+    var MIN_LOGO_PX = 16; // Bajamos umbral: 32×32 se ve bien a 44px; 16×16 es mejor que nada.
 
     var SECTOR_SVGS = {
       municipal:  '<path d="M12 2 L3 7 h18 Z M4 9 v10 M8 9 v10 M12 9 v10 M16 9 v10 M20 9 v10 M3 21 h18"/>',
@@ -102,18 +102,16 @@
 
     function sourcesFor(domain) {
       var enc = encodeURIComponent(domain);
-      // Cadena ordenada por velocidad/fiabilidad:
-      //  0. Logo local pre-cacheado en /logos/ (CDN, sin dependencia externa).
-      //  1. DuckDuckGo ip3 (mejor icono del sitio, 60-180 px).
-      //  2. Google s2 favicons @128 (respaldo estable).
-      //  3-5. Assets directos del dominio (apple-touch-icon, favicon).
       return [
         '/logos/' + domain + '.png',
         'https://icons.duckduckgo.com/ip3/' + domain + '.ico',
         'https://www.google.com/s2/favicons?domain=' + enc + '&sz=128',
+        'https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://' + enc + '&size=128',
         'https://' + domain + '/apple-touch-icon.png',
+        'https://www.' + domain + '/apple-touch-icon.png',
         'https://' + domain + '/apple-touch-icon-precomposed.png',
-        'https://' + domain + '/favicon.ico'
+        'https://' + domain + '/favicon.ico',
+        'https://www.' + domain + '/favicon.ico'
       ];
     }
 
@@ -156,11 +154,6 @@
       var h = img.naturalHeight || 0;
       // 0×0 = imagen rota → que onerror se encargue.
       if (w === 0 && h === 0) return;
-      // Antes: Math.min(w,h) < 40 → rechazaba logos ANCHOS y BAJOS (wordmarks
-      // tipo Codelco, p.ej. 256×54): el alto <40 los descartaba y caían al
-      // ícono genérico ("aparece y luego desaparece"). Un favicon chico es
-      // pequeño en AMBAS dimensiones; un logo real es grande en al menos una.
-      // Con max() solo descartamos lo realmente diminuto (16×16, 32×32).
       if (Math.max(w, h) < MIN_LOGO_PX) {
         // Permitimos reintentar con el siguiente source.
         img.dataset.qualityChecked = '';
@@ -178,8 +171,8 @@
     // Persistimos en localStorage el último source que SÍ pasó el chequeo de
     // calidad por dominio. `window.__logoCacheGet` lo consume app.js para
     // pintar el logo correcto desde el primer frame.
-    // v2: invalida cachés previos que apuntaban a logo.clearbit.com (discontinuado).
-    var LOGO_CACHE_KEY = 'cop_logo_cache_v2';
+    // v3: invalida cachés previos — umbral de calidad reducido + nuevas fuentes.
+    var LOGO_CACHE_KEY = 'cop_logo_cache_v3';
     function cacheRead() {
       try { return JSON.parse(localStorage.getItem(LOGO_CACHE_KEY) || '{}') || {}; }
       catch (e) { return {}; }
