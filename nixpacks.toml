@@ -1,0 +1,19 @@
+# nixpacks.toml — configuración de build para Railway (Nixpacks).
+#
+# Railway autodetecta el proyecto Python y ya instala las dependencias de
+# `requirements.txt` (entre ellas `pytesseract`). Lo único que pip NO puede
+# instalar es el BINARIO de sistema de OCR, así que lo añadimos acá:
+#
+#   tesseract-ocr      → motor OCR
+#   tesseract-ocr-spa  → datos del idioma español
+#
+# Lo usa scrapers/carabineros.py cuando corre con --ocr para leer las "Bases"
+# del concurso, que Carabineros publica como PDF escaneado (sin capa de texto).
+# Si estos paquetes faltaran, el scraper degrada sin error (solo no lee esos
+# PDFs), pero con ellos el OCR queda operativo en producción.
+#
+# `aptPkgs` es ADITIVO: se suma a la fase de setup que Nixpacks genera
+# automáticamente (Python, etc.), no la reemplaza ni cambia el start command
+# (ese se configura en el dashboard de Railway).
+[phases.setup]
+aptPkgs = ["tesseract-ocr", "tesseract-ocr-spa"]

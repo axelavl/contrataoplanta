@@ -71,6 +71,10 @@ mark.cop-hl {
 .cop-why { display: flex; align-items: flex-start; gap: 9px; line-height: 1.5;
   background: var(--acento-l, #FBE4C0); border-bottom: 1px solid #EAD9B6;
   padding: 12px 26px; font-size: 12.5px; color: var(--gold-ink, #5C3A10); }
+/* El atributo `hidden` debe ocultar la franja: sin esto, `display:flex` de
+   arriba lo anula y la franja amarilla se muestra VACÍA (solo fondo+padding)
+   cuando la oferta no tiene motivo de coincidencia. */
+.cop-why[hidden] { display: none; }
 .cop-why svg { flex: none; margin-top: 1px; color: var(--gold-dim, #A66E1B); }
 .cop-qk { display: inline-block; background: #fff; border: 1px solid #EAD9B6; border-radius: 6px; padding: 1px 7px; font-weight: 700; }
 
@@ -96,8 +100,21 @@ mark.cop-hl {
 .cop-kv-v.is-renta { font-family: var(--font-serif, 'Fraunces', serif); font-size: 16px; }
 
 .cop-sec { margin-bottom: 18px; }
-.cop-sec-t { font-family: var(--font-serif, 'Fraunces', serif); font-size: 15.5px; font-weight: 600;
-  color: var(--azul, #142E6B); margin: 0 0 11px; padding-bottom: 8px; border-bottom: 1.5px solid var(--borde, #E5E1D2); }
+/* Título de sección = botón de contraer/expandir. Chevron a la derecha que
+   rota; al colapsar (.is-collapsed) se oculta todo el cuerpo de la sección. */
+.cop-sec-t { display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-serif, 'Fraunces', serif); font-size: 15.5px; font-weight: 600;
+  color: var(--azul, #142E6B); margin: 0 0 11px; padding-bottom: 8px;
+  border-bottom: 1.5px solid var(--borde, #E5E1D2);
+  cursor: pointer; user-select: none; -webkit-user-select: none; }
+.cop-sec-t::after { content: ''; flex: 0 0 auto; margin-left: auto;
+  width: 8px; height: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+  transform: translateY(-2px) rotate(45deg); transition: transform .18s ease; opacity: .65; }
+.cop-sec-t:hover::after { opacity: 1; }
+.cop-sec-t:focus-visible { outline: 2px solid var(--azul-m, #254BA0); outline-offset: 3px; border-radius: 4px; }
+.cop-sec.is-collapsed .cop-sec-t { margin-bottom: 0; }
+.cop-sec.is-collapsed .cop-sec-t::after { transform: translateY(2px) rotate(-135deg); }
+.cop-sec.is-collapsed > :not(.cop-sec-t) { display: none; }
 
 /* Subgrupos de requisitos en 2 columnas fluidas (reduce mucho la altura).
    `break-inside: avoid` evita que un subgrupo se parta entre columnas. */
@@ -112,12 +129,22 @@ mark.cop-hl {
   border-left: 2px solid var(--verde, #2F6E4E); border-bottom: 2px solid var(--verde, #2F6E4E); transform: rotate(-45deg); }
 .cop-objetivo { font-size: 14px; line-height: 1.6; color: var(--texto2, #4B5167); margin: 0;
   background: var(--blanco, #fff); border-left: 3px solid var(--acento, #C88724); border-radius: 0 8px 8px 0; padding: 12px 15px; }
+/* Recorte a una altura estándar (6 líneas) con "Ver más" para expandir. */
+.cop-objetivo.cop-clamp { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; overflow: hidden; }
+.cop-objetivo.cop-clamp.cop-expandida { -webkit-line-clamp: unset; overflow: visible; }
+.cop-desc-toggle { margin-top: 6px; padding: 0; border: none; background: none; cursor: pointer;
+  color: var(--cielo, #1A6BCC); font: 600 12.5px/1 'Inter', system-ui, sans-serif; }
+.cop-desc-toggle:hover { text-decoration: underline; }
 
 .cop-actions { position: sticky; bottom: 0; background: var(--bg, #FDFCF8);
   border-top: 1px solid var(--borde, #E5E1D2); padding: 14px 26px; display: flex; flex-direction: column; gap: 9px; }
 .cop-apply { background: var(--azul, #142E6B); color: #fff; border: none; border-radius: 11px;
   font-family: var(--font-sans, 'Inter', sans-serif); font-size: 14.5px; font-weight: 700; padding: 13px; cursor: pointer; }
 .cop-apply:hover { background: var(--azul-m, #254BA0); }
+/* En dark, var(--azul) es casi negro (#0A1426) y el botón "Ir al portal"
+   desaparecía sobre el fondo oscuro del modal. Le damos un azul visible. */
+:root[data-theme="dark"] .cop-apply { background: var(--cielo, #3057AA); color: #fff; }
+:root[data-theme="dark"] .cop-apply:hover { background: #3A63C0; }
 .cop-actions-sec { display: flex; gap: 10px; }
 .cop-btn2 { flex: 1; background: var(--blanco, #fff); border: 1.5px solid var(--borde, #E5E1D2); color: var(--texto, #18202F);
   border-radius: 10px; font-family: var(--font-sans, 'Inter', sans-serif); font-size: 13px; font-weight: 600; padding: 10px; cursor: pointer; }
@@ -309,6 +336,18 @@ mark.cop-hl {
 }
 .btn-mapa-toggle:hover { border-color: var(--cielo, #1A6BCC); background: var(--bg2, #F4F2EA); }
 .btn-mapa-toggle[aria-expanded="true"] { background: var(--azul, #142E6B); color: #fff; border-color: var(--azul, #142E6B); }
+/* Dark: el color base `var(--azul)` (#0A1426) quedaba casi negro sobre el
+   fondo oscuro y el texto era ilegible. Lo alineamos con el resto de los
+   controles del listado en oscuro: texto claro sobre superficie navy. */
+:root[data-theme="dark"] .btn-mapa-toggle {
+  background: #0F213E;
+  color: var(--text-secondary, #C9D4E5);
+  border-color: var(--border-subtle, #27436D);
+}
+:root[data-theme="dark"] .btn-mapa-toggle:hover {
+  background: #16294A;
+  border-color: var(--acento, #EAB858);
+}
 .mapa-chile-wrap {
   padding: 16px 0 8px;
 }
@@ -488,22 +527,23 @@ mark.cop-hl {
   .resultados-acciones { flex-wrap: wrap; }
 }
 
-/* ── Alerta de empleo: borde visible + acento azul superior (#5) ──────
-   El borde estándar de los widgets es var(--border) = #E5E1D2, casi igual
-   al fondo crema (#F5F4EF), por eso no se percibía el borde superior.
-   #alertas (ID) gana en especificidad a .widget sin necesidad de !important. */
-#alertas {
-  border-color: var(--cielo, #1A6BCC);
-  border-top: 3px solid var(--cielo, #1A6BCC);
-  box-shadow: 0 2px 10px rgba(20, 46, 107, 0.08);
-}
+/* ── "Alertas de empleo": que el borde superior no quede tapado por el hero ──
+   Los widgets del sidebar se suben con `margin-top:-30px` para solaparse con el
+   hero. El panel de resultados lo hace con `position:relative; z-index:2`, pero
+   el sidebar no tenía capa propia: el hero (positioned) pintaba por encima y
+   ocultaba el borde superior del primer widget (la tarjeta de alertas). Le
+   damos al sidebar la misma capa que al panel de resultados.
+   El borde y el color del widget se dejan tal cual los demás del sidebar (sin
+   el acento azul que antes lo hacía resaltar): hereda `.widget`. */
+.sidebar { position: relative; z-index: 2; }
 
 /* ── Vista compacta (lista densa): alineación cabecera ↔ filas ────────
-   Cada fila tiene .row-acciones con 2 botones (comparar + favorito), pero la
-   cabecera reservaba 36px en la última columna → la columna Renta no calzaba.
-   Igualamos ambos a 72px. */
-.oferta-row-header > :nth-child(5) { flex: 0 0 72px; width: 72px; }
-.row-acciones { flex: 0 0 72px; width: 72px; }
+   Cada fila tiene .row-acciones con 2 botones (comparar 36px + gap 6px +
+   favorito 36px = 78px). Con la columna en 72px los botones se desbordaban
+   hacia la izquierda y tapaban la renta. La subimos a 84px (caben los 78px +
+   aire) e igualamos la 5ª columna del header para que todo calce. */
+.oferta-row-header > :nth-child(5) { flex: 0 0 84px; width: 84px; }
+.row-acciones { flex: 0 0 84px; width: 84px; }
 
 /* Tipo: "Código del Trabajo" se cortaba en 82px ("Código del Tra…"). Ampliamos
    la columna y dejamos que el badge use dos líneas si hace falta. */
@@ -521,15 +561,10 @@ mark.cop-hl {
 .resultados-preferencias .ctrl-select--sort { height: 38px; }
 .resultados-preferencias .sort-wrap { height: 38px; align-items: center; }
 
-/* ── Cinta superior en modo oscuro: que destaque como banda propia ────
-   El fondo #050C1A quedaba casi igual al fondo de la página en dark
-   (#0A1426), así que la cinta se "perdía". La subimos a una banda más clara
-   con borde dorado tenue, tan protagonista como en modo claro. */
-:root[data-theme="dark"] .ribbon {
-  background: #16284A;
-  border-bottom: 1px solid rgba(234, 184, 88, 0.22);
-  color: rgba(236, 232, 219, 0.85);
-}
+/* La cinta en modo oscuro (banda #16284A) se movió a redesign-overrides.css
+   —hoja compartida por todas las páginas— para que index y las páginas
+   secundarias se vean iguales. Ver la regla `:root[data-theme="dark"] .ribbon`
+   allí. */
 
 /* ── "Ordenar por": que la opción no se corte (ej. "⏰ Cierra antes") ──
    El select tenía min-width chico y el texto se cortaba con ellipsis. Le

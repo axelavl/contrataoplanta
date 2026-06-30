@@ -40,6 +40,7 @@ apt-get install -y -qq \
     nginx postgresql postgresql-contrib \
     python3.12 python3.12-venv python3.12-dev python3-pip \
     certbot python3-certbot-nginx \
+    tesseract-ocr tesseract-ocr-spa \
     ufw fail2ban
 
 # ── 2. USUARIO ─────────────────────────────────────────────────────────────────

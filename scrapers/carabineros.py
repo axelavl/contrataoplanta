@@ -5,10 +5,19 @@ EmpleoEstado.cl — Scraper del Sistema de Postulaciones de Carabineros
 Basado en el DOM real del sitio (verificado 06/2026):
     /                       listado en cards `div.concurso-card`, paginado ?page=N
     /concursos/{id}         detalle HTML: remuneración, objetivo, funciones,
-                            formación educacional (requisitos)
-    /concursos/download/{id}/Perfil      PDF perfil
+                            formación educacional, conocimientos, competencias,
+                            experiencia y documentación (todo lo que publique)
+    /concursos/download/{id}/Perfil      PDF perfil de cargo (CON capa de texto:
+                                         se parsea siempre que falte info)
     /concursos/download/{id}/Descriptor  PDF "Bases del Concurso" (ESCANEADO,
-                                         sin capa de texto -> no se parsea)
+                                         sin capa de texto -> requiere --ocr;
+                                         su URL se guarda en url_bases igual)
+
+Antecedentes recogidos por oferta: además de los campos estándar, se persisten
+`url_bases` (enlace a Bases/Perfil), `modalidad`, `horas_semanales`, y se
+enriquecen `descripcion` (objetivo + funciones + lugar + vacantes) y
+`requisitos_texto` (formación + conocimientos + competencias + experiencia +
+documentación), combinando detalle HTML y PDFs adjuntos.
 
 Cada card contiene: título/estamento (P.N.S., P.N.I., C.P.R., D.F.L.1),
 fechas "Postulación desde el DD/MM/AAAA al DD/MM/AAAA", y pares
@@ -27,6 +36,7 @@ Uso:
     python scrapers/carabineros.py --dry-run --verbose
     python scrapers/carabineros.py --sin-detalle      # solo cards (rápido)
     python scrapers/carabineros.py --export salida    # además CSV+JSON
+    python scrapers/carabineros.py --ocr --dry-run    # OCR de las Bases (lento)
 """
 
 from __future__ import annotations
@@ -109,6 +119,15 @@ try:
 except Exception:
     pdfplumber = None  # type: ignore[assignment]
 
+# OCR opcional (solo se usa con --ocr / allow_ocr=True). Requiere el binario
+# `tesseract` instalado en el sistema con el idioma español (`tesseract-ocr-spa`)
+# y el paquete Python `pytesseract`. Se importa de forma perezosa para no
+# obligar a la dependencia cuando el OCR está desactivado.
+try:
+    import pytesseract  # type: ignore
+except Exception:
+    pytesseract = None  # type: ignore[assignment]
+
 try:
     from extraction.requirements_extractor import extract_requirements
     from extraction.salary_extractor import extract_salary
@@ -117,23 +136,59 @@ except Exception:
     extract_salary = None  # type: ignore[assignment]
 
 
-def _pdf_a_texto(contenido: bytes, max_paginas: int = 10) -> str:
-    """Texto del PDF con pdfplumber. '' si no se puede (escaneado/cifrado)."""
-    if pdfplumber is None or not contenido[:5].startswith(b"%PDF"):
+def _ocr_pdf(contenido: bytes, max_paginas: int = 8) -> str:
+    """Texto de un PDF ESCANEADO vía OCR (tesseract). '' si falta tesseract,
+    pytesseract o el backend de render. Pensado para el 'Descriptor'/Bases de
+    Carabineros, que se publica como imagen sin capa de texto."""
+    if pdfplumber is None or pytesseract is None:
+        logger.info("  OCR no disponible (pytesseract/tesseract no instalado)")
         return ""
+    if not contenido[:5].startswith(b"%PDF"):
+        return ""
+    paginas: list[str] = []
     try:
         with pdfplumber.open(_io.BytesIO(contenido)) as pdf:
-            return "\n".join((p.extract_text() or "") for p in pdf.pages[:max_paginas])
+            for p in pdf.pages[:max_paginas]:
+                try:
+                    img = p.to_image(resolution=200).original
+                    paginas.append(pytesseract.image_to_string(img, lang="spa"))
+                except Exception:
+                    logger.exception("  Error OCR en una página")
     except Exception:
+        logger.exception("  No se pudo abrir el PDF para OCR")
         return ""
+    return "\n".join(paginas)
+
+
+def _pdf_a_texto(contenido: bytes, max_paginas: int = 10,
+                 allow_ocr: bool = False) -> str:
+    """Texto del PDF. Primero capa de texto (pdfplumber); si está vacío y
+    `allow_ocr`, recurre a OCR. '' si no se puede (cifrado / sin tesseract)."""
+    if pdfplumber is None or not contenido[:5].startswith(b"%PDF"):
+        return ""
+    texto = ""
+    try:
+        with pdfplumber.open(_io.BytesIO(contenido)) as pdf:
+            texto = "\n".join((p.extract_text() or "") for p in pdf.pages[:max_paginas])
+    except Exception:
+        logger.exception("  Error leyendo capa de texto del PDF")
+    if texto.strip():
+        return texto
+    if allow_ocr:
+        logger.info("  PDF sin capa de texto: intentando OCR…")
+        return _ocr_pdf(contenido, max_paginas)
+    return ""
 
 
 def _datos_desde_pdf(texto: str) -> dict[str, Any]:
-    """De un PDF de perfil/bases en texto saca requisitos_texto y renta."""
+    """De un PDF de perfil/bases en texto saca requisitos_texto, renta y, si el
+    documento trae objetivo/funciones, también descripcion_detalle."""
     out: dict[str, Any] = {}
     if not texto or len(texto) < 80:
         return out
     plano = limpiar_texto(texto)
+
+    # 1) Requisitos vía el extractor genérico del proyecto.
     if extract_requirements is not None:
         try:
             req, des, docs = extract_requirements(texto)
@@ -148,6 +203,21 @@ def _datos_desde_pdf(texto: str) -> dict[str, Any]:
                 out["requisitos_texto"] = limpiar_texto(" | ".join(bloques))[:1900]
         except Exception:
             logger.exception("  Error extrayendo requisitos del PDF")
+
+    # 2) Secciones narrativas del PDF (mismo motor que el detalle HTML). Sirve
+    #    de respaldo cuando el extractor genérico no encuentra requisitos y para
+    #    rescatar objetivo/funciones del perfil de cargo.
+    secciones = _extraer_secciones(plano)
+    if secciones:
+        consol = _consolidar(secciones)
+        out.setdefault("requisitos_texto", consol.get("requisitos"))
+        if consol.get("descripcion_detalle"):
+            out["descripcion_detalle"] = consol["descripcion_detalle"]
+        # limpia el setdefault si quedó None
+        if out.get("requisitos_texto") is None:
+            out.pop("requisitos_texto", None)
+
+    # 3) Renta.
     if extract_salary is not None:
         try:
             sal = extract_salary(plano)
@@ -195,17 +265,64 @@ _RE_FECHAS = re.compile(
     r"desde el\s*(\d{1,2}/\d{1,2}/\d{4})\s*al\s*(\d{1,2}/\d{1,2}/\d{4})", re.I)
 _RE_MONTO = re.compile(r"\$\s*([\d.]{5,12})")
 _RE_REMUNERACION = re.compile(r"Remuneraci[oó]n(?:es)?\s*:?\s*\$\s*([\d.]+)", re.I)
-_RE_REQUISITOS = re.compile(
-    r"(?:Formaci[oó]n Educacional|Requisitos(?: del cargo)?)\s*:?\s*(.{40,2000}?)"
-    r"(?:Conocimientos|Competencias|Experiencia|Postulaci[oó]n|Documentaci[oó]n|\Z)",
-    re.I | re.S)
-_RE_OBJETIVO = re.compile(
-    r"Objetivo del Cargo\s*:?\s*(.{30,1500}?)(?:Funciones|Formaci[oó]n|\Z)", re.I | re.S)
-_RE_FUNCIONES = re.compile(
-    r"Funciones del cargo\s*:?\s*(.{30,1500}?)(?:Formaci[oó]n|Requisitos|\Z)", re.I | re.S)
+_RE_HORAS = re.compile(r"(\d{1,3})\s*(?:hrs?|horas)\b", re.I)
 _BLOQUEO_RE = re.compile(r"upstream connect error|connection timeout", re.I)
 _ICONOS = ("contact_mail", "visibility", "check_circle", "insert_chart",
            "warning_amber", "help_outline", "login")
+
+# Encabezados conocidos del detalle / de las bases. Sirven como "muros" para
+# cortar cada sección: el contenido de una sección llega hasta el comienzo de la
+# siguiente etiqueta conocida (o el fin del texto). Es más mantenible que un
+# regex distinto por campo y tolera el orden variable del portal.
+_STOP_SECCIONES = (
+    r"Objetivo del [Cc]argo|Funciones del [Cc]argo|Funciones|"
+    r"Formaci[oó]n Educacional|Formaci[oó]n|Requisitos(?: del [Cc]argo)?|"
+    r"Conocimientos(?: Espec[ií]ficos| T[eé]cnicos)?|"
+    r"Competencias(?: Conductuales| T[eé]cnicas)?|Experiencia(?: Laboral)?|"
+    r"Documentaci[oó]n(?: Requerida)?|Documentos(?: Requeridos)?|"
+    r"Remuneraci[oó]n(?:es)?|Modalidad|Jornada|Estamento|"
+    r"Lugar de Desempe[nñ]o|Lugar|Ubicaci[oó]n|"
+    r"N[°º] de [Vv]acantes|Vacantes|Postulaci[oó]n"
+)
+
+# Secciones narrativas largas (objetivo, funciones, requisitos por componente).
+_SECCIONES_DETALLE = {
+    "objetivo": r"Objetivo del [Cc]argo",
+    "funciones": r"Funciones del [Cc]argo|Funciones",
+    "formacion": r"Formaci[oó]n Educacional|Formaci[oó]n",
+    "conocimientos": r"Conocimientos(?: Espec[ií]ficos| T[eé]cnicos)?",
+    "competencias": r"Competencias(?: Conductuales| T[eé]cnicas)?",
+    "experiencia": r"Experiencia(?: Laboral)?",
+    "documentacion": r"Documentaci[oó]n(?: Requerida)?|Documentos(?: Requeridos)?",
+    "requisitos": r"Requisitos(?: del [Cc]argo)?",
+}
+
+# Campos cortos "Etiqueta: valor" que el detalle a veces agrega.
+_CAMPOS_DETALLE = {
+    "modalidad": r"Modalidad",
+    "jornada": r"Jornada",
+    "lugar": r"Lugar de Desempe[nñ]o|Lugar",
+    "vacantes": r"N[°º] de [Vv]acantes|Vacantes",
+}
+
+
+def _seccion(texto: str, inicio_re: str, max_len: int = 1800) -> str | None:
+    """Contenido de la sección que empieza en `inicio_re` hasta la próxima
+    etiqueta conocida (`_STOP_SECCIONES`) o el fin del texto."""
+    m = re.search(
+        rf"(?:{inicio_re})\s*:?\s*(.{{20,{max_len}}}?)"
+        rf"(?=\s*(?:{_STOP_SECCIONES})\s*:|\Z)",
+        texto, re.I | re.S)
+    return limpiar_texto(m.group(1)) if m else None
+
+
+def _campo_corto(texto: str, inicio_re: str, max_len: int = 80) -> str | None:
+    """Valor corto de un par 'Etiqueta: valor' (modalidad, jornada, etc.)."""
+    m = re.search(
+        rf"(?:{inicio_re})\s*:?\s*(.{{2,{max_len}}}?)"
+        rf"(?=\s*(?:{_STOP_SECCIONES})\s*:|[|\n]|\Z)",
+        texto, re.I)
+    return limpiar_texto(m.group(1)) if m else None
 
 
 # ── HTTP ─────────────────────────────────────────────────────────────────────
@@ -349,23 +466,68 @@ def extraer_total_paginas(html: str) -> int:
 
 
 # ── Parseo del detalle — puro, testeable sin red ────────────────────────────
+def _consolidar(secciones: dict[str, str]) -> dict[str, Any]:
+    """Arma `requisitos` (componentes) y `descripcion_detalle` (objetivo +
+    funciones) a partir de las secciones narrativas extraídas. Reutilizable
+    tanto para el detalle HTML como para los PDFs."""
+    out: dict[str, Any] = {}
+    bloques = []
+    for etiqueta, clave in (
+        ("Formación", "formacion"), ("Conocimientos", "conocimientos"),
+        ("Competencias", "competencias"), ("Experiencia", "experiencia"),
+        ("Documentación", "documentacion"),
+    ):
+        if secciones.get(clave):
+            bloques.append(f"{etiqueta}: {secciones[clave]}")
+    if bloques:
+        out["requisitos"] = limpiar_texto(" | ".join(bloques))[:2000]
+    elif secciones.get("requisitos"):
+        out["requisitos"] = secciones["requisitos"][:2000]
+
+    partes = []
+    if secciones.get("objetivo"):
+        partes.append("Objetivo: " + secciones["objetivo"])
+    if secciones.get("funciones"):
+        partes.append("Funciones: " + secciones["funciones"])
+    if partes:
+        out["descripcion_detalle"] = limpiar_texto(" | ".join(partes))[:2000]
+    return out
+
+
+def _extraer_secciones(texto: str) -> dict[str, str]:
+    """Todas las secciones narrativas conocidas presentes en `texto`."""
+    secciones: dict[str, str] = {}
+    for clave, patron in _SECCIONES_DETALLE.items():
+        if val := _seccion(texto, patron):
+            secciones[clave] = val[:1800]
+    return secciones
+
+
 def parsear_detalle(html: str) -> dict[str, Any]:
-    """Extrae remuneración, requisitos, objetivo y funciones del detalle."""
+    """Extrae del detalle HTML todos los antecedentes disponibles:
+    remuneración, objetivo, funciones, formación educacional, conocimientos,
+    competencias, experiencia, documentación, además de modalidad, jornada,
+    lugar y vacantes cuando el portal los publica en el detalle."""
     soup = BeautifulSoup(html, "html.parser")
     texto = _sin_iconos(soup.get_text(" ", strip=True))
     datos: dict[str, Any] = {}
+
+    # Remuneración (monto + texto crudo)
     if m := _RE_REMUNERACION.search(texto):
         datos["renta"] = _monto(m.group(0))
         datos["renta_texto"] = "$" + m.group(1).rstrip(".").rstrip("-") + " (según portal)"
-    if m := _RE_REQUISITOS.search(texto):
-        datos["requisitos"] = limpiar_texto(m.group(1))[:2000]
-    partes = []
-    if m := _RE_OBJETIVO.search(texto):
-        partes.append("Objetivo: " + limpiar_texto(m.group(1)))
-    if m := _RE_FUNCIONES.search(texto):
-        partes.append("Funciones: " + limpiar_texto(m.group(1)))
-    if partes:
-        datos["descripcion_detalle"] = " | ".join(partes)
+
+    # Secciones narrativas + consolidación a requisitos/descripcion_detalle
+    secciones = _extraer_secciones(texto)
+    if secciones:
+        datos["secciones"] = secciones
+        datos.update(_consolidar(secciones))
+
+    # Campos cortos etiqueta:valor (no pisan lo que ya trae la card)
+    for clave, patron in _CAMPOS_DETALLE.items():
+        if val := _campo_corto(texto, patron):
+            datos[clave] = val
+
     return datos
 
 
@@ -402,8 +564,23 @@ def _nivel(cargo: str, titulo: str) -> str:
     return "Profesional"
 
 
+def _horas_semanales(*textos: str | None) -> int | None:
+    """Extrae las horas de jornada (p.ej. '44 horas semanales' -> 44)."""
+    for t in textos:
+        if not t:
+            continue
+        if m := _RE_HORAS.search(t):
+            try:
+                h = int(m.group(1))
+                if 1 <= h <= 60:
+                    return h
+            except ValueError:
+                pass
+    return None
+
+
 def construir_oferta(c: dict[str, Any], det: dict[str, Any]) -> dict:
-    """Card (+detalle) -> fila con las columnas estándar del proyecto."""
+    """Card (+detalle +PDFs) -> fila con las columnas estándar del proyecto."""
     fuente_id = int(FUENTE["id"])
     nombre = FUENTE["nombre"]
     campos = c["campos"]
@@ -424,10 +601,24 @@ def construir_oferta(c: dict[str, Any], det: dict[str, Any]) -> dict:
     elif det.get("renta_texto"):
         renta_texto = det["renta_texto"]
 
+    # Modalidad y jornada: la card primero, el detalle como respaldo.
+    modalidad = limpiar_texto(campos.get("modalidad") or det.get("modalidad") or "")[:50] or None
+    jornada = campos.get("jornada") or det.get("jornada")
+    horas = _horas_semanales(jornada, campos.get("modalidad"))
+
+    # Enlace a las bases del concurso (Descriptor); si no hay, el Perfil de cargo.
+    docs = c.get("docs") or {}
+    url_bases = _buscar_doc(docs, "descriptor", "bases") or _buscar_doc(docs, "perfil")
+
+    # Descripción ampliada: encabezado + campos clave + objetivo/funciones.
     desc_partes = [c["titulo"]]
-    for k in ("modalidad", "jornada", "lugar", "n de vacantes"):
-        if campos.get(k):
-            desc_partes.append(f"{k.capitalize()}: {campos[k]}")
+    for etiqueta, valor in (
+        ("Modalidad", modalidad), ("Jornada", jornada),
+        ("Lugar", campos.get("lugar") or det.get("lugar")),
+        ("Vacantes", campos.get("n de vacantes") or det.get("vacantes")),
+    ):
+        if valor:
+            desc_partes.append(f"{etiqueta}: {valor}")
     if det.get("descripcion_detalle"):
         desc_partes.append(det["descripcion_detalle"])
     elif c["descripcion"]:
@@ -451,6 +642,9 @@ def construir_oferta(c: dict[str, Any], det: dict[str, Any]) -> dict:
         "renta_bruta_min": renta,
         "renta_bruta_max": None,
         "renta_texto": renta_texto,
+        "url_bases": url_bases,
+        "modalidad": modalidad,
+        "horas_semanales": horas,
         "fecha_publicacion": c["fecha_inicio"] or date.today(),
         "fecha_cierre": c["fecha_cierre"],
         "requisitos_texto": det.get("requisitos"),
@@ -463,7 +657,33 @@ def construir_oferta(c: dict[str, Any], det: dict[str, Any]) -> dict:
 
 
 # ── Recolección ──────────────────────────────────────────────────────────────
-def recolectar(max_results: int | None, con_detalle: bool, delay: float) -> list[dict]:
+def _buscar_doc(docs: dict[str, str], *claves: str) -> str | None:
+    """URL del primer documento cuyo nombre contiene alguna de `claves`."""
+    for k, u in (docs or {}).items():
+        kl = k.lower()
+        if any(cl in kl for cl in claves):
+            return u
+    return None
+
+
+def _fusionar_pdf(det: dict[str, Any], pdf_datos: dict[str, Any],
+                  concurso_id: Any, etiqueta: str) -> None:
+    """Vuelca al detalle los antecedentes de un PDF sin pisar lo ya presente."""
+    if not pdf_datos:
+        return
+    if pdf_datos.get("requisitos_texto") and not det.get("requisitos"):
+        det["requisitos"] = pdf_datos["requisitos_texto"]
+    if pdf_datos.get("descripcion_detalle") and not det.get("descripcion_detalle"):
+        det["descripcion_detalle"] = pdf_datos["descripcion_detalle"]
+    if pdf_datos.get("renta_bruta_min") and not det.get("renta"):
+        det["renta"] = pdf_datos["renta_bruta_min"]
+        det.setdefault("renta_texto", pdf_datos.get("renta_texto"))
+    logger.info("  %s PDF concurso %s: %s",
+                etiqueta, concurso_id, ", ".join(sorted(pdf_datos)))
+
+
+def recolectar(max_results: int | None, con_detalle: bool, delay: float,
+               allow_ocr: bool = False) -> list[dict]:
     session = requests.Session()
     getattr(config, "aplicar_proxy", lambda *_: None)(session)
     session.headers.update(_headers())
@@ -513,23 +733,31 @@ def recolectar(max_results: int | None, con_detalle: bool, delay: float) -> list
             rd = _get(session, c["url"])
             if rd is not None:
                 det = parsear_detalle(rd.text)
-            # Si el detalle HTML no trae requisitos, intentar el PDF "Perfil".
-            if not det.get("requisitos"):
-                perfil_url = next((u for k, u in (c.get("docs") or {}).items()
-                                   if "perfil" in k.lower()), None)
-                if perfil_url:
-                    time.sleep(delay)
-                    rp = _get(session, perfil_url)
-                    if rp is not None:
-                        pdf_datos = _datos_desde_pdf(_pdf_a_texto(rp.content))
-                        if pdf_datos.get("requisitos_texto"):
-                            det["requisitos"] = pdf_datos["requisitos_texto"]
-                        if pdf_datos.get("renta_bruta_min") and not det.get("renta"):
-                            det["renta"] = pdf_datos["renta_bruta_min"]
-                            det.setdefault("renta_texto", pdf_datos.get("renta_texto"))
-                        if pdf_datos:
-                            logger.info("  Perfil PDF concurso %s: %s",
-                                        c["id"], ", ".join(sorted(pdf_datos)))
+
+            docs = c.get("docs") or {}
+            perfil_url = _buscar_doc(docs, "perfil")
+            bases_url = _buscar_doc(docs, "descriptor", "bases")
+
+            # PDF "Perfil de Cargo": tiene capa de texto. Se baja para completar
+            # requisitos / renta / objetivo-funciones que el detalle HTML no
+            # haya entregado.
+            if perfil_url and not (det.get("requisitos") and det.get("renta")):
+                time.sleep(delay)
+                rp = _get(session, perfil_url)
+                if rp is not None:
+                    _fusionar_pdf(det, _datos_desde_pdf(_pdf_a_texto(rp.content)),
+                                  c["id"], "Perfil")
+
+            # PDF "Descriptor"/Bases del Concurso: escaneado (sin texto). Solo se
+            # procesa con OCR habilitado; de lo contrario solo se enlaza.
+            if bases_url and allow_ocr and not det.get("requisitos"):
+                time.sleep(delay)
+                rb = _get(session, bases_url)
+                if rb is not None:
+                    _fusionar_pdf(
+                        det,
+                        _datos_desde_pdf(_pdf_a_texto(rb.content, allow_ocr=True)),
+                        c["id"], "Bases(OCR)")
         oferta = construir_oferta(c, det)
         try:
             from scrapers.enrich import enriquecer_oferta
@@ -546,7 +774,8 @@ def recolectar(max_results: int | None, con_detalle: bool, delay: float) -> list
 CAMPOS_EXPORT = ["id_externo", "fuente_id", "institucion_nombre", "sector", "cargo",
                  "area_profesional", "tipo_cargo", "nivel", "region", "ciudad",
                  "renta_bruta_min", "renta_bruta_max", "renta_texto",
-                 "fecha_publicacion", "fecha_cierre", "url_original",
+                 "modalidad", "horas_semanales",
+                 "fecha_publicacion", "fecha_cierre", "url_original", "url_bases",
                  "descripcion", "requisitos_texto"]
 
 
@@ -574,6 +803,7 @@ def ejecutar(
     con_detalle: bool = True,
     delay: float = DELAY_DEFAULT,
     export: str | None = None,
+    allow_ocr: bool = False,
 ) -> dict[str, Any]:
     inicio = time.time()
     logger.info("=" * 60)
@@ -591,7 +821,8 @@ def ejecutar(
     ofertas: list[dict] = []
 
     try:
-        ofertas = recolectar(max_results=max_results, con_detalle=con_detalle, delay=delay)
+        ofertas = recolectar(max_results=max_results, con_detalle=con_detalle,
+                             delay=delay, allow_ocr=allow_ocr)
         stats["encontradas"] = len(ofertas)
         logger.info("  → %d ofertas", len(ofertas))
 
@@ -668,6 +899,9 @@ if __name__ == "__main__":
                         help=f"Pausa entre requests (default {DELAY_DEFAULT}s)")
     parser.add_argument("--export", default=None, metavar="PREFIJO",
                         help="Exportar además a PREFIJO.json y PREFIJO.csv")
+    parser.add_argument("--ocr", action="store_true",
+                        help="Habilita OCR del PDF de Bases (escaneado). Requiere "
+                             "tesseract + idioma spa y pytesseract instalados.")
     args = parser.parse_args()
     ejecutar(
         dry_run=args.dry_run,
@@ -676,4 +910,5 @@ if __name__ == "__main__":
         con_detalle=not args.sin_detalle,
         delay=args.delay,
         export=args.export,
+        allow_ocr=args.ocr,
     )

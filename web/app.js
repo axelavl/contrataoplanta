@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// web/app.js — JavaScript principal del frontend de estadoemplea
+// web/app.js — JavaScript principal del frontend de contrataoplanta
 //
 // Movido desde el <script> inline de web/index.html (que tenía ~3595
 // líneas) por los siguientes motivos:
@@ -45,6 +45,41 @@
       history.replaceState(null, '', u.pathname + u.search + u.hash);
     }
   } catch (e) { /* IE antiguo, ignorar */ }
+})();
+
+// ═══════════════════════════════════════════════════════════════
+// Fallback de rutaOferta / slugificarCargo (fuente real: shared-shell.js)
+//
+// shared-shell.js define estas globales, PERO se carga con `defer` mientras
+// app.js y ficha-oferta.js no — y ambos las llaman al renderizar el detalle
+// (configurarCompartir → urlDeepLinkOferta). Si shared-shell.js aún no corrió
+// (o no cargó), `rutaOferta` quedaba `undefined` y el bare reference lanzaba
+// `ReferenceError`, tumbando TODO el modal de detalle para cualquier oferta
+// ("No se pudo obtener el detalle" al abrir un enlace compartido).
+//
+// Definimos un fallback IDÉNTICO (mismo slug que `_slugify` del backend, para
+// no disparar el redirect 301) sólo si no existen. Si shared-shell.js corre
+// después, sobrescribe con la misma lógica: no cambia el comportamiento.
+// ═══════════════════════════════════════════════════════════════
+(function () {
+  if (typeof window.slugificarCargo !== 'function') {
+    window.slugificarCargo = function (texto) {
+      if (!texto) return '';
+      return String(texto)
+        .normalize('NFKD').replace(/[^\x00-\x7F]/g, '')
+        .replace(/[^a-zA-Z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .toLowerCase()
+        .slice(0, 80)
+        .replace(/-+$/, '');
+    };
+  }
+  if (typeof window.rutaOferta !== 'function') {
+    window.rutaOferta = function (id, cargo) {
+      var slug = window.slugificarCargo(cargo);
+      return '/oferta/' + id + (slug ? '-' + slug : '');
+    };
+  }
 })();
 
 // ═══════════════════════════════════════════════════════════════
@@ -185,6 +220,16 @@ document.addEventListener('click', function (e) {
       el.setAttribute('aria-expanded', colapsadoObj ? 'false' : 'true');
       break;
     }
+    case 'toggle-desc': {
+      // Expande/contrae la descripción recortada de la tarjeta. La flecha
+      // (chevron) rota y el clamp CSS se libera vía `.is-expanded`.
+      var descWrap = el.closest('.oferta-desc-wrap');
+      if (!descWrap) break;
+      var descAbierta = descWrap.classList.toggle('is-expanded');
+      el.setAttribute('aria-expanded', descAbierta ? 'true' : 'false');
+      el.setAttribute('title', descAbierta ? 'Ver menos' : 'Ver más');
+      break;
+    }
     case 'noop':
       // Hace sólo stopPropagation (caso botón "bases no disponibles"
       // dentro de card, que evita que se dispare el click de la card).
@@ -196,10 +241,28 @@ document.addEventListener('click', function (e) {
   }
 });
 
+// ── "Ordenar por": abrir el menú al clickear cualquier parte del recuadro ──
+// El <select> nativo sólo cubre el texto del valor; el label "Ordenar por:"
+// y el chevron tienen pointer-events:none, así que clickearlos no abría el
+// dropdown (sólo enfocaba el select). Delegamos en document: si el click cae
+// dentro de .sort-wrap (y no sobre el propio select), abrimos el menú con
+// showPicker() —fallback a focus en navegadores sin soporte—.
+document.addEventListener('click', function (e) {
+  const wrap = e.target.closest && e.target.closest('.sort-wrap');
+  if (!wrap) return;
+  const sel = wrap.querySelector('select');
+  if (!sel || e.target === sel) return; // click directo en el select: nativo
+  if (typeof sel.showPicker === 'function') {
+    try { sel.showPicker(); return; } catch (_) { /* fuera de user-gesture, etc. */ }
+  }
+  sel.focus();
+});
+
 // ── Base URL de la API: una sola URL, sin cadena de fallbacks ─────────────
-// Backend en Railway. Los dominios de marca (contrataoplanta.cl,
-// estadoemplea.cl, etc.) no existen en DNS — intentarlos sólo producía
-// ERR_NAME_NOT_RESOLVED y status 530.
+// Backend en Railway. El frontend vive en contrataoplanta.cl (y en
+// estadoemplea.pages.dev de Cloudflare Pages), pero la API siempre se
+// consume desde Railway: apuntar el fetch al dominio de marca daría
+// ERR_NAME_NOT_RESOLVED / status 530.
 //
 // Overrides:
 //   - window.__API_BASE: fuerza otra base (útil para staging/tests).
@@ -265,7 +328,11 @@ async function fetchApi(path, options = {}) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
   try {
-    const resp = await fetch(url, { ...options, signal: controller.signal });
+    // `cache: 'no-store'`: nunca usar la caché HTTP del navegador para los
+    // datos de la API. Garantiza ver siempre las ofertas/estadísticas más
+    // recientes en cada visita (antes el browser podía servir una respuesta
+    // cacheada de horas atrás). Se puede sobrescribir vía `options`.
+    const resp = await fetch(url, { cache: 'no-store', ...options, signal: controller.signal });
     clearTimeout(timeoutId);
     return resp;
   } catch (err) {
@@ -715,7 +782,29 @@ function buildJobPostingJsonLd(oferta) {
   }
 
   if (oferta?.jornada) payload.workHours = oferta.jornada;
-  if (oferta?.tipo_contrato) payload.employmentType = oferta.tipo_contrato.toUpperCase();
+  // Mapeo conservador al vocabulario schema.org (mismo criterio que el SSR
+  // en api/services/seo.py). Se normaliza por substring/categoría —no por
+  // clave exacta— porque el dato puede venir con calificativos o etiquetas
+  // combinadas ("Honorarios (suma alzada)", "Código del Trabajo (Reemplazo)").
+  // El sector público es jornada completa salvo honorarios/reemplazos: ante
+  // un tipo desconocido o vacío usamos FULL_TIME como default para no omitir
+  // employmentType (warning de Search Console).
+  const _tipo = (oferta?.tipo_contrato || '').toLowerCase();
+  const _jornada = (oferta?.jornada || '').toLowerCase();
+  let _esPartTime = ['part time', 'part-time', 'parcial', 'media jornada', 'por hora']
+    .some(s => _tipo.includes(s) || _jornada.includes(s));
+  // Jornadas con horas semanales numéricas ("22 hrs / semana"): bajo la
+  // jornada legal completa chilena (44 hrs) ⇒ part-time.
+  if (!_esPartTime) {
+    const _mh = _jornada.match(/(\d{1,2})\s*(?:hrs?\.?|horas?)\s*\/?\s*semanal?/);
+    if (_mh && +_mh[1] > 0 && +_mh[1] < 44) _esPartTime = true;
+  }
+  let _empType = 'FULL_TIME';
+  if (_tipo.includes('honorario')) _empType = 'CONTRACTOR';
+  else if (['reemplazo', 'suplencia', 'plazo fijo', 'plazo definido', 'transitori'].some(s => _tipo.includes(s))) _empType = 'TEMPORARY';
+  else if (_tipo.includes('practica') || _tipo.includes('práctica') || _tipo.includes('pasant')) _empType = 'INTERN';
+  else if (_esPartTime) _empType = 'PART_TIME';
+  payload.employmentType = _empType;
   if (oferta?.descripcion) payload.description = oferta.descripcion;
 
   return { valido: true, markup: jsonLdScript(payload), errores: [] };
@@ -1200,10 +1289,11 @@ function getInstIcon(oferta) {
     };
   }
   const dom = escAttr(resolved.domain);
-  // size=256 → Clearbit devuelve PNG de 256 px, nítido al escalar a 44-128 px.
+  // Fuente primaria = DuckDuckGo ip3 (devuelve el mejor icono del sitio, nítido
+  // al escalar a 44-128 px). Debe coincidir con sources[0] de shared-shell.js.
   // data-attempt=0 inicializa la cadena: si onerror dispara o imgFavCheckQuality
-  // detecta logo diminuto, advance() pasa a apple-touch-icon → Google → etc.
-  const primary = `https://logo.clearbit.com/${dom}?size=256`;
+  // detecta logo diminuto, advance() pasa a Google s2 → apple-touch-icon → etc.
+  const primary = `https://icons.duckduckgo.com/ip3/${dom}.ico`;
   // Repositorio propio: si ya resolvimos un logo bueno para este dominio en una
   // visita anterior (cacheado en localStorage por shared-shell.js), lo usamos
   // como source inicial → se pinta al primer frame, sin parpadeo. data-attempt
@@ -1325,6 +1415,40 @@ function resaltarBusqueda(texto, q) {
   }).join('');
 }
 
+// Etiquetas administrativas que algunas fuentes anteponen al texto de la
+// descripción ("DESCRIPCIÓN DE LA OFERTA:", "FUNCIONES DEL CARGO", etc.).
+// Las quitamos del inicio del resumen para que se lea más natural. Se aplica
+// de forma repetida porque a veces vienen encadenadas y sin puntuación
+// ("FUNCIONES PRINCIPALES ACTIVIDADES RESULTADO FINAL ESPERADO DE LA FUNCIÓN…").
+const _RE_ENCABEZADOS_DESC = /^(?:descripci[oó]n\s+(?:de\s+la\s+oferta|del\s+cargo|del\s+puesto|general|del\s+empleo)|(?:principales\s+)?funciones?(?:\s+(?:del\s+cargo|del\s+puesto|principales|generales|y\s+actividades))?|actividades(?:\s+principales|\s+del\s+cargo)?|tareas(?:\s+principales|\s+del\s+cargo)?|objetivo(?:s)?(?:\s+(?:del\s+cargo|del\s+puesto|general(?:es)?))?|misi[oó]n\s+del\s+cargo|prop[oó]sito(?:\s+(?:del\s+cargo|principal|del\s+puesto))?|resultado(?:s)?\s+(?:final(?:es)?\s+)?esperado(?:s)?(?:\s+de\s+la\s+funci[oó]n|\s+del\s+cargo)?|perfil(?:\s+(?:del\s+cargo|del\s+puesto|requerido|ocupacional))?|requisitos(?:\s+(?:del\s+cargo|generales|m[ií]nimos|de\s+postulaci[oó]n))?|competencias(?:\s+(?:requeridas|del\s+cargo))?|antecedentes(?:\s+(?:del\s+cargo|generales))?|otros\s+antecedentes|detalle\s+de\s+la\s+oferta|resumen\s+de\s+la\s+oferta|c[oó]mo\s+postular|forma\s+de\s+postul(?:ar|aci[oó]n)|modo\s+de\s+postul(?:ar|aci[oó]n)|instrucciones\s+de\s+postulaci[oó]n)\b[\s:.\-–—]*/i;
+
+// Boilerplate de postulación: cuando, tras limpiar el encabezado, el resumen
+// empieza directamente con instrucciones de cómo postular ("Postula en línea
+// en el portal de Empleos Públicos…"), es texto genérico casi idéntico en
+// todas las ofertas. No aporta como resumen, así que preferimos ocultarlo.
+// Cada alternativa termina en \b para anclar a palabra completa: así
+// "Postulante debe contar…" (resumen legítimo) NO se confunde con el verbo
+// "postula", que sí indica boilerplate ("Postula en línea…").
+const _RE_POSTULACION_BOILERPLATE = /^(?:postul(?:a|ar|e|en|aci[oó]n(?:es)?)\b|para\s+postular\b|deber[aá]n?\s+postular\b|las?\s+postulaci[oó]n(?:es)?\b|el\s+proceso\s+de\s+postulaci[oó]n\b|ingresa(?:r|ndo)?\s+(?:a|al|en)\b)/i;
+
+// Marcador de lista al inicio del texto: "1.", "1.-", "1)", "(1)", "•", "-",
+// "a)"… Lo quitamos del preview para que no empiece con un número suelto
+// ("1. Generar…" → "Generar…"). Sólo afecta el resumen de la tarjeta.
+const _RE_MARCADOR_LISTA_INICIO = /^(?:\(?\d{1,2}\)|\d{1,2}\s*[.\-)]|[a-zA-Z]\)|[-*•·▪◦–—])\s*[.\-–—]?\s+/;
+
+function _limpiarEncabezadoDesc(texto) {
+  let t = String(texto || '').trim();
+  // Hasta 5 pasadas por si vienen rótulos encadenados sin puntuación
+  // ("FUNCIONES PRINCIPALES ACTIVIDADES RESULTADO FINAL ESPERADO…").
+  for (let i = 0; i < 5; i++) {
+    let limpio = t.replace(_RE_ENCABEZADOS_DESC, '').trim();
+    limpio = limpio.replace(_RE_MARCADOR_LISTA_INICIO, '').trim();
+    if (limpio === t) break;
+    t = limpio;
+  }
+  return t;
+}
+
 function renderCard(oferta) {
   const cargoDisplay = normalizarTituloOferta(oferta.cargo);
   const renta = formatRenta(oferta.renta_bruta_min, oferta.renta_bruta_max, oferta.grado_eus, oferta.renta_tipo);
@@ -1332,6 +1456,12 @@ function renderCard(oferta) {
   const tipoCss = tipoClase(oferta.tipo_contrato);
   const tipoLabel = tipoEtiqueta(oferta.tipo_contrato);
   const regionCompleta = nombreRegionCompleto(oferta.region);
+  // Para el chip de región: los nombres oficiales muy largos ("Región de Aysén
+  // del General Carlos Ibáñez del Campo") se partían en dos líneas en la
+  // tarjeta. Si el nombre es largo, usamos la forma canónica corta ("Aysén").
+  const regionChip = regionCompleta.length > 24
+    ? (regionCanonica(oferta.region) || regionCompleta)
+    : regionCompleta;
   const sector  = oferta.sector || '';
   const ciudad  = ciudadValida(oferta.ciudad, oferta.institucion);
   const jornada = jornadaValida(oferta.jornada);
@@ -1353,8 +1483,32 @@ function renderCard(oferta) {
   // institución. La "Renta no informada" también se omite — es ruido
   // cuando el dato no está; preferimos ocultar el span.
   const UI = window.UI_STRINGS || {};
+  // Descripción de la tarjeta: texto plano recortado a una altura estándar
+  // (CSS line-clamp) con "ver más" para expandir. Se oculta si no hay datos
+  // (igual que el resto de campos sin contenido).
+  let _descRaw = (oferta.descripcion || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  // Quitamos etiquetas/encabezados de relleno al inicio ("DESCRIPCIÓN DE LA
+  // OFERTA:", "FUNCIONES DEL CARGO", "OTROS ANTECEDENTES:", etc.) para que el
+  // resumen se lea más fluido y natural, sin el rótulo administrativo delante.
+  _descRaw = _limpiarEncabezadoDesc(_descRaw);
+  // Si el resumen queda como puras instrucciones de postulación ("Cómo
+  // postular: Postula en línea…"), es ruido genérico: no lo mostramos.
+  if (_RE_POSTULACION_BOILERPLATE.test(_descRaw)) _descRaw = '';
+  // Tope de caracteres del resumen de la tarjeta. El CSS line-clamp limita la
+  // ALTURA visible, pero el texto completo igual entraba al DOM y al expandir
+  // "ver más" algunas descripciones quedaban en un muro larguísimo. Lo acotamos
+  // a un preview breve (cortando en la última palabra para no partir a la mitad);
+  // el texto íntegro vive en el modal de detalle ("Ver detalles").
+  const _DESC_CARD_MAX = 150;
+  if (_descRaw.length > _DESC_CARD_MAX) {
+    let _cut = _descRaw.slice(0, _DESC_CARD_MAX);
+    const _lastSpace = _cut.lastIndexOf(' ');
+    if (_lastSpace > _DESC_CARD_MAX * 0.6) _cut = _cut.slice(0, _lastSpace);
+    _descRaw = _cut.trimEnd().replace(/[.,;:]+$/, '') + '…';
+  }
+  const _descCard = _descRaw ? escHtml(_descRaw) : '';
   return `
-  <div class="oferta-card${esFav ? ' favorita' : ''}${plazo.clase ? ' urg-' + plazo.clase : ''}" data-oferta-id="${oferta.id}" role="button" tabindex="0" aria-label="Ver detalle: ${escAttr(cargoDisplay)}">
+  <div class="oferta-card${esFav ? ' favorita' : ''}${oferta.destacada ? ' destacada' : ''}${plazo.clase ? ' urg-' + plazo.clase : ''}" data-oferta-id="${oferta.id}" role="button" tabindex="0" aria-label="Ver detalle: ${escAttr(cargoDisplay)}">
     <button class="btn-fav-card${esFav ? ' activo' : ''}"
       data-id="${oferta.id}"
       data-cargo="${escAttr(cargoDisplay)}"
@@ -1371,8 +1525,9 @@ function renderCard(oferta) {
         <div class="oferta-institucion">${resaltarBusqueda(_aplicarAcronimosForzados(oferta.institucion || ''), estado.q) || 'Institución pública'}</div>
         <div class="oferta-cargo"><span class="oferta-cargo-link">${resaltarBusqueda(cargoDisplay, estado.q)}</span></div>
         <div class="oferta-tipo-wrap">
+          ${oferta.destacada ? `<span class="badge badge-destacada" title="Oferta destacada en nuestras redes sociales">⭐ Destacada</span>` : ''}
           ${oferta.tipo_contrato ? `<span class="badge ${tipoCss}">${tipoLabel}</span>` : ''}
-          ${regionCompleta ? `<span class="badge badge-region">🗺 ${escHtml(regionCompleta)}</span>` : ''}
+          ${regionChip ? `<span class="badge badge-region">🗺 ${escHtml(regionChip)}</span>` : ''}
         </div>
       </div>
     </div>
@@ -1390,6 +1545,10 @@ function renderCard(oferta) {
         ? `<span class="oferta-frescura${frescura.startsWith('✨') ? ' frescura-nueva' : ''}">${escHtml(frescura)}</span>`
         : (oferta.fecha_publicacion ? `<span class="oferta-detalle">🗓 Publicada ${formatFecha(oferta.fecha_publicacion)}</span>` : '')}
     </div>
+    ${_descCard ? `<div class="oferta-desc-wrap">
+      <p class="oferta-desc">${_descCard}</p>
+      <button class="oferta-desc-toggle" type="button" data-action="toggle-desc" data-stop-propagation="true" aria-expanded="false" title="Ver más" aria-label="Ver descripción completa" hidden><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+    </div>` : ''}
     <div class="oferta-footer">
       <div class="oferta-plazo">
         <div class="plazo-dot ${plazo.clase}"></div>
@@ -1403,6 +1562,27 @@ function renderCard(oferta) {
     </div>
     ${jobPosting.markup}
   </div>`;
+}
+
+// ── Flecha de "ver más" en la descripción de la tarjeta ───────────────────
+// La flecha sólo tiene sentido cuando el texto recortado (CSS line-clamp)
+// realmente se desborda. Tras pintar la lista medimos cada descripción y
+// mostramos el chevron únicamente en las que tienen contenido oculto. Se
+// difiere con requestAnimationFrame para medir con el layout ya aplicado.
+function _marcarDescripcionesExpandibles() {
+  var aplicar = function () {
+    var wraps = document.querySelectorAll('.oferta-desc-wrap');
+    for (var i = 0; i < wraps.length; i++) {
+      var wrap = wraps[i];
+      if (wrap.classList.contains('is-expanded')) continue;
+      var p = wrap.querySelector('.oferta-desc');
+      var btn = wrap.querySelector('.oferta-desc-toggle');
+      if (!p || !btn) continue;
+      btn.hidden = p.scrollHeight <= p.clientHeight + 2;
+    }
+  };
+  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(aplicar);
+  else aplicar();
 }
 
 // ── Favorito directo desde tarjeta ────────────────────────────────────────
@@ -1445,6 +1625,9 @@ function renderRowCompacta(oferta) {
   const tipoCss   = tipoClase(oferta.tipo_contrato);
   const tipoLabel = tipoEtiqueta(oferta.tipo_contrato);
   const regionCompleta = nombreRegionCompleto(oferta.region);
+  const regionChip = regionCompleta.length > 24
+    ? (regionCanonica(oferta.region) || regionCompleta)
+    : regionCompleta;
   const rentaHtml = formatRentaRow(oferta.renta_bruta_min, oferta.renta_bruta_max, oferta.grado_eus, oferta.renta_tipo);
   const instLogo = getInstIcon(oferta);
   const favs  = leerFavoritos();
@@ -1454,13 +1637,13 @@ function renderRowCompacta(oferta) {
     console.debug('[SEO] JobPosting omitido en row por campos faltantes:', jobPosting.errores, oferta?.id);
   }
   return `
-  <div class="oferta-row${esFav ? ' favorita' : ''}" data-oferta-id="${oferta.id}" role="button" tabindex="0" aria-label="Ver detalle: ${escAttr(cargoDisplay)}">
+  <div class="oferta-row${esFav ? ' favorita' : ''}${oferta.destacada ? ' destacada' : ''}" data-oferta-id="${oferta.id}" role="button" tabindex="0" aria-label="Ver detalle: ${escAttr(cargoDisplay)}">
     <div class="row-main">
       <div class="row-logo${instLogo.confiable ? ' row-logo--verificada' : ''}" title="${escAttr(instLogo.fuente)}" aria-hidden="true">${instLogo.html}</div>
       <div class="row-textcol">
         <div class="row-inst">${escHtml(_aplicarAcronimosForzados(oferta.institucion || '')) || 'Institución pública'}</div>
-        <div class="row-cargo" title="${escAttr(cargoDisplay)}">${escHtml(cargoDisplay)}</div>
-        ${regionCompleta ? `<div class="row-region">🗺 ${escHtml(regionCompleta)}</div>` : ''}
+        <div class="row-cargo" title="${escAttr(cargoDisplay)}">${oferta.destacada ? '<span title="Oferta destacada en redes sociales">⭐ </span>' : ''}${escHtml(cargoDisplay)}</div>
+        ${regionChip ? `<div class="row-region">🗺 ${escHtml(regionChip)}</div>` : ''}
       </div>
     </div>
     <div class="row-meta">
@@ -1580,6 +1763,17 @@ function renderVacio() {
     aplicarSugerencia(BUSQUEDAS_POPULARES[parseInt(btn.dataset.idx, 10)]);
   });
   document.getElementById('btn-estado-alerta')?.addEventListener('click', prellenarAlertaDesdeFiltros);
+}
+
+// Estado vacío específico de la pestaña "Destacadas": no hay filtros que
+// ajustar, simplemente todavía no hay ofertas curadas para redes.
+function renderVacioDestacadas() {
+  document.getElementById('lista-ofertas').innerHTML = `
+    <div class="estado-vacio">
+      ⭐ Aún no hay ofertas destacadas.
+      <p class="estado-mensaje">Acá aparecen las ofertas que publicamos en nuestras redes sociales (Instagram, TikTok, LinkedIn). Vuelve pronto o revisa la pestaña <strong>Vigentes</strong>.</p>
+    </div>`;
+  document.getElementById('paginacion').innerHTML = '';
 }
 
 function aplicarSugerencia(sug) {
@@ -1742,20 +1936,31 @@ function irPagina(n) {
   document.getElementById('lista-ofertas').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+// Copys por pestaña del listado. Centraliza el texto para que init,
+// buscar() y setVistaListado() no se repitan.
+const LISTADO_COPYS = {
+  vigentes: 'Mostrando concursos vigentes. Revisa los cerrados en la pestaña Cerradas.',
+  destacadas: 'Ofertas destacadas: una selección de las mejores oportunidades vigentes, incluidas las que publicamos en nuestras redes sociales (Instagram, TikTok, LinkedIn). No se aplican los filtros del buscador.',
+  cerradas: 'Mostrando convocatorias ya cerradas para consulta e historial. Vuelve a Vigentes para postular.',
+};
+
+// Sincroniza las pestañas (activo + aria-selected) con la vista actual.
+function sincronizarTabsListado(vista) {
+  document.getElementById('estado-listado-tabs')?.setAttribute('data-estado', vista);
+  ['vigentes', 'destacadas', 'cerradas'].forEach((v) => {
+    const tab = document.getElementById('tab-' + v);
+    if (!tab) return;
+    tab.classList.toggle('activo', v === vista);
+    tab.setAttribute('aria-selected', v === vista ? 'true' : 'false');
+  });
+}
+
 function setVistaListado(vista) {
   estado.vista_listado = vista;
   estado.pagina = 1;
-  document.getElementById('estado-listado-tabs')?.setAttribute('data-estado', vista);
-  document.getElementById('tab-vigentes')?.classList.toggle('activo', vista === 'vigentes');
-  document.getElementById('tab-cerradas')?.classList.toggle('activo', vista === 'cerradas');
-  document.getElementById('tab-vigentes')?.setAttribute('aria-selected', vista === 'vigentes' ? 'true' : 'false');
-  document.getElementById('tab-cerradas')?.setAttribute('aria-selected', vista === 'cerradas' ? 'true' : 'false');
+  sincronizarTabsListado(vista);
   const copy = document.getElementById('estado-listado-copy');
-  if (copy) {
-    copy.textContent = vista === 'vigentes'
-      ? 'Mostrando concursos vigentes. Revisa los cerrados en la pestaña Cerradas.'
-      : 'Mostrando convocatorias ya cerradas para consulta e historial. Vuelve a Vigentes para postular.';
-  }
+  if (copy) copy.textContent = LISTADO_COPYS[vista] || LISTADO_COPYS.vigentes;
   actualizarVisibilidadCompartirBusqueda();
   cargarOfertas();
 }
@@ -1765,34 +1970,44 @@ async function cargarOfertas() {
   renderEsqueletos();
 
   const params = new URLSearchParams({ pagina: estado.pagina, por_pagina: estado.por_pagina, orden: estado.orden });
-  if (estado.q)              params.set('q', estado.q);
-  if (estado.profesion)      params.set('profesion', estado.profesion);
-  if (estado.region && (!Array.isArray(estado.comunas) || estado.comunas.length === 0)) params.set('region', estado.region);
-  if (estado.sector)         params.set('sector', estado.sector);
-  if (estado.nivel)          params.set('nivel', estado.nivel);
-  if (estado.cierra_pronto && estado.vista_listado === 'vigentes')  params.set('cierra_pronto', 'true');
-  if (estado.nuevas)         params.set('nuevas', 'true');
-  if (estado.solo_con_correo) params.set('solo_con_correo', 'true');
-  if (estado.institucion_id) params.set('institucion', estado.institucion_id);
-  if (estado.renta_min)      params.set('renta_min', estado.renta_min);
-  if (estado.renta_max)      params.set('renta_max', estado.renta_max);
-  if (Array.isArray(estado.comunas) && estado.comunas.length > 0) {
-    params.set('comunas', estado.comunas.join(','));
-  } else if (estado.ciudad) {
-    params.set('ciudad', estado.ciudad);
-  }
-  // Tipos activos: enviar solo cuando es un subconjunto propio del catálogo.
-  // Si están todos activos o ninguno, no filtrar para incluir todos los tipos.
-  const TIPOS_CATALOGO_UI = ['planta','contrata','honorarios','codigo_trabajo','otro','no_informa'];
-  const tiposActivosApi = estado.tipos.flatMap((tipo) => (
-    tipo === 'otro' ? ['otro', 'reemplazo'] : [tipo]
-  ));
-  const tiposUnicosApi = [...new Set(tiposActivosApi)];
-  const tiposCatalogoApi = [...new Set(TIPOS_CATALOGO_UI.flatMap((tipo) => (
-    tipo === 'otro' ? ['otro', 'reemplazo'] : [tipo]
-  )))];
-  if (tiposUnicosApi.length > 0 && tiposUnicosApi.length < tiposCatalogoApi.length) {
-    params.set('tipo', tiposUnicosApi.join(','));
+
+  // La pestaña "Destacadas" es una vitrina curada: muestra TODAS las ofertas
+  // destacadas sin aplicar los filtros activos del buscador (región, sector,
+  // término, etc.). Por eso enviamos solo `destacadas` + paginación/orden.
+  const esDestacadas = estado.vista_listado === 'destacadas';
+  if (esDestacadas) {
+    params.set('destacadas', 'true');
+  } else {
+    if (estado.q)              params.set('q', estado.q);
+    if (estado.profesion)      params.set('profesion', estado.profesion);
+    if (estado.region && (!Array.isArray(estado.comunas) || estado.comunas.length === 0)) params.set('region', estado.region);
+    if (estado.sector)         params.set('sector', estado.sector);
+    if (estado.nivel)          params.set('nivel', estado.nivel);
+    if (estado.cierra_pronto && estado.vista_listado === 'vigentes')  params.set('cierra_pronto', 'true');
+    if (estado.nuevas)         params.set('nuevas', 'true');
+    if (estado.solo_con_correo) params.set('solo_con_correo', 'true');
+    if (estado.sin_experiencia) params.set('sin_experiencia', 'true');
+    if (estado.institucion_id) params.set('institucion', estado.institucion_id);
+    if (estado.renta_min)      params.set('renta_min', estado.renta_min);
+    if (estado.renta_max)      params.set('renta_max', estado.renta_max);
+    if (Array.isArray(estado.comunas) && estado.comunas.length > 0) {
+      params.set('comunas', estado.comunas.join(','));
+    } else if (estado.ciudad) {
+      params.set('ciudad', estado.ciudad);
+    }
+    // Tipos activos: enviar solo cuando es un subconjunto propio del catálogo.
+    // Si están todos activos o ninguno, no filtrar para incluir todos los tipos.
+    const TIPOS_CATALOGO_UI = ['planta','contrata','honorarios','codigo_trabajo','otro','no_informa'];
+    const tiposActivosApi = estado.tipos.flatMap((tipo) => (
+      tipo === 'otro' ? ['otro', 'reemplazo'] : [tipo]
+    ));
+    const tiposUnicosApi = [...new Set(tiposActivosApi)];
+    const tiposCatalogoApi = [...new Set(TIPOS_CATALOGO_UI.flatMap((tipo) => (
+      tipo === 'otro' ? ['otro', 'reemplazo'] : [tipo]
+    )))];
+    if (tiposUnicosApi.length > 0 && tiposUnicosApi.length < tiposCatalogoApi.length) {
+      params.set('tipo', tiposUnicosApi.join(','));
+    }
   }
 
   try {
@@ -1822,6 +2037,7 @@ async function cargarOfertas() {
     _nuevasBaseline(totalContador, params.toString());
 
     if (!ofertasFiltradas.length) {
+      if (estado.vista_listado === 'destacadas') { renderVacioDestacadas(); return; }
       renderVacio();
       return;
     }
@@ -1842,6 +2058,7 @@ const itemsHtml = ofertasFiltradas.map((oferta, i) => {
 }).join('');
 
 lista.innerHTML = header + itemsHtml;
+    _marcarDescripcionesExpandibles();
     if (window.repintarComparar) window.repintarComparar();
     // Paginación
     renderPaginacion(data.total ?? ofertasFiltradas.length, data.paginas ?? 1);
@@ -2388,12 +2605,73 @@ function normalizarOferta(o) {
     calidadJuridica: o.calidad_juridica || null,
     estamento: o.estamento || null,
     lugarDesempenio: o.lugar_desempenio || null,
-    shareUrl: (o.id != null ? (location.origin + '/oferta/' + o.id) : (o.url_oferta || null)),
+    shareUrl: (o.id != null ? (location.origin + rutaOferta(o.id, o.cargo)) : (o.url_oferta || null)),
   };
 }
 
 // Punto de entrada del detalle. Si el componente FichaOferta está cargado,
 // usa la ficha nueva; si no (o si falla), cae al modal legacy (#modal).
+// Fetch del detalle con reintento ante fallos transitorios (5xx o error de
+// red). Cubre el cold-start del backend en Railway al abrir un link
+// compartido en frío, que hacía fallar la primera carga del detalle. NO
+// reintenta en respuestas 4xx (p.ej. 404: la oferta ya no existe) — esas son
+// definitivas y se devuelven tal cual para que la UI muestre el mensaje justo.
+async function _fetchOfertaDetalle(ofertaId, { reintentos = 2, esperaMs = 600 } = {}) {
+  let ultimoError = null;
+  for (let intento = 0; intento <= reintentos; intento++) {
+    try {
+      const resp = await fetchApi(`/api/ofertas/${ofertaId}`);
+      if (resp.status >= 500 && intento < reintentos) {
+        await new Promise((r) => setTimeout(r, esperaMs * (intento + 1)));
+        continue;
+      }
+      return resp;
+    } catch (err) {
+      ultimoError = err;
+      if (intento < reintentos) {
+        await new Promise((r) => setTimeout(r, esperaMs * (intento + 1)));
+        continue;
+      }
+      throw ultimoError;
+    }
+  }
+  throw ultimoError || new Error('No se pudo cargar la oferta');
+}
+
+// Pinta el estado de error del modal legacy: oculta el cuerpo/acciones (para
+// no dejar el placeholder a medias) y muestra un mensaje claro con la acción
+// adecuada. Distingue 404 (oferta retirada, sin reintento) de fallos
+// transitorios (ofrece "Reintentar").
+function _mostrarErrorDetalle(ofertaId, err) {
+  const overlay = document.getElementById('modal');
+  if (!overlay) return;
+  const es404 = /\b404\b/.test(String(err && err.message));
+  const setText = (id, t) => { const el = document.getElementById(id); if (el) el.textContent = t; };
+  // Cabecera: limpia datos de placeholder.
+  setText('modal-kicker', '');
+  const instEl = document.getElementById('modal-institucion');
+  if (instEl) { instEl.textContent = ''; instEl.hidden = true; }
+  setText('modal-cargo', '');
+  const badges = document.getElementById('modal-badges');
+  if (badges) badges.innerHTML = '';
+  // Oculta cuerpo y acciones; muestra el panel de error.
+  const body = overlay.querySelector('.modal-body');
+  const actions = overlay.querySelector('.modal-actions');
+  if (body) body.hidden = true;
+  if (actions) actions.hidden = true;
+  setText('modal-error-titulo', es404 ? 'Esta oferta ya no está disponible' : 'No pudimos cargar el detalle');
+  setText('modal-error-texto', es404
+    ? 'Es posible que el proceso de postulación haya cerrado o que la oferta haya sido retirada.'
+    : 'Puede ser un problema temporal de conexión. Inténtalo de nuevo en unos segundos.');
+  const retry = document.getElementById('modal-error-retry');
+  if (retry) {
+    retry.hidden = es404;
+    retry.onclick = () => _abrirModalLegacy(ofertaId);
+  }
+  const panel = document.getElementById('modal-error-panel');
+  if (panel) panel.hidden = false;
+}
+
 async function abrirModal(ofertaId) {
   window.track?.('offer-view', { id: ofertaId });
   if (window.FichaOferta) {
@@ -2420,7 +2698,11 @@ function _toggleCompararFicha(id) {
 }
 
 async function abrirFichaOferta(ofertaId) {
-  const resp = await fetchApi(`/api/ofertas/${ofertaId}`);
+  // Un solo intento: es la ruta primaria (ficha-oferta.js carga antes que
+  // app.js). El presupuesto de reintentos vive en la ruta legacy de fallback,
+  // que además muestra el panel de error; así no se apilan dos budgets de
+  // reintento (ficha + legacy) y el error aparece sin esperas largas.
+  const resp = await _fetchOfertaDetalle(ofertaId, { reintentos: 0 });
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   const o = await resp.json();
   let favs = [];
@@ -2449,6 +2731,14 @@ async function _abrirModalLegacy(ofertaId) {
   overlay.classList.add('open');
   window.__updateBackToTopVisibility?.();
   document.body.style.overflow = 'hidden';
+  // Restaura el layout normal por si venimos de un estado de error previo
+  // (reintento o reapertura): cuerpo/acciones visibles, panel de error oculto.
+  const _bodyRestore = overlay.querySelector('.modal-body');
+  const _actionsRestore = overlay.querySelector('.modal-actions');
+  const _errPanelRestore = document.getElementById('modal-error-panel');
+  if (_bodyRestore) _bodyRestore.hidden = false;
+  if (_actionsRestore) _actionsRestore.hidden = false;
+  if (_errPanelRestore) _errPanelRestore.hidden = true;
   _instalarFocusTrap();
   _instalarSwipeCierre();
   // Foco inicial en el botón principal cuando esté disponible
@@ -2516,11 +2806,20 @@ async function _abrirModalLegacy(ofertaId) {
   document.getElementById('modal-plazo-label').textContent = '—';
   document.getElementById('modal-plazo-fecha').textContent = '';
 
+  let o;
   try {
-    const resp = await fetchApi(`/api/ofertas/${ofertaId}`);
+    const resp = await _fetchOfertaDetalle(ofertaId);
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const o = await resp.json();
+    o = await resp.json();
+  } catch (err) {
+    // El fetch (o el parseo) falló: corresponde el panel de error
+    // (404 = oferta retirada; 5xx/red = transitorio, con "Reintentar").
+    console.error('Error cargando detalle (fetch):', err);
+    _mostrarErrorDetalle(ofertaId, err);
+    return;
+  }
 
+  try {
     const tipoCss  = tipoClase(o.tipo_contrato);
     const tipoLabel = tipoEtiqueta(o.tipo_contrato);
     const regionCompleta = nombreRegionCompleto(o.region);
@@ -2592,6 +2891,13 @@ async function _abrirModalLegacy(ofertaId) {
     // textos cortos (<= umbral) se muestran completos sin truncar.
     // rich-text.js devuelve "" cuando sólo quedan subtítulos huérfanos,
     // así que aquí sólo vemos contenido realmente renderizable.
+    // Bloque de texto enriquecido + secciones semánticas: es la parte más
+    // dependiente de los datos de la oferta y la más propensa a lanzar
+    // (rich-text / buildSemanticSections). La aislamos para que un fallo aquí
+    // NO tumbe el modal entero — cabecera, CTA "postular", bases, favorito y
+    // compartir igual se renderizan (antes, una excepción acá mostraba
+    // "No se pudo obtener el detalle" aunque los datos sí estaban).
+    try {
     const desc = o.descripcion || '';
     const descHtml = formatRichText(desc, {
       truncate: true,
@@ -2700,6 +3006,18 @@ async function _abrirModalLegacy(ofertaId) {
       _toggleSection('modal-data-warning', true);
       document.getElementById('modal-data-warning-text').textContent = warnings[0];
     }
+    } catch (errTexto) {
+      // Datos OK pero el render del texto/secciones falló: ocultamos esas
+      // secciones (para no dejar nada a medias) y seguimos con el resto del
+      // modal. Logueamos el error real para diagnóstico.
+      console.error('[detalle] fallo al renderizar texto/secciones (datos OK):', errTexto, ofertaId);
+      const _ftEl = document.getElementById('modal-descripcion');
+      const _ftSec = _ftEl ? _ftEl.closest('.modal-seccion') : null;
+      if (_ftSec) _ftSec.hidden = true;
+      ['modal-funciones-wrap', 'modal-condiciones-wrap', 'modal-objetivo-wrap',
+       'modal-postulacion-wrap', 'modal-residual-wrap', 'modal-requisitos-wrap',
+       'modal-data-warning'].forEach((id) => _toggleSection(id, false));
+    }
 
     // Botón postular — gateado primero por flag backend, luego por validación cliente.
     const btnPostular = document.getElementById('modal-btn-postular');
@@ -2748,11 +3066,10 @@ async function _abrirModalLegacy(ofertaId) {
     configurarCompartir(o);
 
   } catch (err) {
-    console.error('Error cargando detalle:', err);
-    document.getElementById('modal-kicker').textContent = 'Error al cargar';
-    const _instElErr = document.getElementById('modal-institucion');
-    if (_instElErr) { _instElErr.textContent = ''; _instElErr.hidden = true; }
-    document.getElementById('modal-cargo').textContent = 'No se pudo obtener el detalle de la oferta.';
+    // Último recurso: falló el render de la parte simple (cabecera/resumen/
+    // botones) pese a tener datos. Es muy raro tras aislar el texto enriquecido.
+    console.error('Error mostrando detalle (datos cargados):', err);
+    _mostrarErrorDetalle(ofertaId, err);
   }
 }
 
@@ -2845,14 +3162,21 @@ function abrirVisorBasesPorId(ofertaId) {
   if (oferta) abrirVisorBases(oferta);
 }
 
+// `rutaOferta(id, cargo)` y `slugificarCargo(cargo)` viven en shared-shell.js
+// (fuente única, cargada antes que app.js) y se usan como globales aquí y en
+// favoritos.js / historial.js. Construyen la ruta canónica /oferta/{id}-{slug}
+// con el mismo slug que `_slugify` del backend, evitando el redirect 301.
+
 // Construye el deep-link a esta oferta dentro del dominio actual.
 // Ventaja vs compartir oferta.url_oferta directo: el receptor ve nuestra
 // previsualización (OG image dinámica) y aterriza en el modal preseleccionado,
-// con un solo click para postular.
+// con un solo click para postular. Se limpian hash y query (filtros propios de
+// la sesión) para que el enlace sea preciso y apunte sólo a la oferta.
 function urlDeepLinkOferta(oferta) {
   const url = new URL(window.location.href);
   url.hash = '';
-  url.pathname = `/oferta/${oferta.id}`;
+  url.search = '';
+  url.pathname = rutaOferta(oferta.id, oferta.cargo);
   return url.toString();
 }
 
@@ -3282,12 +3606,9 @@ function limpiarRentaMax() {
 function buscar() {
   if (estado.vista_listado !== 'vigentes') {
     estado.vista_listado = 'vigentes';
-    document.getElementById('estado-listado-tabs')?.setAttribute('data-estado', 'vigentes');
-    document.getElementById('tab-vigentes')?.classList.add('activo');
-    document.getElementById('tab-cerradas')?.classList.remove('activo');
-    document.getElementById('tab-vigentes')?.setAttribute('aria-selected', 'true');
-    document.getElementById('tab-cerradas')?.setAttribute('aria-selected', 'false');
-    document.getElementById('estado-listado-copy').textContent = 'Mostrando concursos vigentes. Revisa los cerrados en la pestaña Cerradas.';
+    sincronizarTabsListado('vigentes');
+    const copyListado = document.getElementById('estado-listado-copy');
+    if (copyListado) copyListado.textContent = LISTADO_COPYS.vigentes;
   }
   estado.q         = document.getElementById('input-cargo').value.trim();
   estado.region    = document.getElementById('filtro-region').value;
@@ -3323,7 +3644,23 @@ function buscar() {
   cargarOfertas();
 }
 
+// Atajos de selección única: activar uno desactiva los demás (no se combinan).
+const ATAJOS_EXCLUSIVOS = ['cierra-hoy', 'nuevos', 'sin-experiencia'];
+
 function toggleFiltro(btn, filtro) {
+  const esAtajo = ATAJOS_EXCLUSIVOS.indexOf(filtro) !== -1;
+  const activando = !btn.classList.contains('activo');
+  if (esAtajo && activando) {
+    // Apaga los otros atajos (clase + estado) antes de encender este.
+    ATAJOS_EXCLUSIVOS.forEach((a) => {
+      if (a === filtro) return;
+      document.querySelector('.filtro-tag[data-filtro="' + a + '"]')?.classList.remove('activo');
+    });
+    estado.cierra_pronto = false;
+    estado.nuevas = false;
+    estado.sin_experiencia = false;
+  }
+
   btn.classList.toggle('activo');
 
   if (filtro === 'cierra-hoy') {
@@ -3432,8 +3769,9 @@ async function enviarAlerta() {
       // Limpiar el formulario
       document.getElementById('alerta-email').value = '';
       document.getElementById('alerta-keywords').value = '';
-      // Umami: track alert subscription
-      trackUmami('alert-subscribe', { region: region || 'todas', frecuencia });
+      // Trackeo: dispara Umami + el beacon interno (window.track), para que
+      // el embudo de conversión del panel cuente las suscripciones.
+      (window.track || trackUmami)('alert-subscribe', { region: region || 'todas', frecuencia });
       // Show email typo suggestion if any
       if (data.sugerencia_email) {
         const sugDiv = document.getElementById('mailcheck-suggestion');
@@ -3612,6 +3950,9 @@ document.getElementById('lista-ofertas')?.addEventListener('click', (e) => {
 // Accesibilidad: Enter / Space también abren el modal cuando la tarjeta tiene foco.
 document.getElementById('lista-ofertas')?.addEventListener('keydown', (e) => {
   if (e.key !== 'Enter' && e.key !== ' ') return;
+  // Botones internos (favorito, "Ver detalles", chevron de descripción…)
+  // manejan su propia tecla — no abrir el modal por encima de ellos.
+  if (e.target.closest('.btn-fav-card, .btn-fav-row, [data-action]')) return;
   const el = e.target.closest('[data-oferta-id]');
   if (!el) return;
   e.preventDefault();
@@ -3797,13 +4138,9 @@ function limpiarTodosLosFiltros() {
   // limpiar filtros implica empezar de cero.
   if (estado.vista_listado !== 'vigentes') {
     estado.vista_listado = 'vigentes';
-    document.getElementById('estado-listado-tabs')?.setAttribute('data-estado', 'vigentes');
-    document.getElementById('tab-vigentes')?.classList.add('activo');
-    document.getElementById('tab-cerradas')?.classList.remove('activo');
-    document.getElementById('tab-vigentes')?.setAttribute('aria-selected', 'true');
-    document.getElementById('tab-cerradas')?.setAttribute('aria-selected', 'false');
+    sincronizarTabsListado('vigentes');
     const copy = document.getElementById('estado-listado-copy');
-    if (copy) copy.innerHTML = 'Mostrando concursos vigentes. Revisa los cerrados en la pestaña <strong>Cerradas</strong>.';
+    if (copy) copy.textContent = LISTADO_COPYS.vigentes;
   }
 
   actualizarVisibilidadCompartirBusqueda();
@@ -3991,15 +4328,15 @@ function restaurarFiltrosDesdeURL() {
     estado.solo_con_correo = params.get('solo_con_correo') === 'true';
     if (params.has('vista')) {
       const vista = params.get('vista');
-      if (vista === 'cerradas' || vista === 'vigentes') estado.vista_listado = vista;
+      if (vista === 'cerradas' || vista === 'vigentes' || vista === 'destacadas') estado.vista_listado = vista;
     }
     // Selectores por data-filtro (el markup usa data-action/data-filtro, no onclick).
     document.querySelector('.filtro-tag[data-filtro="cierra-hoy"]')?.classList.toggle('activo', estado.cierra_pronto);
     document.querySelector('.filtro-tag[data-filtro="nuevos"]')?.classList.toggle('activo', estado.nuevas);
     document.querySelector('.filtro-tag[data-filtro="con-correo"]')?.classList.toggle('activo', estado.solo_con_correo);
-    document.getElementById('estado-listado-tabs')?.setAttribute('data-estado', estado.vista_listado);
-    document.getElementById('tab-vigentes')?.classList.toggle('activo', estado.vista_listado === 'vigentes');
-    document.getElementById('tab-cerradas')?.classList.toggle('activo', estado.vista_listado === 'cerradas');
+    sincronizarTabsListado(estado.vista_listado);
+    const copyListadoInit = document.getElementById('estado-listado-copy');
+    if (copyListadoInit) copyListadoInit.textContent = LISTADO_COPYS[estado.vista_listado] || LISTADO_COPYS.vigentes;
 
     if (params.has('pagina')) {
       const p = parseInt(params.get('pagina'), 10);

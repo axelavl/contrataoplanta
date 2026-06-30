@@ -7,7 +7,9 @@ ROOT = Path(__file__).resolve().parents[2]
 WEB = ROOT / 'web'
 
 errors = []
-pattern = re.compile(r'^.+ — contrata o planta \.cl$')
+# Separador aceptado entre el nombre de la página y la marca: guion largo
+# "—" (estándar) o punto medio "·" (variante usada en index/faq).
+pattern = re.compile(r'^.+ [—·] contrata o planta \.cl$')
 
 for html in sorted(WEB.glob('*.html')):
     txt = html.read_text(encoding='utf-8', errors='ignore')

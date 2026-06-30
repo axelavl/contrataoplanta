@@ -22,4 +22,10 @@
 # Las Pages Functions SÍ pueden hacer fetch a orígenes externos, que es la vía
 # soportada por Cloudflare para proxear hacia Railway.
 #
-# (Sin reglas de redirección activas por ahora.)
+# Consolidación de dominio (SEO): el dominio de marca es contrataoplanta.cl.
+# Cloudflare Pages sigue sirviendo el sitio en estadoemplea.pages.dev, pero lo
+# redirigimos 301 para no dejar dos URLs públicas indexables. La fuente lleva el
+# host completo, así que SOLO afecta al apex estadoemplea.pages.dev: los branch
+# previews `<branch>.estadoemplea.pages.dev` no coinciden y siguen sirviendo para
+# CI, y las peticiones que ya llegan a contrataoplanta.cl no se tocan (sin loop).
+https://estadoemplea.pages.dev/* https://contrataoplanta.cl/:splat 301

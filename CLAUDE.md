@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this project is
 
-Aggregator of Chilean public-sector job listings. Frontend live at `https://estadoemplea.pages.dev` (Cloudflare Pages); backend live at `https://contrataoplanta-production.up.railway.app` (Railway). Legacy brand domains (`contrataoplanta.cl`, `estadoemplea.cl`, `empleoestado.cl`) no longer resolve — avoid reintroducing them. Three loosely coupled pieces share one PostgreSQL database:
+Aggregator of Chilean public-sector job listings. Frontend live at `https://contrataoplanta.cl` (the brand domain; Cloudflare Pages also serves it at `https://estadoemplea.pages.dev`, which stays in CORS during the transition); backend live at `https://contrataoplanta-production.up.railway.app` (Railway). The old brand domains `estadoemplea.cl` and `empleoestado.cl` no longer resolve — avoid reintroducing them. Three loosely coupled pieces share one PostgreSQL database:
 
 1. **Scrapers** (`scrapers/`) — harvest offers from the central portal `empleospublicos.cl` plus hundreds of individual institutional sites.
 2. **FastAPI backend** (`api/main.py`, ASGI app `api.main:app`) — exposes `/api/...` to the frontend and runs auxiliary services (Meilisearch indexing, email alerts via Resend, OG image generation, BCN law lookups).

@@ -213,6 +213,13 @@ BADGE_TEXTS = {
 }
 BAD_CARGO_TEXTS = BUTTON_TEXTS | BADGE_TEXTS
 HEADING_TAGS = ("h2", "h3", "h4", "strong")
+
+# Helper compartido para detectar pasos de postulación por palabras clave
+# (mismo criterio que el resto de scrapers vía enrich).
+try:
+    from extraction.text_sections import extraer_pasos_postulacion
+except Exception:  # pragma: no cover
+    extraer_pasos_postulacion = None  # type: ignore[assignment]
 # Tier CRITICAL: la fuente más densa del país. Damos margen de timeout (la
 # Servicio Civil suele ser lenta en horario peak) y un reintento extra.
 DEFAULT_TIMEOUT = 20
@@ -811,6 +818,26 @@ class EmpleosPublicosScraper(BaseScraper):
             resultado["email_postulacion"] = resultado.get("email_postulacion") or correo
             resultado["email_consultas"] = resultado.get("email_consultas") or correo
 
+        # "Cómo postular": detecta pasos en el texto de la ficha o deja la
+        # instrucción genérica del portal. Se anexa en líneas propias para que
+        # el front lo clasifique como su propia sección.
+        como_postular = self._componer_como_postular(soup, correo=correo)
+        if como_postular:
+            base = resultado.get("descripcion") or ""
+            low = base.lower()
+            if "cómo postular" not in low and "como postular" not in low:
+                # Reservamos espacio para el bloque "Cómo postular": recortamos
+                # PRIMERO la descripción base, así la sección siempre llega
+                # completa al front aunque la ficha traiga funciones muy largas
+                # (de lo contrario el truncado final la cortaba por el extremo).
+                sep = "\n\n" if base else ""
+                margen = 2000 - len(como_postular) - len(sep)
+                if margen <= 0:
+                    resultado["descripcion"] = como_postular[:2000]
+                else:
+                    base_cap = truncate(base, margen) if base else ""
+                    resultado["descripcion"] = base_cap + sep + como_postular
+
         renta_texto = self._extraer_renta_texto(soup, metadata)
         renta_min, renta_max, grado_eus = parse_renta(renta_texto)
         if renta_min is None:
@@ -1052,6 +1079,40 @@ class EmpleosPublicosScraper(BaseScraper):
                 return truncate(m.group(0), 200)
         return None
 
+    def _componer_como_postular(
+        self, soup: BeautifulSoup, correo: str | None = None,
+    ) -> str | None:
+        """Arma el bloque "Cómo postular" para la ficha del portal.
+
+        1) Si la institución escribió instrucciones (módulo "Cómo postular" /
+           "Postulación" / "Instrucciones", o el texto libre de la ficha),
+           detecta los pasos por palabras clave (helper compartido).
+        2) Si no hay pasos explícitos, deja una instrucción genérica pero exacta
+           para el portal: postular en línea antes del cierre. Así la sección
+           nunca queda vacía para los avisos de empleospublicos.cl.
+        """
+        fuentes = [
+            self._texto_modulos_ficha(
+                soup,
+                ("como postular", "postulacion", "forma de postulacion",
+                 "instrucciones", "proceso de postulacion"),
+            ),
+            self._texto_seccion_sin_heading(soup.select_one("#lblTexto")),
+            self._texto_seccion_sin_heading(soup.select_one("#lblCondiciones")),
+        ]
+        texto = "\n".join(t for t in fuentes if t)
+        pasos: list[str] = []
+        if extraer_pasos_postulacion is not None and texto:
+            pasos = extraer_pasos_postulacion(texto)
+        if not pasos:
+            pasos = [
+                "Postula en línea en el portal de Empleos Públicos con el botón "
+                "“Postular”, dentro del plazo de la convocatoria."
+            ]
+            if correo:
+                pasos.append(f"Ante dudas o consultas, escribe a {correo}.")
+        return "Cómo postular:\n" + "\n".join(f"- {p}" for p in pasos)
+
     def _componer_descripcion(self, soup: BeautifulSoup) -> str | None:
         funciones = self._extraer_mapa_encabezados(soup.select_one("#lblFunciones"))
         bloques = [
@@ -1154,7 +1215,41 @@ class EmpleosPublicosScraper(BaseScraper):
         {"privacidad", "privacy", "cookies", "aviso legal", "terminos de uso", "términos de uso"}
     )
 
+    # PDF oficial de bases en el repositorio del portal. empleospublicos publica
+    # las bases (resumidas o completas) como un PDF servido desde
+    # `/Repositoriof/PDFConcursos.../...pdf`, p.ej.:
+    #   /Repositoriof/PDFConcursosResumidos/OtrosEmpleos/Concurso_OtrosEmpleos_141142_23062026_18111.pdf
+    # La ficha lo expone como botón de descarga, pero el enlace puede venir en un
+    # `href`, un `onclick`, un `iframe`/`embed` o una variable de script, así que
+    # lo buscamos sobre el HTML completo (no sólo en los `<a href>`). Acepta el
+    # path relativo o absoluto; `urljoin` lo resuelve contra la ficha.
+    _RE_PDF_BASES_REPO: re.Pattern[str] = re.compile(
+        r"""(?:https?://[^"'\s<>()]+)?/Repositoriof/[^"'\s<>()]+?\.pdf""",
+        re.IGNORECASE,
+    )
+
+    def _extraer_pdf_bases_repositorio(
+        self, soup: BeautifulSoup, fallback_url: str
+    ) -> str | None:
+        """Devuelve el PDF oficial de bases del repositorio si está en la ficha.
+
+        Escanea el HTML completo (href, onclick, iframe/embed, scripts) por el
+        path canónico ``/Repositoriof/...pdf``. Devuelve None si no aparece.
+        """
+        html = str(soup)
+        match = self._RE_PDF_BASES_REPO.search(html)
+        if not match:
+            return None
+        href = match.group(0).replace("&amp;", "&").strip()
+        return urljoin(fallback_url, href)
+
     def _extraer_url_bases(self, soup: BeautifulSoup, fallback_url: str) -> str | None:
+        # Prioridad 0: PDF oficial de bases en el repositorio del portal. Es el
+        # documento que el usuario realmente quiere ("Ver/Descargar bases"); va
+        # antes que cualquier heurística de anchors.
+        repo_pdf = self._extraer_pdf_bases_repositorio(soup, fallback_url)
+        if repo_pdf:
+            return repo_pdf
         anchors = soup.select("a[href]")
         # Pase 1: matchear por hint, en el orden definido. Devolvemos el
         # PRIMER hint que aparezca en el DOM para cada nivel de prioridad.

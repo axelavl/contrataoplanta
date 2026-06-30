@@ -100,6 +100,13 @@ except Exception:  # pragma: no cover
     extract_requirements = None  # type: ignore[assignment]
     extract_salary = None  # type: ignore[assignment]
 
+# Helpers compartidos (reunir líneas envueltas + pasos para postular). Viven en
+# extraction/ para que TODOS los scrapers (vía enrich) los reutilicen.
+from extraction.text_sections import (  # noqa: E402
+    extraer_pasos_postulacion as _extraer_pasos_postulacion,
+    unir_lineas_envueltas as _unir_lineas_envueltas,
+)
+
 if STANDALONE:
 
     class _Cfg:
@@ -452,12 +459,20 @@ def _texto_pdf(binario: bytes, max_paginas: int = 10) -> str:
 
 
 def parsear_pdf_bases(texto: str) -> dict[str, Any]:
-    """De las bases en texto saca requisitos_texto, renta y funciones."""
+    """De las bases en texto saca requisitos_texto, renta, funciones y pasos
+    para postular."""
     out: dict[str, Any] = {}
     if not texto or len(texto) < 80:
         return out
 
+    # Reúne ítems partidos en dos renglones antes de extraer requisitos/funciones.
+    texto = _unir_lineas_envueltas(texto)
     plano = limpiar_texto(texto)
+
+    # Pasos para postular (formulario online, recepción de antecedentes, etc.).
+    pasos = _extraer_pasos_postulacion(texto)
+    if pasos:
+        out["postulacion"] = pasos
 
     # Requisitos (exigibles + deseables + documentos a presentar)
     if extract_requirements is not None:
@@ -514,17 +529,26 @@ def construir_oferta(v: dict[str, Any], det: dict[str, Any],
     cargo = v["cargo"]
     pdf = pdf or {}
 
-    desc_partes = [v["descripcion"]]
+    # Descripción en LÍNEAS (no " | "): cada sección rotulada en su propio
+    # renglón permite que el front (rich-text) detecte los encabezados y
+    # clasifique funciones / cómo postular en su sección, en vez de fundir todo
+    # en un párrafo ambiguo.
+    desc_partes = [limpiar_texto(v["descripcion"])]
     if v.get("nivel_estructura"):
         desc_partes.append(f"Nivel {v['nivel_estructura']} de la estructura de cargos")
     vac = det.get("vacantes") or v.get("vacantes")
     if vac:
         desc_partes.append(f"Vacantes: {vac}")
     if det.get("gerencia"):
-        desc_partes.append(f"Gerencia: {det['gerencia']}")
+        desc_partes.append(limpiar_texto(f"Gerencia: {det['gerencia']}"))
     if pdf.get("funciones"):
-        desc_partes.append(f"Funciones: {pdf['funciones']}")
-    descripcion = limpiar_texto(" | ".join(p for p in desc_partes if p))
+        desc_partes.append(limpiar_texto(f"Funciones: {pdf['funciones']}"))
+    # Pasos para postular: encabezado + viñetas en líneas propias.
+    pasos = pdf.get("postulacion") or []
+    if pasos:
+        desc_partes.append(
+            "Cómo postular:\n" + "\n".join(f"- {limpiar_texto(p)}" for p in pasos))
+    descripcion = "\n".join(p for p in desc_partes if p)
 
     tipo = v.get("tipo") or det.get("tipo") or "Indefinido"
     if "definido" in tipo.lower() and "inde" not in tipo.lower():

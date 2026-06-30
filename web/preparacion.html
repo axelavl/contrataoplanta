@@ -6,17 +6,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Preparación de concursos públicos — contrata o planta .cl</title>
 <meta name="description" content="Centro de preparación para concursos del Estado: ruta por etapas, plantilla de CV, simulacro de conocimientos del sector público y guías de postulación.">
-<link rel="canonical" href="https://estadoemplea.pages.dev/preparacion.html">
+<link rel="canonical" href="https://contrataoplanta.cl/preparacion.html">
 <meta property="og:title" content="Preparación de concursos públicos — contrata o planta .cl">
 <meta property="og:description" content="Ruta por etapas, plantilla de CV y simulacro de conocimientos del Estado para postular mejor a concursos públicos.">
-<meta property="og:url" content="https://estadoemplea.pages.dev/preparacion.html">
-<meta property="og:image" content="https://estadoemplea.pages.dev/og-default.jpg">
+<meta property="og:url" content="https://contrataoplanta.cl/preparacion.html">
+<meta property="og:image" content="https://contrataoplanta.cl/og-default.jpg">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="es_CL">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Preparación de concursos públicos">
 <meta name="twitter:description" content="Ruta, plantilla de CV y simulacro para concursos del Estado.">
-<meta name="twitter:image" content="https://estadoemplea.pages.dev/og-default.jpg">
+<meta name="twitter:image" content="https://contrataoplanta.cl/og-default.jpg">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="alternate icon" href="/favicon.ico">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -55,11 +55,13 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .rec-btn--alt{background:var(--blanco);color:var(--azul);border:1px solid var(--borde)}
 
 /* SIMULACRO */
-.quiz-card{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--r-l);padding:26px;box-shadow:var(--sombra);max-width:760px}
-.quiz-progreso{font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--texto3);margin-bottom:12px}
-.quiz-pregunta{font-family:'Fraunces',Georgia,serif;font-size:20px;color:var(--texto);line-height:1.4;margin-bottom:18px}
+.quiz-card{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--r-l);padding:30px 34px;box-shadow:var(--sombra);width:100%}
+.quiz-progreso{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--texto3);margin-bottom:12px}
+.quiz-timer{font-variant-numeric:tabular-nums;background:var(--bg2);color:var(--azul);padding:3px 10px;border-radius:20px;letter-spacing:0}
+.quiz-tema-badge{display:inline-block;font-size:11px;font-weight:700;color:var(--cielo);background:var(--cielo-l,#eef4ff);border-radius:20px;padding:3px 10px;margin-bottom:12px}
+.quiz-pregunta{font-family:'Fraunces',Georgia,serif;font-size:23px;color:var(--texto);line-height:1.4;margin-bottom:20px}
 .quiz-opciones{display:flex;flex-direction:column;gap:10px}
-.quiz-op{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--bg);border:1px solid var(--borde);border-radius:10px;padding:13px 15px;font-size:15px;font-family:inherit;color:var(--texto);cursor:pointer;transition:border-color .15s,background .15s}
+.quiz-op{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--bg);border:1px solid var(--borde);border-radius:10px;padding:15px 18px;font-size:16px;font-family:inherit;color:var(--texto);cursor:pointer;transition:border-color .15s,background .15s}
 .quiz-op:hover:not(:disabled){border-color:var(--cielo);background:var(--cielo-l)}
 .quiz-op:disabled{cursor:default}
 .quiz-op-letra{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--bg2);font-size:13px;font-weight:700;color:var(--texto2);flex-shrink:0}
@@ -71,9 +73,30 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .quiz-fb{font-size:13px;line-height:1.6;padding:13px 15px;border-radius:10px}
 .quiz-fb--ok{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
 .quiz-fb--mal{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
-.quiz-nav{display:flex;justify-content:flex-end;margin-top:18px}
+.quiz-fb-fuente{display:block;margin-top:8px;font-size:12px;font-weight:600;opacity:.85}
+.quiz-nav{display:flex;justify-content:space-between;align-items:center;margin-top:18px}
 .quiz-next{background:var(--azul);color:var(--blanco);border:none;border-radius:8px;padding:11px 20px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:opacity .15s}
 .quiz-next:disabled{opacity:.4;cursor:not-allowed}
+.quiz-link{background:none;border:none;color:var(--texto3);font-size:13px;font-family:inherit;font-weight:600;cursor:pointer;padding:6px 4px;text-decoration:underline}
+.quiz-link:hover{color:var(--azul)}
+/* Pantalla de configuración */
+.quiz-config-tit{font-family:'Fraunces',Georgia,serif;font-size:20px;color:var(--texto);margin-bottom:6px}
+.quiz-config-lbl{font-size:13px;color:var(--texto2);margin:12px 0 10px}
+.quiz-temas{display:flex;flex-wrap:wrap;gap:8px}
+.quiz-tema-chip{font-size:13px;font-family:inherit;color:var(--texto2);background:var(--bg);border:1px solid var(--borde);border-radius:20px;padding:7px 14px;cursor:pointer;transition:all .15s}
+.quiz-tema-chip:hover{border-color:var(--cielo)}
+.quiz-tema-chip.is-sel{background:var(--azul);color:var(--blanco);border-color:var(--azul)}
+/* Modo contrarreloj: switch en vez de checkbox nativo. */
+.quiz-toggle{display:flex;align-items:center;gap:11px;font-size:14px;color:var(--texto2);margin:22px 0 4px;cursor:pointer;user-select:none}
+.quiz-toggle input{position:absolute;width:1px;height:1px;opacity:0;margin:0}
+.quiz-switch{position:relative;flex:0 0 auto;width:40px;height:23px;border-radius:999px;background:var(--borde);transition:background .18s}
+.quiz-switch::after{content:'';position:absolute;top:2px;left:2px;width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.28);transition:transform .18s}
+.quiz-toggle input:checked + .quiz-switch{background:var(--azul)}
+.quiz-toggle input:checked + .quiz-switch::after{transform:translateX(17px)}
+.quiz-toggle input:focus-visible + .quiz-switch{outline:2px solid var(--cielo);outline-offset:2px}
+.quiz-toggle-txt{line-height:1.35}
+.quiz-toggle-txt strong{font-weight:600;color:var(--texto)}
+.quiz-config-start{margin-top:18px;padding:12px 22px;font-size:14.5px}
 .quiz-resultado{text-align:center;padding:14px 0}
 .quiz-resultado-pct{font-family:'Fraunces',Georgia,serif;font-size:56px;color:var(--azul);line-height:1}
 .quiz-resultado-msg{font-size:15px;color:var(--texto2);margin:8px 0 20px}
@@ -94,6 +117,11 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 }
 </style>
 <script defer src="shared-shell.js"></script>
+<!-- AdSense: loader estático en <head> (lo exige la verificación de propiedad
+     y Auto ads). id="adsbygoogle-js" evita que ads.js lo cargue otra vez. El
+     client también vive en ads-config.js para las unidades manuales. -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9396873058904461"
+     crossorigin="anonymous" id="adsbygoogle-js"></script>
 </head>
 <body data-page="preparacion">
 <a class="skip-link" href="#contenido-principal">Saltar al contenido</a>
@@ -187,7 +215,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 
   <!-- SIMULACRO -->
   <h2 class="sec-titulo">Simulacro: conocimientos del Estado</h2>
-  <p class="sec-sub">Pon a prueba lo que suele medirse en concursos: procedimiento administrativo, Estatuto Administrativo y probidad. Recibes la explicación de cada respuesta.</p>
+  <p class="sec-sub">Practica con las preguntas que de verdad aparecen en los concursos del Estado. En cada intento te toca un set nuevo de 5 preguntas, elegidas de un banco de más de 70, sobre las materias que más se evalúan: procedimientos administrativos, Estatuto Administrativo, probidad, compras públicas, transparencia, lobby y organización del Estado. Puedes practicar todas a la vez o concentrarte en una sola, y activar el contrarreloj si quieres medir tu tiempo. Cada respuesta trae una explicación clara y la fuente legal exacta —ley y artículo— que la respalda.</p>
   <div class="quiz-card">
     <div id="quiz-cont"></div>
   </div>
@@ -200,14 +228,18 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
   <div class="cursos-card">
     <span class="cursos-badge">Gratis</span>
     <h3>Cursos y certificaciones del Estado</h3>
-    <p>Reunimos capacitación gratuita de organismos públicos —Contraloría (CEA), ChileCompra, Servicio Civil y SUBDERE— en inducción, Estatuto Administrativo, compras públicas, probidad y más. Puedes filtrar por área, nivel y tipo.</p>
-    <a class="rec-btn" href="cursos.html" style="margin-top:14px;background:#fff;color:var(--azul);font-weight:700">Ver cursos en Capacítate →</a>
+    <p>Reunimos en un solo lugar los cursos y certificaciones gratuitas de organismos del Estado —Contraloría (CEA), ChileCompra, Servicio Civil y SUBDERE— en temas como inducción, Estatuto Administrativo, compras públicas y probidad. Fíltralos por área, nivel y tipo, y elige el que mejor se ajuste a tu camino.</p>
+    <a class="rec-btn" href="cursos.html" style="margin-top:14px;background:#fff;color:var(--azul);font-weight:700">Ver cursos</a>
   </div>
 
   <p class="fuente-nota">
     <strong>Aviso.</strong> El simulacro y las guías son material de estudio referencial basado en normativa vigente
-    (Ley 19.880 sobre Bases de los Procedimientos Administrativos; Ley 18.834 Estatuto Administrativo; Ley 20.880 sobre Probidad),
-    y no constituyen asesoría legal. Ante una duda concreta, revisa siempre las bases del concurso y la norma aplicable.
+    (Ley 19.880 sobre Bases de los Procedimientos Administrativos; Ley 18.834 Estatuto Administrativo; Ley 18.575 de Bases Generales
+    de la Administración del Estado; Ley 20.880 sobre Probidad; Ley 19.886 de Compras Públicas; Ley 20.285 de Transparencia;
+    Ley 20.730 del Lobby; Ley 10.336 y Constitución Política, en lo relativo a la Contraloría y la organización del Estado),
+    y no constituyen asesoría legal. Cada pregunta indica su fuente (ley y artículo) para que puedas verificarla en
+    <a href="https://www.bcn.cl/leychile" rel="nofollow noopener" target="_blank">leychile.cl (BCN)</a>.
+    Ante una duda concreta, revisa siempre las bases del concurso y la norma aplicable.
   </p>
 
 </div>

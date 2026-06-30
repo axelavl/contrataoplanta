@@ -234,10 +234,12 @@
 <!-- ── Auth screen ── -->
 <div id="auth-screen">
   <div class="auth-card">
-    <h1>🔒 Acceso restringido</h1>
-    <p>EmpleoEstado — gestión interna</p>
+    <h1>🔒 Panel de gestión</h1>
+    <p>EmpleoEstado — acceso solo para el equipo</p>
+    <input id="auth-user" type="text" placeholder="Usuario (opcional)" autocomplete="username">
     <input id="auth-pass" type="password" placeholder="Contraseña de acceso" autocomplete="current-password">
     <button id="auth-btn">Entrar</button>
+    <p class="text-muted" style="font-size:11px;margin-top:10px;color:var(--muted)">Deja el usuario en blanco para entrar con la contraseña maestra.</p>
     <div id="auth-error">Contraseña incorrecta o demasiados intentos</div>
   </div>
 </div>
@@ -252,14 +254,17 @@
     </div>
   </header>
   <nav>
-    <button class="active" data-tab="dashboard">📊 Dashboard</button>
+    <button class="active" data-tab="dashboard">📊 Resumen</button>
+    <button data-tab="estadisticas">📈 Estadísticas del sitio</button>
     <button data-tab="ofertas">📋 Ofertas</button>
-    <button data-tab="scrapers">🤖 Scrapers</button>
-    <button data-tab="fuentes">🏛️ Fuentes</button>
+    <button data-tab="scrapers">🤖 Recolección</button>
+    <button data-tab="fuentes">🏛️ Instituciones</button>
     <button data-tab="revision">🔍 Revisión</button>
-    <button data-tab="alertas">📧 Alertas</button>
-    <button data-tab="acciones">⚡ Acciones</button>
-    <button data-tab="config">⚙️ Config</button>
+    <button data-tab="alertas">📧 Alertas por correo</button>
+    <button data-tab="acciones">⚡ Herramientas</button>
+    <button data-tab="programacion" data-rol="admin">⏱️ Programación</button>
+    <button data-tab="config">⚙️ Ajustes</button>
+    <button data-tab="usuarios" data-rol="admin">👥 Usuarios</button>
     <button data-tab="cursos">🎓 Cursos</button>
   </nav>
   <main>
@@ -270,7 +275,7 @@
         <div class="stat-card"><div class="label">Cargando…</div><div class="value"><span class="spinner"></span></div></div>
       </div>
       <div class="section-header">
-        <h2>Últimas corridas del scraper</h2>
+        <h2>Últimas recolecciones de ofertas</h2>
         <button class="btn btn-ghost btn-sm" data-action="load-dashboard">↻ Actualizar</button>
       </div>
       <div class="table-wrap" style="margin-bottom:26px">
@@ -285,14 +290,93 @@
           </tbody>
         </table>
       </div>
-      <div class="section-header"><h2>Validez de URLs</h2></div>
+      <div class="section-header"><h2>Estado de los enlaces</h2></div>
       <div class="stats-grid" id="url-stats-grid"></div>
 
       <div class="section-header" style="margin-top:24px">
-        <h2>Diagnóstico del sistema</h2>
+        <h2>Estado general del sistema</h2>
         <button class="btn btn-ghost btn-sm" data-action="load-diagnostico">↻ Verificar</button>
       </div>
       <div id="diag-alertas" style="display:grid;gap:10px"></div>
+    </div>
+
+    <!-- Estadísticas del sitio -->
+    <div class="tab-panel" id="tab-estadisticas">
+      <div class="section-header">
+        <h2>Estadísticas del sitio</h2>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="an-dias" data-change="analitica" title="Período a mostrar">
+            <option value="7">Últimos 7 días</option>
+            <option value="30" selected>Últimos 30 días</option>
+            <option value="90">Últimos 90 días</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" data-action="export-analitica">⬇ CSV</button>
+          <button class="btn btn-ghost btn-sm" data-action="load-analitica">↻ Actualizar</button>
+        </div>
+      </div>
+      <p class="text-muted" style="margin:-4px 0 16px;font-size:13px">
+        Tráfico real de visitas medido por el propio sitio — sin cookies de seguimiento,
+        sin guardar direcciones IP ni datos personales. Los “visitantes” son una
+        aproximación anónima que se reinicia cada día.
+      </p>
+
+      <!-- Tarjetas resumen -->
+      <div class="stats-grid" id="an-cards"></div>
+
+      <!-- Tendencia de visitas -->
+      <div class="section-header" style="margin-top:8px"><h2>Tendencia de visitas</h2></div>
+      <div class="table-wrap" style="padding:18px;margin-bottom:22px">
+        <div id="an-chart" style="min-height:160px"></div>
+      </div>
+
+      <!-- Embudo de conversión -->
+      <div class="section-header" style="margin-top:8px"><h2>Embudo de conversión</h2></div>
+      <p class="text-muted" style="margin:-4px 0 12px;font-size:13px">
+        Cuántos visitantes avanzan desde entrar al sitio hasta postular. Cada barra
+        es el % respecto del total de visitantes del período.
+      </p>
+      <div class="table-wrap" style="padding:18px;margin-bottom:22px">
+        <div id="an-embudo"></div>
+      </div>
+
+      <!-- Páginas y referidos -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px">
+        <div class="table-wrap">
+          <div style="padding:14px 16px;border-bottom:1px solid var(--border)"><strong style="font-size:14px">Páginas más visitadas</strong></div>
+          <table><tbody id="an-paginas"><tr class="loading-row"><td colspan="2"><span class="spinner"></span></td></tr></tbody></table>
+        </div>
+        <div class="table-wrap">
+          <div style="padding:14px 16px;border-bottom:1px solid var(--border)"><strong style="font-size:14px">De dónde llegan (referidos)</strong></div>
+          <table><tbody id="an-referidos"><tr class="loading-row"><td colspan="2"><span class="spinner"></span></td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- Dispositivos + eventos -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px">
+        <div class="table-wrap" style="padding:16px">
+          <strong style="font-size:14px;display:block;margin-bottom:12px">Dispositivos</strong>
+          <div id="an-dispositivos"></div>
+        </div>
+        <div class="table-wrap">
+          <div style="padding:14px 16px;border-bottom:1px solid var(--border)"><strong style="font-size:14px">Acciones de los visitantes</strong></div>
+          <table><tbody id="an-eventos"><tr class="empty-row"><td colspan="2">Sin datos</td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- Ofertas más vistas -->
+      <div class="section-header"><h2>Ofertas más vistas</h2></div>
+      <div class="table-wrap" style="margin-bottom:22px">
+        <table>
+          <thead><tr><th>ID</th><th>Cargo</th><th>Institución</th><th style="text-align:right">Vistas</th></tr></thead>
+          <tbody id="an-ofertas"><tr class="empty-row"><td colspan="4">Sin datos</td></tr></tbody>
+        </table>
+      </div>
+
+      <!-- Panel Umami (solo si está configurado) -->
+      <div id="an-umami-wrap" style="display:none">
+        <div class="section-header"><h2>Umami (analítica externa)</h2></div>
+        <div class="stats-grid" id="an-umami-cards"></div>
+      </div>
     </div>
 
     <!-- Ofertas -->
@@ -370,10 +454,10 @@
     <!-- Scrapers -->
     <div class="tab-panel" id="tab-scrapers">
       <div class="section-header">
-        <h2>Historial de corridas</h2>
+        <h2>Historial de recolecciones</h2>
         <div style="display:flex;gap:8px;align-items:center">
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer">
-            <input type="checkbox" id="scrapers-con-detalle" data-change="scrapers"> Con detalle de instituciones
+            <input type="checkbox" id="scrapers-con-detalle" data-change="scrapers"> Ver detalle por institución
           </label>
           <button class="btn btn-ghost btn-sm" data-action="load-scrapers">↻ Actualizar</button>
         </div>
@@ -449,7 +533,7 @@
           <input id="al-email-filtro" type="email" placeholder="Solo a este email (opcional)">
           <input id="al-horas" type="number" value="24" min="1" max="168" style="width:100px" title="Ofertas de últimas N horas">
           <label style="display:flex;align-items:center;gap:6px;color:var(--muted);cursor:pointer">
-            <input id="al-dry-run" type="checkbox"> Dry run (simular)
+            <input id="al-dry-run" type="checkbox"> Simular (no envía correos)
           </label>
           <button class="btn btn-primary" data-action="enviar-alertas">▶ Enviar ahora</button>
         </div>
@@ -504,11 +588,11 @@
 
     <!-- Acciones -->
     <div class="tab-panel" id="tab-acciones">
-      <div class="section-header"><h2>Acciones manuales</h2></div>
+      <div class="section-header"><h2>Herramientas y acciones manuales</h2></div>
 
       <!-- Ejecutar scraper -->
       <div class="table-wrap" style="padding:20px;margin-bottom:20px">
-        <h3 style="font-size:14px;font-weight:600;margin-bottom:14px">🤖 Ejecutar scraper</h3>
+        <h3 style="font-size:14px;font-weight:600;margin-bottom:14px">🤖 Recolectar ofertas ahora</h3>
         <div class="filters" style="margin-bottom:14px">
           <select id="run-mode">
             <option value="empleos_publicos">EmpleosPublicos (portal central)</option>
@@ -516,9 +600,6 @@
             <option value="kind">Por tipo (kind)</option>
             <option value="institucion">Por institución ID</option>
           </select>
-          <label id="run-experimental-wrap" style="display:none;align-items:center;gap:6px;color:var(--muted);cursor:pointer">
-            <input id="run-experimental" type="checkbox"> Incluir experimentales
-          </label>
           <select id="run-kind" style="display:none">
             <option value="wordpress">WordPress</option>
             <option value="generic">Generic</option>
@@ -528,9 +609,9 @@
             <option value="custom_playwright">Playwright</option>
           </select>
           <input id="run-inst-id" type="number" placeholder="ID institución" style="display:none;width:160px">
-          <input id="run-max" type="number" value="50" min="1" max="500" style="width:100px" title="Máx. ofertas">
+          <input id="run-limite" type="number" min="1" max="2000" style="width:170px" placeholder="Máx. instituciones" title="Opcional: limita cuántas instituciones se procesan (--limit)">
           <label style="display:flex;align-items:center;gap:6px;color:var(--muted);cursor:pointer">
-            <input id="run-dry" type="checkbox"> Dry run
+            <input id="run-dry" type="checkbox"> Simular (no guarda nada)
           </label>
           <button class="btn btn-primary" data-action="run-scraper">▶ Ejecutar</button>
         </div>
@@ -540,7 +621,7 @@
       <!-- Procesos lanzados desde el panel -->
       <div class="table-wrap" style="padding:20px;margin-bottom:20px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-          <h3 style="font-size:14px;font-weight:600">🛰️ Procesos lanzados</h3>
+          <h3 style="font-size:14px;font-weight:600">🛰️ Tareas en ejecución</h3>
           <button class="btn btn-ghost btn-sm" data-action="load-procesos">↻ Actualizar</button>
         </div>
         <table>
@@ -584,13 +665,13 @@
 
       <!-- Catálogo de scrapers -->
       <div class="section-header" style="margin-top:8px">
-        <h2>Catálogo de instituciones (clasificación)</h2>
+        <h2>Catálogo de instituciones y cómo se recolectan</h2>
         <button class="btn btn-ghost btn-sm" data-action="load-catalog">↻ Cargar</button>
       </div>
       <div class="table-wrap">
         <table>
           <thead><tr>
-            <th>ID</th><th>Nombre</th><th>Sector</th><th>Kind</th><th>Status</th><th>Acción</th>
+            <th>ID</th><th>Nombre</th><th>Sector</th><th>Tipo de recolector</th><th>Estado</th><th>Acción</th>
           </tr></thead>
           <tbody id="catalog-tbody">
             <tr class="empty-row"><td colspan="6">Haz clic en "Cargar" para ver el catálogo</td></tr>
@@ -668,7 +749,7 @@
 
       <!-- Registro de acciones admin -->
       <div class="section-header">
-        <h2>Registro de acciones admin</h2>
+        <h2>Historial de cambios del equipo</h2>
         <div style="display:flex;gap:8px;align-items:center">
           <select id="audit-accion" data-change="audit">
             <option value="">Todas las acciones</option>
@@ -748,13 +829,92 @@
       <div id="cursos-cats-tabla"></div>
     </div>
 
+    <!-- Programación de recolecciones -->
+    <div class="tab-panel" id="tab-programacion">
+      <div class="section-header">
+        <h2>Programación automática de recolecciones</h2>
+        <button class="btn btn-ghost btn-sm" data-action="load-scheduler">↻ Actualizar</button>
+      </div>
+      <p class="text-muted" style="margin:-4px 0 16px;font-size:13px">
+        Hace que la propia aplicación dispare la recolección de ofertas cada cierto tiempo,
+        además del proceso del servidor. Si lo dejas apagado, solo corre cuando el servidor
+        lo programa o cuando lo lanzas a mano en «Herramientas».
+      </p>
+      <div class="table-wrap" style="padding:20px;max-width:640px">
+        <div id="sched-estado" style="margin-bottom:16px"></div>
+        <div class="form-group" style="display:flex;align-items:center;gap:10px">
+          <label style="margin:0;white-space:nowrap">Recolección automática</label>
+          <input id="sched-activo" type="checkbox">
+        </div>
+        <div class="form-group">
+          <label>Cada cuántas horas</label>
+          <input id="sched-intervalo" type="number" min="1" max="168" value="24">
+        </div>
+        <div class="form-group">
+          <label>Qué recolectar</label>
+          <select id="sched-modo">
+            <option value="completa">Corrida completa (todas las instituciones)</option>
+            <option value="sin_portal">Todo menos el portal central (empleospublicos.cl)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Máx. instituciones por corrida <span style="font-weight:400;text-transform:none">(opcional; vacío = todas)</span></label>
+          <input id="sched-limite" type="number" min="1" max="2000" placeholder="todas">
+        </div>
+        <button class="btn btn-primary" data-action="save-scheduler">Guardar programación</button>
+      </div>
+    </div>
+
+    <!-- Usuarios del panel -->
+    <div class="tab-panel" id="tab-usuarios">
+      <div class="section-header">
+        <h2>Usuarios del panel</h2>
+        <button class="btn btn-ghost btn-sm" data-action="load-usuarios">↻ Actualizar</button>
+      </div>
+      <p class="text-muted" style="margin:-4px 0 16px;font-size:13px">
+        Cuentas con nombre propio para el equipo. Cada acción queda registrada con su autor.
+        <strong>Roles:</strong> <em>Lector</em> solo mira · <em>Editor</em> también edita contenido ·
+        <em>Administrador</em> además gestiona usuarios, ajustes y la programación.
+        La contraseña maestra sigue funcionando como respaldo (entra como «ops»).
+      </p>
+      <div class="table-wrap" style="padding:20px;max-width:760px;margin-bottom:20px">
+        <h3 style="font-size:14px;font-weight:600;margin-bottom:14px">Crear / actualizar cuenta</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="form-group"><label>Usuario *</label><input id="us-usuario" type="text" placeholder="ej. camila"></div>
+          <div class="form-group"><label>Nombre</label><input id="us-nombre" type="text" placeholder="Camila Pérez"></div>
+          <div class="form-group"><label>Contraseña <span style="font-weight:400;text-transform:none">(mín. 8; vacío = sin cambio)</span></label><input id="us-password" type="password" autocomplete="new-password"></div>
+          <div class="form-group"><label>Rol</label>
+            <select id="us-rol">
+              <option value="lector">Lector (solo ver)</option>
+              <option value="editor" selected>Editor</option>
+              <option value="admin">Administrador</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <button class="btn btn-primary" data-action="save-usuario">Guardar</button>
+          <button class="btn btn-ghost" id="us-cancelar" data-action="cancelar-usuario" style="display:none">Cancelar edición</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>ID</th><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th>Último ingreso</th><th>Acciones</th>
+          </tr></thead>
+          <tbody id="usuarios-tbody">
+            <tr class="loading-row"><td colspan="7"><span class="spinner"></span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- Fuentes -->
     <div class="tab-panel" id="tab-fuentes">
       <div class="section-header">
-        <h2>Instituciones / fuentes</h2>
+        <h2>Instituciones</h2>
         <div style="display:flex;gap:8px;align-items:center">
           <span id="fuentes-badge" class="pill gray"></span>
-          <button class="btn btn-primary btn-sm" data-action="crear-fuente">+ Nueva fuente</button>
+          <button class="btn btn-primary btn-sm" data-action="crear-fuente">+ Nueva institución</button>
         </div>
       </div>
       <div class="filters">
@@ -779,8 +939,8 @@
         <table>
           <thead><tr>
             <th>ID</th><th>Nombre</th><th>Sector</th>
-            <th>Extractor</th><th>Decisión</th><th>Confianza</th>
-            <th>Disponib.</th><th>HTTP</th><th>Ofertas</th><th>Última eval.</th><th>Acciones</th>
+            <th>Recolector</th><th>Estado</th><th>Confianza</th>
+            <th>Disponibilidad</th><th>HTTP</th><th>Ofertas</th><th>Última revisión</th><th>Acciones</th>
           </tr></thead>
           <tbody id="fuentes-tbody">
             <tr class="loading-row"><td colspan="10"><span class="spinner"></span></td></tr>

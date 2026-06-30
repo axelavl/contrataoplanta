@@ -49,8 +49,12 @@ from pydantic import BaseModel
 
 from api.deps import (
     ADMIN_PATH,
+    ROLES_VALIDOS,
     SITE_URL,
     _PROJECT_ROOT,
+    hash_password,
+    require_admin as _require_admin,
+    require_editor as _require_editor,
     verify_admin_jwt as _verify_admin_jwt,
 )
 from api.services.db import (
@@ -82,6 +86,11 @@ from api.services.meilisearch_svc import (
     buscar as meili_buscar,
     configurar_indice as meili_configurar,
     indexar_ofertas as meili_indexar,
+)
+from api.services.analitica import (
+    resumen_interno as analitica_resumen_interno,
+    resumen_umami as analitica_resumen_umami,
+    umami_configurado as analitica_umami_configurado,
 )
 
 # `scrapers.source_status` opcional (tests / entornos minimal)
@@ -162,7 +171,7 @@ def admin_audit(
 
 
 @router.post(f"/api/{ADMIN_PATH}/meilisearch/reindexar", tags=["admin"])
-def api_reindexar_meili(_user: str = Depends(_verify_admin_jwt)) -> dict[str, Any]:
+def api_reindexar_meili(_user: str = Depends(_require_editor)) -> dict[str, Any]:
     """Re-indexa todas las ofertas activas en Meilisearch.
 
     Movido bajo el prefijo admin: antes era público y permitía gatillar
@@ -195,7 +204,7 @@ def api_reindexar_meili(_user: str = Depends(_verify_admin_jwt)) -> dict[str, An
 @router.post(f"/api/{ADMIN_PATH}/alertas/enviar", tags=["admin"])
 def api_enviar_alertas_pendientes(
     payload: dict[str, Any] | None = None,
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """
     Procesa y envía alertas pendientes a los suscriptores.
@@ -414,6 +423,54 @@ def admin_stats(_user: str = Depends(_verify_admin_jwt)) -> dict[str, Any]:
     }
 
 
+@router.get(f"/api/{ADMIN_PATH}/analitica", tags=["admin"])
+def admin_analitica(
+    dias: int = Query(30, ge=1, le=365),
+    incluir_umami: bool = Query(True),
+    _user: str = Depends(_verify_admin_jwt),
+) -> dict[str, Any]:
+    """Estadísticas de tráfico del sitio: analítica propia + Umami (si está).
+
+    La analítica propia sale de `web_eventos` (beacon de `web/analytics.js`).
+    Umami se consulta solo si está configurado vía env vars; si no, la
+    sección viene con `configurado=false` y el panel la oculta.
+    """
+    interno = analitica_resumen_interno(dias)
+    umami: dict[str, Any] = {"configurado": False}
+    if incluir_umami and analitica_umami_configurado():
+        umami = analitica_resumen_umami(dias)
+    return {"dias": dias, "interno": interno, "umami": umami}
+
+
+@router.get(f"/api/{ADMIN_PATH}/analitica/export", tags=["admin"])
+def admin_analitica_export(
+    dias: int = Query(30, ge=1, le=365),
+    _user: str = Depends(_verify_admin_jwt),
+) -> Response:
+    """Exporta la analítica del sitio como CSV (serie diaria + páginas top).
+
+    Pensado para abrir en una planilla: una sección con visitas por día y
+    otra con las páginas más vistas del período.
+    """
+    interno = analitica_resumen_interno(dias)
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow([f"Estadísticas del sitio — últimos {dias} días"])
+    writer.writerow([])
+    writer.writerow(["Fecha", "Páginas vistas", "Visitantes"])
+    for fila in (interno.get("serie") or []):
+        writer.writerow([fila.get("dia", ""), fila.get("vistas", 0), fila.get("visitantes", 0)])
+    writer.writerow([])
+    writer.writerow(["Página", "Vistas"])
+    for fila in (interno.get("top_paginas") or []):
+        writer.writerow([fila.get("path", ""), fila.get("vistas", 0)])
+    return Response(
+        content=buf.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=estadisticas_{dias}d.csv"},
+    )
+
+
 @router.get(f"/api/{ADMIN_PATH}/ofertas", tags=["admin"])
 def admin_ofertas(
     pagina: int = Query(1, ge=1),
@@ -516,7 +573,8 @@ def admin_ofertas(
             o.region, o.sector,
             COALESCE(i.sector, o.sector, 'Sin sector') AS sector_real,
             o.tipo_contrato, o.fecha_cierre, o.fecha_publicacion,
-            o.activa, o.estado, o.url_oferta, o.url_oferta_valida,
+            o.activa, COALESCE(o.destacada, FALSE) AS destacada,
+            o.estado, o.url_oferta, o.url_oferta_valida,
             o.url_bases, o.url_bases_valida,
             o.renta_bruta_min, o.renta_bruta_max,
             o.fecha_scraped, o.detectada_en,
@@ -551,7 +609,7 @@ def admin_ofertas(
 @router.post(f"/api/{ADMIN_PATH}/ofertas/{{oferta_id}}/toggle-activa", tags=["admin"])
 def admin_toggle_activa(
     oferta_id: int,
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Activa o desactiva una oferta."""
     with get_cursor() as (conn, cur):
@@ -567,6 +625,31 @@ def admin_toggle_activa(
         conn.commit()
     _auditar(_user, "toggle_activa", "oferta", oferta_id, {"activa": nuevo_estado})
     return {"id": oferta_id, "activa": nuevo_estado}
+
+
+@router.post(f"/api/{ADMIN_PATH}/ofertas/{{oferta_id}}/toggle-destacada", tags=["admin"])
+def admin_toggle_destacada(
+    oferta_id: int,
+    _user: str = Depends(_require_editor),
+) -> dict[str, Any]:
+    """Marca/desmarca una oferta como destacada (sección de redes sociales).
+
+    Las ofertas destacadas alimentan la pestaña pública "Destacadas":
+    las que el equipo publica activamente en Instagram / TikTok / LinkedIn.
+    """
+    with get_cursor() as (conn, cur):
+        cur.execute("SELECT COALESCE(destacada, FALSE) AS destacada FROM ofertas WHERE id = %s", [oferta_id])
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(404, "Oferta no encontrada")
+        nuevo_estado = not (row["destacada"] if isinstance(row, dict) else row[0])
+        cur.execute(
+            "UPDATE ofertas SET destacada = %s, actualizada_en = NOW() WHERE id = %s",
+            [nuevo_estado, oferta_id],
+        )
+        conn.commit()
+    _auditar(_user, "toggle_destacada", "oferta", oferta_id, {"destacada": nuevo_estado})
+    return {"id": oferta_id, "destacada": nuevo_estado}
 
 
 # ── Cursos (directorio gestionable desde el panel) ───────────────────────────
@@ -594,7 +677,7 @@ def admin_listar_cursos(_user: str = Depends(_verify_admin_jwt)) -> dict[str, An
 @router.post(f"/api/{ADMIN_PATH}/cursos", tags=["admin"])
 def admin_crear_curso(
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Crea un curso. Requerido: titulo. `curso_id` se deriva del título si falta."""
     titulo = (payload.get("titulo") or "").strip()
@@ -643,7 +726,7 @@ def admin_crear_curso(
 def admin_editar_curso(
     curso_pk: int,
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Edita un curso. Acepta cualquier subconjunto de los campos del curso."""
     updates = {k: v for k, v in payload.items() if k in set(_CURSO_CAMPOS)}
@@ -678,7 +761,7 @@ def admin_editar_curso(
 @router.delete(f"/api/{ADMIN_PATH}/cursos/{{curso_pk}}", tags=["admin"])
 def admin_borrar_curso(
     curso_pk: int,
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Elimina un curso del directorio."""
     with get_cursor() as (conn, cur):
@@ -705,7 +788,7 @@ def admin_listar_categorias(_user: str = Depends(_verify_admin_jwt)) -> dict[str
 @router.post(f"/api/{ADMIN_PATH}/cursos/categorias", tags=["admin"])
 def admin_crear_categoria(
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     etiqueta = (payload.get("etiqueta") or "").strip()
     if not etiqueta:
@@ -733,7 +816,7 @@ def admin_crear_categoria(
 def admin_editar_categoria(
     cat_id: int,
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Renombra (etiqueta) o reordena/activa una categoría. El slug no se cambia
     para no romper los cursos ya asignados."""
@@ -771,7 +854,7 @@ def admin_editar_categoria(
 @router.delete(f"/api/{ADMIN_PATH}/cursos/categorias/{{cat_id}}", tags=["admin"])
 def admin_borrar_categoria(
     cat_id: int,
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Borra una categoría. Los cursos que la usaban pasan a 'Otros' para no
     quedar huérfanos. 'Otros' no se puede borrar (es el destino de reasignación)."""
@@ -794,7 +877,7 @@ def admin_borrar_categoria(
 def admin_editar_oferta(
     oferta_id: int,
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Edita campos de una oferta.
 
@@ -850,7 +933,7 @@ def admin_editar_oferta(
 @router.post(f"/api/{ADMIN_PATH}/ofertas", tags=["admin"])
 def admin_crear_oferta(
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Crea una oferta manual desde el panel.
 
@@ -917,7 +1000,7 @@ def admin_crear_oferta(
 @router.post(f"/api/{ADMIN_PATH}/ofertas/bulk-marcar-revisadas", tags=["admin"])
 def admin_bulk_marcar_revisadas(
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Marca en bloque ofertas como revisadas (needs_review=FALSE).
 
@@ -1322,51 +1405,60 @@ def admin_scraper_catalog(
 @router.post(f"/api/{ADMIN_PATH}/scraper/run", tags=["admin"])
 async def admin_scraper_run(
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """
     Dispara un scraper en background.
 
     Body (JSON):
       - mode: "all" | "empleos_publicos" | "institucion" | "kind"
-      - institucion_id: int   (para mode=institucion)
-      - kind: str             (para mode=kind, ej. "wordpress")
-      - include_experimental: bool (para mode=all, default false)
-      - dry_run: bool         (default false)
-      - max: int              (máx ofertas, default 50)
+      - institucion_id: int    (para mode=institucion)
+      - kind: str              (para mode=kind, ej. "wordpress")
+      - dry_run: bool          (default false → corre como --evaluate-only)
+      - limite_fuentes: int    (opcional; máx. instituciones, → --limit)
     """
     import subprocess, sys as _sys, shlex
 
     mode       = payload.get("mode", "empleos_publicos")
     dry_run    = bool(payload.get("dry_run", False))
-    max_offers = int(payload.get("max", 50))
+    # `limite_fuentes` (opcional) acota la cantidad de instituciones (--limit).
+    # Compat: versiones viejas del panel mandaban `max` (que run_all no soporta).
+    limite     = payload.get("limite_fuentes", payload.get("limite"))
+    try:
+        limite = int(limite) if limite not in (None, "") else 0
+    except (TypeError, ValueError):
+        limite = 0
 
-    # Construir comando
+    # Construir comando con flags REALES de run_all.py: --mode, --limit, --ids,
+    # --id, --only-kind, --skip-empleos-publicos, --evaluate-only. (No existen
+    # --max, --dry-run ni --include-experimental.)
     python = _sys.executable
     run_all = str(_PROJECT_ROOT / "scrapers" / "run_all.py")
 
-    cmd = [python, run_all, "--mode", "production", "--max", str(max_offers)]
+    cmd = [python, run_all, "--mode", "production"]
     if dry_run:
-        cmd.append("--dry-run")
+        # run_all no tiene --dry-run; --evaluate-only hace discovery+evaluación
+        # SIN extraer ni persistir ofertas → equivale a una simulación.
+        cmd.append("--evaluate-only")
+    if limite > 0:
+        cmd += ["--limit", str(limite)]
 
     if mode == "all":
-        # Corrida completa: todos los kinds runnables + el batch de
-        # EmpleosPublicos, igual que el timer de systemd.
-        if payload.get("include_experimental"):
-            cmd.append("--include-experimental")
+        # Corrida completa: run_all decide qué corre según el gatekeeper
+        # (status=active); el conjunto experimental lo gobierna la evaluación.
+        pass
     elif mode == "empleos_publicos":
         cmd += ["--only-kind", "empleos_publicos"]
     elif mode == "institucion":
         inst_id = payload.get("institucion_id")
         if not inst_id:
             raise HTTPException(400, "institucion_id es requerido para mode=institucion")
-        cmd += ["--id", str(inst_id), "--skip-empleos-publicos"]
+        cmd += ["--id", str(int(inst_id)), "--skip-empleos-publicos"]
     elif mode == "kind":
         kind = str(payload.get("kind", "wordpress"))
-        # `kind` se pasa como argumento a run_all.py (`--only-kind <kind>`).
-        # Sin validar, un valor como "--alguna-flag" se colaría como flag
-        # arbitraria del subproceso (argument injection). Lo restringimos a
-        # los valores conocidos del enum ScraperKind.
+        # `kind` se pasa como `--only-kind <kind>`. Sin validar, un valor como
+        # "--alguna-flag" se colaría como flag arbitraria (argument injection).
+        # Lo restringimos a los valores conocidos del enum ScraperKind.
         try:
             from scrapers.source_status import ScraperKind
             _kinds_validos = {k.value for k in ScraperKind}
@@ -1410,7 +1502,7 @@ async def admin_scraper_run(
         pass  # tabla puede no existir
 
     _auditar(_user, "scraper_run", "proceso", proc.pid, {
-        "mode": mode, "dry_run": dry_run, "max": max_offers,
+        "mode": mode, "dry_run": dry_run, "limite_fuentes": limite or None,
         "run_id": run_id, "log": proceso.log_path.name,
     })
     return {
@@ -1474,7 +1566,7 @@ def admin_get_config(
 @router.put(f"/api/{ADMIN_PATH}/config", tags=["admin"])
 def admin_set_config(
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_admin),
 ) -> dict[str, Any]:
     """
     Actualiza configuración editable del sitio.
@@ -1510,7 +1602,7 @@ def admin_set_config(
 @router.post(f"/api/{ADMIN_PATH}/ofertas/bulk-desactivar", tags=["admin"])
 def admin_bulk_desactivar(
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """
     Desactiva en bloque ofertas según criterios.
@@ -1561,7 +1653,7 @@ def admin_bulk_desactivar(
 @router.post(f"/api/{ADMIN_PATH}/urls/revalidar", tags=["admin"])
 async def admin_revalidar_urls(
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """
     Dispara revalidación de URLs en background (llama a validate_offer_urls.py).
@@ -1632,7 +1724,7 @@ def admin_get_fuente(
 def admin_editar_fuente(
     fuente_id: int,
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """
     Edita campos de una institución.
@@ -1663,7 +1755,7 @@ def admin_editar_fuente(
 @router.post(f"/api/{ADMIN_PATH}/fuentes", tags=["admin"])
 def admin_crear_fuente(
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """
     Crea una nueva institución en el catálogo interno.
@@ -1702,7 +1794,7 @@ def admin_crear_fuente(
 @router.delete(f"/api/{ADMIN_PATH}/fuentes/{{fuente_id}}", tags=["admin"])
 def admin_desactivar_fuente(
     fuente_id: int,
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """
     Desactiva una fuente: marca todas sus ofertas activas como cerradas
@@ -1765,7 +1857,7 @@ _OVERRIDE_STATUSES = {"active", "experimental", "manual_review", "js_required",
 def admin_set_override(
     fuente_id: int,
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Fija un override de clasificación para una fuente (persistente en DB).
 
@@ -1790,7 +1882,7 @@ def admin_set_override(
 @router.delete(f"/api/{ADMIN_PATH}/fuentes/{{fuente_id}}/override", tags=["admin"])
 def admin_quitar_override(
     fuente_id: int,
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Elimina el override de una fuente — vuelve a la clasificación automática."""
     with get_cursor() as (conn, cur):
@@ -1927,7 +2019,7 @@ def admin_revision_queue(
 def admin_marcar_revisada(
     oferta_id: int,
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Marca una oferta como revisada (needs_review=FALSE) y guarda una nota opcional."""
     nota = (payload.get("nota") or "").strip()
@@ -2077,7 +2169,7 @@ def admin_suscripciones(
 @router.delete(f"/api/{ADMIN_PATH}/suscripciones/{{sub_id}}", tags=["admin"])
 def admin_eliminar_suscripcion(
     sub_id: int,
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Elimina (o desactiva) una suscripción."""
     with get_cursor() as (conn, cur):
@@ -2095,7 +2187,7 @@ def admin_eliminar_suscripcion(
 @router.post(f"/api/{ADMIN_PATH}/alertas/test-email", tags=["admin"])
 def admin_test_email(
     payload: dict[str, Any],
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """
     Envía un email de prueba con las últimas 3 ofertas activas.
@@ -2243,6 +2335,158 @@ def admin_export_ofertas(
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=ofertas.csv"},
     )
+
+
+# ── Admin: gestión de usuarios del panel (solo rol admin) ────────────────────
+
+@router.get(f"/api/{ADMIN_PATH}/usuarios", tags=["admin"])
+def admin_listar_usuarios(_user: str = Depends(_require_admin)) -> dict[str, Any]:
+    """Lista las cuentas del panel (sin exponer el hash de contraseña)."""
+    try:
+        rows = execute_fetch_all(
+            """SELECT id, usuario, nombre, rol, activo, creado_en, ultimo_login
+               FROM admin_usuarios ORDER BY usuario ASC""",
+            [],
+        )
+        return {"usuarios": rows}
+    except Exception as exc:
+        logger.warning(f"[usuarios] tabla no disponible: {exc}")
+        return {
+            "usuarios": [],
+            "warning": "Tabla admin_usuarios no disponible — aplicar `alembic upgrade head`.",
+        }
+
+
+@router.post(f"/api/{ADMIN_PATH}/usuarios", tags=["admin"])
+def admin_crear_usuario(
+    payload: dict[str, Any],
+    _user: str = Depends(_require_admin),
+) -> dict[str, Any]:
+    """Crea una cuenta del panel. Requeridos: usuario, password. rol opcional."""
+    usuario = (payload.get("usuario") or "").strip()
+    password = str(payload.get("password") or "")
+    rol = (payload.get("rol") or "editor").strip()
+    nombre = (payload.get("nombre") or "").strip() or None
+    if not usuario or len(usuario) < 3:
+        raise HTTPException(400, "El usuario debe tener al menos 3 caracteres")
+    if len(password) < 8:
+        raise HTTPException(400, "La contraseña debe tener al menos 8 caracteres")
+    if rol not in ROLES_VALIDOS:
+        raise HTTPException(400, f"rol inválido. Válidos: {list(ROLES_VALIDOS)}")
+    if usuario.lower() == "ops":
+        raise HTTPException(400, "'ops' está reservado para la contraseña maestra")
+    try:
+        with get_cursor() as (conn, cur):
+            cur.execute(
+                """INSERT INTO admin_usuarios (usuario, nombre, password_hash, rol, activo)
+                   VALUES (%s, %s, %s, %s, TRUE)
+                   ON CONFLICT (LOWER(usuario)) DO NOTHING RETURNING id""",
+                [usuario, nombre, hash_password(password), rol],
+            )
+            row = cur.fetchone()
+            if not row:
+                raise HTTPException(409, "Ya existe un usuario con ese nombre")
+            conn.commit()
+            nuevo_id = row["id"] if isinstance(row, dict) else row[0]
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(500, f"No se pudo crear el usuario (¿migración 0003 aplicada?): {exc}") from exc
+    _auditar(_user, "crear_usuario", "usuario", nuevo_id, {"usuario": usuario, "rol": rol})
+    return {"id": nuevo_id, "usuario": usuario, "rol": rol}
+
+
+@router.put(f"/api/{ADMIN_PATH}/usuarios/{{usuario_id}}", tags=["admin"])
+def admin_editar_usuario(
+    usuario_id: int,
+    payload: dict[str, Any],
+    _user: str = Depends(_require_admin),
+) -> dict[str, Any]:
+    """Edita una cuenta: nombre, rol, activo y, opcionalmente, su contraseña."""
+    updates: dict[str, Any] = {}
+    if "nombre" in payload:
+        updates["nombre"] = (payload.get("nombre") or "").strip() or None
+    if "rol" in payload:
+        rol = (payload.get("rol") or "").strip()
+        if rol not in ROLES_VALIDOS:
+            raise HTTPException(400, f"rol inválido. Válidos: {list(ROLES_VALIDOS)}")
+        updates["rol"] = rol
+    if "activo" in payload:
+        updates["activo"] = bool(payload.get("activo"))
+    if payload.get("password"):
+        if len(str(payload["password"])) < 8:
+            raise HTTPException(400, "La contraseña debe tener al menos 8 caracteres")
+        updates["password_hash"] = hash_password(str(payload["password"]))
+    if not updates:
+        raise HTTPException(400, "Sin campos para actualizar")
+    from psycopg2 import sql as _sql
+    set_parts = [_sql.SQL("{} = %s").format(_sql.Identifier(c)) for c in updates]
+    query = _sql.SQL("UPDATE admin_usuarios SET {} WHERE id = %s").format(
+        _sql.SQL(", ").join(set_parts),
+    )
+    with get_cursor() as (conn, cur):
+        cur.execute(query, list(updates.values()) + [usuario_id])
+        if cur.rowcount == 0:
+            raise HTTPException(404, "Usuario no encontrado")
+        conn.commit()
+    _auditar(_user, "editar_usuario", "usuario", usuario_id,
+             {"campos": sorted(k for k in updates if k != "password_hash")})
+    return {"id": usuario_id, "updated": [k for k in updates if k != "password_hash"]}
+
+
+@router.delete(f"/api/{ADMIN_PATH}/usuarios/{{usuario_id}}", tags=["admin"])
+def admin_borrar_usuario(
+    usuario_id: int,
+    _user: str = Depends(_require_admin),
+) -> dict[str, Any]:
+    """Elimina una cuenta del panel."""
+    with get_cursor() as (conn, cur):
+        cur.execute("DELETE FROM admin_usuarios WHERE id = %s", [usuario_id])
+        if cur.rowcount == 0:
+            raise HTTPException(404, "Usuario no encontrado")
+        conn.commit()
+    _auditar(_user, "borrar_usuario", "usuario", usuario_id)
+    return {"id": usuario_id, "deleted": True}
+
+
+# ── Admin: programador de recolecciones (config solo rol admin) ──────────────
+
+@router.get(f"/api/{ADMIN_PATH}/scheduler", tags=["admin"])
+def admin_get_scheduler(_user: str = Depends(_verify_admin_jwt)) -> dict[str, Any]:
+    """Estado actual del programador automático de recolecciones."""
+    from api.services.scheduler import get_estado
+    estado = get_estado()
+    if estado is None:
+        return {
+            "disponible": False,
+            "warning": "Tabla scheduler_state no disponible — aplicar `alembic upgrade head`.",
+        }
+    return {"disponible": True, "estado": estado}
+
+
+@router.put(f"/api/{ADMIN_PATH}/scheduler", tags=["admin"])
+def admin_set_scheduler(
+    payload: dict[str, Any],
+    _user: str = Depends(_require_admin),
+) -> dict[str, Any]:
+    """Configura el programador: activo, intervalo_horas, modo, limite_fuentes."""
+    from api.services.scheduler import set_estado, _UNSET
+    try:
+        estado = set_estado(
+            activo=payload.get("activo") if "activo" in payload else None,
+            intervalo_horas=payload.get("intervalo_horas") if "intervalo_horas" in payload else None,
+            modo=payload.get("modo") if "modo" in payload else None,
+            limite_fuentes=payload.get("limite_fuentes") if "limite_fuentes" in payload else _UNSET,
+            usuario=_user,
+        )
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from None
+    except Exception as exc:
+        raise HTTPException(500, f"No se pudo guardar (¿migración 0003 aplicada?): {exc}") from exc
+    _auditar(_user, "config_scheduler", "scheduler", 1, {
+        k: payload.get(k) for k in ("activo", "intervalo_horas", "modo", "limite_fuentes") if k in payload
+    })
+    return {"ok": True, "estado": estado}
 
 
 # ── Fin endpoints admin ────────────────────────────────────────────────────

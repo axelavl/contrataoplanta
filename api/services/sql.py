@@ -53,6 +53,29 @@ STATUS_LEGACY_MAP = {
     "unknown": "desconocido",
 }
 
+# ── Sección "Destacadas" (ofertas que se publican en redes sociales) ─────────
+#
+# La pestaña pública "Destacadas" muestra, por defecto, SOLO las ofertas
+# marcadas a mano (``o.destacada = TRUE``) desde el panel admin: las que el
+# equipo realmente publica en Instagram / TikTok / LinkedIn. Así la sección
+# queda 100% curada y honesta (lo que viste en redes está acá).
+#
+# Enganche automático OPCIONAL — APAGADO por defecto. Si se enciende
+# (``DESTACADAS_AUTO = True``), además de las marcadas a mano entran las
+# ofertas que cumplan ``DESTACADAS_AUTO_SQL``. El criterio por defecto son las
+# ofertas con renta bruta publicada (las más "compartibles" y con mejor data).
+# Para cambiar el criterio, editar SÓLO la expresión de abajo (un único lugar).
+DESTACADAS_AUTO = True
+DESTACADAS_AUTO_SQL = "(o.renta_bruta_min IS NOT NULL OR o.renta_bruta_max IS NOT NULL)"
+
+
+def _destacadas_where() -> str:
+    """Cláusula WHERE para la sección 'Destacadas' (sin parámetros)."""
+    manual = "COALESCE(o.destacada, FALSE) = TRUE"
+    if DESTACADAS_AUTO:
+        return f"({manual} OR {DESTACADAS_AUTO_SQL})"
+    return manual
+
 # Normalización sin extensiones: permite que búsquedas como "contraloria" o
 # "educacion" encuentren instituciones/cargos con tildes. Se usa translate()
 # para no depender de la extensión PostgreSQL unaccent en producción.
@@ -165,6 +188,7 @@ def ofertas_select_sql() -> str:
         o.calidad_juridica,
         o.estamento,
         o.lugar_desempenio,
+        COALESCE(o.destacada, FALSE) AS destacada,
         {OFFER_STATUS_SQL} AS estado,
         COALESCE(o.fecha_scraped, o.detectada_en, o.actualizada_en, o.creada_en) AS fecha_scraped,
         COALESCE(o.fecha_actualizado, o.actualizada_en, o.creada_en) AS fecha_actualizado,
@@ -248,6 +272,8 @@ def build_ofertas_filters(
     cierra_pronto: bool = False,
     nuevas: bool = False,
     solo_con_correo: bool = False,
+    solo_destacadas: bool = False,
+    sin_experiencia: bool = False,
     solo_activas: bool = True,
     closed_only: bool = False,
 ) -> tuple[str, list[Any]]:
@@ -258,6 +284,11 @@ def build_ofertas_filters(
         where.append(ACTIVE_OFFER_SQL)
     if closed_only:
         where.append(f"{OFFER_STATUS_SQL} = 'closed'")
+
+    if solo_destacadas:
+        # Pestaña "Destacadas": curaduría manual (+ criterio automático si
+        # DESTACADAS_AUTO está encendido). Ver _destacadas_where() arriba.
+        where.append(_destacadas_where())
 
     if solo_con_correo:
         # "Postular por correo": ofertas con email de contacto capturado en las
@@ -389,5 +420,35 @@ def build_ofertas_filters(
     if nuevas:
         # "Nuevas" = añadidas en las últimas 24 horas (issue #242).
         where.append("COALESCE(o.fecha_scraped, o.detectada_en, o.actualizada_en, o.creada_en) >= NOW() - INTERVAL '24 hours'")
+
+    if sin_experiencia:
+        # "Sin experiencia": ofertas que no exigen experiencia previa. No hay un
+        # campo estructurado confiable (experiencia_anos casi nunca se captura),
+        # así que es best-effort por texto sobre cargo + descripción + requisitos.
+        # Matchea frases que indican que la experiencia NO es obligatoria.
+        # Accent/case-insensitive vía _norm_sql (sin depender de unaccent).
+        texto_oferta = _norm_sql(
+            "COALESCE(o.cargo, '') || ' ' || COALESCE(o.descripcion, '') || ' ' "
+            "|| COALESCE(o.requisitos, o.requisitos_texto, '')"
+        )
+        frases = [
+            "sin experiencia",
+            "no requiere experiencia",
+            "no se requiere experiencia",
+            "no requieren experiencia",
+            "no exige experiencia",
+            "no se exige experiencia",
+            "no requiere experiencia previa",
+            "experiencia no requerida",
+            "experiencia no excluyente",
+            "experiencia no sera requisito",
+            "experiencia deseable",
+            "experiencia no necesaria",
+        ]
+        clauses = [f"{texto_oferta} LIKE %s" for _ in frases]
+        params.extend(_norm_like(f) for f in frases)
+        # Si algún scraper sí pobló los años de experiencia y son 0, también cuenta.
+        clauses.append("o.experiencia_anos = 0")
+        where.append("(" + " OR ".join(clauses) + ")")
 
     return (" WHERE " + " AND ".join(where)) if where else "", params

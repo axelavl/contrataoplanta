@@ -139,7 +139,7 @@ _IDS_NUEVO_ESTANDAR: frozenset[int] = frozenset({
     # municipios.py (scraper agrupado, un modo por sitio): municipalidades y
     # corporaciones con extracción funcional. Las fuentes spa/bloqueada quedan
     # al genérico (no scrapean nada por ahora). Ver scrapers/municipios.py.
-    345, 379, 382, 384, 385, 401, 407, 409, 416, 419, 456, 527, 537, 580, 647, 670, 676,
+    345, 363, 382, 384, 385, 401, 407, 409, 416, 419, 456, 527, 537, 580, 647, 670, 676,
 })
 
 
@@ -336,6 +336,7 @@ def _build_discovery_catalog(
     *,
     limit: int | None = None,
     skip_empleos_publicos: bool = False,
+    only_kind: str | None = None,
 ) -> list[dict[str, Any]]:
     bundle = loader.load(prefer_json=True)
     items = [
@@ -348,6 +349,16 @@ def _build_discovery_catalog(
             inst for inst in items
             if "empleospublicos.cl" not in str(inst.get("url_empleo", ""))
         ]
+    if only_kind:
+        # Filtrar por ScraperKind clasificado ANTES de aplicar --limit, para que
+        # `--only-kind wordpress --limit 10` devuelva 10 wordpress y no 10 del
+        # catálogo completo de los que casi ninguno sea wordpress.
+        def _kind_de(inst: dict[str, Any]) -> str:
+            try:
+                return classify_source(inst).kind.value
+            except Exception:
+                return ""
+        items = [inst for inst in items if _kind_de(inst) == only_kind]
     return items[:limit] if limit else items
 
 
@@ -625,15 +636,18 @@ def _run_empleos_publicos_sync(
     return report
 
 
-def _run_modulo_ejecutar_sync(nombre: str, ejecutar_fn: Any) -> PrecisionReport:
+def _run_modulo_ejecutar_sync(nombre: str, ejecutar_fn: Any, **extra_kwargs: Any) -> PrecisionReport:
     """Corre un scraper del 'nuevo estándar' (módulo auto-contenido con
     ``ejecutar()`` que descubre sus propias fuentes y persiste vía db.database)
     y traduce sus stats a un PrecisionReport para integrarlo al reporte global.
+
+    ``extra_kwargs`` se reenvían a ``ejecutar()`` (p. ej. ``allow_ocr=True``
+    para Carabineros); los módulos que no los acepten no deben recibirlos.
     """
     log.info("Ejecutando %s (módulo ejecutar() nuevo estándar)...", nombre)
     report = PrecisionReport(institucion=nombre)
     try:
-        stats = ejecutar_fn(dry_run=False) or {}
+        stats = ejecutar_fn(dry_run=False, **extra_kwargs) or {}
     except Exception as exc:
         log.exception("Módulo %s falló: %s", nombre, exc)
         report.errores += 1
@@ -937,6 +951,20 @@ async def main(argv: list[str] | None = None) -> int:
         help="Lista de IDs de instituciones separados por coma para correr solo esas (ej: 315,387,562).",
     )
     parser.add_argument(
+        "--id",
+        type=int,
+        help="Atajo para correr una sola institución por ID (equivale a --ids con un valor).",
+    )
+    parser.add_argument(
+        "--only-kind",
+        type=str,
+        help=(
+            "Correr solo las fuentes cuyo ScraperKind (clasificación de "
+            "source_status) coincida (ej: wordpress, empleos_publicos, "
+            "custom_trabajando). Se aplica antes de --limit."
+        ),
+    )
+    parser.add_argument(
         "--skip-empleos-publicos",
         action="store_true",
         help="Excluir instituciones cuya url_empleo apunta a empleospublicos.cl (útil para probar scrapers de portales propios).",
@@ -949,6 +977,17 @@ async def main(argv: list[str] | None = None) -> int:
             "Ignorar cooldowns de retry_policy y re-evaluar todas las fuentes. "
             "Por defecto las fuentes con evaluación reciente se saltan según su "
             "retry_policy (critical=3h, high=6h, … eventual=168h)."
+        ),
+    )
+    parser.add_argument(
+        "--ocr",
+        action="store_true",
+        help=(
+            "Habilitar OCR de PDFs escaneados en los scrapers que lo soporten "
+            "(hoy Carabineros, para leer las 'Bases' del concurso escaneadas). "
+            "Lento; requiere el binario tesseract-ocr + tesseract-ocr-spa "
+            "instalado en el sistema. Apagado por defecto; el servicio de "
+            "producción lo activa."
         ),
     )
     args = parser.parse_args(argv)
@@ -969,16 +1008,34 @@ async def main(argv: list[str] | None = None) -> int:
     loader = CatalogLoader(json_path=args.catalog_json, xlsx_path=args.catalog_xlsx)
     fuentes_index = _load_fuentes_index()
     audit_store = AuditStore()
+    # Validar --only-kind contra los ScraperKind conocidos (evita un filtro
+    # silencioso que no calza con nada y "corre 0 fuentes" sin avisar).
+    only_kind = getattr(args, "only_kind", None)
+    if only_kind:
+        _kinds_validos = {k.value for k in ScraperKind}
+        if only_kind not in _kinds_validos:
+            parser.error(
+                f"--only-kind inválido: {only_kind!r}. Válidos: {sorted(_kinds_validos)}"
+            )
+
     catalog_sources = _build_discovery_catalog(
         loader,
         limit=args.limit,
         skip_empleos_publicos=getattr(args, "skip_empleos_publicos", False),
+        only_kind=only_kind,
     )
-    # Filtrar por IDs específicos si se indica --ids
+    if only_kind:
+        log.info("--only-kind=%s activo: %d fuentes tras filtrar por kind.", only_kind, len(catalog_sources))
+
+    # Filtrar por IDs específicos si se indica --ids / --id
+    target_ids: set[int] = set()
     if getattr(args, "ids", None):
-        target_ids = {int(x.strip()) for x in args.ids.split(",") if x.strip()}
+        target_ids |= {int(x.strip()) for x in args.ids.split(",") if x.strip()}
+    if getattr(args, "id", None):
+        target_ids.add(int(args.id))
+    if target_ids:
         catalog_sources = [s for s in catalog_sources if s.get("id") in target_ids]
-        log.info("--ids activo: filtrando a %d instituciones: %s", len(catalog_sources), sorted(target_ids))
+        log.info("--ids/--id activo: filtrando a %d instituciones: %s", len(catalog_sources), sorted(target_ids))
 
     # ── Filtrado por cooldown de retry_policy ──────────────────────────────
     cooldown_reason_by_inst: dict[int, str] = {}
@@ -1074,7 +1131,8 @@ async def main(argv: list[str] | None = None) -> int:
         if hay_carabineros:
             reports.append(
                 await asyncio.to_thread(
-                    _run_modulo_ejecutar_sync, "carabineros (161)", carabineros_scraper.ejecutar
+                    _run_modulo_ejecutar_sync, "carabineros (161)",
+                    carabineros_scraper.ejecutar, allow_ocr=args.ocr,
                 )
             )
         if hay_trabajando:
@@ -1187,7 +1245,7 @@ async def main(argv: list[str] | None = None) -> int:
         # modos de extracción por sitio (pdf_links, secciones, enlaces_detalle,
         # headings, lista_o_vacio). Corre si alguna de sus fuentes funcionales
         # está en el catálogo activo. Excluidas del genérico vía _IDS_NUEVO_ESTANDAR.
-        _IDS_MUNICIPIOS = {345, 379, 382, 384, 385, 401, 407, 409, 416, 419,
+        _IDS_MUNICIPIOS = {345, 363, 382, 384, 385, 401, 407, 409, 416, 419,
                            456, 527, 537, 580, 647, 670, 676}
         hay_municipios = any(s.get("id") in _IDS_MUNICIPIOS for s in catalog_sources)
         if hay_municipios:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import html
 import json
@@ -115,6 +116,7 @@ from api.services.seo import (  # noqa: E402
 )
 
 DEFAULT_ALLOW_ORIGINS = [
+    "https://contrataoplanta.cl",
     "https://estadoemplea.pages.dev",
 ]
 
@@ -129,10 +131,12 @@ def _load_allow_origins() -> list[str]:
 
 ALLOW_ORIGINS = _load_allow_origins()
 
-# Dominio público del frontend. Los dominios de marca históricos
-# (contrataoplanta.cl / estadoemplea.cl / empleoestado.cl) ya no resuelven
-# en DNS — si se filtran a un og:image o og:url, el crawler recibe NXDOMAIN
-# y el unfurl no se renderiza. Apuntamos a Cloudflare Pages por defecto.
+# Dominio público del frontend. El dominio de marca es contrataoplanta.cl;
+# Cloudflare Pages además sirve el sitio en estadoemplea.pages.dev, que se
+# mantiene en la allowlist durante la transición para no romper el deploy
+# vigente. Los dominios de marca previos (estadoemplea.cl / empleoestado.cl)
+# ya no resuelven en DNS — si se filtran a un og:image o og:url, el crawler
+# recibe NXDOMAIN y el unfurl no se renderiza.
 # Constantes y helpers de auth + rate limit centralizados en
 # api/deps.py. Los re-exportamos como módulo-level bindings para que
 # los 30+ endpoints admin que siguen viviendo en este archivo puedan
@@ -318,9 +322,10 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOW_ORIGINS,
     # El regex cubre branch previews de Cloudflare Pages del proyecto activo
-    # (`<branch>.estadoemplea.pages.dev`). Los dominios de marca muertos
-    # (contrataoplanta.*, estadoemplea.cl, *.netlify.app) se eliminaron para
-    # evitar permitir orígenes que ya no corresponden a este deploy.
+    # (`<branch>.estadoemplea.pages.dev`). El dominio de marca contrataoplanta.cl
+    # va en la allowlist estática (DEFAULT_ALLOW_ORIGINS). Los dominios muertos
+    # (estadoemplea.cl, *.netlify.app) se mantienen fuera para evitar permitir
+    # orígenes que ya no corresponden a este deploy.
     allow_origin_regex=(
         r"https://([a-z0-9-]+\.)?estadoemplea\.pages\.dev$"
     ),
@@ -369,10 +374,10 @@ _SECURITY_HEADERS = {
         "style-src 'self' 'unsafe-inline'; "
         "font-src 'self' data:; "
         "img-src 'self' data: https:; "
-        "connect-src 'self' https://estadoemplea.pages.dev; "
+        "connect-src 'self' https://contrataoplanta.cl https://estadoemplea.pages.dev https://contrataoplanta-production.up.railway.app; "
         "frame-ancestors 'self'; "
         "base-uri 'self'; "
-        "form-action 'self' https://estadoemplea.pages.dev; "
+        "form-action 'self' https://contrataoplanta.cl https://estadoemplea.pages.dev; "
         "object-src 'none'; "
         "upgrade-insecure-requests"
     ),
@@ -420,12 +425,32 @@ def on_startup() -> None:
     logger.info("API iniciada (schema gestionado por Alembic)")
 
 
+@app.on_event("startup")
+async def on_startup_scheduler() -> None:
+    # Programador propio de recolecciones (in-app). Vive en cada worker; el
+    # claim atómico en `scheduler_state` evita disparos duplicados. Está
+    # apagado por defecto en la DB (activo=FALSE) y se puede deshabilitar del
+    # todo con SCHEDULER_DISABLED=1 (p. ej. en procesos one-shot / cron).
+    if os.getenv("SCHEDULER_DISABLED", "").strip().lower() in ("1", "true", "yes"):
+        logger.info("Programador in-app deshabilitado por SCHEDULER_DISABLED")
+        return
+    try:
+        from api.services.scheduler import scheduler_loop
+        app.state.scheduler_task = asyncio.create_task(scheduler_loop())
+        logger.info("Programador in-app activo (loop en background)")
+    except Exception as exc:
+        logger.error("No se pudo iniciar el programador in-app: %s", exc)
+
+
 @app.on_event("shutdown")
 def on_shutdown() -> None:
     # Cierra limpiamente las conexiones del pool. Importante al redeploy:
     # sin esto, Railway puede matar el proceso antes de que Postgres libere
     # las conexiones y el contador de max_connections crece sin volver a
     # bajar hasta que Postgres las expira por idle_timeout.
+    task = getattr(app.state, "scheduler_task", None)
+    if task is not None:
+        task.cancel()
     db_pool.close_pool()
 
 

@@ -10,8 +10,8 @@ import os
 from pathlib import Path
 
 # ── Identidad / destino ──────────────────────────────────────────────────
-SITE_URL = os.getenv("SITE_URL", "https://estadoemplea.pages.dev").rstrip("/")
-MARCA = "estadoemplea"
+SITE_URL = os.getenv("SITE_URL", "https://contrataoplanta.cl").rstrip("/")
+MARCA = "contrataoplanta"
 
 # ── Rutas de la cola ─────────────────────────────────────────────────────
 # La cola es el "buzón de salida": cada corrida deja aquí las imágenes + el

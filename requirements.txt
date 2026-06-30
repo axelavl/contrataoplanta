@@ -4,16 +4,22 @@
 # ============================================================
 
 # ── HTTP async y scraping ───────────────────────────────────
-# aiohttp 3.13.5: fixea 20+ CVEs de 2025-2026 sobre 3.11.13
-# (CVE-2025-53643, CVE-2025-69223..69230, CVE-2026-22815,
-#  CVE-2026-34513..34525). API async compatible.
-aiohttp==3.13.5
+# aiohttp 3.14.1: cierra CVE-2026-34993/47265/50269 y la familia
+# CVE-2026-54273..54280 (sobre 3.13.5). API async compatible.
+aiohttp==3.14.1
 beautifulsoup4==4.12.3
-lxml==5.1.0
+# lxml 6.1.1: fix de PYSEC-2026-87 (la serie 5.x no tiene arreglo).
+# Compatible con el parser de BeautifulSoup y la extracción del proyecto.
+lxml==6.1.1
 requests==2.33.1
 # pdfplumber 0.11.9 arrastra pdfminer.six con fix de CVE-2025-64512
 # y CVE-2025-70559.
 pdfplumber==0.11.9
+# OCR de PDFs escaneados (scrapers/carabineros.py --ocr / run_all.py --ocr para
+# las "Bases" del concurso escaneadas). Requiere además el binario del sistema
+# `tesseract-ocr` con `tesseract-ocr-spa` (lo instala deploy/setup.sh). Si el
+# binario falta, el scraper degrada sin error (solo no lee esos PDFs).
+pytesseract==0.3.13
 # Playwright: navegador headless para scrapers de sitios JS/anti-bot
 # (bcentral=Incapsula, laborum=SPA Navent). OJO: `pip install` instala sólo la
 # librería; el navegador hay que bajarlo aparte en el deploy con:
@@ -28,17 +34,22 @@ SQLAlchemy==2.0.30
 alembic==1.13.3
 
 # ── API FastAPI ─────────────────────────────────────────────
-# fastapi 0.125 acepta starlette 0.49.1 (fix CVE-2025-62727).
-# fastapi 0.118 estaba pineada a starlette<0.49 → bloqueaba el fix.
-fastapi==0.125.0
-starlette==0.49.1
+# starlette 1.3.1 cierra PYSEC-2026-161 y CVE-2026-48817/48818/54282/54283.
+# El fix solo existe en la serie 1.x, que exige fastapi>=0.126: por eso se
+# sube fastapi a 0.138.1 (acepta starlette<2.0). pydantic 2.9.2 sigue válido.
+# OJO despliegue: starlette 1.x mueve TestClient a `httpx2` (solo afecta tests
+# que usen TestClient, no a uvicorn en producción).
+fastapi==0.138.1
+starlette==1.3.1
 uvicorn[standard]==0.32.0
 pydantic[email]==2.9.2
 slowapi==0.1.9
-PyJWT==2.12.1
+# PyJWT 2.13.0: fix de PYSEC-2026-175..179.
+PyJWT==2.13.0
 
 # ── Configuración ───────────────────────────────────────────
-python-dotenv==1.0.1
+# python-dotenv 1.2.2: fix de CVE-2026-28684.
+python-dotenv==1.2.2
 
 # ── Utilidades de datos ─────────────────────────────────────
 python-dateutil==2.9.0
@@ -64,3 +75,10 @@ rich==13.7.1
 # ── Generación de imágenes OG/Twitter por oferta ────────────
 # Pillow 12.2.0: fix CVE-2026-25990 (fuzzing) y CVE-2026-40192.
 Pillow==12.2.0
+
+# ── Cliente Claude (clasificación/auditoría con LLM) ────────
+# Usado por classification/anthropic_client.py (cliente real detrás del
+# LLMClient) y scripts/qa/auditoria_llm_clasificacion.py. Requiere
+# ANTHROPIC_API_KEY en el entorno. Import perezoso: el resto del código
+# arranca sin esta librería.
+anthropic==0.69.0

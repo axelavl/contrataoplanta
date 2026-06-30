@@ -1,6 +1,40 @@
 (function () {
   'use strict';
 
+  /* ── Analítica del sitio · carga única ──
+     shared-shell.js lo cargan ~todas las páginas públicas, así que es el
+     punto ideal para activar la analítica (Umami + beacon propio) en todo
+     el sitio sin tocar 28 HTML. analytics.js trae su propio guard
+     anti-doble-arranque; aquí solo evitamos duplicar el <script> cuando la
+     página ya lo incluye directo (p. ej. index.html). */
+  (function cargarAnalitica() {
+    if (document.querySelector('script[src="/analytics.js"]')) return;
+    var s = document.createElement('script');
+    s.src = '/analytics.js';
+    s.defer = true;
+    document.head.appendChild(s);
+  })();
+
+  /* ── Ruta canónica de una oferta · fuente única de verdad ──
+     /oferta/{id}-{slug-del-cargo}. El slug DEBE coincidir con `_slugify` del
+     backend (api/services/formatters.py) para que el enlace que compartimos ya
+     sea el CANÓNICO y no dispare el redirect 301 del SSR. Lo usan app.js,
+     favoritos.js e historial.js (todos cargan shared-shell.js antes). */
+  window.slugificarCargo = function (texto) {
+    if (!texto) return '';
+    return String(texto)
+      .normalize('NFKD').replace(/[^\x00-\x7F]/g, '')   // NFKD + descarta no-ASCII (= encode('ascii','ignore'))
+      .replace(/[^a-zA-Z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .toLowerCase()
+      .slice(0, 80)
+      .replace(/-+$/, '');
+  };
+  window.rutaOferta = function (id, cargo) {
+    var slug = window.slugificarCargo(cargo);
+    return '/oferta/' + id + (slug ? '-' + slug : '');
+  };
+
   /* ── Logo fallback robusto · fuente única de verdad ──
      Se registra ANTES de que se carguen los partials y las cards, para
      que el override de `window.imgFavFallback` y `window.imgFavCheckQuality`
@@ -65,11 +99,16 @@
 
     function sourcesFor(domain) {
       var enc = encodeURIComponent(domain);
+      // Cadena ordenada por fiabilidad. Clearbit (logo.clearbit.com) fue
+      // discontinuado por HubSpot en dic-2025 y hoy devuelve errores, así que
+      // dejó de ser la fuente primaria. DuckDuckGo entrega el mejor icono del
+      // sitio (suele ser el apple-touch-icon, 60-180 px) y Google s2 @128 es un
+      // respaldo muy estable; al final probamos los assets propios del dominio.
       return [
-        'https://logo.clearbit.com/' + enc + '?size=256',
+        'https://icons.duckduckgo.com/ip3/' + domain + '.ico',
+        'https://www.google.com/s2/favicons?domain=' + enc + '&sz=128',
         'https://' + domain + '/apple-touch-icon.png',
         'https://' + domain + '/apple-touch-icon-precomposed.png',
-        'https://www.google.com/s2/favicons?domain=' + enc + '&sz=128',
         'https://' + domain + '/favicon.ico'
       ];
     }
@@ -135,7 +174,8 @@
     // Persistimos en localStorage el último source que SÍ pasó el chequeo de
     // calidad por dominio. `window.__logoCacheGet` lo consume app.js para
     // pintar el logo correcto desde el primer frame.
-    var LOGO_CACHE_KEY = 'cop_logo_cache_v1';
+    // v2: invalida cachés previos que apuntaban a logo.clearbit.com (discontinuado).
+    var LOGO_CACHE_KEY = 'cop_logo_cache_v2';
     function cacheRead() {
       try { return JSON.parse(localStorage.getItem(LOGO_CACHE_KEY) || '{}') || {}; }
       catch (e) { return {}; }

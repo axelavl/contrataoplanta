@@ -77,6 +77,7 @@ from api.services.seo import (
 from api.services.regiones import get_comunas, get_regiones
 from api.services.leyes import buscar_ley_bcn, get_ley_institucion
 from api.services.mailcheck import validar_email as mailcheck_validar
+from api.services.analitica import registrar_evento
 from api.services.email_alerts import enviar_alerta_ofertas, enviar_verificacion
 from api.services.meilisearch_svc import (
     autocompletar as meili_autocompletar,
@@ -169,6 +170,8 @@ def get_ofertas(
     cierra_pronto: bool = Query(False),
     nuevas: bool = Query(False),
     solo_con_correo: bool = Query(False, description="Solo ofertas con correo de postulación/contacto."),
+    destacadas: bool = Query(False, description="Solo ofertas destacadas (las que se publican en redes sociales)."),
+    sin_experiencia: bool = Query(False, description="Solo ofertas que no exigen experiencia previa (best-effort por texto)."),
     vista: str = Query("vigentes", pattern="^(vigentes|cerradas|todas)$"),
     orden: str = Query("recientes"),
     pagina: int = Query(1, ge=1),
@@ -193,6 +196,8 @@ def get_ofertas(
         cierra_pronto=cierra_pronto,
         nuevas=nuevas,
         solo_con_correo=solo_con_correo,
+        solo_destacadas=destacadas,
+        sin_experiencia=sin_experiencia,
         solo_activas=only_active,
         closed_only=only_closed,
     )
@@ -217,6 +222,11 @@ def get_ofertas(
     if q:
         rel_sql, rel_params = build_cargo_relevance(q)
 
+    # En la pestaña "Destacadas" las marcadas a mano (las que se publican en
+    # redes sociales) van SIEMPRE primero; debajo, las incluidas por el
+    # criterio automático (DESTACADAS_AUTO). `destacada` viene de la CTE base.
+    destacadas_prefix = "destacada DESC, " if destacadas else ""
+
     select_sql = f"""
     WITH base AS (
         {ofertas_select_sql()}
@@ -224,7 +234,7 @@ def get_ofertas(
         {where_sql}
     )
     SELECT * FROM base
-    ORDER BY {rel_sql}{order_sql}
+    ORDER BY {destacadas_prefix}{rel_sql}{order_sql}
     LIMIT %s OFFSET %s
     """
     count_sql = f"""
@@ -666,19 +676,40 @@ def get_institucion_estadisticas(institucion_id: int) -> dict[str, Any]:
 
 @router.get("/api/historial")
 def get_historial(
+    q: str | None = Query(None),
     institucion_id: int | None = Query(None),
+    institucion: str | None = Query(None, description="Alias de institucion_id; acepta uno o varios separados por coma."),
     sector: str | None = Query(None),
     region: str | None = Query(None),
     tipo: str | None = Query(None),
+    nivel: str | None = Query(None),
+    profesion: str | None = Query(None),
+    area_profesional: str | None = Query(None),
+    renta_min: int | None = Query(None, ge=0),
+    renta_max: int | None = Query(None, ge=0),
+    ciudad: str | None = Query(None),
+    comunas: str | None = Query(None, description="Lista de comunas separadas por coma"),
+    solo_con_correo: bool = Query(False),
+    sin_experiencia: bool = Query(False),
     pagina: int = Query(1, ge=1),
     por_pagina: int = Query(50, ge=1, le=200),
 ) -> dict[str, Any]:
     pag = Paginacion(pagina=pagina, por_pagina=por_pagina)
     where_sql, params = build_ofertas_filters(
+        q=q,
         region=region,
         sector=sector,
         tipo=tipo,
-        institucion_id=institucion_id,
+        institucion_id=institucion if institucion is not None else institucion_id,
+        nivel=nivel,
+        profesion=profesion,
+        area_profesional=area_profesional,
+        renta_min=renta_min,
+        renta_max=renta_max,
+        ciudad=ciudad,
+        comunas=comunas,
+        solo_con_correo=solo_con_correo,
+        sin_experiencia=sin_experiencia,
         solo_activas=False,
         closed_only=True,
     )
@@ -764,6 +795,59 @@ def crear_alerta(request: Request, payload: AlertaPayload) -> dict[str, Any]:
     if check.get("sugerencia"):
         response["sugerencia_email"] = check["sugerencia"]
     return response
+
+
+# ──────────────────── Analítica interna (beacon de tráfico) ─────────────────
+
+#: Límite holgado y propio para el beacon: una sesión normal genera muchas
+#: vistas, así que no comparte presupuesto con `/api/alertas`.
+_track_rate: dict[str, list[float]] = defaultdict(list)
+_TRACK_RATE_WINDOW = 60
+_TRACK_RATE_MAX = 120
+
+
+def _check_track_rate(request: Request) -> bool:
+    ip = client_ip(request)
+    ahora = _time.time()
+    corte = ahora - _TRACK_RATE_WINDOW
+    hits = _track_rate[ip] = [t for t in _track_rate[ip] if t > corte]
+    if len(hits) >= _TRACK_RATE_MAX:
+        return False
+    _track_rate[ip].append(ahora)
+    return True
+
+
+@router.post("/api/track")
+async def track_evento(request: Request) -> Response:
+    """Registra una vista de página o un evento del sitio (analítica propia).
+
+    Lo llama `web/analytics.js` vía `navigator.sendBeacon`. El cuerpo se
+    parsea a mano (no se declara un modelo de FastAPI) porque el beacon se
+    envía como `text/plain` para evitar el preflight CORS que `sendBeacon`
+    no puede hacer cross-origin.
+
+    No guarda IP ni datos personales; el «visitante único» se aproxima con
+    un hash anónimo que rota a diario. Siempre responde 204 (incluso si se
+    descarta o la tabla aún no existe) para no entorpecer la navegación.
+    """
+    if _check_track_rate(request):
+        try:
+            raw = await request.body()
+            data = json.loads(raw or b"{}")
+            if not isinstance(data, dict):
+                data = {}
+        except Exception:
+            data = {}
+        registrar_evento(
+            tipo=str(data.get("tipo") or "pageview"),
+            path=data.get("path"),
+            evento=data.get("evento"),
+            oferta_id=data.get("oferta_id"),
+            referrer=data.get("ref") or request.headers.get("referer"),
+            user_agent=request.headers.get("user-agent", ""),
+            ip=client_ip(request),
+        )
+    return Response(status_code=204)
 
 
 # ──────────────────── Scraper sources (catálogo + clasificación) ───────────

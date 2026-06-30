@@ -631,9 +631,13 @@ nav {
 .meta-link:hover{text-decoration:underline}
 
 /* ═══ BARRA DE RESULTADOS Y CONTROLES ════════════════════════════════ */
-.estado-listado-tabs{display:inline-grid;grid-template-columns:1fr 1fr;position:relative;padding:4px;background:var(--bg2);border:1px solid var(--borde);border-radius:999px;margin-bottom:14px;max-width:420px;gap:0}
-.estado-listado-tabs::before{content:"";position:absolute;top:4px;bottom:4px;left:4px;width:calc(50% - 4px);background:var(--azul);border-radius:999px;box-shadow:0 1px 3px rgba(0,0,0,.12);transition:transform .25s cubic-bezier(.4,0,.2,1);z-index:0}
-.estado-listado-tabs[data-estado="cerradas"]::before{transform:translateX(100%)}
+.estado-listado-tabs{display:inline-grid;grid-template-columns:repeat(3,1fr);position:relative;padding:4px;background:var(--bg2);border:1px solid var(--borde);border-radius:999px;margin-bottom:14px;max-width:520px;gap:0}
+/* Píldora deslizante: ancho = una columna exacta ((100% - 2·padding)/3).
+   translateX(100%) = un ancho de píldora = una columna (gap:0), así el
+   desplazamiento cae exacto en cada pestaña. */
+.estado-listado-tabs::before{content:"";position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 8px) / 3);background:var(--azul);border-radius:999px;box-shadow:0 1px 3px rgba(0,0,0,.12);transition:transform .25s cubic-bezier(.4,0,.2,1);z-index:0}
+.estado-listado-tabs[data-estado="destacadas"]::before{transform:translateX(100%)}
+.estado-listado-tabs[data-estado="cerradas"]::before{transform:translateX(200%)}
 .estado-tab{position:relative;z-index:1;border:none;background:transparent;color:var(--texto2);padding:8px 14px;border-radius:999px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:color .2s ease;font-family:inherit}
 .estado-tab:hover{color:var(--texto)}
 .estado-tab.activo{color:#fff}
@@ -792,12 +796,14 @@ nav {
   border-color: var(--acento);
   background: linear-gradient(135deg, var(--blanco) 0%, var(--acento-l) 100%);
 }
+/* El realce de "Destacada" se muestra como chip inline (.badge-destacada)
+   dentro de la fila de badges, para no chocar con el botón de favorito que
+   vive en la esquina superior derecha. Anulamos el badge de esquina previo. */
 .oferta-card.destacada::before {
-  content: '⭐ Destacada';
-  position: absolute; top: 12px; right: 12px;
-  font-size: 10px; font-weight: 700;
-  font-family: 'Inter', sans-serif;
-  color: var(--naran); letter-spacing: 0.5px;
+  content: none;
+}
+.badge-destacada {
+  background: var(--naran); color: #fff;
 }
 
 .oferta-header {
@@ -830,7 +836,10 @@ nav {
   text-align: center;
   box-shadow: 0 1px 4px rgba(0,0,0,.25);
 }
-.oferta-meta { flex: 1 1 auto; min-width: 0; max-width: 100%; }
+/* padding-right reserva el espacio del corazón de favorito (.btn-fav-card,
+   absolute top/right 14px, ~30px de ancho) para que la institución y el
+   cargo no queden por debajo del botón en títulos largos. */
+.oferta-meta { flex: 1 1 auto; min-width: 0; max-width: 100%; padding-right: 38px; }
 .oferta-institucion {
   font-size: 12px; font-weight: 700;
   color: var(--azul); margin-bottom: 5px;
@@ -894,6 +903,30 @@ nav {
 .oferta-detalle {
   display: flex; align-items: center; gap: 5px;
 }
+
+/* Descripción breve de la tarjeta: vista previa recortada a una altura
+   compacta (2 líneas) para que la tarjeta ocupe poco alto y se vean varias
+   ofertas en pantalla. El chevron `.oferta-desc-toggle` aparece sólo cuando
+   el texto se desborda y permite expandir/contraer in situ. */
+.oferta-desc-wrap { margin: 0 0 10px; }
+.oferta-desc {
+  margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--texto2);
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.oferta-desc-wrap.is-expanded .oferta-desc {
+  -webkit-line-clamp: unset; overflow: visible;
+}
+.oferta-desc-toggle {
+  display: flex; align-items: center; justify-content: center;
+  margin: 2px 0 0 auto; width: 28px; height: 22px; padding: 0;
+  border: none; background: none; cursor: pointer;
+  color: var(--texto3); border-radius: 6px;
+  transition: color .15s, background .15s;
+}
+.oferta-desc-toggle:hover { color: var(--azul-m, #254BA0); background: var(--bg2); }
+.oferta-desc-toggle svg { transition: transform .18s ease; }
+.oferta-desc-wrap.is-expanded .oferta-desc-toggle svg { transform: rotate(180deg); }
 .oferta-detalle svg { opacity: .5; flex-shrink: 0; }
 .oferta-renta {
   font-weight: 700; color: var(--texto);
@@ -1001,7 +1034,7 @@ nav {
 /* ═══ CABECERA ORDENABLE VISTA COMPACTA ════════════════════════════ */
 .oferta-row-header {
   display: flex; align-items: center;
-  padding: 0 16px; height: 34px;
+  padding: 0 14px; height: 34px;
   background: var(--bg2);
   border-bottom: 1.5px solid var(--borde);
   position: sticky; top: 56px; z-index: 5;
@@ -1798,6 +1831,30 @@ footer {
   background: var(--blanco);
   position: sticky; bottom: 0;
   border-radius: 0 0 var(--r-l) var(--r-l);
+}
+/* Estado de error del modal de detalle (fetch fallido). Reemplaza
+   .modal-body + .modal-actions con un mensaje claro y acciones. */
+.modal-error-panel {
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; gap: 12px;
+  padding: 40px 24px 32px;
+}
+/* La regla de display:flex de arriba gana sobre el [hidden]{display:none} del
+   navegador, así que el atributo hidden no bastaría para ocultar el panel.
+   Override explícito (mismo patrón que otros componentes con display propio). */
+.modal-error-panel[hidden] { display: none; }
+.modal-error-icon { font-size: 40px; line-height: 1; }
+.modal-error-titulo {
+  font-family: 'Lora', Georgia, serif;
+  font-size: 21px; color: var(--azul); margin: 0;
+}
+.modal-error-texto {
+  font-size: 14px; color: var(--texto2);
+  max-width: 42ch; margin: 0; line-height: 1.5;
+}
+.modal-error-acciones {
+  display: flex; flex-direction: column; gap: 10px;
+  width: 100%; max-width: 320px; margin-top: 6px;
 }
 .modal-actions-secondary {
   display: grid;

@@ -56,6 +56,15 @@ try:
 except ImportError:
     extract_functions = None  # type: ignore[assignment]
 
+try:
+    from extraction.text_sections import (
+        extraer_pasos_postulacion,
+        unir_lineas_envueltas,
+    )
+except ImportError:  # pragma: no cover
+    unir_lineas_envueltas = None  # type: ignore[assignment]
+    extraer_pasos_postulacion = None  # type: ignore[assignment]
+
 
 # ── PDF ───────────────────────────────────────────────────────────────────
 
@@ -135,6 +144,18 @@ def _limpiar(t: str | None) -> str:
     return re.sub(r"\s+", " ", t or "").strip()
 
 
+def _limpiar_lineas(t: str | None) -> str:
+    """Como ``_limpiar`` pero PRESERVA los saltos de línea.
+
+    Las secciones rotuladas ("Funciones:", "Cómo postular:") se anexan en
+    líneas propias para que el front (rich-text) detecte los encabezados y
+    clasifique cada bloque. Colapsa solo espacios/tabs dentro de cada línea.
+    """
+    lineas = [re.sub(r"[ \t]+", " ", ln).strip()
+              for ln in (t or "").replace("\r", "\n").split("\n")]
+    return re.sub(r"\n{3,}", "\n\n", "\n".join(lineas)).strip()
+
+
 def _extraer_salario(texto: str, oferta: dict) -> None:
     """Extrae salario si no está ya presente en la oferta."""
     if extract_salary is None:
@@ -164,7 +185,8 @@ def _extraer_requisitos(texto: str, oferta: dict) -> None:
     if docs:
         partes.append("Documentos: " + "; ".join(docs[:6]))
     if partes:
-        oferta["requisitos_texto"] = _limpiar(" | ".join(partes))[:1900]
+        # Saltos de línea entre bloques rotulados → el front los clasifica.
+        oferta["requisitos_texto"] = _limpiar_lineas("\n".join(partes))[:1900]
 
 
 def _extraer_email(texto: str, oferta: dict) -> None:
@@ -191,9 +213,9 @@ def _extraer_email(texto: str, oferta: dict) -> None:
         else:
             partes_email.append(f"Correo: {em.email}")
     if partes_email:
-        sep = " | " if desc else ""
-        oferta["descripcion"] = _limpiar(
-            desc + sep + " | ".join(partes_email)
+        sep = "\n" if desc else ""
+        oferta["descripcion"] = _limpiar_lineas(
+            desc + sep + "\n".join(partes_email)
         )[:2000]
 
 
@@ -225,9 +247,9 @@ def _extraer_contrato(texto: str, oferta: dict) -> None:
         if modalidad and modalidad not in desc.lower():
             extras.append(f"Modalidad: {modalidad}")
         if extras:
-            sep = " | " if desc else ""
-            oferta["descripcion"] = _limpiar(
-                desc + sep + " | ".join(extras)
+            sep = "\n" if desc else ""
+            oferta["descripcion"] = _limpiar_lineas(
+                desc + sep + "\n".join(extras)
             )[:2000]
 
 
@@ -236,13 +258,36 @@ def _extraer_funciones(texto: str, oferta: dict) -> None:
     if extract_functions is None:
         return
     desc = oferta.get("descripcion") or ""
-    if "funciones" in desc.lower()[:200]:
+    if "funciones" in desc.lower():
         return
     funciones = extract_functions(texto)
     if funciones:
-        bloque = "Funciones: " + "; ".join(funciones[:6])
-        sep = " | " if desc else ""
-        oferta["descripcion"] = _limpiar(desc + sep + bloque)[:2000]
+        # Encabezado + viñetas en líneas propias → el front las clasifica como
+        # "Funciones principales" en vez de fundirlas en el párrafo.
+        bloque = "Funciones del cargo:\n" + "\n".join(f"- {f}" for f in funciones[:8])
+        sep = "\n" if desc else ""
+        oferta["descripcion"] = _limpiar_lineas(desc + sep + bloque)[:2000]
+
+
+def _extraer_postulacion(texto: str, oferta: dict) -> None:
+    """Agrega los pasos para postular ('Cómo postular') si no están presentes.
+
+    Detecta por palabras/frases clave (formulario online, recepción de
+    antecedentes, adjuntar CV, expectativas de renta, dudas/consultas) y los
+    anexa como bloque rotulado en líneas propias.
+    """
+    if extraer_pasos_postulacion is None:
+        return
+    desc = oferta.get("descripcion") or ""
+    low = desc.lower()
+    if "cómo postular" in low or "como postular" in low:
+        return
+    pasos = extraer_pasos_postulacion(texto)
+    if not pasos:
+        return
+    bloque = "Cómo postular:\n" + "\n".join(f"- {p}" for p in pasos)
+    sep = "\n" if desc else ""
+    oferta["descripcion"] = _limpiar_lineas(desc + sep + bloque)[:2000]
 
 
 # ── Función principal ─────────────────────────────────────────────────────
@@ -297,12 +342,18 @@ def enriquecer_oferta(
         return oferta
 
     texto_combinado = "\n\n".join(textos)
+    # Reúne renglones partidos por ancho de página ANTES de extraer: así los
+    # títulos profesionales ("Título profesional de Ingeniería…, o carrera
+    # profesional afín…") y las funciones no se pierden al cortarse en dos.
+    if unir_lineas_envueltas is not None:
+        texto_combinado = unir_lineas_envueltas(texto_combinado)
 
     _extraer_salario(texto_combinado, oferta)
     _extraer_requisitos(texto_combinado, oferta)
     _extraer_email(texto_combinado, oferta)
     _extraer_contrato(texto_combinado, oferta)
     _extraer_funciones(texto_combinado, oferta)
+    _extraer_postulacion(texto_combinado, oferta)
 
     return oferta
 

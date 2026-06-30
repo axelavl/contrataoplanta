@@ -4,12 +4,12 @@
 <!-- boot.js: theme + js-nav. SIN defer, debe ejecutarse antes del paint
      para evitar flash de tema claro. Externalizado desde `<script>`
      inline para poder declarar CSP `script-src 'self'`. -->
-<script src="boot.js"></script>
+<script src="/boot.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Empleo público en Chile · contrata o planta .cl</title>
 <meta name="description" content="Encuentra empleos públicos en Chile, filtra por institución y revisa oportunidades del sector público en un solo buscador.">
-<link rel="canonical" href="https://estadoemplea.pages.dev/">
+<link rel="canonical" href="https://contrataoplanta.cl/">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="alternate icon" href="/favicon.ico">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -17,32 +17,32 @@
 <meta name="theme-color" content="#0A2E6E">
 <meta property="og:title" content="contrata o planta .cl · Empleo público en Chile">
 <meta property="og:description" content="Buscador laboral del sector público chileno con vacantes, filtros y acceso directo a concursos vigentes.">
-<meta property="og:url" content="https://estadoemplea.pages.dev/">
-<meta property="og:image" content="https://estadoemplea.pages.dev/og-default.jpg">
+<meta property="og:url" content="https://contrataoplanta.cl/">
+<meta property="og:image" content="https://contrataoplanta.cl/og-default.jpg">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="es_CL">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="contrata o planta .cl · Empleo público en Chile">
 <meta name="twitter:description" content="Busca vacantes del sector público chileno con filtros por institución, región y tipo de cargo.">
-<meta name="twitter:image" content="https://estadoemplea.pages.dev/og-default.jpg">
+<meta name="twitter:image" content="https://contrataoplanta.cl/og-default.jpg">
 <!-- Fuentes self-hosted desde web/fonts/. Ver web/styles/fonts.css. Ya no
      hay dependencia con fonts.googleapis.com / fonts.gstatic.com, con lo
      que el CSP puede cerrar `style-src` y `font-src` a `'self'`. -->
-<link rel="stylesheet" href="styles/fonts.css">
+<link rel="stylesheet" href="/styles/fonts.css">
 <!-- Analytics (Umami): activable editando los dos meta tags con el
      URL del script y el website_id de la instancia. Si quedan vacíos,
      `window.track()` queda como no-op y el resto del código sigue
      funcionando. Ver `web/analytics.js`. -->
 <meta name="umami-url" content="">
 <meta name="umami-website-id" content="">
-<script src="analytics.js"></script>
+<script src="/analytics.js"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "Organization",
   "name": "Estado Emplea",
-  "url": "https://estadoemplea.pages.dev/",
-  "logo": "https://estadoemplea.pages.dev/icon-512.png",
+  "url": "https://contrataoplanta.cl/",
+  "logo": "https://contrataoplanta.cl/icon-512.png",
   "contactPoint": [
     {
       "@type": "ContactPoint",
@@ -58,22 +58,27 @@
   "@context": "https://schema.org",
   "@type": "WebSite",
   "name": "Estado Emplea",
-  "url": "https://estadoemplea.pages.dev/",
+  "url": "https://contrataoplanta.cl/",
   "potentialAction": {
     "@type": "SearchAction",
-    "target": "https://estadoemplea.pages.dev/?q={search_term_string}",
+    "target": "https://contrataoplanta.cl/?q={search_term_string}",
     "query-input": "required name=search_term_string"
   }
 }
 </script>
-<link rel="stylesheet" href="styles/index.css">
-<link rel="stylesheet" href="styles/redesign-overrides.css">
-<link rel="stylesheet" href="styles/integracion/estilos.css">
+<link rel="stylesheet" href="/styles/index.css">
+<link rel="stylesheet" href="/styles/redesign-overrides.css">
+<link rel="stylesheet" href="/styles/integracion/estilos.css">
 <!-- Ajustes de UX móvil + modo oscuro. Va último para sobrescribir lo previo. -->
-<link rel="stylesheet" href="styles/mobile-ux-fixes.css">
-<script defer src="ui-strings.js"></script>
-<script defer src="shared-shell.js"></script>
-<script defer src="nav-mobile.js"></script>
+<link rel="stylesheet" href="/styles/mobile-ux-fixes.css">
+<script defer src="/ui-strings.js"></script>
+<script defer src="/shared-shell.js"></script>
+<script defer src="/nav-mobile.js"></script>
+<!-- AdSense: loader estático en <head> (lo exige la verificación de propiedad
+     y Auto ads). id="adsbygoogle-js" evita que ads.js lo cargue otra vez. El
+     client también vive en ads-config.js para las unidades manuales. -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9396873058904461"
+     crossorigin="anonymous" id="adsbygoogle-js"></script>
 </head>
 <body data-page="home">
 <a class="skip-link" href="#contenido-principal">Saltar al contenido</a>
@@ -132,6 +137,7 @@
             <option>Salud Pública</option>
             <option value="Universidad/Educación">Educación Superior</option>
             <option>Gobierno Regional</option>
+            <option>Legislativo</option>
             <option>Judicial</option>
             <option>FF.AA. y Orden</option>
             <option>Empresa del Estado</option>
@@ -196,7 +202,6 @@
             <button class="filtro-tag" type="button" data-action="toggle-filtro" data-filtro="cierra-hoy">⏰ Cierra pronto</button>
             <button class="filtro-tag" type="button" data-action="toggle-filtro" data-filtro="nuevos">✨ Últimas 24 h</button>
             <button class="filtro-tag" type="button" data-action="toggle-filtro" data-filtro="sin-experiencia">Sin experiencia</button>
-            <button class="filtro-tag" type="button" data-action="toggle-filtro" data-filtro="con-correo" title="Solo ofertas con correo de postulación o contacto">Postular por correo</button>
           </div>
         </div>
       </div>
@@ -214,6 +219,7 @@
       <div class="resultados-head-left">
         <div class="estado-listado-tabs" id="estado-listado-tabs" role="tablist" aria-label="Vista por estado" data-estado="vigentes">
           <button class="estado-tab activo" id="tab-vigentes" type="button" data-action="set-vista-listado" data-listado="vigentes" role="tab" aria-selected="true">Vigentes</button>
+          <button class="estado-tab" id="tab-destacadas" type="button" data-action="set-vista-listado" data-listado="destacadas" role="tab" aria-selected="false">⭐ Destacadas</button>
           <button class="estado-tab" id="tab-cerradas" type="button" data-action="set-vista-listado" data-listado="cerradas" role="tab" aria-selected="false">Cerradas</button>
         </div>
         <div class="resultados-count">
@@ -355,9 +361,11 @@
                 <option>Salud Pública</option>
                 <option value="Universidad/Educación">Educación Superior</option>
                 <option>Gobierno Regional</option>
+                <option>Legislativo</option>
                 <option>Judicial</option>
                 <option>FF.AA. y Orden</option>
                 <option>Empresa del Estado</option>
+                <option>Autónomo/Regulador</option>
               </select>
             </div>
             <div>
@@ -395,7 +403,7 @@
     <div class="widget">
       <div class="widget-header">
         <div class="widget-titulo">📊 En este momento</div>
-        <a href="estadisticas.html" class="widget-ver-todo">Ver todo</a>
+        <a href="/estadisticas.html" class="widget-ver-todo">Ver todo</a>
       </div>
       <div class="widget-body">
         <div class="stat-grid">
@@ -435,7 +443,7 @@
     <div class="widget widget--solo-estadisticas">
       <div class="widget-header">
         <div class="widget-titulo">📈 Histórico mensual</div>
-        <a href="estadisticas.html" class="widget-ver-todo">2025-2026</a>
+        <a href="/estadisticas.html" class="widget-ver-todo">2025-2026</a>
       </div>
       <div class="widget-body">
         <div class="hist-bar-wrap" id="historico-lista">
@@ -621,6 +629,18 @@
         </button>
       </div>
     </div>
+    <!-- Estado de error: se muestra (y oculta .modal-body/.modal-actions)
+         cuando el detalle no se pudo cargar. Distingue 404 (oferta retirada)
+         de fallos transitorios de conexión/backend. -->
+    <div class="modal-error-panel" id="modal-error-panel" role="alert" hidden>
+      <div class="modal-error-icon" aria-hidden="true">⚠️</div>
+      <h2 class="modal-error-titulo" id="modal-error-titulo">No pudimos cargar el detalle</h2>
+      <p class="modal-error-texto" id="modal-error-texto">Puede ser un problema temporal. Inténtalo de nuevo en unos segundos.</p>
+      <div class="modal-error-acciones">
+        <button class="btn-modal-primary" id="modal-error-retry" type="button">Reintentar</button>
+        <a class="btn-modal-sec" href="/">Volver al listado</a>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -719,7 +739,7 @@
 </div>
 
 <!-- ══ JAVASCRIPT ══════════════════════════════════════════════════ -->
-<script src="rich-text.js"></script>
+<script src="/rich-text.js"></script>
 <!-- JS principal en archivo externo (antes era un `<script>` inline
      de ~3 600 líneas). Cargado sync para replicar el timing del
      original: ejecuta antes de nav-mobile.js y antes del
@@ -730,15 +750,15 @@
 <!-- Componentes de integración (vanilla, exponen globals window.*).
      Orden de carga: chile-geo (datos), luego profesiones, ficha-oferta y mapa-chile.
      Deben cargar ANTES de app.js para que los globals existan en su init. -->
-<script src="integracion/chile-geo.js"></script>
-<script src="integracion/profesiones.js"></script>
-<script src="integracion/ficha-oferta.js"></script>
-<script src="integracion/mapa-chile.js"></script>
-<script src="integracion/comparador.js"></script>
-<script src="app.js"></script>
-<script src="ads-config.js"></script>
-<script src="ads.js"></script>
+<script src="/integracion/chile-geo.js"></script>
+<script src="/integracion/profesiones.js"></script>
+<script src="/integracion/ficha-oferta.js"></script>
+<script src="/integracion/mapa-chile.js"></script>
+<script src="/integracion/comparador.js"></script>
+<script src="/app.js"></script>
+<script src="/ads-config.js"></script>
+<script src="/ads.js"></script>
 <!-- Mejoras UX móvil: alto real de la cinta + acordeón de la ficha. -->
-<script defer src="mobile-ux.js"></script>
+<script defer src="/mobile-ux.js"></script>
 </body>
 </html>
