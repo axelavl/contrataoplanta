@@ -374,7 +374,7 @@ _SECURITY_HEADERS = {
         "style-src 'self' 'unsafe-inline'; "
         "font-src 'self' data:; "
         "img-src 'self' data: https:; "
-        "connect-src 'self' https://contrataoplanta.cl https://estadoemplea.pages.dev; "
+        "connect-src 'self' https://contrataoplanta.cl https://estadoemplea.pages.dev https://contrataoplanta-production.up.railway.app; "
         "frame-ancestors 'self'; "
         "base-uri 'self'; "
         "form-action 'self' https://contrataoplanta.cl https://estadoemplea.pages.dev; "
