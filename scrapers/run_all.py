@@ -149,7 +149,8 @@ _IDS_NUEVO_ESTANDAR: frozenset[int] = frozenset({
     # 254 (UTEM) → trabajando.py; 258/259 (UOH/UAysén) → universidades_wp.py
     # 251 (UNAP) / 246 (UFRO) → universidades_portal.py
     # 243 (USACH) / 244 (UV) / 252 (UTA) → universidades_tabla.py
-    243, 244, 245, 246, 248, 251, 252, 253, 255, 258, 259,
+    # 249 (UMAG) / 254 (UTEM) / 257 (UTalca) → trabajando.py (auto-descubiertos)
+    243, 244, 245, 246, 248, 249, 251, 252, 253, 254, 255, 257, 258, 259,
 })
 
 
