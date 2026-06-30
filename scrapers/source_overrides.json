@@ -326,31 +326,31 @@
     },
     {
       "id": 243,
-      "status": "experimental",
-      "kind": "generic",
-      "reason": "USACH — URL de empleo no es un enlace válido, se usará sitio_web como fallback",
-      "notes": "URL original era un título de página, no una URL"
+      "status": "active",
+      "kind": "skip",
+      "reason": "USACH — cubierto por trabajando.py (usach.trabajando.cl) + universidades_tabla.py (honorarios + académicos en usach.cl)",
+      "notes": "trabajando.py + universidades_tabla.py (modos tabla y pdf_nombre)"
     },
     {
       "id": 244,
       "status": "active",
-      "kind": "generic",
-      "reason": "Universidad de Valparaíso — portal cyl.uv.cl/cargos propio",
+      "kind": "skip",
+      "reason": "Universidad de Valparaíso — cubierto por scrapers/universidades_tabla.py (modo joomla)",
       "notes": "https://cyl.uv.cl/cargos"
     },
     {
       "id": 245,
-      "status": "experimental",
-      "kind": "generic",
-      "reason": "Universidad de Antofagasta — URL apunta a intranet/asp, puede no responder externamente",
-      "notes": "https://intranetua.uantof.cl/academicos/pages/academicos.asp?ID=concurso2018"
+      "status": "active",
+      "kind": "skip",
+      "reason": "Universidad de Antofagasta — portal propio trabajosua.uantof.cl, cubierto por scrapers/universidades.py",
+      "notes": "https://trabajosua.uantof.cl/ (portal nuevo, reemplaza intranet vieja)"
     },
     {
       "id": 246,
       "status": "active",
-      "kind": "generic",
-      "reason": "Universidad de La Frontera — portal personas.ufro.cl propio",
-      "notes": "https://personas.ufro.cl/servicio/convocatorias/"
+      "kind": "skip",
+      "reason": "Universidad de La Frontera — portal propio, cubierto por scrapers/universidades_portal.py (ufro_tabla)",
+      "notes": "https://extranet.ufro.cl/concursos/ver_tipo_administrativo.php"
     },
     {
       "id": 247,
@@ -382,31 +382,31 @@
     },
     {
       "id": 251,
-      "status": "experimental",
-      "kind": "generic",
-      "reason": "Universidad Arturo Prat — portal PHP legacy (sispartime/llamado.php), puede no ser parseable",
+      "status": "active",
+      "kind": "skip",
+      "reason": "Universidad Arturo Prat — portal PHP legacy, cubierto por scrapers/universidades_portal.py (unap_sispartime)",
       "notes": "http://portal.unap.cl/kb/dewey/app/sispartime/llamado.php"
     },
     {
       "id": 252,
       "status": "active",
-      "kind": "generic",
-      "reason": "Universidad de Tarapacá — portal RRHH propio en zapahuira.uta.cl",
-      "notes": "https://zapahuira.uta.cl/negocio/RRHH/MantLaboral/"
+      "kind": "skip",
+      "reason": "Universidad de Tarapacá — cubierto por scrapers/universidades_tabla.py (modo transparencia)",
+      "notes": "https://www.uta.cl/transparencia/actosyresoluciones_d/concursos/2026/"
     },
     {
       "id": 253,
       "status": "active",
       "kind": "generic",
-      "reason": "Universidad de Atacama — portal uda.cl/concursos-publicos propio",
-      "notes": "https://uda.cl/concursos-publicos/"
+      "reason": "Universidad de Atacama — portal propio, cubierto por scrapers/universidades.py",
+      "notes": "https://pregrado.uda.cl/index.php/concurso-academico/ (académico) + https://uda.cl/concursos-publicos/ (general)"
     },
     {
       "id": 254,
       "status": "active",
-      "kind": "generic",
-      "reason": "Universidad Tecnológica Metropolitana — portal empleos.utem.cl propio",
-      "notes": "https://empleos.utem.cl/"
+      "kind": "custom_trabajando",
+      "reason": "UTEM — empleos.utem.cl es plataforma Trabajando.cl (id_dominio=3836), lo cubre trabajando.py",
+      "notes": "https://empleos.utem.cl/ (plataforma Trabajando con dominio propio)"
     },
     {
       "id": 255,
@@ -432,16 +432,16 @@
     {
       "id": 258,
       "status": "active",
-      "kind": "generic",
-      "reason": "Universidad de O'Higgins — portal uoh.cl/trabaja-con-nosotros propio",
-      "notes": "https://www.uoh.cl/trabaja-con-nosotros/"
+      "kind": "wordpress",
+      "reason": "UOH — WordPress listado_html, cubierto por scrapers/universidades_wp.py",
+      "notes": "https://www.uoh.cl/trabaja-con-nosotros/ → posts /concurso/<slug>"
     },
     {
       "id": 259,
       "status": "active",
-      "kind": "generic",
-      "reason": "Universidad de Aysén — portal uaysen.cl/trabaja-con-nosotros propio",
-      "notes": "https://uaysen.cl/trabaja-con-nosotros/"
+      "kind": "wordpress",
+      "reason": "UAysén — WordPress CPT REST (/wp-json/wp/v2/concursos), cubierto por scrapers/universidades_wp.py",
+      "notes": "https://uaysen.cl/wp-json/wp/v2/concursos — estados en título [Publicación]/[Cierre]"
     },
     {
       "_comment": "=== CFTs Estatales ==="
