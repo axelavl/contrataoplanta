@@ -1,22 +1,18 @@
 """
-EmpleoEstado.cl — Scraper de ofertas del Ministerio Público / Fiscalía de
-Chile (https://fiscaliadechile.trabajando.cl). Patrón estándar de sesión.
+Scraper de ofertas del Ministerio Público / Fiscalía de Chile
+(https://fiscaliadechile.trabajando.cl). Patrón estándar de sesión.
 
 OJO CON LA PLATAFORMA: aunque el dominio es *.trabajando.cl, este portal usa
 la GENERACIÓN ANTIGUA de Trabajando (jQuery/Angular con widgets AJAX), no la
 plantilla Nuxt que autodetecta trabajando.py — por eso va en scraper propio.
 
-Fuente de datos (verificada 06/2026): GET /offers/getAjax devuelve JSON:
-    offers[]: id, jobTitle, fiscaliaRegional, vacancies,
-              statePublication ("Proceso en Etapa de Postulación"),
-              validity ("15/06/2026" = cierre de postulación),
-              _creation_date (publicación), lastUpdate, page
-    headers: {pages: N}   (páginas adicionales vía POST /offers/ajax_search)
-
-El detalle por oferta se renderiza con un widget cuyo endpoint no está
-expuesto de forma estable, así que descripcion/requisitos quedan a nivel de
-los campos del listado (que ya cubren cargo, región, vacantes, fechas y
-estado). url_original usa el deep-link real del sitio: /offers#detail/{id}.
+Fuente de datos (verificada 06/2026):
+  - Listado: GET /offers/getAjax → JSON con offers[] (id, jobTitle,
+    fiscaliaRegional, vacancies, statePublication, validity, _creation_date).
+    Páginas adicionales vía POST /offers/ajax_search.
+  - Detalle: GET /offers/detail/{id} → HTML con campos estructurados
+    (renta bruta, jornada, estamento, requisitos, comuna, unidad operativa,
+    experiencia, grado educacional, tipo de contrato, etc.).
 
 Vigencia: se importan solo ofertas con validity >= hoy (el sitio mantiene el
 estado "Proceso en Etapa de Postulación" como texto, pero la fecha manda);
@@ -137,7 +133,7 @@ _RE_ORDINAL = re.compile(r"\s*\([IVXL]+\)\s*$")
 
 CAMPOS_EXPORT = ["id_externo", "fuente_id", "institucion_id", "institucion_nombre", "sector", "cargo",
                  "area_profesional", "tipo_cargo", "nivel", "region", "ciudad",
-                 "renta_bruta_min", "renta_bruta_max", "renta_texto",
+                 "renta_bruta_min", "renta_bruta_max", "renta_texto", "jornada",
                  "fecha_publicacion", "fecha_cierre", "url_original",
                  "descripcion", "requisitos_texto"]
 
@@ -175,6 +171,101 @@ def _json(session: requests.Session, method: str, url: str,
                 return None
             time.sleep(2 ** intento)
     return None
+
+
+# ── Detalle por oferta ──────────────────────────────────────────────────────
+_RE_TAG = re.compile(r"<[^>]+>")
+_RE_WS = re.compile(r"\s+")
+
+
+def _html_a_texto(html: str | None) -> str:
+    if not html:
+        return ""
+    t = re.sub(r"<br\s*/?>", "\n", html, flags=re.I)
+    t = re.sub(r"</(p|li|ul|ol|div|h[1-6])>", "\n", t, flags=re.I)
+    t = re.sub(r"<li[^>]*>", "- ", t, flags=re.I)
+    t = _RE_TAG.sub("", t)
+    try:
+        from html import unescape
+        t = unescape(t)
+    except Exception:
+        pass
+    return re.sub(r"\n{3,}", "\n\n", t).strip()
+
+
+def _extraer_campos_detalle(html_text: str) -> dict[str, str]:
+    """Extrae pares label→valor del HTML de detalle de la Fiscalía.
+
+    El HTML usa pares de elementos (th/td, dt/dd, o divs con clases
+    label/value) que al concatenarse quedan como "LabelValor". Buscamos
+    los labels conocidos con regex sobre el HTML limpio.
+    """
+    campos: dict[str, str] = {}
+    labels = [
+        ("renta_bruta", r"Remuneraci[oó]n\s+Bruta\s*[:\-]?\s*"),
+        ("jornada", r"Jornada\s+[Ll]aboral\s*[:\-]?\s*"),
+        ("estamento", r"Estamento\s*[:\-]?\s*"),
+        ("grado", r"Grado\s*[:\-]?\s*"),
+        ("tipo_contrato", r"Tipo\s+de\s+Contrato\s*[:\-]?\s*"),
+        ("vacantes", r"N[°º]?\s*de\s+Vacantes\s*[:\-]?\s*"),
+        ("unidad_operativa", r"Unidad\s+Operativa\s*[:\-]?\s*"),
+        ("experiencia", r"Experiencia\s+Laboral\s*[:\-]?\s*"),
+        ("grado_educacional", r"Grado\s+Educacional(?:/[^:\n]*)?\s*[:\-]?\s*"),
+        ("comuna", r"Comuna\s*[:\-]?\s*"),
+        ("lugar_trabajo", r"Lugar\s+de\s+Trabajo\s*[:\-]?\s*"),
+        ("conocimiento_computacion", r"Conocimiento\s+en\s+Computaci[oó]n\s*[:\-]?\s*"),
+    ]
+    texto_plano = _html_a_texto(html_text)
+    for key, pattern in labels:
+        m = re.search(pattern + r"(.+)", texto_plano, re.I)
+        if m:
+            valor = m.group(1).strip()
+            valor = re.split(r"\n", valor)[0].strip()
+            if valor:
+                campos[key] = valor
+
+    for key, pattern in [
+        ("requisitos_generales", r"Requisitos\s+Generales\s*[:\-]?\s*"),
+        ("requisitos_especificos", r"Requisitos\s+Espec[ií]ficos\s*[:\-]?\s*"),
+    ]:
+        m = re.search(pattern + r"(.+?)(?=Requisitos\s+Espec|Conocimiento\s+en|Ubicaci[oó]n|$)",
+                       texto_plano, re.I | re.DOTALL)
+        if m:
+            valor = m.group(1).strip()
+            if valor:
+                campos[key] = valor
+
+    desc_match = re.search(
+        r"Oferta\s+de\s+Empleo\s*\n+\s*[^\n]+\n+(.+?)(?=Fiscal[ií]a\s+Regional|Requisitos\s+del\s+Postulante|N[°º]?\s*de\s+Vacantes)",
+        texto_plano, re.I | re.DOTALL)
+    if desc_match:
+        campos["descripcion_detalle"] = desc_match.group(1).strip()
+
+    return campos
+
+
+def _obtener_detalle(session: requests.Session, oid: str,
+                     delay: float) -> dict[str, str]:
+    """Obtiene campos del detalle HTML en /offers/detail/{id}."""
+    url = f"{BASE}/offers/detail/{oid}"
+    try:
+        r = session.get(url, timeout=HTTP_TIMEOUT)
+        if r.status_code >= 400:
+            logger.debug("  Detalle HTTP %s para oferta %s", r.status_code, oid)
+            return {}
+        return _extraer_campos_detalle(r.text)
+    except requests.RequestException as exc:
+        logger.debug("  Error detalle oferta %s: %s", oid, type(exc).__name__)
+        return {}
+
+
+def _parsear_renta(valor: str) -> int | None:
+    """'2.191.480' → 2191480, '$1.500.000' → 1500000."""
+    limpio = re.sub(r"[^\d]", "", valor)
+    if not limpio:
+        return None
+    n = int(limpio)
+    return n if n > 10000 else None
 
 
 # ── Parseo (puro, testeable sin red) ─────────────────────────────────────────
@@ -216,12 +307,14 @@ def _nivel(cargo: str) -> str:
     return "Profesional"
 
 
-def construir_oferta(o: dict[str, Any]) -> dict:
+def construir_oferta(o: dict[str, Any],
+                     detalle: dict[str, str] | None = None) -> dict:
     fuente_id = int(FUENTE["id"])
     nombre = FUENTE["nombre"]
     cargo = limpiar_texto(str(o.get("jobTitle") or ""))[:500]
     fiscalia = limpiar_texto(str(o.get("fiscaliaRegional") or ""))
     oid = str(o.get("id") or "")
+    det = detalle or {}
 
     fecha_pub = None
     if cd := o.get("_creation_date"):
@@ -231,41 +324,87 @@ def construir_oferta(o: dict[str, Any]) -> dict:
         except ValueError:
             pass
 
+    # ── Descripción enriquecida ──────────────────────────────────────────
     desc_partes = []
+    if det.get("descripcion_detalle"):
+        desc_partes.append(det["descripcion_detalle"])
     if fiscalia:
         desc_partes.append(f"Fiscalía Regional: {fiscalia}")
+    if det.get("unidad_operativa"):
+        desc_partes.append(f"Unidad Operativa: {det['unidad_operativa']}")
     if o.get("vacancies"):
         desc_partes.append(f"Vacantes: {o['vacancies']}")
+    if det.get("jornada"):
+        desc_partes.append(f"Jornada: {det['jornada']}")
+    if det.get("estamento"):
+        desc_partes.append(f"Estamento: {det['estamento']}")
+    if det.get("grado"):
+        desc_partes.append(f"Grado: {det['grado']}")
+    if det.get("experiencia"):
+        desc_partes.append(f"Experiencia requerida: {det['experiencia']}")
+    if det.get("grado_educacional"):
+        desc_partes.append(f"Estudios mínimos: {det['grado_educacional']}")
     if o.get("statePublication"):
         desc_partes.append(f"Estado: {limpiar_texto(str(o['statePublication']))}")
+
+    # ── Renta ────────────────────────────────────────────────────────────
+    renta_bruta = _parsear_renta(det["renta_bruta"]) if det.get("renta_bruta") else None
+    renta_texto = None
+    if renta_bruta:
+        renta_texto = f"${renta_bruta:,.0f}".replace(",", ".") + " bruta"
+
+    # ── Requisitos ───────────────────────────────────────────────────────
+    req_partes = []
+    if det.get("requisitos_generales"):
+        req_partes.append(det["requisitos_generales"])
+    if det.get("requisitos_especificos"):
+        if req_partes:
+            req_partes.append("Requisitos Específicos:")
+        req_partes.append(det["requisitos_especificos"])
+    requisitos_texto = "\n".join(req_partes).strip() or None
+
+    # ── Tipo de cargo desde detalle ──────────────────────────────────────
+    tipo_contrato = det.get("tipo_contrato", "")
+    tipo_cargo = _tipo(tipo_contrato) if tipo_contrato else _tipo(cargo)
+
+    # ── Nivel desde estamento del detalle ────────────────────────────────
+    estamento = det.get("estamento", "")
+    nivel = estamento if estamento else _nivel(cargo)
+
+    # ── Ubicación ────────────────────────────────────────────────────────
+    ciudad = det.get("comuna") or det.get("lugar_trabajo") or None
+    if ciudad:
+        ciudad = limpiar_texto(ciudad)[:200]
 
     return {
         "id_externo": generar_id_estable(fuente_id, nombre, cargo, oid),
         "institucion_id": fuente_id,
         "fuente_id": None,
-        "url_original": f"{BASE}/offers#detail/{oid}",
+        "url_original": f"{BASE}/offers/detail/{oid}",
         "cargo": cargo,
         "descripcion": limpiar_texto(" | ".join(desc_partes)) or None,
         "institucion_nombre": nombre,
         "sector": FUENTE["sector"],
         "area_profesional": normalizar_area(cargo),
-        "tipo_cargo": _tipo(cargo),
-        "nivel": _nivel(cargo),
+        "tipo_cargo": tipo_cargo,
+        "nivel": nivel,
         "region": _region_desde_fiscalia(fiscalia),
-        "ciudad": None,
-        "renta_bruta_min": None,   # el listado no publica renta
-        "renta_bruta_max": None,
-        "renta_texto": None,
+        "ciudad": ciudad,
+        "renta_bruta_min": renta_bruta,
+        "renta_bruta_max": renta_bruta,
+        "renta_texto": renta_texto,
+        "jornada": det.get("jornada") or None,
         "fecha_publicacion": fecha_pub or date.today(),
         "fecha_cierre": _fecha_ddmmyyyy(str(o.get("validity") or "")),
-        "requisitos_texto": None,  # el detalle carga por widget sin endpoint expuesto
+        "requisitos_texto": requisitos_texto,
         "url_bases": None,
     }
 
 
 # ── Recolección ──────────────────────────────────────────────────────────────
 def recolectar(max_results: int | None, delay: float,
-               incluir_cerrados: bool) -> list[dict]:
+               incluir_cerrados: bool,
+               con_detalle: bool = True) -> list[dict]:
     session = _session()
     d = _json(session, "GET", f"{BASE}/offers/getAjax")
     if not d or "offers" not in d:
@@ -294,11 +433,19 @@ def recolectar(max_results: int | None, delay: float,
     for o in crudas:
         if str(o.get("hidden") or "0") == "1":
             continue
-        of = construir_oferta(o)
-        if (of["fecha_cierre"] and of["fecha_cierre"] < hoy
-                and not incluir_cerrados):
+        # Pre-filtrar por fecha antes de gastar una request en el detalle
+        fecha_cierre = _fecha_ddmmyyyy(str(o.get("validity") or ""))
+        if fecha_cierre and fecha_cierre < hoy and not incluir_cerrados:
             omitidas += 1
             continue
+        oid = str(o.get("id") or "")
+        detalle: dict[str, str] = {}
+        if con_detalle and oid:
+            time.sleep(delay)
+            detalle = _obtener_detalle(session, oid, delay)
+        if detalle:
+            logger.debug("  Detalle oferta %s: %d campos", oid, len(detalle))
+        of = construir_oferta(o, detalle)
         try:
             from scrapers.enrich import enriquecer_oferta
             enriquecer_oferta(
@@ -336,7 +483,7 @@ def _exportar(ofertas: list[dict], prefijo: str) -> None:
 
 def ejecutar(dry_run=False, verbose=False, max_results=None,
              delay=DELAY_DEFAULT, incluir_cerrados=False,
-             export=None) -> dict[str, Any]:
+             con_detalle=True, export=None) -> dict[str, Any]:
     inicio = time.time()
     logger.info("=" * 60)
     logger.info("INICIO - Scraper Fiscalía de Chile%s",
@@ -354,16 +501,20 @@ def ejecutar(dry_run=False, verbose=False, max_results=None,
     ofertas: list[dict] = []
 
     try:
-        ofertas = recolectar(max_results, delay, incluir_cerrados)
+        ofertas = recolectar(max_results, delay, incluir_cerrados,
+                             con_detalle=con_detalle)
         stats["encontradas"] = len(ofertas)
         for datos in ofertas:
             urls_activas.append(datos["url_original"])
             if verbose or dry_run:
+                renta = datos.get("renta_texto") or "sin renta"
+                ciudad = datos.get("ciudad") or ""
                 print(f"  [FISCALIA] {datos['cargo'][:38]:38} | "
-                      f"{datos['region'][:24]:24} | {datos['tipo_cargo'][:24]:24} "
+                      f"{datos['region'][:20]:20} | {renta:>20} "
                       f"| cierre: {datos['fecha_cierre']}")
                 if verbose:
-                    print(f"      {datos['url_original']}")
+                    print(f"      {datos['url_original']}"
+                          f"  {ciudad}")
             if dry_run or db is None:
                 continue
             try:
@@ -421,7 +572,10 @@ if __name__ == "__main__":
     p.add_argument("--delay", type=float, default=DELAY_DEFAULT)
     p.add_argument("--incluir-cerrados", action="store_true",
                    help="No filtrar ofertas con plazo vencido")
+    p.add_argument("--sin-detalle", action="store_true",
+                   help="Solo listado sin consultar detalle por oferta (rápido)")
     p.add_argument("--export", default=None, metavar="PREFIJO")
     a = p.parse_args()
     ejecutar(dry_run=a.dry_run, verbose=a.verbose, max_results=a.max,
-             delay=a.delay, incluir_cerrados=a.incluir_cerrados, export=a.export)
+             delay=a.delay, incluir_cerrados=a.incluir_cerrados,
+             con_detalle=not a.sin_detalle, export=a.export)

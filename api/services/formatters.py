@@ -43,7 +43,7 @@ _CATALOG_PATH = _PROJECT_ROOT / "repositorio_instituciones_publicas_chile.json"
 #: Dominios que son *portales intermediarios* (empleospublicos.cl, etc.)
 #: y por eso no representan el sitio oficial de la institución. Se
 #: excluyen de la resolución del dominio oficial para que
-#: `logo.clearbit.com` no termine buscando el logo de un portal.
+#: los proveedores de logos no terminen buscando el logo de un portal.
 _PORTAL_DOMAINS_LOWER = {
     "empleospublicos.cl", "www.empleospublicos.cl",
     "trabajando.com", "www.trabajando.com",
@@ -213,7 +213,7 @@ def _extract_root_domain(url: str | None) -> str | None:
         return None
     if host in _PORTAL_DOMAINS_LOWER:
         return None
-    # Remueve www. para que logo.clearbit.com tenga mejor hit rate.
+    # Remueve www. para que DuckDuckGo ip3 y Google s2 tengan mejor hit rate.
     return host[4:] if host.startswith("www.") else host
 
 
@@ -280,14 +280,17 @@ def resolve_institucion_sitio_web(
         return None
     if key in by_name:
         return by_name[key]
-    # Match por contención: escoger la entrada del catálogo con la clave
-    # más larga contenida en el nombre consultado (evita falsos
-    # positivos cortos).
+    # Match por contención bidireccional: la clave del catálogo está
+    # contenida en el nombre buscado ("gobierno regional de antofagasta"
+    # ⊂ "gobierno regional de antofagasta servicio x"), O viceversa
+    # (la consulta es un recorte del nombre del catálogo). La clave más
+    # larga gana para evitar falsos positivos.
     best: tuple[int, str] | None = None
     for catalog_key, domain in by_name.items():
-        if len(catalog_key) < 10:
+        if len(catalog_key) < 8:
             continue
-        if catalog_key in key:
-            if best is None or len(catalog_key) > best[0]:
-                best = (len(catalog_key), domain)
+        if catalog_key in key or (len(key) >= 10 and key in catalog_key):
+            score = len(catalog_key)
+            if best is None or score > best[0]:
+                best = (score, domain)
     return best[1] if best else None

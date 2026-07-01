@@ -41,16 +41,18 @@
      esté activo desde el primer image error.
 
      Cadena de resolución (primero a último):
-       1. Clearbit logo @ 256 px
-       2. apple-touch-icon del dominio (suele ser 180 px+)
-       3. apple-touch-icon-precomposed
-       4. Google s2 favicons @ sz=128
+       0. Logo local pre-cacheado en /logos/{dominio}.png (CDN, instantáneo)
+       1. DuckDuckGo ip3 (mejor icono del sitio, 60-180 px)
+       2. Google s2 favicons @ sz=128
+       3. apple-touch-icon del dominio (suele ser 180 px+)
+       4. apple-touch-icon-precomposed
        5. favicon del dominio raíz (suele ser 32 px o menos)
      Si ninguna supera el chequeo de calidad (naturalWidth >= 40 px), se
      reemplaza la <img> por un ícono SVG según sector institucional — nunca
-     quedamos con recuadros vacíos ni con emojis. */
+     quedamos con recuadros vacíos ni con emojis.
+     Logos locales se generan con scripts/descargar_logos.py. */
   (function registerLogoFallback() {
-    var MIN_LOGO_PX = 40; // Bajo esto el logo se ve pixelado al subir a 44×44.
+    var MIN_LOGO_PX = 16; // Bajamos umbral: 32×32 se ve bien a 44px; 16×16 es mejor que nada.
 
     var SECTOR_SVGS = {
       municipal:  '<path d="M12 2 L3 7 h18 Z M4 9 v10 M8 9 v10 M12 9 v10 M16 9 v10 M20 9 v10 M3 21 h18"/>',
@@ -71,15 +73,15 @@
 
     function sectorFor(name) {
       var n = (name || '').toLowerCase();
-      if (/municipalidad|municipal|muni\./.test(n)) return 'municipal';
-      if (/hospital|salud|clinic|consultori|cesfam|servicio\s+de\s+salud/.test(n)) return 'salud';
-      if (/universidad|instituto\s+profesional|centro\s+de\s+formaci/.test(n)) return 'universidad';
-      if (/colegio|escuela|liceo|educaci/.test(n)) return 'educacion';
-      if (/poder\s+judicial|juzgado|corte|fiscal|tribunal|ministerio\s+p[úu]blico|fiscal[íi]a/.test(n)) return 'judicial';
-      if (/fuerzas|armada|ej[ée]rcito|carabineros|pdi|gendarmer|bomberos/.test(n)) return 'ffaa';
-      if (/gobierno\s+regional|intendencia|gore/.test(n)) return 'regional';
-      if (/empresa|banco|metro|tvn|codelco|enap|enami|correos/.test(n)) return 'empresa';
-      if (/ministerio|subsecretar|superintendencia|servicio\s+de|direcci[óo]n\s+general/.test(n)) return 'ejecutivo';
+      if (/municipalidad|municipal|muni\.|corporaci[óo]n\s+(?:de\s+(?:desarrollo|educaci|salud)|municipal)/.test(n)) return 'municipal';
+      if (/hospital|salud|clinic|consultori|cesfam|servicio\s+de\s+salud|cenabast|seremi\s+de\s+salud/.test(n)) return 'salud';
+      if (/universidad|instituto\s+profesional|centro\s+de\s+formaci|cft\s+estatal/.test(n)) return 'universidad';
+      if (/colegio|escuela|liceo|educaci|servicio\s+local\s+de\s+educaci/.test(n)) return 'educacion';
+      if (/poder\s+judicial|juzgado|corte|fiscal|tribunal|ministerio\s+p[úu]blico|fiscal[íi]a|defensor[íi]a|registro\s+civil/.test(n)) return 'judicial';
+      if (/fuerzas|armada|ej[ée]rcito|carabineros|pdi|gendarmer|bomberos|fuerza\s+a[ée]rea|famae|asmar|enaer|emco/.test(n)) return 'ffaa';
+      if (/gobierno\s+regional|intendencia|gore|delegaci[óo]n\s+presidencial/.test(n)) return 'regional';
+      if (/empresa|banco|metro|tvn|codelco|enap|enami|correos|portuari|polla|zofri/.test(n)) return 'empresa';
+      if (/ministerio|subsecretar|superintendencia|servicio\s+(?:de|nacional|civil)|direcci[óo]n|agencia|comisi[óo]n|consejo|contralor|secretar[íi]a\s+general/.test(n)) return 'ejecutivo';
       return 'default';
     }
 
@@ -87,6 +89,7 @@
       if (img.dataset.domain) return img.dataset.domain;
       var src = img.src || '';
       var m =
+        src.match(/\/logos\/([^/]+)\.png/) ||
         src.match(/logo\.clearbit\.com\/([^?#/]+)/) ||
         src.match(/duckduckgo\.com\/ip3\/([^.]+\.[^/]+)\.ico/) ||
         src.match(/google\.com\/s2\/favicons.*domain=([^&]+)/) ||
@@ -99,17 +102,16 @@
 
     function sourcesFor(domain) {
       var enc = encodeURIComponent(domain);
-      // Cadena ordenada por fiabilidad. Clearbit (logo.clearbit.com) fue
-      // discontinuado por HubSpot en dic-2025 y hoy devuelve errores, así que
-      // dejó de ser la fuente primaria. DuckDuckGo entrega el mejor icono del
-      // sitio (suele ser el apple-touch-icon, 60-180 px) y Google s2 @128 es un
-      // respaldo muy estable; al final probamos los assets propios del dominio.
       return [
+        '/logos/' + domain + '.png',
         'https://icons.duckduckgo.com/ip3/' + domain + '.ico',
         'https://www.google.com/s2/favicons?domain=' + enc + '&sz=128',
+        'https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://' + enc + '&size=128',
         'https://' + domain + '/apple-touch-icon.png',
+        'https://www.' + domain + '/apple-touch-icon.png',
         'https://' + domain + '/apple-touch-icon-precomposed.png',
-        'https://' + domain + '/favicon.ico'
+        'https://' + domain + '/favicon.ico',
+        'https://www.' + domain + '/favicon.ico'
       ];
     }
 
@@ -152,11 +154,6 @@
       var h = img.naturalHeight || 0;
       // 0×0 = imagen rota → que onerror se encargue.
       if (w === 0 && h === 0) return;
-      // Antes: Math.min(w,h) < 40 → rechazaba logos ANCHOS y BAJOS (wordmarks
-      // tipo Codelco, p.ej. 256×54): el alto <40 los descartaba y caían al
-      // ícono genérico ("aparece y luego desaparece"). Un favicon chico es
-      // pequeño en AMBAS dimensiones; un logo real es grande en al menos una.
-      // Con max() solo descartamos lo realmente diminuto (16×16, 32×32).
       if (Math.max(w, h) < MIN_LOGO_PX) {
         // Permitimos reintentar con el siguiente source.
         img.dataset.qualityChecked = '';
@@ -174,8 +171,8 @@
     // Persistimos en localStorage el último source que SÍ pasó el chequeo de
     // calidad por dominio. `window.__logoCacheGet` lo consume app.js para
     // pintar el logo correcto desde el primer frame.
-    // v2: invalida cachés previos que apuntaban a logo.clearbit.com (discontinuado).
-    var LOGO_CACHE_KEY = 'cop_logo_cache_v2';
+    // v3: invalida cachés previos — umbral de calidad reducido + nuevas fuentes.
+    var LOGO_CACHE_KEY = 'cop_logo_cache_v3';
     function cacheRead() {
       try { return JSON.parse(localStorage.getItem(LOGO_CACHE_KEY) || '{}') || {}; }
       catch (e) { return {}; }

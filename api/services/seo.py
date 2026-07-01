@@ -130,20 +130,24 @@ def _find_landing(tipo: str, slug: str) -> dict[str, Any] | None:
     return None
 
 
-def serialize_offer(row: dict[str, Any]) -> dict[str, Any]:
+_TRUNCATE_MAX = 300
+
+
+def serialize_offer(row: dict[str, Any], *, truncate: bool = False) -> dict[str, Any]:
     data = dict(row)
     data["dias_restantes"] = dias_restantes(data.get("fecha_cierre"))
-    # Bandera de curaduría para la pestaña "Destacadas" (redes sociales).
     data["destacada"] = bool(data.get("destacada"))
     estado = str(data.get("estado") or "unknown").strip().lower()
     data["estado_normalizado"] = estado
     data["estado_legacy"] = STATUS_LEGACY_MAP.get(estado, "desconocido")
-    # Expone el sitio web real de la institución (desde el catálogo JSON), para
-    # que el frontend pueda resolver el logo correcto aunque la oferta venga
-    # intermediada por Empleos Públicos u otros portales.
     data["institucion_sitio_web"] = resolve_institucion_sitio_web(
         data.get("institucion"), data.get("institucion_id")
     )
+    if truncate:
+        for campo in ("descripcion", "requisitos"):
+            val = data.get(campo) or ""
+            if len(val) > _TRUNCATE_MAX:
+                data[campo] = val[:_TRUNCATE_MAX]
     return data
 
 

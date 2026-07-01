@@ -3718,16 +3718,18 @@ summary:focus-visible,
     flex: 1 1 auto !important;    /* ocupa el espacio que deja vista-btns */
   }
 
-  /* Paginación con más aire. */
+  /* Paginación: nowrap para que no salte a dos líneas. */
   .paginacion {
-    gap: 6px !important;
+    gap: 4px !important;
     margin-top: 22px !important;
     margin-bottom: 4px;
+    flex-wrap: nowrap !important;
   }
   .pag-btn {
-    width: 36px !important;
-    height: 36px !important;
-    font-size: 13px !important;
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 12px !important;
+    border-width: 1px !important;
   }
 
   /* ── BOTÓN FLOTANTE · Back-to-top con menor presencia ─────────
