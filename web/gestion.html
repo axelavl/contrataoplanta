@@ -281,7 +281,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <h1>🔒 Panel de gestión</h1>
-    <p>EmpleoEstado — acceso solo para el equipo</p>
+    <p>contrataoplanta.cl — acceso solo para el equipo</p>
     <input id="auth-user" type="text" placeholder="Usuario (opcional)" autocomplete="username">
     <input id="auth-pass" type="password" placeholder="Contraseña de acceso" autocomplete="current-password">
     <button id="auth-btn">Entrar</button>
@@ -293,7 +293,7 @@
 <!-- ── App ── -->
 <div id="app">
   <header>
-    <div class="header-brand"><span>EmpleoEstado</span> · Gestión</div>
+    <div class="header-brand"><span>contrataoplanta</span> · Gestión</div>
     <div class="header-right">
       <div class="badge-live">Conectado</div>
       <button class="btn-logout" data-action="logout">Cerrar sesión</button>
@@ -329,6 +329,15 @@
       <div class="stats-grid" id="stats-grid">
         <div class="stat-card"><div class="label">Cargando…</div><div class="value"><span class="spinner"></span></div></div>
       </div>
+      <!-- Acciones rápidas -->
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px">
+        <button class="btn btn-primary btn-sm" data-action="ir-a" data-target="nueva-oferta" title="Crear oferta manualmente">+ Nueva oferta</button>
+        <button class="btn btn-ghost btn-sm" data-action="ir-a" data-target="revision" title="Ofertas pendientes de revisión">🔍 Revisión</button>
+        <button class="btn btn-ghost btn-sm" data-action="ir-a" data-target="scraper-runs" title="Lanzar o ver scrapers">🤖 Scrapers</button>
+        <button class="btn btn-ghost btn-sm" data-action="ir-a" data-target="alertas" title="Enviar alertas de email">📧 Alertas</button>
+        <button class="btn btn-ghost btn-sm" data-action="ir-a" data-target="export" title="Exportar ofertas a CSV">⬇ Exportar CSV</button>
+      </div>
+
       <div class="section-header">
         <h2>Últimas recolecciones de ofertas</h2>
         <button class="btn btn-ghost btn-sm" data-action="load-dashboard">↻ Actualizar</button>
@@ -788,6 +797,32 @@
       <div class="section-header" style="margin-top:8px">
         <h2>Catálogo de instituciones y cómo se recolectan</h2>
         <button class="btn btn-ghost btn-sm" data-action="load-catalog">↻ Cargar</button>
+      </div>
+      <div class="filters" style="margin-bottom:8px">
+        <input id="catalog-search" type="text" placeholder="Filtrar por nombre…" style="flex:1;max-width:300px" data-input="catalog-filter">
+        <select id="catalog-status-filter" data-change="catalog-filter">
+          <option value="">Todos los estados</option>
+          <option value="active">active</option>
+          <option value="experimental">experimental</option>
+          <option value="blocked">blocked</option>
+          <option value="broken">broken</option>
+          <option value="disabled">disabled</option>
+          <option value="manual_review">manual_review</option>
+          <option value="no_data">no_data</option>
+          <option value="js_required">js_required</option>
+        </select>
+        <select id="catalog-kind-filter" data-change="catalog-filter">
+          <option value="">Todos los tipos</option>
+          <option value="wordpress">wordpress</option>
+          <option value="generic">generic</option>
+          <option value="empleos_publicos">empleos_publicos</option>
+          <option value="custom_trabajando">custom_trabajando</option>
+          <option value="custom_hiringroom">custom_hiringroom</option>
+          <option value="custom_buk">custom_buk</option>
+          <option value="custom_playwright">custom_playwright</option>
+          <option value="skip">skip</option>
+        </select>
+        <span id="catalog-count" class="pill gray" style="font-size:11px"></span>
       </div>
       <div class="table-wrap">
         <table>

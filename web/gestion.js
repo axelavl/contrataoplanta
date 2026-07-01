@@ -38,6 +38,7 @@ let _fuenteEditId = null;
 let _procPollTimer = null;
 let _logPollTimer = null;
 let _logArchivo = null;
+let _catalogData = [];
 // Cache de objetos oferta por id para el modal de edición (reemplaza el
 // JSON serializado en atributos onclick, incompatible con CSP).
 const _itemCache = {};
@@ -450,6 +451,9 @@ function escAttr(s) {
   return String(s ?? '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function esc(s) {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────
@@ -1594,17 +1598,19 @@ function verDestacadas() {
 function irA(accion) {
   const tabMap = {
     'bulk-desactivar':'acciones','revalidar-urls':'acciones','revision':'revision',
-    'scraper-runs':'scrapers','evaluaciones':'fuentes',
+    'scraper-runs':'scrapers','evaluaciones':'fuentes','alertas':'alertas',
+    'nueva-oferta':'ofertas','export':'ofertas',
   };
   const tab = tabMap[accion]||'dashboard';
-  document.querySelectorAll('.sidebar button').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
-  const btn = document.querySelector(`[data-tab=${tab}]`);
-  if (btn) btn.classList.add('active');
-  const panel = document.getElementById('tab-'+tab);
-  if (panel) panel.classList.add('active');
+  _switchToTab(tab);
   if (tab==='revision') loadRevision();
   else if (tab==='scrapers') loadScrapers();
+  else if (tab==='alertas') loadAlertasTab();
+  else if (tab==='ofertas') {
+    loadOfertas(1);
+    if (accion==='nueva-oferta') setTimeout(openCrearOferta, 300);
+    else if (accion==='export') setTimeout(exportOfertas, 300);
+  }
 }
 
 // ── REVISIÓN ───────────────────────────────────────────────────
@@ -1899,26 +1905,41 @@ async function loadCatalog() {
   const tbody = document.getElementById('catalog-tbody');
   tbody.innerHTML = `<tr class="loading-row"><td colspan="6"><span class="spinner"></span> Cargando catálogo…</td></tr>`;
   try {
-    const items = await api('/scraper/catalog');
-    if (!items.length) { tbody.innerHTML='<tr class="empty-row"><td colspan="6">Sin datos</td></tr>'; return; }
-    const km = {wordpress:'blue',generic:'gray',custom_trabajando:'orange',custom_hiringroom:'orange',
-                custom_buk:'orange',empleos_publicos:'blue',custom_playwright:'yellow',skip:'gray'};
-    const sm = {active:'green',experimental:'yellow',blocked:'red',broken:'red',
-                disabled:'gray',manual_review:'orange',no_data:'gray',js_required:'yellow'};
-    tbody.innerHTML = items.map(i=>`<tr>
-      <td class="text-muted text-small">${i.id??'—'}</td>
-      <td style="max-width:240px">${trunc(i.nombre||'—',36)}</td>
-      <td class="text-small text-muted">${trunc(i.sector||'—',22)}</td>
-      <td>${i.kind?`<span class="pill ${km[i.kind]||'gray'}">${i.kind}</span>`:'—'}</td>
-      <td>${i.status?`<span class="pill ${sm[i.status]||'gray'}">${i.status}</span>`:'—'}</td>
-      <td>${i.id && i.kind && i.kind!=='skip'
-        ?`<button class="btn btn-ghost btn-sm" data-action="run-instancia" data-id="${i.id}" data-nombre="${escAttr((i.nombre||'').slice(0,20))}">▶ Run</button>`
-        :'—'
-      }</td>
-    </tr>`).join('');
+    _catalogData = await api('/scraper/catalog');
+    renderCatalog();
   } catch(e) {
     tbody.innerHTML=`<tr class="empty-row"><td colspan="6" style="color:var(--red)">Error: ${e.message}</td></tr>`;
   }
+}
+
+function renderCatalog() {
+  const tbody = document.getElementById('catalog-tbody');
+  const countEl = document.getElementById('catalog-count');
+  const search = (document.getElementById('catalog-search')?.value || '').trim().toLowerCase();
+  const statusF = (document.getElementById('catalog-status-filter')?.value || '');
+  const kindF = (document.getElementById('catalog-kind-filter')?.value || '');
+  let items = _catalogData;
+  if (!items.length) { tbody.innerHTML='<tr class="empty-row"><td colspan="6">Sin datos</td></tr>'; return; }
+  if (search) items = items.filter(i => (i.nombre||'').toLowerCase().includes(search) || (i.sector||'').toLowerCase().includes(search));
+  if (statusF) items = items.filter(i => i.status === statusF);
+  if (kindF) items = items.filter(i => i.kind === kindF);
+  if (countEl) countEl.textContent = items.length + ' de ' + _catalogData.length;
+  if (!items.length) { tbody.innerHTML='<tr class="empty-row"><td colspan="6">Sin resultados con estos filtros</td></tr>'; return; }
+  const km = {wordpress:'blue',generic:'gray',custom_trabajando:'orange',custom_hiringroom:'orange',
+              custom_buk:'orange',empleos_publicos:'blue',custom_playwright:'yellow',skip:'gray'};
+  const sm = {active:'green',experimental:'yellow',blocked:'red',broken:'red',
+              disabled:'gray',manual_review:'orange',no_data:'gray',js_required:'yellow'};
+  tbody.innerHTML = items.map(i=>`<tr>
+    <td class="text-muted text-small">${i.id??'—'}</td>
+    <td style="max-width:240px">${trunc(i.nombre||'—',36)}</td>
+    <td class="text-small text-muted">${trunc(i.sector||'—',22)}</td>
+    <td>${i.kind?`<span class="pill ${km[i.kind]||'gray'}">${i.kind}</span>`:'—'}</td>
+    <td>${i.status?`<span class="pill ${sm[i.status]||'gray'}">${i.status}</span>`:'—'}</td>
+    <td>${i.id && i.kind && i.kind!=='skip'
+      ?`<button class="btn btn-ghost btn-sm" data-action="run-instancia" data-id="${i.id}" data-nombre="${escAttr((i.nombre||'').slice(0,20))}">▶ Run</button>`
+      :'—'
+    }</td>
+  </tr>`).join('');
 }
 
 async function runInstancia(id, nombre) {
@@ -2142,11 +2163,13 @@ document.addEventListener('change', e => {
     case 'fuentes':  loadFuentes(); break;
     case 'audit':    loadAudit(); break;
     case 'eventos':  loadEventos(); break;
+    case 'catalog-filter': if (_catalogData.length) renderCatalog(); break;
   }
 });
 
 document.addEventListener('input', e => {
   if (e.target.matches('[data-input="ofertas-q"]')) debounceSearch();
+  if (e.target.matches('[data-input="catalog-filter"]') && _catalogData.length) renderCatalog();
 });
 
 // ── Keyboard ───────────────────────────────────────────────────
