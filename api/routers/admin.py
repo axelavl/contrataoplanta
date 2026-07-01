@@ -664,15 +664,15 @@ def admin_toggle_activa(
 ) -> dict[str, Any]:
     """Activa o desactiva una oferta."""
     with get_cursor() as (conn, cur):
-        cur.execute("SELECT activa FROM ofertas WHERE id = %s", [oferta_id])
+        cur.execute(
+            "UPDATE ofertas SET activa = NOT COALESCE(activa, TRUE), actualizada_en = NOW() "
+            "WHERE id = %s RETURNING activa",
+            [oferta_id],
+        )
         row = cur.fetchone()
         if not row:
             raise HTTPException(404, "Oferta no encontrada")
-        nuevo_estado = not (row["activa"] if isinstance(row, dict) else row[0])
-        cur.execute(
-            "UPDATE ofertas SET activa = %s, actualizada_en = NOW() WHERE id = %s",
-            [nuevo_estado, oferta_id],
-        )
+        nuevo_estado = row["activa"] if isinstance(row, dict) else row[0]
         conn.commit()
     _auditar(_user, "toggle_activa", "oferta", oferta_id, {"activa": nuevo_estado})
     return {"id": oferta_id, "activa": nuevo_estado}
@@ -689,15 +689,15 @@ def admin_toggle_destacada(
     las que el equipo publica activamente en Instagram / TikTok / LinkedIn.
     """
     with get_cursor() as (conn, cur):
-        cur.execute("SELECT COALESCE(destacada, FALSE) AS destacada FROM ofertas WHERE id = %s", [oferta_id])
+        cur.execute(
+            "UPDATE ofertas SET destacada = NOT COALESCE(destacada, FALSE), actualizada_en = NOW() "
+            "WHERE id = %s RETURNING destacada",
+            [oferta_id],
+        )
         row = cur.fetchone()
         if not row:
             raise HTTPException(404, "Oferta no encontrada")
-        nuevo_estado = not (row["destacada"] if isinstance(row, dict) else row[0])
-        cur.execute(
-            "UPDATE ofertas SET destacada = %s, actualizada_en = NOW() WHERE id = %s",
-            [nuevo_estado, oferta_id],
-        )
+        nuevo_estado = row["destacada"] if isinstance(row, dict) else row[0]
         conn.commit()
     _auditar(_user, "toggle_destacada", "oferta", oferta_id, {"destacada": nuevo_estado})
     return {"id": oferta_id, "destacada": nuevo_estado}

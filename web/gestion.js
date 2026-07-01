@@ -443,7 +443,8 @@ function runPill(s) {
 }
 function trunc(s, n=38) {
   if (!s) return '<span class="text-muted">—</span>';
-  return s.length > n ? s.slice(0,n) + '…' : s;
+  const safe = esc(s);
+  return safe.length > n ? safe.slice(0,n) + '…' : safe;
 }
 // Igual que trunc() pero escapa el contenido para insertarlo en el CUERPO de
 // una celda. Datos como cargo/institución vienen scrapeados (no confiables):
@@ -1396,11 +1397,11 @@ async function loadAlertas() {
     }
     tbody.innerHTML = subs.map(s=>`<tr>
       <td class="text-muted text-small">${s.id}</td>
-      <td>${s.email}</td>
-      <td class="text-small text-muted">${s.region||'—'}</td>
-      <td class="text-small text-muted">${s.termino||'—'}</td>
-      <td class="text-small text-muted">${s.sector||'—'}</td>
-      <td class="text-small text-muted">${s.tipo_contrato||'—'}</td>
+      <td>${esc(s.email)}</td>
+      <td class="text-small text-muted">${esc(s.region||'—')}</td>
+      <td class="text-small text-muted">${esc(s.termino||'—')}</td>
+      <td class="text-small text-muted">${esc(s.sector||'—')}</td>
+      <td class="text-small text-muted">${esc(s.tipo_contrato||'—')}</td>
       <td><span class="pill gray">${s.frecuencia||'diaria'}</span></td>
       <td>${s.activa?pill('activo','green'):pill('inactivo','gray')}</td>
       <td class="text-small text-muted">${fmtDate(s.creada_en)}</td>
@@ -1434,9 +1435,9 @@ async function enviarAlertas() {
       ${r.detalles?.length?`<details style="margin-top:8px"><summary style="cursor:pointer;color:var(--accent)">Ver detalle (${r.detalles.length})</summary>
         <div style="margin-top:8px;display:grid;gap:4px">
           ${r.detalles.map(d=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid var(--border)">
-            <span>${d.email}</span>
+            <span>${esc(d.email)}</span>
             <span style="color:${d.resultado==='enviado'?'var(--green)':d.resultado==='error'?'var(--red)':'var(--muted)'}">
-              ${d.resultado} · ${d.coincidencias} oferta${d.coincidencias!==1?'s':''}
+              ${esc(d.resultado)} · ${d.coincidencias} oferta${d.coincidencias!==1?'s':''}
             </span>
           </div>`).join('')}
         </div></details>`:''}`;
@@ -1510,7 +1511,7 @@ async function loadEventos() {
       return `<tr>
         <td class="text-small">${fmtDt(ev.ts)}</td>
         <td>${pill(tipo, evPill[tipo]||'gray')}</td>
-        <td class="text-small">${ev.email||'—'}</td>
+        <td class="text-small">${esc(ev.email||'—')}</td>
         <td class="text-small text-muted" style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escAttr(ev.asunto)}">${trunc(ev.asunto,46)}</td>
       </tr>`;
     }).join('');
@@ -1570,7 +1571,7 @@ async function loadDiagnostico() {
       const co = {error:'var(--red)',warning:'var(--yellow)',info:'#60a5fa'}[a.nivel]||'var(--muted)';
       const dir = accionDirecta[a.accion];
       html += `<div style="background:${bg};border:1px solid ${co}44;border-radius:var(--radius);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
-        <span style="color:${co}">${a.mensaje}</span>
+        <span style="color:${co}">${esc(a.mensaje)}</span>
         <span style="display:flex;gap:6px;white-space:nowrap">
           ${dir?`<button class="btn btn-primary btn-sm" data-action="${dir.action}">${dir.label}</button>`:''}
           <button class="btn btn-ghost btn-sm" data-action="ir-a" data-target="${escAttr(a.accion)}">Ver →</button>
@@ -1683,7 +1684,7 @@ async function loadRevision() {
       if (item._tipo==='url_rota') detalle = `of:${item.url_oferta_valida===false?'❌':'✓'} base:${item.url_bases_valida===false?'❌':'✓'}`;
       else if (item._tipo==='calidad_baja') detalle = item.overall_quality_score!=null?`score: ${(item.overall_quality_score*100).toFixed(0)}%`:'needs_review';
       else if (item._tipo==='texto_corto') detalle = `${item.desc_len||0} chars`;
-      else if (item._tipo==='sin_sector') detalle = item.sector||'(vacío)';
+      else if (item._tipo==='sin_sector') detalle = esc(item.sector||'(vacío)');
       else if (item._tipo==='duplicado_posible') detalle = `grupo #${item.dup_grupo} · ${item.copias} copias`;
       return `<tr>
         <td class="text-muted text-small">${item.id}</td>
@@ -1808,7 +1809,7 @@ async function runScraper() {
   res.innerHTML='<span class="spinner"></span> Lanzando…';
   try {
     const r = await api('/scraper/run', { method:'POST', body:JSON.stringify(payload) });
-    res.innerHTML = `✅ Proceso lanzado — PID: <strong>${r.pid}</strong> · run_id: ${r.run_id??'—'} · dry_run: ${r.dry_run} · cmd: <code>${r.cmd.join(' ')}</code>`;
+    res.innerHTML = `✅ Proceso lanzado — PID: <strong>${r.pid}</strong> · run_id: ${r.run_id??'—'} · dry_run: ${r.dry_run} · cmd: <code>${esc(r.cmd.join(' '))}</code>`;
     toast('Scraper iniciado ✓');
     loadProcesos();
     if (r.log) verLog(r.log);
