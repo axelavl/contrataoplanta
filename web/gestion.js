@@ -445,6 +445,17 @@ function trunc(s, n=38) {
   if (!s) return '<span class="text-muted">—</span>';
   return s.length > n ? s.slice(0,n) + '…' : s;
 }
+// Igual que trunc() pero escapa el contenido para insertarlo en el CUERPO de
+// una celda. Datos como cargo/institución vienen scrapeados (no confiables):
+// sin escapar, markup como <img src=x onerror=...> se inyecta en el mismo
+// origin donde vive el JWT admin (la CSP hoy bloquea la ejecución de scripts,
+// pero la inyección de HTML es un sink real). El placeholder "—" es HTML propio
+// y se conserva sin escapar.
+function truncEsc(s, n=38) {
+  if (!s) return '<span class="text-muted">—</span>';
+  const t = s.length > n ? s.slice(0,n) + '…' : s;
+  return esc(t);
+}
 // Escapa un valor para insertarlo en un atributo HTML de las filas
 // generadas (data-nombre, data-email, title=, …).
 function escAttr(s) {
@@ -1088,8 +1099,8 @@ function renderOfertasTable(ofertas) {
       <td><input type="checkbox" class="sel-oferta" data-id="${o.id}"></td>
       <td class="text-muted text-small">${o.id}</td>
       <td style="max-width:220px">
-        <div title="${escAttr(o.cargo)}" style="font-weight:500">${destacada?'<span title="Destacada en redes sociales">⭐ </span>':''}${trunc(o.cargo,36)}</div>
-        <div class="text-small text-muted" title="${escAttr(inst)}">${trunc(inst,34)}</div>
+        <div title="${escAttr(o.cargo)}" style="font-weight:500">${destacada?'<span title="Destacada en redes sociales">⭐ </span>':''}${truncEsc(o.cargo,36)}</div>
+        <div class="text-small text-muted" title="${escAttr(inst)}">${truncEsc(inst,34)}</div>
       </td>
       <td class="text-small text-muted">${trunc(o.sector_real||'',18)}</td>
       <td class="text-small text-muted">${trunc(o.region||'',14)}</td>
@@ -1249,7 +1260,7 @@ async function loadScrapers() {
                 </tr></thead>
                 <tbody>
                   ${insts.map(i=>`<tr style="border-bottom:1px solid #ffffff08">
-                    <td style="padding:2px 6px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escAttr(i.nombre)}">${trunc(i.nombre,32)}</td>
+                    <td style="padding:2px 6px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escAttr(i.nombre)}">${truncEsc(i.nombre,32)}</td>
                     <td style="text-align:right;padding:2px 4px;color:var(--muted)">${i.encontradas}</td>
                     <td style="text-align:right;padding:2px 4px;color:${i.nuevas>0?'var(--green)':'var(--muted)'};font-weight:${i.nuevas>0?600:400}">${i.nuevas}</td>
                     <td style="text-align:right;padding:2px 4px;color:var(--muted)">${i.existian}</td>
@@ -1298,7 +1309,7 @@ async function loadFuentes() {
                 custom_buk:'orange',empleos_publicos:'blue',custom_playwright:'yellow'};
     tbody.innerHTML = fs.map(f=>`<tr>
       <td class="text-muted text-small">${f.id}</td>
-      <td style="max-width:220px"><div title="${escAttr(f.nombre)}">${trunc(f.nombre||'—',32)}</div></td>
+      <td style="max-width:220px"><div title="${escAttr(f.nombre)}">${truncEsc(f.nombre||'—',32)}</div></td>
       <td class="text-small text-muted">${trunc(f.sector||'—',20)}</td>
       <td>${f.recommended_extractor?`<span class="pill ${em[f.recommended_extractor]||'gray'}">${f.recommended_extractor}</span>`:'<span class="text-muted">—</span>'}</td>
       <td>${decisionPill(f.ultima_decision||'sin_evaluar')}</td>
@@ -1825,7 +1836,7 @@ async function loadProcesos() {
         <td><span class="pill gray">${p.tipo}</span></td>
         <td class="text-muted text-small">${p.pid}</td>
         <td>${pill(p.estado, ep[p.estado]||'gray')}${p.returncode!=null&&p.returncode!==0?` <span class="text-small" style="color:var(--red)">rc=${p.returncode}</span>`:''}</td>
-        <td class="text-small text-muted" style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escAttr(p.cmd)}">${p.cmd}</td>
+        <td class="text-small text-muted" style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escAttr(p.cmd)}">${esc(p.cmd)}</td>
         <td><button class="btn btn-ghost btn-sm" data-action="ver-log" data-log="${escAttr(p.log)}">📜 Ver</button></td>
       </tr>`).join('');
     }
@@ -2037,7 +2048,7 @@ async function loadAudit() {
         <td class="text-small text-muted">${a.usuario}</td>
         <td><span class="pill blue">${a.accion}</span></td>
         <td class="text-small text-muted">${a.entidad?`${a.entidad}${a.entidad_id?` #${a.entidad_id}`:''}`:'—'}</td>
-        <td class="text-small text-muted" style="max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escAttr(det)}">${det}</td>
+        <td class="text-small text-muted" style="max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escAttr(det)}">${esc(det)}</td>
       </tr>`;
     }).join('');
   } catch(e) {

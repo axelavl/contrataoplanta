@@ -30,7 +30,7 @@ from urllib.parse import quote_plus, urlencode, urlparse
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, Response, StreamingResponse
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 import time as _time
 from collections import defaultdict
@@ -44,7 +44,6 @@ from api.deps import (
     client_ip,
 )
 from api.services.db import (
-    DB_CONFIG,
     execute_fetch_all,
     execute_fetch_one,
     get_cursor,
@@ -134,11 +133,16 @@ def _check_public_rate(request: Request, max_hits: int = _PUBLIC_RATE_MAX) -> No
 # ═══════════════════════════════════════════════════════════════════════════
 
 class AlertaPayload(BaseModel):
-    email: str
-    region: str | None = None
-    termino: str | None = None
-    tipo_contrato: str | None = None
-    sector: str | None = None
+    # Límites de longitud explícitos: sin ellos, el body POST aceptaba
+    # cadenas ilimitadas que (a) alimentaban el regex de validación de email
+    # con entradas enormes y (b) reventaban con 500 al superar el límite
+    # VARCHAR de la columna en el INSERT. Un email válido cabe en 254 chars
+    # (RFC 5321); el resto son términos cortos de filtro.
+    email: str = Field(..., min_length=3, max_length=254)
+    region: str | None = Field(default=None, max_length=100)
+    termino: str | None = Field(default=None, max_length=200)
+    tipo_contrato: str | None = Field(default=None, max_length=50)
+    sector: str | None = Field(default=None, max_length=100)
     frecuencia: str | None = "diaria"
 
 
@@ -175,7 +179,7 @@ def get_ofertas(
     sin_experiencia: bool = Query(False, description="Solo ofertas que no exigen experiencia previa (best-effort por texto)."),
     vista: str = Query("vigentes", pattern="^(vigentes|cerradas|todas)$"),
     orden: str = Query("recientes"),
-    pagina: int = Query(1, ge=1),
+    pagina: int = Query(1, ge=1, le=10000),
     por_pagina: int = Query(20, ge=1, le=100),
 ) -> dict[str, Any]:
     pag = Paginacion(pagina=pagina, por_pagina=por_pagina)
@@ -361,7 +365,11 @@ def og_image_oferta(
         from api.services.og_image import render_offer_card
         png = render_offer_card(oferta, fmt=format)  # type: ignore[arg-type]
     except ImportError as exc:  # Pillow no instalado
-        raise HTTPException(status_code=503, detail=f"Generador OG no disponible: {exc}") from exc
+        # El detalle de la excepción (rutas/versiones internas) queda en logs;
+        # al cliente se le devuelve un mensaje genérico.
+        import logging
+        logging.getLogger("api.routers.public").warning("Generador OG no disponible: %s", exc)
+        raise HTTPException(status_code=503, detail="Generador de imágenes no disponible") from exc
 
     filename = f"oferta-{oferta_id}-{format}.png"
     return Response(
@@ -554,7 +562,7 @@ def get_instituciones(
     q: str | None = Query(None),
     sector: str | None = Query(None),
     region: str | None = Query(None),
-    pagina: int = Query(1, ge=1),
+    pagina: int = Query(1, ge=1, le=10000),
     por_pagina: int = Query(50, ge=1, le=200),
 ) -> dict[str, Any]:
     pag = Paginacion(pagina=pagina, por_pagina=por_pagina)
@@ -608,7 +616,7 @@ def get_instituciones(
 @router.get("/api/instituciones/{institucion_id}/ofertas")
 def get_institucion_ofertas(
     institucion_id: int,
-    pagina: int = Query(1, ge=1),
+    pagina: int = Query(1, ge=1, le=10000),
     por_pagina: int = Query(20, ge=1, le=100),
 ) -> dict[str, Any]:
     pag = Paginacion(pagina=pagina, por_pagina=por_pagina)
@@ -706,7 +714,7 @@ def get_historial(
     comunas: str | None = Query(None, description="Lista de comunas separadas por coma"),
     solo_con_correo: bool = Query(False),
     sin_experiencia: bool = Query(False),
-    pagina: int = Query(1, ge=1),
+    pagina: int = Query(1, ge=1, le=10000),
     por_pagina: int = Query(50, ge=1, le=200),
 ) -> dict[str, Any]:
     pag = Paginacion(pagina=pagina, por_pagina=por_pagina)
@@ -1090,7 +1098,6 @@ def root() -> dict[str, Any]:
         "nombre": "contrata o planta .cl - API",
         "version": "3.0.0",
         "docs": "/docs",
-        "db_host": DB_CONFIG["host"],
         "endpoints": [
             "GET /api/ofertas",
             "GET /api/ofertas/{id}",

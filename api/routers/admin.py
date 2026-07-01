@@ -1926,6 +1926,21 @@ def admin_set_override(
         raise HTTPException(400, "Se requiere status o kind")
     if status and status not in _OVERRIDE_STATUSES:
         raise HTTPException(400, f"status inválido. Válidos: {sorted(_OVERRIDE_STATUSES)}")
+    if kind:
+        # `kind` gobierna qué módulo scraper se despacha para la fuente; un
+        # valor fuera del enum quedaría persistido y rompería el dispatch.
+        # Se valida contra ScraperKind, igual que en `admin_scraper_run`.
+        try:
+            from scrapers.source_status import ScraperKind
+            _kinds_validos = {k.value for k in ScraperKind}
+        except Exception:
+            _kinds_validos = {
+                "empleos_publicos", "wordpress", "generic",
+                "custom_trabajando", "custom_hiringroom", "custom_buk",
+                "custom_playwright", "custom_policia", "custom_ffaa", "skip",
+            }
+        if kind not in _kinds_validos:
+            raise HTTPException(400, f"kind inválido. Válidos: {sorted(_kinds_validos)}")
     try:
         _set_override_db(fuente_id, status=status, kind=kind, reason=reason, usuario=_user)
     except Exception as exc:
@@ -2188,7 +2203,10 @@ def admin_diagnostico(
 def admin_suscripciones(
     activa: bool | None = Query(None),
     limit: int = Query(200, ge=1, le=1000),
-    _user: str = Depends(_verify_admin_jwt),
+    # PII (correos de suscriptores): el rol `lector` (solo-lectura del
+    # dashboard) no debe poder listar/exportar el padrón. Se exige `editor`,
+    # alineado con el trato que se le da a `/usuarios`.
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Lista de suscriptores de alertas con estadísticas."""
     where = ""
@@ -2275,7 +2293,8 @@ def admin_test_email(
 def admin_email_eventos(
     limit: int = Query(50, ge=1, le=500),
     email: str | None = Query(None),
-    _user: str = Depends(_verify_admin_jwt),
+    # Expone correos de destinatarios (PII): mínimo rol `editor`.
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Métricas de entrega de emails (webhooks de Resend) + últimos eventos.
 
@@ -2322,7 +2341,8 @@ def admin_email_eventos(
 
 @router.get(f"/api/{ADMIN_PATH}/suscripciones/export", tags=["admin"])
 def admin_export_suscripciones(
-    _user: str = Depends(_verify_admin_jwt),
+    # Exporta el padrón completo de correos (PII): mínimo rol `editor`.
+    _user: str = Depends(_require_editor),
 ) -> Response:
     """Exporta suscripciones activas como CSV."""
     import csv, io

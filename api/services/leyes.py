@@ -11,6 +11,7 @@ from __future__ import annotations
 import logging
 import time
 from typing import Any
+from urllib.parse import quote
 
 import aiohttp
 
@@ -267,7 +268,10 @@ async def buscar_ley_bcn(termino: str) -> list[dict[str, Any]]:
         return [result] if result else []
 
     try:
-        url = f"{_BCN_SEARCH}?q={termino}&limit=5"
+        # `termino` llega desde el usuario: se URL-encodea para no inyectar
+        # parámetros extra en la request a BCN (un `&`/`#`/espacio crudo
+        # partiría el query string).
+        url = f"{_BCN_SEARCH}?q={quote(termino, safe='')}&limit=5"
         timeout = aiohttp.ClientTimeout(total=10)
         async with aiohttp.ClientSession(timeout=timeout) as session:
             async with session.get(url) as resp:

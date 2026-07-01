@@ -866,7 +866,9 @@ function formatRenta(min, max, grado, tipo) {
     return minF + suf;
   }
   if (tieneMax) return 'Hasta $' + max.toLocaleString('es-CL') + suf;
-  if (grado) return 'Grado ' + grado + ' EUS';
+  // `grado` (grado EUS) es scrapeado; el resultado se inyecta con innerHTML en
+  // la tarjeta, así que se escapa. El resto de ramas son montos numéricos.
+  if (grado) return 'Grado ' + escHtml(String(grado)) + ' EUS';
   return null;
 }
 
@@ -887,7 +889,7 @@ function formatRentaRow(min, max, grado, tipo) {
     return `<span class="renta-principal">${minF}</span>${sufHtml}`;
   }
   if (tieneMax) return `<span class="renta-principal">hasta $${max.toLocaleString('es-CL')}</span>${sufHtml}`;
-  if (grado) return `<span class="renta-principal" style="font-size:11.5px">Grado ${grado} EUS</span>`;
+  if (grado) return `<span class="renta-principal" style="font-size:11.5px">Grado ${escHtml(String(grado))} EUS</span>`;
   return null;
 }
 
@@ -3154,6 +3156,11 @@ async function _abrirModalLegacy(ofertaId) {
       btnPostular.disabled = false;
       btnPostular.textContent = UI.CTA_POSTULAR || 'Ir al portal de postulación →';
       btnPostular.onclick = () => {
+        // Defensa en profundidad: aunque el flag backend marque la URL como
+        // válida, re-verificamos el esquema http(s) antes de abrirla para no
+        // navegar nunca a un `javascript:`/`data:` scrapeado si el backend
+        // marcara mal una fila.
+        if (!isValidHttpUrl(urlPostular)) return;
         registrarClicPostular(o);
         window.open(urlPostular, '_blank', 'noopener,noreferrer');
       };
@@ -5079,7 +5086,11 @@ async function cargarSiteConfig() {
   // Solo se habilitan si el admin las activó (alertas_activas === 'true').
   aplicarEstadoAlertas(conf.alertas_activas === 'true');
 
-  // Footer extra (HTML simple, definido por el administrador del sitio)
+  // Footer extra: HTML de confianza del OPERADOR. `footer_extra` sólo se puede
+  // escribir vía `PUT /config`, protegido por rol `admin` (require_admin). Es un
+  // sink de innerHTML intencional (permite markup en el footer); su seguridad
+  // depende de que la escritura de site-config siga exigiendo admin. No inyectar
+  // aquí datos de fuentes no confiables (scrapers, usuarios).
   if ((conf.footer_extra || '').trim()) {
     const anchor = document.getElementById('site-footer');
     if (anchor) {

@@ -324,9 +324,14 @@ def verify_admin_jwt(request: Request) -> str:
     user = str(payload.get("sub") or "")
     if not user:
         raise HTTPException(status_code=401, detail="Token inválido")
-    # El rol viaja firmado en el token. Tokens antiguos (anteriores a los
-    # usuarios con rol) no lo traen → se asumen admin para no romper sesiones.
-    rol = payload.get("rol") or "admin"
+    # El rol viaja firmado en el token. Un token sin `rol` (o con uno inválido)
+    # degrada a `lector` (fail-safe): antes defaulteaba a `admin`, lo que abría
+    # una escalada silenciosa si alguna vez se emitiera/aceptara un token sin
+    # el claim. Los tokens legítimos actuales siempre incluyen `rol`, y el
+    # usuario maestro `ops` recibe `admin` explícito en `create_admin_token`,
+    # así que este default sólo cubre el caso anómalo — donde menos privilegio
+    # es lo correcto.
+    rol = payload.get("rol") or "lector"
     if rol not in ROLES_VALIDOS:
         rol = "lector"
     # Para cuentas nominales (admin_usuarios), la BD es la fuente de verdad del
