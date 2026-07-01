@@ -482,7 +482,7 @@ async function loadDestacadasStats() {
       <div class="stat-card blue"><div class="label">Total ofertas activas</div><div class="value">${(d.total_activas||0).toLocaleString()}</div></div>
     `;
   } catch(e) {
-    g.innerHTML = `<div class="stat-card"><div class="label">Error</div><div class="sub">${e.message}</div></div>`;
+    g.innerHTML = `<div class="stat-card"><div class="label">Error</div><div class="sub">${esc(e.message)}</div></div>`;
   }
 }
 
@@ -553,7 +553,7 @@ async function destSearch() {
           + '<td><button class="btn btn-success btn-sm" data-action="dest-agregar" data-id="' + o.id + '">⭐ Destacar</button></td></tr>';
       }).join('')
       + '</tbody></table>';
-  } catch(e) { cont.innerHTML = '<p style="color:var(--red);padding:8px">Error: ' + e.message + '</p>'; }
+  } catch(e) { cont.innerHTML = '<p style="color:var(--red);padding:8px">Error: ' + esc(e.message) + '</p>'; }
 }
 
 async function destAgregar(id) {
@@ -692,7 +692,7 @@ async function loadAnalitica() {
     const d = await api(`/analitica?dias=${dias}`);
     const interno = d.interno || {};
     if (interno.disponible === false) {
-      cards.innerHTML = `<div class="stat-card" style="grid-column:1/-1"><div class="label" style="color:var(--yellow)">Analítica no disponible</div><div class="sub">${interno.warning || 'Aplica las migraciones de la base de datos para empezar a medir el tráfico.'}</div></div>`;
+      cards.innerHTML = `<div class="stat-card" style="grid-column:1/-1"><div class="label" style="color:var(--yellow)">Analítica no disponible</div><div class="sub">${esc(interno.warning || 'Aplica las migraciones de la base de datos para empezar a medir el tráfico.')}</div></div>`;
       ['an-paginas','an-referidos','an-eventos','an-ofertas'].forEach(id => {
         const el = document.getElementById(id); if (el) el.innerHTML = '<tr class="empty-row"><td colspan="4">Sin datos todavía</td></tr>';
       });
@@ -875,7 +875,7 @@ async function loadUsuarios() {
   tbody.innerHTML = `<tr class="loading-row"><td colspan="7"><span class="spinner"></span></td></tr>`;
   try {
     const d = await api('/usuarios');
-    if (d.warning) { tbody.innerHTML = `<tr class="empty-row"><td colspan="7" style="color:var(--yellow)">${d.warning}</td></tr>`; return; }
+    if (d.warning) { tbody.innerHTML = '<tr class="empty-row"><td colspan="7" style="color:var(--yellow)">' + esc(d.warning) + '</td></tr>'; return; }
     const us = d.usuarios || [];
     if (!us.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Sin usuarios. Crea el primero arriba.</td></tr>'; return; }
     const rolPill = { admin:'blue', editor:'green', lector:'gray' };
@@ -892,7 +892,7 @@ async function loadUsuarios() {
       </td>
     </tr>`).join('');
   } catch(e) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="7" style="color:var(--red)">Error: ${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="7" style="color:var(--red)">Error: ${esc(e.message)}</td></tr>`;
   }
 }
 
@@ -949,7 +949,7 @@ async function loadScheduler() {
   cont.innerHTML = '<span class="spinner"></span>';
   try {
     const d = await api('/scheduler');
-    if (!d.disponible) { cont.innerHTML = `<div style="color:var(--yellow)">${d.warning||'No disponible'}</div>`; return; }
+    if (!d.disponible) { cont.innerHTML = `<div style="color:var(--yellow)">${esc(d.warning||'No disponible')}</div>`; return; }
     const e = d.estado || {};
     document.getElementById('sched-activo').checked = e.activo === true;
     document.getElementById('sched-intervalo').value = e.intervalo_horas || 24;
@@ -1025,7 +1025,7 @@ async function loadOfertas(pag=1) {
     renderPaginacion(d, 'ofertas-paginacion');
     document.getElementById('ofertas-badge').textContent = `${(d.total||0).toLocaleString()} ofertas`;
   } catch(e) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="9" style="color:var(--red)">Error: ${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="9" style="color:var(--red)">Error: ${esc(e.message)}</td></tr>`;
   }
 }
 
@@ -1275,7 +1275,7 @@ async function loadScrapers() {
       </tr>`;
     }).join('');
   } catch(e) {
-    tbody.innerHTML=`<tr class="empty-row"><td colspan="11" style="color:var(--red)">Error: ${e.message}</td></tr>`;
+    tbody.innerHTML=`<tr class="empty-row"><td colspan="11" style="color:var(--red)">Error: ${esc(e.message)}</td></tr>`;
   }
 }
 
@@ -1314,7 +1314,7 @@ async function loadFuentes() {
       </td>
     </tr>`).join('');
   } catch(e) {
-    tbody.innerHTML=`<tr class="empty-row"><td colspan="11" style="color:var(--red)">Error: ${e.message}</td></tr>`;
+    tbody.innerHTML=`<tr class="empty-row"><td colspan="11" style="color:var(--red)">Error: ${esc(e.message)}</td></tr>`;
   }
 }
 
@@ -1397,7 +1397,7 @@ async function loadAlertas() {
       </td>
     </tr>`).join('');
   } catch(e) {
-    tbody.innerHTML=`<tr class="empty-row"><td colspan="10" style="color:var(--red)">Error: ${e.message}</td></tr>`;
+    tbody.innerHTML=`<tr class="empty-row"><td colspan="10" style="color:var(--red)">Error: ${esc(e.message)}</td></tr>`;
   }
 }
 
@@ -1430,7 +1430,7 @@ async function enviarAlertas() {
     if (!dryRun && r.enviados > 0) toast(`${r.enviados} alertas enviadas ✓`);
     else if (dryRun) toast(`Simulación: ${r.enviados} se enviarían`);
   } catch(e) {
-    res.innerHTML=`<span style="color:var(--red)">Error: ${e.message}</span>`;
+    res.innerHTML=`<span style="color:var(--red)">Error: ${esc(e.message)}</span>`;
     toast('Error: '+e.message,'error');
   }
 }
@@ -1471,7 +1471,7 @@ async function loadEventos() {
     const d = await api(`/alertas/eventos?${p}`);
     if (d.warning) {
       statsEl.innerHTML = '';
-      tbody.innerHTML = `<tr class="empty-row"><td colspan="4" style="color:var(--yellow)">${d.warning}</td></tr>`;
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="4" style="color:var(--yellow)">${esc(d.warning)}</td></tr>`;
       return;
     }
     const r = d.resumen || {};
@@ -1503,7 +1503,7 @@ async function loadEventos() {
     }).join('');
   } catch(e) {
     statsEl.innerHTML = '';
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="4" style="color:var(--red)">Error: ${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="4" style="color:var(--red)">Error: ${esc(e.message)}</td></tr>`;
   }
 }
 
@@ -1595,7 +1595,7 @@ async function loadDiagnostico() {
 
     el.innerHTML = html;
   } catch(e) {
-    el.innerHTML = `<div style="color:var(--red)">Error: ${e.message}</div>`;
+    el.innerHTML = `<div style="color:var(--red)">Error: ${esc(e.message)}</div>`;
   }
 }
 
@@ -1688,7 +1688,7 @@ async function loadRevision() {
       </tr>`;
     }).join('');
   } catch(e) {
-    tbody.innerHTML=`<tr class="empty-row"><td colspan="7" style="color:var(--red)">Error: ${e.message}</td></tr>`;
+    tbody.innerHTML=`<tr class="empty-row"><td colspan="7" style="color:var(--red)">Error: ${esc(e.message)}</td></tr>`;
   }
 }
 
@@ -1800,7 +1800,7 @@ async function runScraper() {
     loadProcesos();
     if (r.log) verLog(r.log);
   } catch(e) {
-    res.innerHTML = `<span style="color:var(--red)">Error: ${e.message}</span>`;
+    res.innerHTML = `<span style="color:var(--red)">Error: ${esc(e.message)}</span>`;
     toast('Error: '+e.message, 'error');
   }
 }
@@ -1834,7 +1834,7 @@ async function loadProcesos() {
       _procPollTimer = setTimeout(loadProcesos, 4000);
     }
   } catch(e) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="6" style="color:var(--red)">Error: ${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="6" style="color:var(--red)">Error: ${esc(e.message)}</td></tr>`;
   }
 }
 
@@ -1905,7 +1905,7 @@ async function reindexarMeili() {
     if (res) res.innerHTML = msg;
     toast('Índice de búsqueda actualizado ✓');
   } catch(e) {
-    if (res) res.innerHTML = '<span style="color:var(--red)">Error: ' + e.message + '</span>';
+    if (res) res.innerHTML = '<span style="color:var(--red)">Error: ' + esc(e.message) + '</span>';
     toast('Error: ' + e.message, 'error');
   }
 }
@@ -1917,7 +1917,7 @@ async function loadCatalog() {
     _catalogData = await api('/scraper/catalog');
     renderCatalog();
   } catch(e) {
-    tbody.innerHTML=`<tr class="empty-row"><td colspan="6" style="color:var(--red)">Error: ${e.message}</td></tr>`;
+    tbody.innerHTML=`<tr class="empty-row"><td colspan="6" style="color:var(--red)">Error: ${esc(e.message)}</td></tr>`;
   }
 }
 
@@ -1968,7 +1968,7 @@ async function runInstancia(id, nombre) {
     loadProcesos();
     if (r.log) verLog(r.log);
   } catch(e) {
-    res.innerHTML=`<span style="color:var(--red)">Error: ${e.message}</span>`;
+    res.innerHTML=`<span style="color:var(--red)">Error: ${esc(e.message)}</span>`;
     toast('Error: '+e.message,'error');
   }
 }
@@ -2018,7 +2018,7 @@ async function loadAudit() {
     if (accion) p.set('accion', accion);
     const d = await api(`/audit?${p}`);
     if (d.warning) {
-      tbody.innerHTML = `<tr class="empty-row"><td colspan="5" style="color:var(--yellow)">${d.warning}</td></tr>`;
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="5" style="color:var(--yellow)">${esc(d.warning)}</td></tr>`;
       return;
     }
     const items = d.items||[];
@@ -2041,7 +2041,7 @@ async function loadAudit() {
       </tr>`;
     }).join('');
   } catch(e) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="5" style="color:var(--red)">Error: ${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="5" style="color:var(--red)">Error: ${esc(e.message)}</td></tr>`;
   }
 }
 
