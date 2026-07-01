@@ -3727,13 +3727,20 @@ function limpiarRentaMax() {
 
 // ── Búsqueda y filtros ─────────────────────────────────────────────────────
 function buscar() {
+  const rawQ = document.getElementById('input-cargo').value.trim();
+  // Búsqueda por ID: si el usuario escribe solo un número, abrir la oferta directamente.
+  const idMatch = rawQ.match(/^#?(\d+)$/);
+  if (idMatch) {
+    const id = parseInt(idMatch[1], 10);
+    if (id > 0) { abrirModal(id); return; }
+  }
   if (estado.vista_listado !== 'vigentes') {
     estado.vista_listado = 'vigentes';
     sincronizarTabsListado('vigentes');
     const copyListado = document.getElementById('estado-listado-copy');
     if (copyListado) copyListado.textContent = LISTADO_COPYS.vigentes;
   }
-  estado.q         = document.getElementById('input-cargo').value.trim();
+  estado.q         = rawQ;
   estado.region    = document.getElementById('filtro-region').value;
   estado.sector    = document.getElementById('filtro-sector').value;
   estado.nivel     = document.getElementById('filtro-nivel')?.value || '';
