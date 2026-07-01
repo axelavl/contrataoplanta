@@ -634,7 +634,7 @@ def get_institucion_ofertas(
         "pagina": pag.pagina,
         "por_pagina": pag.por_pagina,
         "paginas": paginas,
-        "ofertas": [serialize_offer(row) for row in rows],
+        "ofertas": serialize_offer_batch(rows),
     }
 
 

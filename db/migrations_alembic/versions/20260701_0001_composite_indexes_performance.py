@@ -54,7 +54,7 @@ def upgrade() -> None:
             ON ofertas USING gin (cargo gin_trgm_ops);
 
         CREATE INDEX IF NOT EXISTS idx_ofertas_institucion_trgm
-            ON ofertas USING gin (institucion gin_trgm_ops);
+            ON ofertas USING gin (institucion_nombre gin_trgm_ops);
     """)
 
 

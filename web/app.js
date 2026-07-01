@@ -4082,7 +4082,7 @@ document.getElementById('lista-ofertas')?.addEventListener('mouseenter', (e) => 
   setTimeout(() => _prefetchCache.delete(id), 120000);
 }, true);
 
-/ Accesibilidad: Enter / Space también abren el modal cuando la tarjeta tiene foco.
+// Accesibilidad: Enter / Space también abren el modal cuando la tarjeta tiene foco.
 document.getElementById('lista-ofertas')?.addEventListener('keydown', (e) => {
   if (e.key !== 'Enter' && e.key !== ' ') return;
   // Botones internos (favorito, "Ver detalles", chevron de descripción…)

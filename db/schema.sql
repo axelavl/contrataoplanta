@@ -274,7 +274,7 @@ CREATE INDEX IF NOT EXISTS idx_ofertas_nivel ON ofertas(nivel);
 -- Trigram para ILIKE en búsqueda de cargo/institución
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE INDEX IF NOT EXISTS idx_ofertas_cargo_trgm ON ofertas USING gin (cargo gin_trgm_ops);
-CREATE INDEX IF NOT EXISTS idx_ofertas_institucion_trgm ON ofertas USING gin (institucion gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_ofertas_institucion_trgm ON ofertas USING gin (institucion_nombre gin_trgm_ops);
 
 -- Full-text search en español con unaccent (post-audit 2.8)
 CREATE INDEX IF NOT EXISTS idx_ofertas_fts ON ofertas
