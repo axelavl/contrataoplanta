@@ -139,23 +139,21 @@ def ofertas_base_sql() -> str:
     """
 
 
-def ofertas_select_sql() -> str:
+def ofertas_select_sql(*, truncate_text: bool = False) -> str:
     institucion_visible = _clean_institution_sql(
         "COALESCE(NULLIF(TRIM(o.institucion_nombre), ''), i.nombre, 'Sin institución')"
     )
+    desc_col = "LEFT(COALESCE(o.descripcion, ''), 300)" if truncate_text else "COALESCE(o.descripcion, '')"
+    req_col = "LEFT(COALESCE(o.requisitos, o.requisitos_texto, ''), 300)" if truncate_text else "COALESCE(o.requisitos, o.requisitos_texto, '')"
     return f"""
     SELECT
         o.id,
         o.institucion_id,
-        -- Prioridad: nombre tal como aparece en la oferta oficial (o.institucion_nombre)
-        -- sobre el match del catálogo (i.nombre). Antes de exponerlo se limpia
-        -- el marcador operacional 'Personal Civil' para que el usuario vea sólo
-        -- la institución: 'Armada de Chile', 'Carabineros de Chile', etc.
         COALESCE({institucion_visible}, 'Sin institución') AS institucion,
         COALESCE(i.sigla, i.nombre_corto) AS sigla,
         COALESCE(o.cargo, 'Sin cargo') AS cargo,
-        COALESCE(o.descripcion, '') AS descripcion,
-        COALESCE(o.requisitos, o.requisitos_texto, '') AS requisitos,
+        {desc_col} AS descripcion,
+        {req_col} AS requisitos,
         COALESCE(NULLIF(o.tipo_contrato, ''), NULLIF(o.tipo_cargo, '')) AS tipo_contrato,
         COALESCE(o.region, i.region) AS region,
         o.ciudad,

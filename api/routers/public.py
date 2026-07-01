@@ -230,7 +230,7 @@ def get_ofertas(
 
     select_sql = f"""
     WITH base AS (
-        {ofertas_select_sql()}
+        {ofertas_select_sql(truncate_text=True)}
         {ofertas_base_sql()}
         {where_sql}
     )
@@ -615,7 +615,7 @@ def get_institucion_ofertas(
     where_sql, params = build_ofertas_filters(institucion_id=institucion_id, solo_activas=True)
     sql = f"""
     WITH base AS (
-        {ofertas_select_sql()}
+        {ofertas_select_sql(truncate_text=True)}
         {ofertas_base_sql()}
         {where_sql}
     )
@@ -730,7 +730,7 @@ def get_historial(
     )
     sql = f"""
     WITH base AS (
-        {ofertas_select_sql()}
+        {ofertas_select_sql(truncate_text=True)}
         {ofertas_base_sql()}
         {where_sql}
     )

@@ -260,6 +260,22 @@ CREATE INDEX IF NOT EXISTS idx_ofertas_activas_cierre
     ON ofertas(fecha_cierre ASC NULLS LAST)
     WHERE activa = TRUE;
 
+-- Índices compuestos parciales para filtros frecuentes
+CREATE INDEX IF NOT EXISTS idx_ofertas_activa_cierre
+    ON ofertas(fecha_cierre ASC NULLS LAST, id DESC) WHERE activa = TRUE;
+CREATE INDEX IF NOT EXISTS idx_ofertas_activa_region_cierre
+    ON ofertas(region, fecha_cierre ASC NULLS LAST) WHERE activa = TRUE;
+CREATE INDEX IF NOT EXISTS idx_ofertas_activa_sector_cierre
+    ON ofertas(sector, fecha_cierre ASC NULLS LAST) WHERE activa = TRUE;
+CREATE INDEX IF NOT EXISTS idx_ofertas_activa_inst_cierre
+    ON ofertas(institucion_id, fecha_cierre ASC NULLS LAST) WHERE activa = TRUE;
+CREATE INDEX IF NOT EXISTS idx_ofertas_nivel ON ofertas(nivel);
+
+-- Trigram para ILIKE en búsqueda de cargo/institución
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE INDEX IF NOT EXISTS idx_ofertas_cargo_trgm ON ofertas USING gin (cargo gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_ofertas_institucion_trgm ON ofertas USING gin (institucion gin_trgm_ops);
+
 -- Full-text search en español con unaccent (post-audit 2.8)
 CREATE INDEX IF NOT EXISTS idx_ofertas_fts ON ofertas
     USING GIN (
