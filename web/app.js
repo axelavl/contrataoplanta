@@ -407,7 +407,8 @@ const estado = {
   orden:        ORDEN_POR_DEFECTO,
   por_pagina:   _prefs.por_pagina || POR_PAGINA_CONFIG[_prefs.vista || 'cards']?.porDefecto || 20,
   vista:        (_prefs.vista === 'grid' ? 'cards' : _prefs.vista) || 'cards',
-  institucion_id: null,
+  institucion_id: null,       // compat: primer ID o null
+  instituciones: [],          // [{id, nombre}, ...] — multi-select
   nivel: '',
   renta_min: null,
   renta_max: null,
@@ -2352,13 +2353,12 @@ function renderMasActivas(instituciones) {
 }
 
 function filtrarInstitucion(id, nombre) {
-  estado.institucion_id  = id;
-  const input = document.getElementById('input-institucion');
-  const clearBtn = document.getElementById('btn-clear-inst');
-  if (input)    { input.value = nombre || `Institución #${id}`; }
-  if (clearBtn) { clearBtn.style.display = 'flex'; }
+  estado.instituciones = [{ id, nombre: nombre || `Institución #${id}` }];
+  estado.institucion_id = String(id);
+  _renderChipsInstitucion();
   estado.pagina = 1;
   window.scrollTo({ top: document.getElementById('lista-ofertas').offsetTop - 90, behavior: 'smooth' });
+  actualizarVisibilidadCompartirBusqueda();
   cargarOfertas();
 }
 
@@ -3632,6 +3632,9 @@ function initAutocompletarInstitucion() {
   const clearBtn = document.getElementById('btn-clear-inst');
   if (!input) return;
 
+  const chipsWrap = document.getElementById('inst-chips')?.parentElement;
+  if (chipsWrap) chipsWrap.addEventListener('click', () => input.focus());
+
   input.addEventListener('input', () => {
     clearTimeout(_autocompleteTimer);
     const q = input.value.trim();
@@ -3642,6 +3645,9 @@ function initAutocompletarInstitucion() {
   input.addEventListener('keydown', e => {
     if (e.key === 'Escape') { dropdown.style.display = 'none'; input.blur(); }
     if (e.key === 'Enter')  { e.preventDefault(); buscar(); }
+    if (e.key === 'Backspace' && !input.value && estado.instituciones.length) {
+      _quitarInstitucion(estado.instituciones[estado.instituciones.length - 1].id);
+    }
   });
 
   input.addEventListener('blur', () => {
@@ -3652,7 +3658,9 @@ function initAutocompletarInstitucion() {
     input.value = '';
     clearBtn.style.display = 'none';
     dropdown.style.display = 'none';
+    estado.instituciones = [];
     estado.institucion_id = null;
+    _renderChipsInstitucion();
     estado.pagina = 1;
     actualizarVisibilidadCompartirBusqueda();
     cargarOfertas();
@@ -3668,14 +3676,18 @@ async function _buscarInstituciones(q) {
     const dropdown = document.getElementById('autocomplete-dropdown');
     if (!_autocompleteData.length) { dropdown.style.display = 'none'; return; }
 
-    dropdown.innerHTML = _autocompleteData.map((inst, i) =>
-      `<div class="autocomplete-item" data-idx="${i}">${escHtml(inst.nombre)}</div>`
+    const idsSeleccionados = new Set(estado.instituciones.map(i => i.id));
+    const disponibles = _autocompleteData.filter(inst => !idsSeleccionados.has(inst.id));
+    if (!disponibles.length) { dropdown.style.display = 'none'; return; }
+    dropdown.innerHTML = disponibles.map((inst) =>
+      `<div class="autocomplete-item" data-inst-id="${inst.id}">${escHtml(inst.nombre)}</div>`
     ).join('');
 
     dropdown.querySelectorAll('.autocomplete-item').forEach(el => {
       el.addEventListener('mousedown', () => {
-        const inst = _autocompleteData[parseInt(el.dataset.idx)];
-        _seleccionarInstitucion(inst.id, inst.nombre);
+        const instId = parseInt(el.dataset.instId);
+        const inst = _autocompleteData.find(i => i.id === instId);
+        if (inst) _seleccionarInstitucion(inst.id, inst.nombre);
       });
     });
 
@@ -3684,16 +3696,64 @@ async function _buscarInstituciones(q) {
 }
 
 function _seleccionarInstitucion(id, nombre) {
-  estado.institucion_id = id;
+  if (estado.instituciones.some(i => i.id === id)) return;
+  estado.instituciones.push({ id, nombre });
+  estado.institucion_id = estado.instituciones.map(i => i.id).join(',');
   const input    = document.getElementById('input-institucion');
-  const clearBtn = document.getElementById('btn-clear-inst');
   const dropdown = document.getElementById('autocomplete-dropdown');
-  input.value          = nombre;
-  clearBtn.style.display = 'flex';
+  input.value = '';
   dropdown.style.display = 'none';
+  _renderChipsInstitucion();
   estado.pagina = 1;
   actualizarVisibilidadCompartirBusqueda();
   cargarOfertas();
+}
+
+function _quitarInstitucion(id) {
+  estado.instituciones = estado.instituciones.filter(i => i.id !== id);
+  estado.institucion_id = estado.instituciones.length
+    ? estado.instituciones.map(i => i.id).join(',')
+    : null;
+  _renderChipsInstitucion();
+  estado.pagina = 1;
+  actualizarVisibilidadCompartirBusqueda();
+  cargarOfertas();
+}
+
+function _renderChipsInstitucion() {
+  const wrap = document.getElementById('inst-chips');
+  const clearBtn = document.getElementById('btn-clear-inst');
+  if (!wrap) return;
+  if (!estado.instituciones.length) {
+    wrap.innerHTML = '';
+    if (clearBtn) clearBtn.style.display = 'none';
+    return;
+  }
+  if (clearBtn) clearBtn.style.display = 'flex';
+  wrap.innerHTML = estado.instituciones.map(i =>
+    `<span class="inst-chip" data-id="${i.id}">${escHtml(i.nombre)}<button type="button" class="inst-chip-x" title="Quitar">&times;</button></span>`
+  ).join('');
+  wrap.querySelectorAll('.inst-chip-x').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const id = parseInt(btn.parentElement.dataset.id);
+      _quitarInstitucion(id);
+    });
+  });
+}
+
+async function _cargarNombresInstituciones(ids) {
+  try {
+    const resp = await fetchApi(`/api/instituciones?por_pagina=1000`);
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const lista = data.instituciones || [];
+    estado.instituciones = estado.instituciones.map(inst => {
+      const found = lista.find(i => i.id === inst.id);
+      return found ? { id: inst.id, nombre: found.nombre } : inst;
+    });
+    _renderChipsInstitucion();
+  } catch { /* fallo silencioso */ }
 }
 
 // ── Renta libre ───────────────────────────────────────────────────────────
@@ -4196,7 +4256,7 @@ function hayFiltrosActivos() {
   const tiposFiltran = Array.isArray(estado.tipos) && !_tiposIguales(estado.tipos, TIPOS_POR_DEFECTO);
   return Boolean(
     estado.q?.trim() || estado.region || estado.sector || estado.ciudad || (estado.comunas || []).length ||
-    estado.renta_min || estado.institucion_id || estado.cierra_pronto || estado.nuevas || estado.solo_con_correo ||
+    estado.renta_min || estado.instituciones.length || estado.cierra_pronto || estado.nuevas || estado.solo_con_correo ||
     estado.vista_listado !== 'vigentes' || estado.orden !== ORDEN_POR_DEFECTO ||
     tiposFiltran
   );
@@ -4213,7 +4273,7 @@ function hayEstadoCompartibleReal() {
   const tieneTiposPersonalizados = Array.isArray(estado.tipos) && !_tiposEsDefault(estado.tipos);
   return Boolean(
     estado.q || estado.region || estado.sector || estado.ciudad || (estado.comunas || []).length ||
-    estado.renta_min || estado.institucion_id ||
+    estado.renta_min || estado.instituciones.length ||
     estado.cierra_pronto || estado.nuevas || estado.sin_experiencia || estado.solo_con_correo ||
     tieneTiposPersonalizados
   );
@@ -4269,6 +4329,8 @@ function limpiarTodosLosFiltros() {
   estado.renta_min = null;
   estado.renta_max = null;
   estado.institucion_id = null;
+  estado.instituciones = [];
+  _renderChipsInstitucion();
   estado.tipos = [...TIPOS_POR_DEFECTO];
   estado.cierra_pronto = false;
   estado.nuevas = false;
@@ -4431,7 +4493,13 @@ function restaurarFiltrosDesdeURL() {
       });
     }
     if (params.has('institucion')) {
-      estado.institucion_id = params.get('institucion') || null;
+      const raw = params.get('institucion') || '';
+      const ids = raw.split(',').map(s => parseInt(s.trim(), 10)).filter(n => n > 0);
+      if (ids.length) {
+        estado.institucion_id = ids.join(',');
+        estado.instituciones = ids.map(id => ({ id, nombre: `#${id}` }));
+        _cargarNombresInstituciones(ids);
+      }
     }
     if (params.has('comunas')) {
       estado.comunas = (params.get('comunas') || '').split(',').map((c) => c.trim()).filter(Boolean);

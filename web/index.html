@@ -170,7 +170,10 @@
         <div class="campo">
           <label for="input-institucion">Institución</label>
           <div class="autocomplete-wrap">
-            <input type="text" id="input-institucion" placeholder="Buscar institución pública..." autocomplete="off">
+            <div class="inst-chips-input">
+              <div class="inst-chips" id="inst-chips"></div>
+              <input type="text" id="input-institucion" placeholder="Buscar institución pública..." autocomplete="off">
+            </div>
             <button class="autocomplete-clear" id="btn-clear-inst" style="display:none" title="Limpiar">✕</button>
             <div class="autocomplete-dropdown" id="autocomplete-dropdown"></div>
           </div>
