@@ -3961,22 +3961,29 @@ async function enviarAlerta() {
 
     if (resp.ok) {
       const data = await resp.json();
-      btn.textContent = '✓ ¡Alerta activada!';
+      // Doble opt-in: si la suscripción quedó PENDIENTE de confirmación, no
+      // decimos "activada" (aún no lo está); guiamos a revisar el correo.
+      const pendiente = data.verificada === false;
+      btn.textContent = pendiente ? '✉️ Revisa tu correo' : '✓ ¡Alerta activada!';
       btn.style.background = 'var(--verde)';
       // Limpiar el formulario
       document.getElementById('alerta-email').value = '';
       document.getElementById('alerta-keywords').value = '';
+      // Mensaje del backend (confirmación pendiente o alta directa).
+      const sugDiv = document.getElementById('mailcheck-suggestion');
+      if (sugDiv && data.mensaje) {
+        sugDiv.textContent = data.mensaje;
+        sugDiv.style.color = pendiente ? 'var(--azul, #1557C0)' : 'var(--verde)';
+        sugDiv.style.display = 'block';
+      }
       // Trackeo: dispara Umami + el beacon interno (window.track), para que
       // el embudo de conversión del panel cuente las suscripciones.
       (window.track || trackUmami)('alert-subscribe', { region: region || 'todas', frecuencia });
       // Show email typo suggestion if any
-      if (data.sugerencia_email) {
-        const sugDiv = document.getElementById('mailcheck-suggestion');
-        if (sugDiv) {
-          sugDiv.innerHTML = `Nota: ¿Tu email correcto es <strong>${escHtml(data.sugerencia_email)}</strong>?`;
-          sugDiv.style.color = 'var(--naran)';
-          sugDiv.style.display = 'block';
-        }
+      if (data.sugerencia_email && sugDiv) {
+        sugDiv.innerHTML = `Nota: ¿Tu email correcto es <strong>${escHtml(data.sugerencia_email)}</strong>?`;
+        sugDiv.style.color = 'var(--naran)';
+        sugDiv.style.display = 'block';
       }
     } else {
       const errData = await resp.json().catch(() => ({}));
@@ -3996,6 +4003,49 @@ async function enviarAlerta() {
 // Nota: el botón "Crear alerta" fue retirado del header. El widget de alertas
 // sigue disponible en el sidebar (#alertas) y su formulario en #btn-alerta-submit.
 document.getElementById('btn-alerta-submit')?.addEventListener('click', enviarAlerta);
+
+// ── Confirmación de suscripción (doble opt-in) ──────────────────────────────
+// El correo de verificación enlaza a `?verificar=<token>`. Al cargar la home
+// con ese parámetro, confirmamos la suscripción contra la API y mostramos el
+// resultado; luego limpiamos el token de la URL para no reintentar al recargar.
+async function confirmarSuscripcionDesdeURL() {
+  let token = '';
+  try {
+    token = new URLSearchParams(window.location.search).get('verificar') || '';
+  } catch { return; }
+  if (!token) return;
+
+  let mensaje, ok = false;
+  try {
+    const resp = await fetchApi(`/api/alertas/confirmar?token=${encodeURIComponent(token)}`);
+    const data = await resp.json().catch(() => ({}));
+    ok = resp.ok;
+    mensaje = data.mensaje || data.detail ||
+      (ok ? 'Suscripción confirmada.' : 'No se pudo confirmar la suscripción.');
+  } catch {
+    mensaje = 'No se pudo confirmar la suscripción. Revisa tu conexión e intenta de nuevo.';
+  }
+
+  // Banner simple, accesible, sin markup no confiable (todo por textContent).
+  const banner = document.createElement('div');
+  banner.setAttribute('role', 'status');
+  banner.style.cssText =
+    'position:fixed;left:50%;top:16px;transform:translateX(-50%);z-index:9999;' +
+    'max-width:92%;padding:12px 18px;border-radius:10px;font-size:14px;font-weight:600;' +
+    'box-shadow:0 6px 24px rgba(0,0,0,.18);color:#fff;background:' +
+    (ok ? '#16a34a' : '#dc2626');
+  banner.textContent = (ok ? '✓ ' : '⚠️ ') + mensaje;
+  document.body.appendChild(banner);
+  setTimeout(() => banner.remove(), 6000);
+
+  // Quitar el token de la URL sin recargar (evita reconfirmar / filtrarlo).
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('verificar');
+    window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+  } catch { /* noop */ }
+}
+confirmarSuscripcionDesdeURL();
 
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;

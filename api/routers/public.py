@@ -794,30 +794,106 @@ def crear_alerta(request: Request, payload: AlertaPayload) -> dict[str, Any]:
     if not check["valido"]:
         raise HTTPException(status_code=422, detail=check["motivo"])
 
+    # Doble opt-in: la suscripción NO se activa para envíos hasta que se
+    # confirma el correo. Así se evita que alguien suscriba a un tercero y le
+    # llegue spam (y se protege la reputación del dominio remitente). Si Resend
+    # NO está configurado (dev/staging sin RESEND_API_KEY), no habría forma de
+    # confirmar, así que se degrada al comportamiento anterior: se marca como
+    # verificada de inmediato.
+    email_configurado = bool(os.getenv("RESEND_API_KEY") or os.getenv("EMAIL_API_KEY"))
+    token = secrets.token_urlsafe(32) if email_configurado else None
+    verificada_inicial = not email_configurado
+
     with get_cursor() as (connection, cursor):
         cursor.execute(
             """
             INSERT INTO alertas_suscripciones (
                 email, region, termino, tipo_contrato, sector, frecuencia,
-                activa, creada_en, actualizada_en
-            ) VALUES (%s, %s, %s, %s, %s, %s, TRUE, NOW(), NOW())
+                activa, verificada, token_verificacion, creada_en, actualizada_en
+            ) VALUES (%s, %s, %s, %s, %s, %s, TRUE, %s, %s, NOW(), NOW())
             ON CONFLICT (
                 LOWER(email),
                 COALESCE(region, ''),
                 COALESCE(termino, ''),
                 COALESCE(tipo_contrato, ''),
                 COALESCE(sector, '')
-            ) DO UPDATE SET activa = TRUE, frecuencia = EXCLUDED.frecuencia,
-                           actualizada_en = NOW()
+            ) DO UPDATE SET
+                activa = TRUE,
+                frecuencia = EXCLUDED.frecuencia,
+                actualizada_en = NOW(),
+                -- Sólo (re)generar token si la suscripción NO estaba verificada;
+                -- una re-suscripción de un correo ya confirmado no exige
+                -- reconfirmar (queda activa y verificada).
+                token_verificacion = CASE
+                    WHEN alertas_suscripciones.verificada THEN alertas_suscripciones.token_verificacion
+                    ELSE EXCLUDED.token_verificacion END
+            RETURNING verificada, token_verificacion
             """,
-            [email, region, termino, tipo_contrato, sector, frecuencia],
+            [email, region, termino, tipo_contrato, sector, frecuencia,
+             verificada_inicial, token],
         )
+        row = cursor.fetchone()
         connection.commit()
 
-    response: dict[str, Any] = {"ok": True, "mensaje": "Alerta registrada correctamente"}
+    row = dict(row) if row else {}
+    ya_verificada = bool(row.get("verificada"))
+    token_envio = row.get("token_verificacion")
+
+    response: dict[str, Any] = {"ok": True}
+    if ya_verificada:
+        response["mensaje"] = "Alerta registrada correctamente"
+        response["verificada"] = True
+    else:
+        # Pendiente de confirmación: enviar (o reenviar) el correo de verificación.
+        if token_envio:
+            try:
+                enviar_verificacion(email, token_envio)
+            except Exception as exc:  # noqa: BLE001 — no romper el alta por un fallo de envío
+                import logging
+                logging.getLogger("api.routers.public").warning(
+                    "No se pudo enviar verificación de alerta a %s: %s", email, exc
+                )
+        response["mensaje"] = "Te enviamos un correo para confirmar tu suscripción. Revisa tu bandeja (y spam)."
+        response["verificada"] = False
+
     if check.get("sugerencia"):
         response["sugerencia_email"] = check["sugerencia"]
     return response
+
+
+@router.get("/api/alertas/confirmar")
+def confirmar_alerta(request: Request, token: str = Query(..., min_length=16, max_length=64)) -> dict[str, Any]:
+    """Confirma una suscripción a alertas a partir del token del correo.
+
+    Marca la fila como `verificada = TRUE`, la deja activa y consume el token
+    (un solo uso). Idempotente en la práctica: si el token ya se usó no existe
+    ninguna fila con él y se responde 404, pero una fila ya verificada no se ve
+    afectada.
+    """
+    _check_public_rate(request, max_hits=30)
+    with get_cursor() as (connection, cursor):
+        cursor.execute(
+            """
+            UPDATE alertas_suscripciones
+               SET verificada = TRUE,
+                   activa = TRUE,
+                   verificada_en = NOW(),
+                   token_verificacion = NULL,
+                   actualizada_en = NOW()
+             WHERE token_verificacion = %s
+            RETURNING email
+            """,
+            [token],
+        )
+        row = cursor.fetchone()
+        connection.commit()
+
+    if not row:
+        raise HTTPException(
+            status_code=404,
+            detail="Enlace de confirmación inválido o ya utilizado.",
+        )
+    return {"ok": True, "mensaje": "Suscripción confirmada. Ya recibirás tus alertas."}
 
 
 # ──────────────────── Analítica interna (beacon de tráfico) ─────────────────

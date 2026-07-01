@@ -228,14 +228,18 @@ def api_enviar_alertas_pendientes(
     except (TypeError, ValueError):
         horas = 24
 
+    # Sólo suscripciones VERIFICADAS (doble opt-in): nunca enviar a un correo
+    # que no confirmó su alta. Las filas heredadas quedaron verificada=TRUE en
+    # la migración, así que no se pierden envíos existentes.
     if email_filtro:
         suscripciones = execute_fetch_all(
-            "SELECT * FROM alertas_suscripciones WHERE activa = TRUE AND LOWER(email) = %s",
+            "SELECT * FROM alertas_suscripciones "
+            "WHERE activa = TRUE AND verificada = TRUE AND LOWER(email) = %s",
             [email_filtro],
         )
     else:
         suscripciones = execute_fetch_all(
-            "SELECT * FROM alertas_suscripciones WHERE activa = TRUE"
+            "SELECT * FROM alertas_suscripciones WHERE activa = TRUE AND verificada = TRUE"
         )
     if not suscripciones:
         return {
@@ -2217,7 +2221,7 @@ def admin_suscripciones(
 
     subs = execute_fetch_all(
         f"""SELECT id, email, region, termino, tipo_contrato, sector,
-                   frecuencia, activa, creada_en, actualizada_en
+                   frecuencia, activa, verificada, creada_en, actualizada_en
             FROM alertas_suscripciones
             {where}
             ORDER BY creada_en DESC
@@ -2229,6 +2233,8 @@ def admin_suscripciones(
             COUNT(*)                     AS total,
             COUNT(*) FILTER(WHERE activa)                     AS activas,
             COUNT(*) FILTER(WHERE NOT activa)                 AS inactivas,
+            COUNT(*) FILTER(WHERE verificada)                 AS verificadas,
+            COUNT(*) FILTER(WHERE NOT verificada)             AS sin_verificar,
             COUNT(DISTINCT LOWER(email))                      AS emails_unicos,
             COUNT(*) FILTER(WHERE region IS NOT NULL)         AS con_region,
             COUNT(*) FILTER(WHERE termino IS NOT NULL)        AS con_termino,

@@ -29,32 +29,24 @@ críticos abiertos.
 | I5 | Info | `deps.py` | Un JWT sin claim `rol` defaulteaba a `admin` (fail-open). | Default a `lector` (fail-safe). |
 | A3-fe | Info | `app.js` | `footer_extra` inyectado como HTML sin documentar el contrato de confianza. | Comentario: es HTML de operador (solo `PUT /config`, rol admin). |
 | B2 | Baja | `admin.py` | `admin_set_override` no validaba `kind` contra `ScraperKind`. | Validación de `kind` (mismo patrón que `scraper_run`). |
+| A1 | **Alta** | alertas | `POST /api/alertas` activaba la suscripción sin verificar la propiedad del correo → email bombing a terceros. | **Doble opt-in** (ver detalle abajo). |
+
+### A1 — Doble opt-in en suscripción a alertas (implementado)
+`POST /api/alertas` ya no activa envíos sin confirmar el correo. Cambios:
+1. Migración `20260701_0002_alertas_doble_optin`: columnas `verificada`,
+   `token_verificacion`, `verificada_en` en `alertas_suscripciones`. Las filas
+   **preexistentes** se marcan `verificada = TRUE` (no se cortan sus envíos).
+2. `crear_alerta`: inserta con `verificada = FALSE` + token
+   (`secrets.token_urlsafe(32)`) y envía `enviar_verificacion`. Si Resend NO
+   está configurado, degrada a activación inmediata (dev/staging).
+3. `GET /api/alertas/confirmar?token=…`: marca `verificada = TRUE`, consume el
+   token (un solo uso) y responde. Con rate limit público.
+4. El envío (`api_enviar_alertas_pendientes`) filtra `verificada = TRUE`.
+5. Frontend: maneja `?verificar=` (banner de confirmación) y el mensaje de alta
+   distingue "revisa tu correo" de "activada". El panel admin muestra
+   verificadas / sin verificar.
 
 ## Recomendaciones pendientes (requieren decisión de producto/esquema)
-
-### A1 — Doble opt-in en suscripción a alertas (severidad ALTA)
-`POST /api/alertas` activa la suscripción (`activa = TRUE`) **sin verificar la
-propiedad del correo**. Cualquiera puede suscribir a un tercero, que recibirá
-alertas no solicitadas (acoso/spam y daño a la reputación del dominio remitente).
-La infraestructura ya existe parcialmente: `enviar_verificacion(email, token)` en
-`email_alerts.py` construye el enlace `?verificar=<token>`, pero **no se invoca**,
-no hay endpoint de confirmación, y la tabla `alertas_suscripciones` no tiene
-columna de token (la que existe, `token_verificacion`, vive en la tabla `usuarios`,
-que la API no usa).
-
-Plan de implementación:
-1. Migración Alembic: agregar `token_verificacion VARCHAR(100)` y
-   `verificada BOOLEAN DEFAULT FALSE` a `alertas_suscripciones`.
-2. `crear_alerta`: insertar con `verificada = FALSE` + token
-   (`secrets.token_urlsafe`), llamar `enviar_verificacion`, responder
-   "revisa tu correo".
-3. Nuevo `GET /api/alertas/confirmar?token=…` que marca `verificada = TRUE`.
-4. El cron de envío debe filtrar `verificada = TRUE`.
-5. Frontend: manejar `?verificar=` y cambiar el mensaje de éxito.
-
-No se implementó aquí porque cambia el comportamiento visible (el usuario debe
-confirmar) y toca el flujo de email en vivo + esquema; conviene probarlo
-end-to-end contra Resend y una DB real antes de desplegar.
 
 ### M3 — Rate limiting de endpoints públicos frágil (severidad MEDIA)
 El límite de `/api/alertas` y `/api/track` vive en un `dict` en memoria: con
