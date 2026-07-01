@@ -41,6 +41,7 @@ from api.deps import (
     SITE_URL,
     WEB_INDEX_PATH,
     _PROJECT_ROOT,
+    check_public_rate_limit,
     client_ip,
 )
 from api.services.db import (
@@ -108,24 +109,23 @@ except Exception:  # pragma: no cover
 router = APIRouter(tags=["public"])
 
 
-_public_rate: dict[str, list[float]] = defaultdict(list)
 _PUBLIC_RATE_WINDOW = 600
 _PUBLIC_RATE_MAX = 20
 
 
-def _check_public_rate(request: Request, max_hits: int = _PUBLIC_RATE_MAX) -> None:
-    """Rate limit liviano por IP para endpoints públicos sensibles."""
-    ip = client_ip(request)
-    ahora = _time.time()
-    corte = ahora - _PUBLIC_RATE_WINDOW
-    hits = _public_rate[ip] = [t for t in _public_rate[ip] if t > corte]
-    if len(hits) >= max_hits:
-        raise HTTPException(
-            status_code=429,
-            detail="Demasiadas solicitudes. Intente en unos minutos.",
-            headers={"Retry-After": str(_PUBLIC_RATE_WINDOW)},
-        )
-    _public_rate[ip].append(ahora)
+def _check_public_rate(
+    request: Request, max_hits: int = _PUBLIC_RATE_MAX, *, bucket: str = "publico"
+) -> None:
+    """Rate limit por IP para endpoints públicos sensibles.
+
+    Estado compartido entre workers en Postgres (tabla `public_rate_hits`), con
+    fallback en memoria si la DB no responde. `bucket` separa el presupuesto por
+    familia de endpoint para que el abuso de uno no consuma la cuota de otro.
+    """
+    check_public_rate_limit(
+        client_ip(request), bucket,
+        window_seg=_PUBLIC_RATE_WINDOW, max_hits=max_hits,
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -779,7 +779,7 @@ def get_sugerencias(q: str = Query(..., min_length=1, max_length=100)) -> list[s
 
 @router.post("/api/alertas")
 def crear_alerta(request: Request, payload: AlertaPayload) -> dict[str, Any]:
-    _check_public_rate(request)
+    _check_public_rate(request, bucket="alertas")
     email         = validate_email(payload.email)
     region        = payload.region.strip()        if payload.region        else None
     termino       = payload.termino.strip()       if payload.termino       else None
@@ -870,7 +870,7 @@ def confirmar_alerta(request: Request, token: str = Query(..., min_length=16, ma
     ninguna fila con él y se responde 404, pero una fila ya verificada no se ve
     afectada.
     """
-    _check_public_rate(request, max_hits=30)
+    _check_public_rate(request, max_hits=30, bucket="alertas_confirmar")
     with get_cursor() as (connection, cursor):
         cursor.execute(
             """
@@ -900,6 +900,12 @@ def confirmar_alerta(request: Request, token: str = Query(..., min_length=16, ma
 
 #: Límite holgado y propio para el beacon: una sesión normal genera muchas
 #: vistas, así que no comparte presupuesto con `/api/alertas`.
+#:
+#: A diferencia de `_check_public_rate`, este límite se mantiene EN MEMORIA a
+#: propósito: el beacon es alto volumen (hasta 120/min por IP) y su valor de
+#: seguridad es bajo (protege sólo contra spam de analítica, no toca DB de
+#: negocio ni envía correos). Un INSERT por hit en Postgres sería un costo de
+#: escritura desproporcionado. La fragmentación por worker es aceptable acá.
 _track_rate: dict[str, list[float]] = defaultdict(list)
 _TRACK_RATE_WINDOW = 60
 _TRACK_RATE_MAX = 120
@@ -1122,7 +1128,7 @@ def api_validar_email(request: Request, email: str = Query(..., min_length=3, ma
     Valida un email: detecta dominios temporales/desechables y sugiere
     correcciones de typos comunes (gmial→gmail, hotnail→hotmail).
     """
-    _check_public_rate(request, max_hits=30)
+    _check_public_rate(request, max_hits=30, bucket="validar_email")
     return mailcheck_validar(email)
 
 

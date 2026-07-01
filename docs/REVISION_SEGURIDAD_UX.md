@@ -46,16 +46,27 @@ críticos abiertos.
    distingue "revisa tu correo" de "activada". El panel admin muestra
    verificadas / sin verificar.
 
-## Recomendaciones pendientes (requieren decisión de producto/esquema)
+### M3 — Rate limiting de endpoints públicos compartido (implementado)
+El límite de `/api/alertas`, `/api/alertas/confirmar` y `/api/validar-email`
+vivía en un `dict` en memoria por worker (≈N× el nominal, se reiniciaba en cada
+deploy, y las claves de IP nunca se purgaban). Cambios:
+1. Migración `20260701_0003_public_rate_limit`: tabla `public_rate_hits`
+   (`ip`, `bucket`, `ts`) con índices, análoga a `admin_auth_failures`.
+2. `deps.check_public_rate_limit(ip, bucket, window, max)`: cuenta en Postgres
+   (compartido entre workers), purga la ventana vencida y cae a memoria si la DB
+   no responde. El fallback en memoria descarta claves vencidas (no crece sin
+   límite).
+3. `bucket` separa el presupuesto por endpoint (`alertas`, `alertas_confirmar`,
+   `validar_email`) para que el abuso de uno no consuma la cuota de otro.
+4. El beacon `/api/track` se mantiene en memoria **a propósito** (alto volumen,
+   valor de seguridad bajo: un INSERT por hit sería desproporcionado).
 
-### M3 — Rate limiting de endpoints públicos frágil (severidad MEDIA)
-El límite de `/api/alertas` y `/api/track` vive en un `dict` en memoria: con
-`--workers 2` es por-worker (≈2×) y se reinicia en cada deploy; las claves de IP
-no se purgan (crecimiento no acotado); y `client_ip` toma el último `X-Forwarded-For`,
-que detrás de Cloudflare+Railway puede ser una IP de infraestructura compartida.
-El estado de auth admin ya se migró a Postgres (`admin_auth_failures`); conviene
-llevar también el rate limit público a un backend compartido (Postgres/Redis),
-purgar claves vacías y fijar el número de proxies de confianza al extraer la IP.
+Nota abierta: `client_ip` toma el último `X-Forwarded-For`. Detrás de
+Cloudflare+Railway conviene fijar el número de proxies de confianza para extraer
+la IP real; no se cambió aquí porque depende de la topología exacta del proxy y
+un valor incorrecto agruparía a todos los clientes bajo una IP.
+
+## Recomendaciones pendientes
 
 ### Otros (defensa en profundidad)
 - **CSP `style-src 'unsafe-inline'`**: trade-off ya documentado; migrar los
