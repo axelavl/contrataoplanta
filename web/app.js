@@ -2735,6 +2735,11 @@ function normalizarOferta(o) {
 // reintenta en respuestas 4xx (p.ej. 404: la oferta ya no existe) — esas son
 // definitivas y se devuelven tal cual para que la UI muestre el mensaje justo.
 async function _fetchOfertaDetalle(ofertaId, { reintentos = 2, esperaMs = 600 } = {}) {
+  if (typeof _prefetchCache !== 'undefined' && _prefetchCache.has(ofertaId)) {
+    const data = await _prefetchCache.get(ofertaId);
+    _prefetchCache.delete(ofertaId);
+    if (data) return new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  }
   let ultimoError = null;
   for (let intento = 0; intento <= reintentos; intento++) {
     try {
@@ -4065,7 +4070,19 @@ document.getElementById('lista-ofertas')?.addEventListener('click', (e) => {
   const id = parseInt(el.dataset.ofertaId, 10);
   if (!isNaN(id)) abrirModal(id);
 });
-// Accesibilidad: Enter / Space también abren el modal cuando la tarjeta tiene foco.
+/// Prefetch del detalle al pasar el mouse: al hacer click el modal abre instantáneo.
+const _prefetchCache = new Map();
+document.getElementById('lista-ofertas')?.addEventListener('mouseenter', (e) => {
+  const el = e.target.closest('[data-oferta-id]');
+  if (!el) return;
+  const id = parseInt(el.dataset.ofertaId, 10);
+  if (isNaN(id) || _prefetchCache.has(id)) return;
+  const p = fetchApi(`/api/ofertas/${id}`).then(r => r.ok ? r.json() : null).catch(() => null);
+  _prefetchCache.set(id, p);
+  setTimeout(() => _prefetchCache.delete(id), 120000);
+}, true);
+
+/ Accesibilidad: Enter / Space también abren el modal cuando la tarjeta tiene foco.
 document.getElementById('lista-ofertas')?.addEventListener('keydown', (e) => {
   if (e.key !== 'Enter' && e.key !== ' ') return;
   // Botones internos (favorito, "Ver detalles", chevron de descripción…)
@@ -5167,7 +5184,19 @@ Promise.all([
   mostrarUltimaActualizacion(),
   cargarSiteConfig(),
 ]);
-setInterval(mostrarUltimaActualizacion, 5 * 60 * 1000); // refresco cada 5 min
+// Polling inteligente: pausa cuando el tab está oculto para no gastar requests.
+let _pollingActualizacion = setInterval(mostrarUltimaActualizacion, 5 * 60 * 1000);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    clearInterval(_pollingActualizacion);
+    _pollingActualizacion = null;
+  } else {
+    if (!_pollingActualizacion) {
+      mostrarUltimaActualizacion();
+      _pollingActualizacion = setInterval(mostrarUltimaActualizacion, 5 * 60 * 1000);
+    }
+  }
+});
 
 // ── Parte 10 — Aviso de nuevas ofertas sin F5 ─────────────────────────────
 // Polling liviano (90 s + al recuperar el foco) comparando el `total` del

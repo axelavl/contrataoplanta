@@ -15,6 +15,12 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="manifest" href="/site.webmanifest">
 <meta name="theme-color" content="#0A2E6E">
+<!-- Preconnect al backend API para eliminar latencia DNS+TCP+TLS en la primera request -->
+<link rel="preconnect" href="https://contrataoplanta-production.up.railway.app" crossorigin>
+<!-- DNS-prefetch para CDNs de logos institucionales -->
+<link rel="dns-prefetch" href="https://icons.duckduckgo.com">
+<link rel="dns-prefetch" href="https://www.google.com">
+<link rel="dns-prefetch" href="https://t1.gstatic.com">
 <meta property="og:title" content="contrata o planta .cl · Empleo público en Chile">
 <meta property="og:description" content="Buscador laboral del sector público chileno con vacantes, filtros y acceso directo a concursos vigentes.">
 <meta property="og:url" content="https://contrataoplanta.cl/">
