@@ -348,7 +348,7 @@ def admin_stats(_user: str = Depends(_verify_admin_jwt)) -> dict[str, Any]:
                       >= NOW() - INTERVAL '24 hours'
             ) AS nuevas_24h,
             COUNT(*) FILTER (
-                WHERE fecha_cierre IS NOT NULL AND fecha_cierre < CURRENT_DATE AND activa = TRUE
+                WHERE fecha_cierre IS NOT NULL AND fecha_cierre < (NOW() AT TIME ZONE 'America/Santiago')::date AND activa = TRUE
             ) AS activas_vencidas
         FROM ofertas
     """) or {}
@@ -1678,7 +1678,7 @@ def admin_bulk_desactivar(
         ids = [r["id"] for r in rows]
     elif payload.get("fecha_cierre_vencida"):
         rows = execute_fetch_all(
-            "SELECT id FROM ofertas WHERE activa=TRUE AND fecha_cierre < CURRENT_DATE", []
+            "SELECT id FROM ofertas WHERE activa=TRUE AND fecha_cierre < (NOW() AT TIME ZONE 'America/Santiago')::date", []
         )
         ids = [r["id"] for r in rows]
 
@@ -2111,7 +2111,7 @@ def admin_diagnostico(
             COUNT(*) FILTER (WHERE activa=TRUE AND url_oferta_valida=FALSE) AS url_oferta_rota,
             COUNT(*) FILTER (WHERE activa=TRUE AND url_bases_valida=FALSE) AS url_bases_rota,
             COUNT(*) FILTER (WHERE activa=TRUE AND needs_review=TRUE) AS needs_review,
-            COUNT(*) FILTER (WHERE activa=TRUE AND fecha_cierre < CURRENT_DATE) AS vencidas_activas,
+            COUNT(*) FILTER (WHERE activa=TRUE AND fecha_cierre < (NOW() AT TIME ZONE 'America/Santiago')::date) AS vencidas_activas,
             COUNT(*) FILTER (WHERE activa=TRUE AND CHAR_LENGTH(COALESCE(descripcion,''))<80) AS descripcion_corta,
             COUNT(*) FILTER (WHERE activa=TRUE AND sector IS NULL AND institucion_id IS NULL) AS sin_sector,
             COUNT(*) FILTER (WHERE activa=TRUE AND fecha_cierre IS NULL) AS sin_fecha_cierre,
