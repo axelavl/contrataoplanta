@@ -1,7 +1,7 @@
 -- ============================================================
 --  contrataoplanta.cl — Schema de Base de Datos
 --  PostgreSQL 14+
---  Version: 2.0 (post-audit 2026-04-15)
+--  Version: 3.0 (sincronizado con migraciones Alembic, 2026-07-01)
 --
 --  Todas las sentencias son idempotentes. Se puede ejecutar
 --  varias veces sobre una base existente sin romper datos.
@@ -41,11 +41,13 @@ CREATE TABLE IF NOT EXISTS instituciones (
     id            SERIAL PRIMARY KEY,
     nombre        VARCHAR(300) NOT NULL,
     nombre_corto  VARCHAR(80),
+    sigla         VARCHAR(50),
     nombre_norm   VARCHAR(300),           -- nombre normalizado para fuzzy match
     sector        VARCHAR(80),
     tipo          VARCHAR(80),
     region        VARCHAR(80),
     url_empleo    TEXT,
+    plataforma_empleo VARCHAR(100),
     fuente_id     INTEGER REFERENCES fuentes(id),
     color_hex     VARCHAR(7) DEFAULT '#1F4E79',
     creada_en     TIMESTAMPTZ DEFAULT NOW()
@@ -73,29 +75,38 @@ CREATE TABLE IF NOT EXISTS ofertas (
     -- Datos principales
     cargo                   VARCHAR(500) NOT NULL,
     descripcion             TEXT,
+    requisitos              TEXT,
     institucion_id          INTEGER REFERENCES instituciones(id),
     institucion_nombre      VARCHAR(300) NOT NULL,
     sector                  VARCHAR(80),
     area_profesional        VARCHAR(100),
     tipo_cargo              VARCHAR(50),
+    tipo_contrato           VARCHAR(50),
     nivel                   VARCHAR(80),
+    calidad_juridica        VARCHAR(60),
+    estamento               VARCHAR(60),
 
     -- Ubicación
     region                  VARCHAR(80),
     ciudad                  VARCHAR(80),
+    lugar_desempenio        VARCHAR(200),
 
     -- Condiciones
     renta_bruta_min         BIGINT,
     renta_bruta_max         BIGINT,
     renta_texto             VARCHAR(200),
-    -- Tipo de renta informada: 'bruta' | 'liquida' | 'indeterminada'.
-    -- La renta que se reporta debe ser bruta; si la fuente solo publica
-    -- líquida queda señalado aquí y en renta_texto.
     renta_tipo              VARCHAR(20),
+    renta_regional          JSONB,
     grado_eus               VARCHAR(20),
+    jornada                 VARCHAR(100),
     url_bases               TEXT,
     horas_semanales         INTEGER,
     modalidad               VARCHAR(50),
+    numero_vacantes         INTEGER,
+
+    -- Contacto
+    email_postulacion       VARCHAR(200),
+    email_consultas         VARCHAR(200),
 
     -- Plazos
     fecha_publicacion       DATE,
@@ -108,16 +119,27 @@ CREATE TABLE IF NOT EXISTS ofertas (
 
     -- Estado
     activa                  BOOLEAN DEFAULT TRUE,
+    estado                  VARCHAR(20) DEFAULT 'activo',
     es_nueva                BOOLEAN DEFAULT TRUE,
-    -- Curaduría: ofertas destacadas que se publican en redes sociales.
-    -- Alimentan la pestaña pública "Destacadas".
     destacada               BOOLEAN DEFAULT FALSE,
+    needs_review            BOOLEAN DEFAULT FALSE,
+    overall_quality_score   NUMERIC,
     vistas                  INTEGER DEFAULT 0,
+
+    -- Validación URLs
+    url_oferta_valida       BOOLEAN,
+    url_bases_valida        BOOLEAN,
+    url_valida_chequeada_en TIMESTAMPTZ,
+
+    -- Deduplicación
+    dedup_hash              VARCHAR(40),
 
     -- Auditoría
     creada_en               TIMESTAMPTZ DEFAULT NOW(),
     actualizada_en          TIMESTAMPTZ DEFAULT NOW(),
     detectada_en            TIMESTAMPTZ DEFAULT NOW(),
+    fecha_scraped           TIMESTAMPTZ DEFAULT NOW(),
+    fecha_actualizado       TIMESTAMPTZ DEFAULT NOW(),
     fecha_cierre_detectada  TIMESTAMPTZ,
     ultima_vista_en         TIMESTAMPTZ DEFAULT NOW()
 );

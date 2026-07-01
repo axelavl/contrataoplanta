@@ -5,10 +5,10 @@ Wants=postgresql.service
 
 [Service]
 Type=simple
-User=APP_USER
-WorkingDirectory=APP_DIR
-EnvironmentFile=APP_DIR/.env
-ExecStart=APP_DIR/venv/bin/uvicorn api.main:app --host 127.0.0.1 --port 8000 --workers 2
+User=contrata
+WorkingDirectory=/opt/contrataoplanta
+EnvironmentFile=/opt/contrataoplanta/.env
+ExecStart=/opt/contrataoplanta/venv/bin/uvicorn api.main:app --host 127.0.0.1 --port 8000 --workers 2
 Restart=on-failure
 RestartSec=5s
 StandardOutput=journal
@@ -32,8 +32,8 @@ RestrictSUIDSGID=true
 LockPersonality=true
 MemoryDenyWriteExecute=true
 # ProtectSystem=strict deja todo / en read-only. La app escribe logs de
-# procesos admin en APP_DIR/logs; habilitamos sólo ese subárbol.
-ReadWritePaths=APP_DIR/logs
+# procesos admin en /opt/contrataoplanta/logs; habilitamos sólo ese subárbol.
+ReadWritePaths=/opt/contrataoplanta/logs
 
 [Install]
 WantedBy=multi-user.target

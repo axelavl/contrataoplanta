@@ -38,6 +38,7 @@ let _fuenteEditId = null;
 let _procPollTimer = null;
 let _logPollTimer = null;
 let _logArchivo = null;
+let _catalogData = [];
 // Cache de objetos oferta por id para el modal de edición (reemplaza el
 // JSON serializado en atributos onclick, incompatible con CSP).
 const _itemCache = {};
@@ -133,7 +134,7 @@ function showApp() {
 function aplicarRol() {
   const esAdmin = _rol === 'admin';
   const tabsAdmin = ['programacion', 'usuarios'];
-  document.querySelectorAll('nav button[data-rol="admin"]').forEach(b => {
+  document.querySelectorAll('.sidebar button[data-rol="admin"]').forEach(b => {
     b.style.display = esAdmin ? '' : 'none';
   });
   if (!esAdmin) {
@@ -146,8 +147,8 @@ function aplicarRol() {
     if (schedEstado) schedEstado.innerHTML = '';
     const activa = document.querySelector('.tab-panel.active');
     if (activa && tabsAdmin.some(t => activa.id === 'tab-' + t)) {
-      const nav = document.querySelector('nav button[data-tab="dashboard"]');
-      if (nav) nav.click();   // vuelve al Resumen (re-aplica active + carga)
+      const nav = document.querySelector('.sidebar button[data-tab="dashboard"]');
+      if (nav) nav.click();
     }
   }
   document.body.classList.toggle('rol-lector', _rol === 'lector');
@@ -189,20 +190,46 @@ function toast(msg, type = 'success') {
   t._timer = setTimeout(() => { t.className = ''; }, 3000);
 }
 
+// ── Tab navigation helpers ────────────────────────────────────
+function _switchToTab(tabName) {
+  document.querySelectorAll('.sidebar button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  var btn = document.querySelector('[data-tab=' + tabName + ']');
+  if (btn) btn.classList.add('active');
+  var panel = document.getElementById('tab-' + tabName);
+  if (panel) panel.classList.add('active');
+}
+
+// ── Sidebar toggle (responsive) ──────────────────────────────
+var _sidebarEl = document.getElementById('sidebar');
+var _sidebarOverlay = document.getElementById('sidebar-overlay');
+var _sidebarToggle = document.getElementById('sidebar-toggle');
+function _closeSidebar() {
+  if (_sidebarEl) _sidebarEl.classList.remove('open');
+  if (_sidebarOverlay) _sidebarOverlay.classList.remove('open');
+}
+if (_sidebarToggle) _sidebarToggle.addEventListener('click', function() {
+  _sidebarEl.classList.toggle('open');
+  _sidebarOverlay.classList.toggle('open');
+});
+if (_sidebarOverlay) _sidebarOverlay.addEventListener('click', _closeSidebar);
+
 // ── Tabs ───────────────────────────────────────────────────────
-document.querySelectorAll('nav button').forEach(btn => {
+document.querySelectorAll('.sidebar button[data-tab]').forEach(btn => {
   btn.addEventListener('click', () => {
     const tab = btn.dataset.tab;
-    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.sidebar button').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-' + tab).classList.add('active');
+    _closeSidebar();
     if (tab === 'ofertas')  loadOfertas(1);
     else if (tab === 'estadisticas') loadAnalitica();
     else if (tab === 'scrapers') loadScrapers();
     else if (tab === 'fuentes')  loadFuentes();
     else if (tab === 'revision') loadRevision();
-    else if (tab === 'alertas')  { loadAlertas(); loadEventos(); }
+    else if (tab === 'destacadas') loadDestacadas();
+    else if (tab === 'alertas')  { loadAlertasTab(); }
     else if (tab === 'config')   loadConfig();
     else if (tab === 'acciones') loadProcesos();
     else if (tab === 'programacion') loadScheduler();
@@ -425,6 +452,9 @@ function escAttr(s) {
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
+function esc(s) {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
 
 // ── DASHBOARD ─────────────────────────────────────────────────
 async function loadDashboard() {
@@ -453,6 +483,132 @@ async function loadDestacadasStats() {
     `;
   } catch(e) {
     g.innerHTML = `<div class="stat-card"><div class="label">Error</div><div class="sub">${e.message}</div></div>`;
+  }
+}
+
+// ── DESTACADAS (tab dedicado) ─────────────────────────────────
+async function loadDestacadas() {
+  var stats = document.getElementById('dest-stats');
+  var tbody = document.getElementById('dest-tbody');
+  if (!tbody) return;
+  try {
+    var d = await api('/destacadas/stats');
+    if (stats) stats.innerHTML = `
+      <div class="stat-card yellow"><div class="label">⭐ Marcadas manualmente</div><div class="value">${(d.manual||0).toLocaleString()}</div></div>
+      <div class="stat-card"><div class="label">Auto (con renta)</div><div class="value">${d.auto_activo?(d.auto||0).toLocaleString():'Desactivado'}</div></div>
+      <div class="stat-card blue"><div class="label">Total activas</div><div class="value">${(d.total_activas||0).toLocaleString()}</div></div>
+    `;
+  } catch(e) {
+    if (stats) stats.innerHTML = '';
+  }
+  try {
+    var r = await api('/ofertas?pagina=1&por_pagina=200&destacada=true');
+    var ofertas = r.ofertas || r.data || [];
+    if (!ofertas.length) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No hay ofertas destacadas aún. Usa el buscador de arriba para agregar.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = ofertas.map(function(o) {
+      var activa = o.activa || o.estado === 'activa';
+      return '<tr>'
+        + '<td>' + o.id + '</td>'
+        + '<td>' + esc(o.cargo||'') + '</td>'
+        + '<td class="text-small">' + esc(o.institucion_nombre||o.institucion||'') + '</td>'
+        + '<td class="text-small">' + esc(o.region||'') + '</td>'
+        + '<td class="text-small">' + (o.fecha_cierre ? fmtDate(o.fecha_cierre) : '—') + '</td>'
+        + '<td>' + (activa ? pill('activa','green') : pill(o.estado||'inactiva','red')) + '</td>'
+        + '<td><button class="btn btn-danger btn-sm" data-action="dest-quitar" data-id="' + o.id + '">☆ Quitar</button>'
+        + (o.url_oferta ? ' <a href="' + escAttr(o.url_oferta) + '" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">🔗</a>' : '')
+        + '</td></tr>';
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Error: ' + e.message + '</td></tr>';
+  }
+}
+
+async function destSearch() {
+  var q = (document.getElementById('dest-buscar')?.value || '').trim();
+  var cont = document.getElementById('dest-search-results');
+  if (!cont) return;
+  if (!q) { cont.innerHTML = '<p class="text-muted" style="padding:8px">Escribe un cargo o institución para buscar.</p>'; return; }
+  cont.innerHTML = '<span class="spinner"></span>';
+  try {
+    var r = await api('/ofertas?pagina=1&por_pagina=20&q=' + encodeURIComponent(q) + '&destacada=false&activa=true');
+    var ofertas = r.ofertas || r.data || [];
+    if (!ofertas.length) { cont.innerHTML = '<p class="text-muted" style="padding:8px">Sin resultados para «' + esc(q) + '».</p>'; return; }
+    cont.innerHTML = '<table style="width:100%"><thead><tr><th>ID</th><th>Cargo</th><th>Institución</th><th>Región</th><th>Acción</th></tr></thead><tbody>'
+      + ofertas.map(function(o) {
+        return '<tr><td>' + o.id + '</td><td>' + esc(o.cargo||'') + '</td>'
+          + '<td class="text-small">' + esc(o.institucion_nombre||o.institucion||'') + '</td>'
+          + '<td class="text-small">' + esc(o.region||'') + '</td>'
+          + '<td><button class="btn btn-success btn-sm" data-action="dest-agregar" data-id="' + o.id + '">⭐ Destacar</button></td></tr>';
+      }).join('')
+      + '</tbody></table>';
+  } catch(e) { cont.innerHTML = '<p style="color:var(--red);padding:8px">Error: ' + e.message + '</p>'; }
+}
+
+async function destAgregar(id) {
+  try {
+    await api('/ofertas/' + id + '/toggle-destacada', { method:'POST' });
+    toast('Oferta ' + id + ' destacada ⭐');
+    loadDestacadas();
+    destSearch();
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+async function destQuitar(id) {
+  try {
+    await api('/ofertas/' + id + '/toggle-destacada', { method:'POST' });
+    toast('Oferta ' + id + ' quitada de destacadas');
+    loadDestacadas();
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+// ── ALERTAS TAB (con toggle master) ───────────────────────────
+async function loadAlertasTab() {
+  loadAlertas();
+  loadEventos();
+  _loadAlertasToggleState();
+}
+
+async function _loadAlertasToggleState() {
+  var toggle = document.getElementById('alertas-master-toggle');
+  var status = document.getElementById('alertas-toggle-status');
+  if (!toggle || !status) return;
+  try {
+    var d = await api('/config');
+    var c = d.config || d || {};
+    var activas = c.alertas_activas === 'true' || c.alertas_activas === true;
+    toggle.checked = activas;
+    status.textContent = activas
+      ? 'Activas — los usuarios pueden suscribirse y reciben alertas'
+      : 'Desactivadas — el widget muestra «Próximamente» y no acepta suscripciones';
+    status.style.color = activas ? 'var(--green)' : 'var(--muted)';
+  } catch(e) {
+    status.textContent = 'Error al cargar estado';
+  }
+}
+
+async function _toggleAlertasMaster() {
+  var toggle = document.getElementById('alertas-master-toggle');
+  var status = document.getElementById('alertas-toggle-status');
+  if (!toggle) return;
+  var nuevoEstado = toggle.checked;
+  status.textContent = 'Guardando…';
+  try {
+    var d = await api('/config');
+    var c = d.config || d || {};
+    c.alertas_activas = nuevoEstado ? 'true' : 'false';
+    await api('/config', { method: 'PUT', body: JSON.stringify(c) });
+    status.textContent = nuevoEstado
+      ? 'Activas — los usuarios pueden suscribirse y reciben alertas'
+      : 'Desactivadas — el widget muestra «Próximamente» y no acepta suscripciones';
+    status.style.color = nuevoEstado ? 'var(--green)' : 'var(--muted)';
+    toast(nuevoEstado ? 'Alertas activadas ✓' : 'Alertas desactivadas');
+  } catch(e) {
+    toggle.checked = !nuevoEstado;
+    status.textContent = 'Error al guardar';
+    toast('Error: ' + e.message, 'error');
   }
 }
 
@@ -1435,30 +1591,26 @@ async function loadDiagnostico() {
 }
 
 function verDestacadas() {
-  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  const btn = document.querySelector('[data-tab=ofertas]');
-  if (btn) btn.classList.add('active');
-  const panel = document.getElementById('tab-ofertas');
-  if (panel) panel.classList.add('active');
-  document.getElementById('f-destacada').value = 'true';
-  loadOfertas(1);
+  _switchToTab('destacadas');
+  loadDestacadas();
 }
 
 function irA(accion) {
   const tabMap = {
     'bulk-desactivar':'acciones','revalidar-urls':'acciones','revision':'revision',
-    'scraper-runs':'scrapers','evaluaciones':'fuentes',
+    'scraper-runs':'scrapers','evaluaciones':'fuentes','alertas':'alertas',
+    'nueva-oferta':'ofertas','export':'ofertas',
   };
   const tab = tabMap[accion]||'dashboard';
-  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
-  const btn = document.querySelector(`[data-tab=${tab}]`);
-  if (btn) btn.classList.add('active');
-  const panel = document.getElementById('tab-'+tab);
-  if (panel) panel.classList.add('active');
+  _switchToTab(tab);
   if (tab==='revision') loadRevision();
   else if (tab==='scrapers') loadScrapers();
+  else if (tab==='alertas') loadAlertasTab();
+  else if (tab==='ofertas') {
+    loadOfertas(1);
+    if (accion==='nueva-oferta') setTimeout(openCrearOferta, 300);
+    else if (accion==='export') setTimeout(exportOfertas, 300);
+  }
 }
 
 // ── REVISIÓN ───────────────────────────────────────────────────
@@ -1733,30 +1885,61 @@ async function revalidarUrls() {
   } catch(e) { toast('Error: '+e.message,'error'); }
 }
 
+async function reindexarMeili() {
+  var res = document.getElementById('meili-result');
+  if (!confirm('¿Reconstruir el índice de búsqueda completo?')) return;
+  if (res) { res.style.display = 'block'; res.innerHTML = '<span class="spinner"></span> Reindexando…'; }
+  try {
+    var r = await api('/meilisearch/reindexar', { method: 'POST' });
+    var msg = '✅ Reindexación completada';
+    if (r.indexados != null) msg += ' — ' + r.indexados + ' ofertas indexadas';
+    if (res) res.innerHTML = msg;
+    toast('Índice de búsqueda actualizado ✓');
+  } catch(e) {
+    if (res) res.innerHTML = '<span style="color:var(--red)">Error: ' + e.message + '</span>';
+    toast('Error: ' + e.message, 'error');
+  }
+}
+
 async function loadCatalog() {
   const tbody = document.getElementById('catalog-tbody');
   tbody.innerHTML = `<tr class="loading-row"><td colspan="6"><span class="spinner"></span> Cargando catálogo…</td></tr>`;
   try {
-    const items = await api('/scraper/catalog');
-    if (!items.length) { tbody.innerHTML='<tr class="empty-row"><td colspan="6">Sin datos</td></tr>'; return; }
-    const km = {wordpress:'blue',generic:'gray',custom_trabajando:'orange',custom_hiringroom:'orange',
-                custom_buk:'orange',empleos_publicos:'blue',custom_playwright:'yellow',skip:'gray'};
-    const sm = {active:'green',experimental:'yellow',blocked:'red',broken:'red',
-                disabled:'gray',manual_review:'orange',no_data:'gray',js_required:'yellow'};
-    tbody.innerHTML = items.map(i=>`<tr>
-      <td class="text-muted text-small">${i.id??'—'}</td>
-      <td style="max-width:240px">${trunc(i.nombre||'—',36)}</td>
-      <td class="text-small text-muted">${trunc(i.sector||'—',22)}</td>
-      <td>${i.kind?`<span class="pill ${km[i.kind]||'gray'}">${i.kind}</span>`:'—'}</td>
-      <td>${i.status?`<span class="pill ${sm[i.status]||'gray'}">${i.status}</span>`:'—'}</td>
-      <td>${i.id && i.kind && i.kind!=='skip'
-        ?`<button class="btn btn-ghost btn-sm" data-action="run-instancia" data-id="${i.id}" data-nombre="${escAttr((i.nombre||'').slice(0,20))}">▶ Run</button>`
-        :'—'
-      }</td>
-    </tr>`).join('');
+    _catalogData = await api('/scraper/catalog');
+    renderCatalog();
   } catch(e) {
     tbody.innerHTML=`<tr class="empty-row"><td colspan="6" style="color:var(--red)">Error: ${e.message}</td></tr>`;
   }
+}
+
+function renderCatalog() {
+  const tbody = document.getElementById('catalog-tbody');
+  const countEl = document.getElementById('catalog-count');
+  const search = (document.getElementById('catalog-search')?.value || '').trim().toLowerCase();
+  const statusF = (document.getElementById('catalog-status-filter')?.value || '');
+  const kindF = (document.getElementById('catalog-kind-filter')?.value || '');
+  let items = _catalogData;
+  if (!items.length) { tbody.innerHTML='<tr class="empty-row"><td colspan="6">Sin datos</td></tr>'; return; }
+  if (search) items = items.filter(i => (i.nombre||'').toLowerCase().includes(search) || (i.sector||'').toLowerCase().includes(search));
+  if (statusF) items = items.filter(i => i.status === statusF);
+  if (kindF) items = items.filter(i => i.kind === kindF);
+  if (countEl) countEl.textContent = items.length + ' de ' + _catalogData.length;
+  if (!items.length) { tbody.innerHTML='<tr class="empty-row"><td colspan="6">Sin resultados con estos filtros</td></tr>'; return; }
+  const km = {wordpress:'blue',generic:'gray',custom_trabajando:'orange',custom_hiringroom:'orange',
+              custom_buk:'orange',empleos_publicos:'blue',custom_playwright:'yellow',skip:'gray'};
+  const sm = {active:'green',experimental:'yellow',blocked:'red',broken:'red',
+              disabled:'gray',manual_review:'orange',no_data:'gray',js_required:'yellow'};
+  tbody.innerHTML = items.map(i=>`<tr>
+    <td class="text-muted text-small">${i.id??'—'}</td>
+    <td style="max-width:240px">${trunc(i.nombre||'—',36)}</td>
+    <td class="text-small text-muted">${trunc(i.sector||'—',22)}</td>
+    <td>${i.kind?`<span class="pill ${km[i.kind]||'gray'}">${i.kind}</span>`:'—'}</td>
+    <td>${i.status?`<span class="pill ${sm[i.status]||'gray'}">${i.status}</span>`:'—'}</td>
+    <td>${i.id && i.kind && i.kind!=='skip'
+      ?`<button class="btn btn-ghost btn-sm" data-action="run-instancia" data-id="${i.id}" data-nombre="${escAttr((i.nombre||'').slice(0,20))}">▶ Run</button>`
+      :'—'
+    }</td>
+  </tr>`).join('');
 }
 
 async function runInstancia(id, nombre) {
@@ -1765,10 +1948,7 @@ async function runInstancia(id, nombre) {
   res.style.display='block';
   res.innerHTML='<span class="spinner"></span> Lanzando…';
   // Cambiar al tab acciones si no está ahí
-  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
-  document.querySelector('[data-tab=acciones]').classList.add('active');
-  document.getElementById('tab-acciones').classList.add('active');
+  _switchToTab('acciones');
   try {
     const r = await api('/scraper/run', {
       method:'POST',
@@ -1901,6 +2081,7 @@ document.addEventListener('click', e => {
     case 'run-scraper':        runScraper(); break;
     case 'bulk-desactivar':    bulkDesactivar(d.tipo); break;
     case 'revalidar-urls':     revalidarUrls(); break;
+    case 'reindexar-meili':    reindexarMeili(); break;
     case 'load-catalog':       loadCatalog(); break;
     case 'load-procesos':      loadProcesos(); break;
     case 'cerrar-log':         cerrarLog(); break;
@@ -1933,6 +2114,10 @@ document.addEventListener('click', e => {
     case 'run-instancia':      runInstancia(parseInt(d.id), d.nombre||''); break;
     case 'ver-log':            verLog(d.log); break;
     case 'ver-destacadas':     verDestacadas(); break;
+    case 'load-destacadas':    loadDestacadas(); break;
+    case 'dest-search':        destSearch(); break;
+    case 'dest-agregar':       destAgregar(parseInt(d.id)); break;
+    case 'dest-quitar':        destQuitar(parseInt(d.id)); break;
     case 'ir-a':               irA(d.target); break;
     case 'diag-desactivar-vencidas': diagDesactivarVencidas(); break;
     case 'diag-revalidar':     revalidarUrls(); break;
@@ -1974,20 +2159,24 @@ document.addEventListener('change', e => {
     case 'scrapers': loadScrapers(); break;
     case 'revision': loadRevision(); break;
     case 'alertas':  loadAlertas(); break;
+    case 'alertas-toggle': _toggleAlertasMaster(); break;
     case 'fuentes':  loadFuentes(); break;
     case 'audit':    loadAudit(); break;
     case 'eventos':  loadEventos(); break;
+    case 'catalog-filter': if (_catalogData.length) renderCatalog(); break;
   }
 });
 
 document.addEventListener('input', e => {
   if (e.target.matches('[data-input="ofertas-q"]')) debounceSearch();
+  if (e.target.matches('[data-input="catalog-filter"]') && _catalogData.length) renderCatalog();
 });
 
 // ── Keyboard ───────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
   if (e.key==='Escape') closeModal();
   if (e.key==='Enter' && document.getElementById('auth-screen').style.display!=='none') doLogin();
+  if (e.key==='Enter' && e.target.id==='dest-buscar') destSearch();
 });
 document.getElementById('auth-btn').addEventListener('click', doLogin);
 

@@ -199,7 +199,7 @@ def _infer_page_type(*, page: FetchedPage, soup: BeautifulSoup, profile: SourceP
     if len(soup.find_all("a", href=True)) >= 12 and len(soup.find_all(["table", "li"])) >= 8:
         return PageType.LISTING_PAGE, None
 
-    if soup.find("h1") and (soup.find(text=re.compile("requisitos|funciones|remuneraci", re.I)) or soup.find("table")):
+    if soup.find("h1") and (soup.find(string=re.compile("requisitos|funciones|remuneraci", re.I)) or soup.find("table")):
         return PageType.DETAIL_PAGE, None
 
     if title and _norm(title) in {"concursos", "trabaja con nosotros", "ofertas laborales"}:

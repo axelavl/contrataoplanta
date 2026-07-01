@@ -71,19 +71,42 @@
   }
   .btn-logout:hover { border-color: var(--red); color: var(--red); }
 
-  nav {
-    background: var(--surface); border-bottom: 1px solid var(--border);
-    display: flex; padding: 0 24px; gap: 2px; overflow-x: auto;
+  /* ── Sidebar layout ── */
+  .app-layout { display: flex; min-height: calc(100vh - 54px); }
+  .sidebar {
+    width: 220px; min-width: 220px; background: var(--surface);
+    border-right: 1px solid var(--border); overflow-y: auto;
+    padding: 10px 0; flex-shrink: 0;
   }
-  nav button {
-    background: none; border: none; color: var(--muted); padding: 12px 16px;
-    cursor: pointer; font-size: 13px; font-weight: 500; border-bottom: 2px solid transparent;
-    transition: all .15s; white-space: nowrap;
+  .sidebar-group-label {
+    color: var(--muted); font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .08em;
+    padding: 14px 18px 4px; user-select: none;
   }
-  nav button:hover { color: var(--text); }
-  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .sidebar-group-label:first-child { padding-top: 6px; }
+  .sidebar button {
+    display: flex; align-items: center; gap: 8px; width: 100%;
+    background: none; border: none; color: var(--muted); padding: 7px 18px;
+    cursor: pointer; font-size: 13px; font-weight: 500;
+    transition: all .12s; text-align: left; white-space: nowrap;
+  }
+  .sidebar button:hover { color: var(--text); background: var(--surface2); }
+  .sidebar button.active { color: var(--accent); background: #3b82f60e; border-right: 2px solid var(--accent); }
+  .sidebar-toggle {
+    display: none; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 6px 10px; cursor: pointer;
+    color: var(--muted); font-size: 18px; margin: 10px 14px 0;
+  }
 
-  main { padding: 24px; max-width: 1400px; margin: 0 auto; }
+  main { padding: 24px; max-width: 1400px; margin: 0 auto; flex: 1; min-width: 0; }
+
+  @media (max-width: 900px) {
+    .sidebar { position: fixed; left: -240px; top: 54px; bottom: 0; z-index: 20; transition: left .2s; }
+    .sidebar.open { left: 0; box-shadow: 4px 0 20px #0008; }
+    .sidebar-toggle { display: block; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; top: 54px; z-index: 19; background: #00000044; }
+    .sidebar-overlay.open { display: block; }
+  }
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
 
@@ -220,10 +243,33 @@
   #toast.success { border-color: var(--green); color: var(--green); }
   #toast.error   { border-color: var(--red);   color: var(--red); }
 
+  /* ── Alertas toggle ── */
+  .alertas-toggle-bar {
+    display: flex; align-items: center; gap: 14px; padding: 14px 18px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); margin-bottom: 20px;
+  }
+  .alertas-toggle-bar .label { font-weight: 600; font-size: 14px; }
+  .alertas-toggle-bar .sub { color: var(--muted); font-size: 12px; }
+  .toggle-switch {
+    position: relative; width: 44px; height: 24px; flex-shrink: 0;
+  }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-switch .slider {
+    position: absolute; inset: 0; background: var(--border); border-radius: 24px;
+    cursor: pointer; transition: background .2s;
+  }
+  .toggle-switch .slider::before {
+    content: ''; position: absolute; width: 18px; height: 18px;
+    left: 3px; bottom: 3px; background: #fff; border-radius: 50%;
+    transition: transform .2s;
+  }
+  .toggle-switch input:checked + .slider { background: var(--green); }
+  .toggle-switch input:checked + .slider::before { transform: translateX(20px); }
+
   @media (max-width: 640px) {
     main { padding: 14px; }
     .stats-grid { grid-template-columns: repeat(2, 1fr); }
-    nav button { padding: 10px 9px; font-size: 12px; }
   }
 </style>
 </head>
@@ -235,7 +281,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <h1>🔒 Panel de gestión</h1>
-    <p>EmpleoEstado — acceso solo para el equipo</p>
+    <p>contrataoplanta.cl — acceso solo para el equipo</p>
     <input id="auth-user" type="text" placeholder="Usuario (opcional)" autocomplete="username">
     <input id="auth-pass" type="password" placeholder="Contraseña de acceso" autocomplete="current-password">
     <button id="auth-btn">Entrar</button>
@@ -247,25 +293,34 @@
 <!-- ── App ── -->
 <div id="app">
   <header>
-    <div class="header-brand"><span>EmpleoEstado</span> · Gestión</div>
+    <div class="header-brand"><span>contrataoplanta</span> · Gestión</div>
     <div class="header-right">
       <div class="badge-live">Conectado</div>
       <button class="btn-logout" data-action="logout">Cerrar sesión</button>
     </div>
   </header>
-  <nav>
+  <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Abrir menú">☰</button>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <div class="app-layout">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-group-label">General</div>
     <button class="active" data-tab="dashboard">📊 Resumen</button>
-    <button data-tab="estadisticas">📈 Estadísticas del sitio</button>
+    <button data-tab="estadisticas">📈 Estadísticas</button>
+    <div class="sidebar-group-label">Contenido</div>
     <button data-tab="ofertas">📋 Ofertas</button>
-    <button data-tab="scrapers">🤖 Recolección</button>
-    <button data-tab="fuentes">🏛️ Instituciones</button>
+    <button data-tab="destacadas">⭐ Destacadas</button>
     <button data-tab="revision">🔍 Revisión</button>
-    <button data-tab="alertas">📧 Alertas por correo</button>
+    <button data-tab="cursos">🎓 Cursos</button>
+    <div class="sidebar-group-label">Recolección</div>
+    <button data-tab="scrapers">🤖 Historial</button>
+    <button data-tab="fuentes">🏛️ Instituciones</button>
     <button data-tab="acciones">⚡ Herramientas</button>
     <button data-tab="programacion" data-rol="admin">⏱️ Programación</button>
+    <div class="sidebar-group-label">Comunicación</div>
+    <button data-tab="alertas">📧 Alertas</button>
+    <div class="sidebar-group-label">Sistema</div>
     <button data-tab="config">⚙️ Ajustes</button>
     <button data-tab="usuarios" data-rol="admin">👥 Usuarios</button>
-    <button data-tab="cursos">🎓 Cursos</button>
   </nav>
   <main>
 
@@ -274,6 +329,15 @@
       <div class="stats-grid" id="stats-grid">
         <div class="stat-card"><div class="label">Cargando…</div><div class="value"><span class="spinner"></span></div></div>
       </div>
+      <!-- Acciones rápidas -->
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px">
+        <button class="btn btn-primary btn-sm" data-action="ir-a" data-target="nueva-oferta" title="Crear oferta manualmente">+ Nueva oferta</button>
+        <button class="btn btn-ghost btn-sm" data-action="ir-a" data-target="revision" title="Ofertas pendientes de revisión">🔍 Revisión</button>
+        <button class="btn btn-ghost btn-sm" data-action="ir-a" data-target="scraper-runs" title="Lanzar o ver scrapers">🤖 Scrapers</button>
+        <button class="btn btn-ghost btn-sm" data-action="ir-a" data-target="alertas" title="Enviar alertas de email">📧 Alertas</button>
+        <button class="btn btn-ghost btn-sm" data-action="ir-a" data-target="export" title="Exportar ofertas a CSV">⬇ Exportar CSV</button>
+      </div>
+
       <div class="section-header">
         <h2>Últimas recolecciones de ofertas</h2>
         <button class="btn btn-ghost btn-sm" data-action="load-dashboard">↻ Actualizar</button>
@@ -466,6 +530,37 @@
       </div>
     </div>
 
+    <!-- Destacadas -->
+    <div class="tab-panel" id="tab-destacadas">
+      <div class="section-header">
+        <h2>⭐ Ofertas destacadas</h2>
+        <button class="btn btn-ghost btn-sm" data-action="load-destacadas">↻ Actualizar</button>
+      </div>
+      <div class="stats-grid" id="dest-stats" style="margin-bottom:20px"></div>
+
+      <div class="table-wrap" style="padding:20px;margin-bottom:20px">
+        <h3 style="font-size:14px;font-weight:600;margin-bottom:14px">Agregar ofertas a destacadas</h3>
+        <div class="filters" style="margin-bottom:12px">
+          <input id="dest-buscar" type="search" placeholder="Buscar por cargo o institución…" style="min-width:280px">
+          <button class="btn btn-primary btn-sm" data-action="dest-search">Buscar</button>
+        </div>
+        <div id="dest-search-results"></div>
+      </div>
+
+      <div class="section-header"><h2>Ofertas actualmente destacadas</h2></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>ID</th><th>Cargo</th><th>Institución</th><th>Región</th>
+            <th>Cierre</th><th>Estado</th><th>Acciones</th>
+          </tr></thead>
+          <tbody id="dest-tbody">
+            <tr class="loading-row"><td colspan="7"><span class="spinner"></span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- Scrapers -->
     <div class="tab-panel" id="tab-scrapers">
       <div class="section-header">
@@ -530,8 +625,18 @@
 
     <!-- Alertas / Suscripciones -->
     <div class="tab-panel" id="tab-alertas">
+      <div class="alertas-toggle-bar">
+        <label class="toggle-switch">
+          <input type="checkbox" id="alertas-master-toggle" data-change="alertas-toggle">
+          <span class="slider"></span>
+        </label>
+        <div>
+          <div class="label">Alertas por email</div>
+          <div class="sub" id="alertas-toggle-status">Cargando estado…</div>
+        </div>
+      </div>
       <div class="section-header">
-        <h2>Alertas por email</h2>
+        <h2>Gestión de alertas</h2>
         <div style="display:flex;gap:8px">
           <button class="btn btn-ghost btn-sm" data-action="load-alertas">↻ Actualizar</button>
           <button class="btn btn-primary btn-sm" data-action="abrir-test-email">✉️ Email de prueba</button>
@@ -678,10 +783,46 @@
         </div>
       </div>
 
+      <!-- Meilisearch -->
+      <div class="table-wrap" style="padding:20px;margin-bottom:20px">
+        <h3 style="font-size:14px;font-weight:600;margin-bottom:14px">🔍 Índice de búsqueda (Meilisearch)</h3>
+        <div style="display:flex;gap:12px;align-items:center">
+          <div style="color:var(--muted);font-size:13px;flex:1">Reconstruye el índice de búsqueda completo. Útil si las búsquedas del sitio no devuelven ofertas recientes.</div>
+          <button class="btn btn-primary" data-action="reindexar-meili">↻ Reindexar ahora</button>
+        </div>
+        <div id="meili-result" style="display:none;margin-top:12px;padding:12px;background:var(--bg);border-radius:var(--radius);border:1px solid var(--border);font-size:13px"></div>
+      </div>
+
       <!-- Catálogo de scrapers -->
       <div class="section-header" style="margin-top:8px">
         <h2>Catálogo de instituciones y cómo se recolectan</h2>
         <button class="btn btn-ghost btn-sm" data-action="load-catalog">↻ Cargar</button>
+      </div>
+      <div class="filters" style="margin-bottom:8px">
+        <input id="catalog-search" type="text" placeholder="Filtrar por nombre…" style="flex:1;max-width:300px" data-input="catalog-filter">
+        <select id="catalog-status-filter" data-change="catalog-filter">
+          <option value="">Todos los estados</option>
+          <option value="active">active</option>
+          <option value="experimental">experimental</option>
+          <option value="blocked">blocked</option>
+          <option value="broken">broken</option>
+          <option value="disabled">disabled</option>
+          <option value="manual_review">manual_review</option>
+          <option value="no_data">no_data</option>
+          <option value="js_required">js_required</option>
+        </select>
+        <select id="catalog-kind-filter" data-change="catalog-filter">
+          <option value="">Todos los tipos</option>
+          <option value="wordpress">wordpress</option>
+          <option value="generic">generic</option>
+          <option value="empleos_publicos">empleos_publicos</option>
+          <option value="custom_trabajando">custom_trabajando</option>
+          <option value="custom_hiringroom">custom_hiringroom</option>
+          <option value="custom_buk">custom_buk</option>
+          <option value="custom_playwright">custom_playwright</option>
+          <option value="skip">skip</option>
+        </select>
+        <span id="catalog-count" class="pill gray" style="font-size:11px"></span>
       </div>
       <div class="table-wrap">
         <table>
@@ -965,6 +1106,7 @@
     </div>
 
   </main>
+  </div><!-- .app-layout -->
 </div>
 
 <!-- Modal editar oferta -->

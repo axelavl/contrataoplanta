@@ -2735,7 +2735,7 @@ function normalizarOferta(o) {
 // reintenta en respuestas 4xx (p.ej. 404: la oferta ya no existe) — esas son
 // definitivas y se devuelven tal cual para que la UI muestre el mensaje justo.
 async function _fetchOfertaDetalle(ofertaId, { reintentos = 2, esperaMs = 600 } = {}) {
-  if (typeof _prefetchCache !== 'undefined' && _prefetchCache.has(ofertaId)) {
+  if (_prefetchCache.has(ofertaId)) {
     const data = await _prefetchCache.get(ofertaId);
     _prefetchCache.delete(ofertaId);
     if (data) return new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json' } });

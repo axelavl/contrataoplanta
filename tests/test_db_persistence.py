@@ -229,7 +229,8 @@ class MarcarOfertasCerradasTests(unittest.TestCase):
         session = FakeSession(raise_on_execute=RuntimeError("db down"))
         with self.assertRaises(RuntimeError):
             marcar_ofertas_cerradas(session, 1, ["https://x"])
-        self.assertEqual(session.rollbacks, 1)
+        # 2 rollbacks: el defensivo previo + el del except handler
+        self.assertEqual(session.rollbacks, 2)
         self.assertEqual(session.commits, 0)
 
 
@@ -277,10 +278,9 @@ class RegistrarLogTests(unittest.TestCase):
         self.assertEqual(params["estado"], "ERROR")
         self.assertEqual(params["error"], "timeout")
 
-    def test_rollback_on_exception(self):
+    def test_exception_swallowed_with_rollback(self):
         session = FakeSession(raise_on_execute=RuntimeError("boom"))
-        with self.assertRaises(RuntimeError):
-            registrar_log(session, fuente_id=1, estado="OK")
+        registrar_log(session, fuente_id=1, estado="OK")
         self.assertEqual(session.rollbacks, 1)
         self.assertEqual(session.commits, 0)
 

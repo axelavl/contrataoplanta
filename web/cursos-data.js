@@ -351,7 +351,7 @@
   ];
 
   var contacto = {
-    email: 'contacto@estadoemplea.cl', // ← reemplazar por correo real
+    email: 'contacto@contrataoplanta.cl', // ← reemplazar por correo real
     asuntoBase: 'Quiero anunciar un curso'
   };
 

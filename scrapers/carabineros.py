@@ -648,11 +648,6 @@ def construir_oferta(c: dict[str, Any], det: dict[str, Any]) -> dict:
         "fecha_publicacion": c["fecha_inicio"] or date.today(),
         "fecha_cierre": c["fecha_cierre"],
         "requisitos_texto": det.get("requisitos"),
-        "url_bases": next(
-            (u for k, u in (c.get("docs") or {}).items()
-             if any(w in k.lower() for w in ("perfil", "bases", "descriptor"))),
-            None,
-        ),
     }
 
 
