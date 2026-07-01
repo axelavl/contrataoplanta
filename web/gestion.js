@@ -487,20 +487,29 @@ async function loadDestacadasStats() {
 }
 
 // ── DESTACADAS (tab dedicado) ─────────────────────────────────
-async function loadDestacadas() {
+function loadDestacadas() {
+  _loadDestacadasStats();
+  _loadDestacadasTable();
+}
+
+async function _loadDestacadasStats() {
   var stats = document.getElementById('dest-stats');
-  var tbody = document.getElementById('dest-tbody');
-  if (!tbody) return;
+  if (!stats) return;
   try {
     var d = await api('/destacadas/stats');
-    if (stats) stats.innerHTML = `
-      <div class="stat-card yellow"><div class="label">⭐ Marcadas manualmente</div><div class="value">${(d.manual||0).toLocaleString()}</div></div>
-      <div class="stat-card"><div class="label">Auto (con renta)</div><div class="value">${d.auto_activo?(d.auto||0).toLocaleString():'Desactivado'}</div></div>
-      <div class="stat-card blue"><div class="label">Total activas</div><div class="value">${(d.total_activas||0).toLocaleString()}</div></div>
-    `;
+    stats.innerHTML =
+      '<div class="stat-card yellow"><div class="label">⭐ Marcadas manualmente</div><div class="value">' + (d.manual||0).toLocaleString() + '</div></div>'
+      + '<div class="stat-card"><div class="label">Auto (con renta)</div><div class="value">' + (d.auto_activo ? (d.auto||0).toLocaleString() : 'Desactivado') + '</div></div>'
+      + '<div class="stat-card blue"><div class="label">Total activas</div><div class="value">' + (d.total_activas||0).toLocaleString() + '</div></div>';
   } catch(e) {
-    if (stats) stats.innerHTML = '';
+    stats.innerHTML = '<div class="stat-card"><div class="label">Error</div><div class="sub">' + esc(e.message) + '</div></div>';
   }
+}
+
+async function _loadDestacadasTable() {
+  var tbody = document.getElementById('dest-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><span class="spinner"></span></td></tr>';
   try {
     var r = await api('/ofertas?pagina=1&por_pagina=200&destacada=true');
     var ofertas = r.ofertas || r.data || [];
@@ -522,7 +531,7 @@ async function loadDestacadas() {
         + '</td></tr>';
     }).join('');
   } catch(e) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Error: ' + e.message + '</td></tr>';
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7" style="color:var(--red)">Error: ' + esc(e.message) + '</td></tr>';
   }
 }
 
