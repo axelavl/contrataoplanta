@@ -246,6 +246,10 @@
   font-family: 'Fraunces', Georgia, serif;
   font-size: 15px;
   letter-spacing: -0.01em;
+  display: inline-block;
+  min-width: 3.5ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ══ SEARCH · card blanca con mejor shadow y typography ═══════════════ */
@@ -390,7 +394,8 @@
   border-left: 3px solid transparent;
   border-radius: 10px;
   padding: 20px 22px;
-  transition: all 0.2s;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+  will-change: transform;
 }
 .oferta-card:hover {
   background: var(--surface-hover);
@@ -764,6 +769,7 @@ body, .hero, .buscador-wrap, .oferta-card, .widget, .filtro-tag, .ribbon {
   max-height: 94vh;
   display: flex;
   flex-direction: column;
+  contain: content;
 }
 .modal-header {
   padding: 16px 20px;
@@ -2922,6 +2928,16 @@ header {
   color: var(--text-secondary);
   border-bottom-color: var(--border-subtle);
 }
+:root[data-theme="dark"] .inst-chips-input {
+  background: var(--surface-primary);
+  border-color: var(--border-subtle);
+}
+:root[data-theme="dark"] .inst-chip {
+  background: rgba(26,107,204,0.2);
+  color: var(--accent);
+}
+:root[data-theme="dark"] .inst-chip-x { color: var(--accent); }
+:root[data-theme="dark"] .inst-chip-x:hover { background: rgba(26,107,204,0.3); }
 :root[data-theme="dark"] .autocomplete-item:hover,
 :root[data-theme="dark"] .autocomplete-item.seleccionado {
   background: rgba(26, 107, 204, 0.15);

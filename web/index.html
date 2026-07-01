@@ -15,6 +15,12 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="manifest" href="/site.webmanifest">
 <meta name="theme-color" content="#0A2E6E">
+<!-- Preconnect al backend API para eliminar latencia DNS+TCP+TLS en la primera request -->
+<link rel="preconnect" href="https://contrataoplanta-production.up.railway.app" crossorigin>
+<!-- DNS-prefetch para CDNs de logos institucionales -->
+<link rel="dns-prefetch" href="https://icons.duckduckgo.com">
+<link rel="dns-prefetch" href="https://www.google.com">
+<link rel="dns-prefetch" href="https://t1.gstatic.com">
 <meta property="og:title" content="contrata o planta .cl · Empleo público en Chile">
 <meta property="og:description" content="Buscador laboral del sector público chileno con vacantes, filtros y acceso directo a concursos vigentes.">
 <meta property="og:url" content="https://contrataoplanta.cl/">
@@ -28,6 +34,9 @@
 <!-- Fuentes self-hosted desde web/fonts/. Ver web/styles/fonts.css. Ya no
      hay dependencia con fonts.googleapis.com / fonts.gstatic.com, con lo
      que el CSP puede cerrar `style-src` y `font-src` a `'self'`. -->
+<link rel="preload" href="/fonts/Inter-400-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/Inter-600-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/Fraunces-600-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/styles/fonts.css">
 <!-- Analytics (Umami): activable editando los dos meta tags con el
      URL del script y el website_id de la instancia. Si quedan vacíos,
@@ -116,7 +125,7 @@
       <div class="buscador-form">
         <div class="campo">
           <label for="input-cargo">Cargo o palabra clave</label>
-          <input type="text" placeholder="Ej: psicólogo, contador, RRHH..." id="input-cargo">
+          <input type="text" placeholder="Ej: psicólogo, contador, #12345..." id="input-cargo">
         </div>
         <div class="campo">
           <label for="filtro-region">Región</label>
@@ -161,7 +170,10 @@
         <div class="campo">
           <label for="input-institucion">Institución</label>
           <div class="autocomplete-wrap">
-            <input type="text" id="input-institucion" placeholder="Buscar institución pública..." autocomplete="off">
+            <div class="inst-chips-input">
+              <div class="inst-chips" id="inst-chips"></div>
+              <input type="text" id="input-institucion" placeholder="Buscar institución pública..." autocomplete="off">
+            </div>
             <button class="autocomplete-clear" id="btn-clear-inst" style="display:none" title="Limpiar">✕</button>
             <div class="autocomplete-dropdown" id="autocomplete-dropdown"></div>
           </div>

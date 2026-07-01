@@ -400,7 +400,15 @@ async def add_security_headers(request: Request, call_next):
     # background. Así la vuelta al sitio es instantánea sin mostrar datos de
     # horas atrás. Endpoints con su propio Cache-Control (OG images) no se pisan.
     path = request.url.path
-    if path == "/api/estadisticas" or path.startswith("/api/ofertas"):
+    if path == "/api/estadisticas":
+        response.headers.setdefault(
+            "Cache-Control", "public, max-age=120, stale-while-revalidate=600"
+        )
+    elif path.startswith("/api/ofertas/"):
+        response.headers.setdefault(
+            "Cache-Control", "public, max-age=300, stale-while-revalidate=3600"
+        )
+    elif path == "/api/ofertas":
         response.headers.setdefault(
             "Cache-Control", "public, max-age=60, stale-while-revalidate=300"
         )

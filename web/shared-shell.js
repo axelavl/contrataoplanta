@@ -182,15 +182,23 @@
       var c = cacheRead();
       return c[domain] || null;
     }
+    var _logoCacheDirty = false;
+    var _logoCacheMem = null;
     function cacheSet(domain, src) {
       if (!domain || !src) return;
-      // No cacheamos el ícono genérico (data-URI / svg inline) ni vacíos.
       if (src.indexOf('data:') === 0) return;
       try {
-        var c = cacheRead();
-        if (c[domain] === src) return;
-        c[domain] = src;
-        localStorage.setItem(LOGO_CACHE_KEY, JSON.stringify(c));
+        if (!_logoCacheMem) _logoCacheMem = cacheRead();
+        if (_logoCacheMem[domain] === src) return;
+        _logoCacheMem[domain] = src;
+        if (!_logoCacheDirty) {
+          _logoCacheDirty = true;
+          requestAnimationFrame(function () {
+            try { localStorage.setItem(LOGO_CACHE_KEY, JSON.stringify(_logoCacheMem)); }
+            catch (e) { /* storage lleno */ }
+            _logoCacheDirty = false;
+          });
+        }
       } catch (e) { /* storage lleno/bloqueado: seguimos sin caché */ }
     }
     window.__logoCacheGet = cacheGet;

@@ -2664,6 +2664,39 @@ footer {
 .autocomplete-item:hover, .autocomplete-item.seleccionado {
   background: var(--cielo-l); color: var(--azul);
 }
+.inst-chips-input {
+  display: flex; flex-wrap: wrap; gap: 4px; align-items: center;
+  min-height: 44px; padding: 4px 36px 4px 8px;
+  border: 1.5px solid var(--borde); border-radius: var(--r);
+  background: white; cursor: text;
+  transition: border-color .15s;
+}
+.inst-chips-input:focus-within {
+  border-color: var(--cielo);
+  box-shadow: 0 0 0 3px rgba(26,107,204,0.12);
+}
+.inst-chips-input input {
+  flex: 1; min-width: 120px; border: none !important;
+  padding: 4px 0 !important; height: auto !important;
+  background: transparent !important; outline: none !important;
+  box-shadow: none !important;
+}
+.inst-chips { display: contents; }
+.inst-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 6px 2px 10px; border-radius: 12px;
+  background: var(--cielo-l); color: var(--azul);
+  font-size: 12px; line-height: 1.4; white-space: nowrap;
+  max-width: 200px; overflow: hidden; text-overflow: ellipsis;
+}
+.inst-chip-x {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; border-radius: 50%;
+  border: none; background: transparent; cursor: pointer;
+  font-size: 13px; line-height: 1; color: var(--azul);
+  padding: 0; flex-shrink: 0;
+}
+.inst-chip-x:hover { background: rgba(26,107,204,0.2); }
 
 /* ═══ RESPONSIVE ══════════════════════════════════════════════════════ */
 @media (max-width: 900px) {

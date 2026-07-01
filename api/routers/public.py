@@ -73,6 +73,7 @@ from api.services.seo import (
     build_offer_meta,
     fetch_offer_for_meta,
     serialize_offer,
+    serialize_offer_batch,
 )
 from api.services.regiones import get_comunas, get_regiones
 from api.services.leyes import buscar_ley_bcn, get_ley_institucion
@@ -229,7 +230,7 @@ def get_ofertas(
 
     select_sql = f"""
     WITH base AS (
-        {ofertas_select_sql()}
+        {ofertas_select_sql(truncate_text=True)}
         {ofertas_base_sql()}
         {where_sql}
     )
@@ -252,7 +253,7 @@ def get_ofertas(
         "pagina": pag.pagina,
         "por_pagina": pag.por_pagina,
         "paginas": paginas,
-        "ofertas": [serialize_offer(row, truncate=True) for row in rows],
+        "ofertas": serialize_offer_batch(rows, truncate=True),
     }
 
 
@@ -376,8 +377,19 @@ def og_image_oferta(
     )
 
 
+_estadisticas_cache: dict[str, Any] = {"data": None, "ts": 0.0}
+_ESTADISTICAS_TTL = 90
+
+_scraper_resumen_cache: dict[str, Any] = {"data": None, "ts": 0.0}
+_SCRAPER_RESUMEN_TTL = 300
+
+
 @router.get("/api/estadisticas")
 def get_estadisticas() -> dict[str, Any]:
+    now = _time.monotonic()
+    if _estadisticas_cache["data"] is not None and (now - _estadisticas_cache["ts"]) < _ESTADISTICAS_TTL:
+        return _estadisticas_cache["data"]
+
     ultima_actualizacion_row = execute_fetch_one(
         """
         SELECT MAX(COALESCE(fecha_scraped, detectada_en, actualizada_en, creada_en)) AS ultima_actualizacion
@@ -443,7 +455,7 @@ def get_estadisticas() -> dict[str, Any]:
         """
     )
 
-    return {
+    result = {
         "activas_hoy": int(conteos.get("activas_hoy") or 0),
         "nuevas_48h": int(conteos.get("nuevas_48h") or 0),
         "cierran_hoy": int(conteos.get("cierran_hoy") or 0),
@@ -453,6 +465,9 @@ def get_estadisticas() -> dict[str, Any]:
         "historico_mensual": historico_mensual,
         "mas_activas": mas_activas,
     }
+    _estadisticas_cache["data"] = result
+    _estadisticas_cache["ts"] = _time.monotonic()
+    return result
 
 
 @router.get("/api/mercado/agregados")
@@ -600,7 +615,7 @@ def get_institucion_ofertas(
     where_sql, params = build_ofertas_filters(institucion_id=institucion_id, solo_activas=True)
     sql = f"""
     WITH base AS (
-        {ofertas_select_sql()}
+        {ofertas_select_sql(truncate_text=True)}
         {ofertas_base_sql()}
         {where_sql}
     )
@@ -619,7 +634,7 @@ def get_institucion_ofertas(
         "pagina": pag.pagina,
         "por_pagina": pag.por_pagina,
         "paginas": paginas,
-        "ofertas": [serialize_offer(row) for row in rows],
+        "ofertas": serialize_offer_batch(rows),
     }
 
 
@@ -715,7 +730,7 @@ def get_historial(
     )
     sql = f"""
     WITH base AS (
-        {ofertas_select_sql()}
+        {ofertas_select_sql(truncate_text=True)}
         {ofertas_base_sql()}
         {where_sql}
     )
@@ -734,7 +749,7 @@ def get_historial(
         "pagina": pag.pagina,
         "por_pagina": pag.por_pagina,
         "paginas": paginas,
-        "historial": [serialize_offer(row, truncate=True) for row in rows],
+        "historial": serialize_offer_batch(rows, truncate=True),
     }
 
 
@@ -886,6 +901,10 @@ def get_scraper_resumen() -> dict[str, Any]:
     cuántas están active / experimental / manual_review / etc.
     Sirve para que el frontend muestre honestamente el estado de cobertura.
     """
+    now = _time.monotonic()
+    if _scraper_resumen_cache["data"] is not None and (now - _scraper_resumen_cache["ts"]) < _SCRAPER_RESUMEN_TTL:
+        return _scraper_resumen_cache["data"]
+
     enriched = _load_catalog_enriched()
     if enriched is None:
         return {
@@ -907,7 +926,7 @@ def get_scraper_resumen() -> dict[str, Any]:
     )
     cobertura = round((activas / total) * 100, 1) if total else 0.0
 
-    return {
+    result = {
         "disponible": True,
         "total": total,
         "activas": activas,
@@ -915,6 +934,9 @@ def get_scraper_resumen() -> dict[str, Any]:
         "por_kind": {k: v for k, v in kind_counts.items() if v},
         "cobertura_activa_pct": cobertura,
     }
+    _scraper_resumen_cache["data"] = result
+    _scraper_resumen_cache["ts"] = _time.monotonic()
+    return result
 
 
 @router.get("/api/scraper/fuentes")

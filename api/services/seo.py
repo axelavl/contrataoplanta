@@ -131,17 +131,20 @@ def _find_landing(tipo: str, slug: str) -> dict[str, Any] | None:
 
 
 _TRUNCATE_MAX = 300
+_SENTINEL = object()
 
 
-def serialize_offer(row: dict[str, Any], *, truncate: bool = False) -> dict[str, Any]:
+def serialize_offer(row: dict[str, Any], *, truncate: bool = False, _sitio_web: str | None = _SENTINEL) -> dict[str, Any]:
     data = dict(row)
     data["dias_restantes"] = dias_restantes(data.get("fecha_cierre"))
     data["destacada"] = bool(data.get("destacada"))
     estado = str(data.get("estado") or "unknown").strip().lower()
     data["estado_normalizado"] = estado
     data["estado_legacy"] = STATUS_LEGACY_MAP.get(estado, "desconocido")
-    data["institucion_sitio_web"] = resolve_institucion_sitio_web(
-        data.get("institucion"), data.get("institucion_id")
+    data["institucion_sitio_web"] = (
+        resolve_institucion_sitio_web(data.get("institucion"), data.get("institucion_id"))
+        if _sitio_web is _SENTINEL
+        else _sitio_web
     )
     if truncate:
         for campo in ("descripcion", "requisitos"):
@@ -149,6 +152,19 @@ def serialize_offer(row: dict[str, Any], *, truncate: bool = False) -> dict[str,
             if len(val) > _TRUNCATE_MAX:
                 data[campo] = val[:_TRUNCATE_MAX]
     return data
+
+
+def serialize_offer_batch(rows: list[dict[str, Any]], *, truncate: bool = False) -> list[dict[str, Any]]:
+    """Serializa múltiples ofertas resolviendo dominios institucionales en un solo pase."""
+    resolved: dict[tuple, str | None] = {}
+    for row in rows:
+        key = (row.get("institucion_id"), row.get("institucion"))
+        if key not in resolved:
+            resolved[key] = resolve_institucion_sitio_web(key[1], key[0])
+    return [
+        serialize_offer(row, truncate=truncate, _sitio_web=resolved[(row.get("institucion_id"), row.get("institucion"))])
+        for row in rows
+    ]
 
 
 def _set_title(html_doc: str, title: str) -> str:

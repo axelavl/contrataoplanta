@@ -407,7 +407,8 @@ const estado = {
   orden:        ORDEN_POR_DEFECTO,
   por_pagina:   _prefs.por_pagina || POR_PAGINA_CONFIG[_prefs.vista || 'cards']?.porDefecto || 20,
   vista:        (_prefs.vista === 'grid' ? 'cards' : _prefs.vista) || 'cards',
-  institucion_id: null,
+  institucion_id: null,       // compat: primer ID o null
+  instituciones: [],          // [{id, nombre}, ...] — multi-select
   nivel: '',
   renta_min: null,
   renta_max: null,
@@ -2352,13 +2353,12 @@ function renderMasActivas(instituciones) {
 }
 
 function filtrarInstitucion(id, nombre) {
-  estado.institucion_id  = id;
-  const input = document.getElementById('input-institucion');
-  const clearBtn = document.getElementById('btn-clear-inst');
-  if (input)    { input.value = nombre || `Institución #${id}`; }
-  if (clearBtn) { clearBtn.style.display = 'flex'; }
+  estado.instituciones = [{ id, nombre: nombre || `Institución #${id}` }];
+  estado.institucion_id = String(id);
+  _renderChipsInstitucion();
   estado.pagina = 1;
   window.scrollTo({ top: document.getElementById('lista-ofertas').offsetTop - 90, behavior: 'smooth' });
+  actualizarVisibilidadCompartirBusqueda();
   cargarOfertas();
 }
 
@@ -2735,6 +2735,11 @@ function normalizarOferta(o) {
 // reintenta en respuestas 4xx (p.ej. 404: la oferta ya no existe) — esas son
 // definitivas y se devuelven tal cual para que la UI muestre el mensaje justo.
 async function _fetchOfertaDetalle(ofertaId, { reintentos = 2, esperaMs = 600 } = {}) {
+  if (typeof _prefetchCache !== 'undefined' && _prefetchCache.has(ofertaId)) {
+    const data = await _prefetchCache.get(ofertaId);
+    _prefetchCache.delete(ofertaId);
+    if (data) return new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  }
   let ultimoError = null;
   for (let intento = 0; intento <= reintentos; intento++) {
     try {
@@ -3627,6 +3632,9 @@ function initAutocompletarInstitucion() {
   const clearBtn = document.getElementById('btn-clear-inst');
   if (!input) return;
 
+  const chipsWrap = document.getElementById('inst-chips')?.parentElement;
+  if (chipsWrap) chipsWrap.addEventListener('click', () => input.focus());
+
   input.addEventListener('input', () => {
     clearTimeout(_autocompleteTimer);
     const q = input.value.trim();
@@ -3637,6 +3645,9 @@ function initAutocompletarInstitucion() {
   input.addEventListener('keydown', e => {
     if (e.key === 'Escape') { dropdown.style.display = 'none'; input.blur(); }
     if (e.key === 'Enter')  { e.preventDefault(); buscar(); }
+    if (e.key === 'Backspace' && !input.value && estado.instituciones.length) {
+      _quitarInstitucion(estado.instituciones[estado.instituciones.length - 1].id);
+    }
   });
 
   input.addEventListener('blur', () => {
@@ -3647,7 +3658,9 @@ function initAutocompletarInstitucion() {
     input.value = '';
     clearBtn.style.display = 'none';
     dropdown.style.display = 'none';
+    estado.instituciones = [];
     estado.institucion_id = null;
+    _renderChipsInstitucion();
     estado.pagina = 1;
     actualizarVisibilidadCompartirBusqueda();
     cargarOfertas();
@@ -3663,14 +3676,18 @@ async function _buscarInstituciones(q) {
     const dropdown = document.getElementById('autocomplete-dropdown');
     if (!_autocompleteData.length) { dropdown.style.display = 'none'; return; }
 
-    dropdown.innerHTML = _autocompleteData.map((inst, i) =>
-      `<div class="autocomplete-item" data-idx="${i}">${escHtml(inst.nombre)}</div>`
+    const idsSeleccionados = new Set(estado.instituciones.map(i => i.id));
+    const disponibles = _autocompleteData.filter(inst => !idsSeleccionados.has(inst.id));
+    if (!disponibles.length) { dropdown.style.display = 'none'; return; }
+    dropdown.innerHTML = disponibles.map((inst) =>
+      `<div class="autocomplete-item" data-inst-id="${inst.id}">${escHtml(inst.nombre)}</div>`
     ).join('');
 
     dropdown.querySelectorAll('.autocomplete-item').forEach(el => {
       el.addEventListener('mousedown', () => {
-        const inst = _autocompleteData[parseInt(el.dataset.idx)];
-        _seleccionarInstitucion(inst.id, inst.nombre);
+        const instId = parseInt(el.dataset.instId);
+        const inst = _autocompleteData.find(i => i.id === instId);
+        if (inst) _seleccionarInstitucion(inst.id, inst.nombre);
       });
     });
 
@@ -3679,16 +3696,64 @@ async function _buscarInstituciones(q) {
 }
 
 function _seleccionarInstitucion(id, nombre) {
-  estado.institucion_id = id;
+  if (estado.instituciones.some(i => i.id === id)) return;
+  estado.instituciones.push({ id, nombre });
+  estado.institucion_id = estado.instituciones.map(i => i.id).join(',');
   const input    = document.getElementById('input-institucion');
-  const clearBtn = document.getElementById('btn-clear-inst');
   const dropdown = document.getElementById('autocomplete-dropdown');
-  input.value          = nombre;
-  clearBtn.style.display = 'flex';
+  input.value = '';
   dropdown.style.display = 'none';
+  _renderChipsInstitucion();
   estado.pagina = 1;
   actualizarVisibilidadCompartirBusqueda();
   cargarOfertas();
+}
+
+function _quitarInstitucion(id) {
+  estado.instituciones = estado.instituciones.filter(i => i.id !== id);
+  estado.institucion_id = estado.instituciones.length
+    ? estado.instituciones.map(i => i.id).join(',')
+    : null;
+  _renderChipsInstitucion();
+  estado.pagina = 1;
+  actualizarVisibilidadCompartirBusqueda();
+  cargarOfertas();
+}
+
+function _renderChipsInstitucion() {
+  const wrap = document.getElementById('inst-chips');
+  const clearBtn = document.getElementById('btn-clear-inst');
+  if (!wrap) return;
+  if (!estado.instituciones.length) {
+    wrap.innerHTML = '';
+    if (clearBtn) clearBtn.style.display = 'none';
+    return;
+  }
+  if (clearBtn) clearBtn.style.display = 'flex';
+  wrap.innerHTML = estado.instituciones.map(i =>
+    `<span class="inst-chip" data-id="${i.id}">${escHtml(i.nombre)}<button type="button" class="inst-chip-x" title="Quitar">&times;</button></span>`
+  ).join('');
+  wrap.querySelectorAll('.inst-chip-x').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const id = parseInt(btn.parentElement.dataset.id);
+      _quitarInstitucion(id);
+    });
+  });
+}
+
+async function _cargarNombresInstituciones(ids) {
+  try {
+    const resp = await fetchApi(`/api/instituciones?por_pagina=1000`);
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const lista = data.instituciones || [];
+    estado.instituciones = estado.instituciones.map(inst => {
+      const found = lista.find(i => i.id === inst.id);
+      return found ? { id: inst.id, nombre: found.nombre } : inst;
+    });
+    _renderChipsInstitucion();
+  } catch { /* fallo silencioso */ }
 }
 
 // ── Renta libre ───────────────────────────────────────────────────────────
@@ -3722,13 +3787,20 @@ function limpiarRentaMax() {
 
 // ── Búsqueda y filtros ─────────────────────────────────────────────────────
 function buscar() {
+  const rawQ = document.getElementById('input-cargo').value.trim();
+  // Búsqueda por ID: si el usuario escribe solo un número, abrir la oferta directamente.
+  const idMatch = rawQ.match(/^#?(\d+)$/);
+  if (idMatch) {
+    const id = parseInt(idMatch[1], 10);
+    if (id > 0) { abrirModal(id); return; }
+  }
   if (estado.vista_listado !== 'vigentes') {
     estado.vista_listado = 'vigentes';
     sincronizarTabsListado('vigentes');
     const copyListado = document.getElementById('estado-listado-copy');
     if (copyListado) copyListado.textContent = LISTADO_COPYS.vigentes;
   }
-  estado.q         = document.getElementById('input-cargo').value.trim();
+  estado.q         = rawQ;
   estado.region    = document.getElementById('filtro-region').value;
   estado.sector    = document.getElementById('filtro-sector').value;
   estado.nivel     = document.getElementById('filtro-nivel')?.value || '';
@@ -4065,6 +4137,18 @@ document.getElementById('lista-ofertas')?.addEventListener('click', (e) => {
   const id = parseInt(el.dataset.ofertaId, 10);
   if (!isNaN(id)) abrirModal(id);
 });
+/// Prefetch del detalle al pasar el mouse: al hacer click el modal abre instantáneo.
+const _prefetchCache = new Map();
+document.getElementById('lista-ofertas')?.addEventListener('mouseenter', (e) => {
+  const el = e.target.closest('[data-oferta-id]');
+  if (!el) return;
+  const id = parseInt(el.dataset.ofertaId, 10);
+  if (isNaN(id) || _prefetchCache.has(id)) return;
+  const p = fetchApi(`/api/ofertas/${id}`).then(r => r.ok ? r.json() : null).catch(() => null);
+  _prefetchCache.set(id, p);
+  setTimeout(() => _prefetchCache.delete(id), 120000);
+}, true);
+
 // Accesibilidad: Enter / Space también abren el modal cuando la tarjeta tiene foco.
 document.getElementById('lista-ofertas')?.addEventListener('keydown', (e) => {
   if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -4172,7 +4256,7 @@ function hayFiltrosActivos() {
   const tiposFiltran = Array.isArray(estado.tipos) && !_tiposIguales(estado.tipos, TIPOS_POR_DEFECTO);
   return Boolean(
     estado.q?.trim() || estado.region || estado.sector || estado.ciudad || (estado.comunas || []).length ||
-    estado.renta_min || estado.institucion_id || estado.cierra_pronto || estado.nuevas || estado.solo_con_correo ||
+    estado.renta_min || estado.instituciones.length || estado.cierra_pronto || estado.nuevas || estado.solo_con_correo ||
     estado.vista_listado !== 'vigentes' || estado.orden !== ORDEN_POR_DEFECTO ||
     tiposFiltran
   );
@@ -4189,7 +4273,7 @@ function hayEstadoCompartibleReal() {
   const tieneTiposPersonalizados = Array.isArray(estado.tipos) && !_tiposEsDefault(estado.tipos);
   return Boolean(
     estado.q || estado.region || estado.sector || estado.ciudad || (estado.comunas || []).length ||
-    estado.renta_min || estado.institucion_id ||
+    estado.renta_min || estado.instituciones.length ||
     estado.cierra_pronto || estado.nuevas || estado.sin_experiencia || estado.solo_con_correo ||
     tieneTiposPersonalizados
   );
@@ -4245,6 +4329,8 @@ function limpiarTodosLosFiltros() {
   estado.renta_min = null;
   estado.renta_max = null;
   estado.institucion_id = null;
+  estado.instituciones = [];
+  _renderChipsInstitucion();
   estado.tipos = [...TIPOS_POR_DEFECTO];
   estado.cierra_pronto = false;
   estado.nuevas = false;
@@ -4407,7 +4493,13 @@ function restaurarFiltrosDesdeURL() {
       });
     }
     if (params.has('institucion')) {
-      estado.institucion_id = params.get('institucion') || null;
+      const raw = params.get('institucion') || '';
+      const ids = raw.split(',').map(s => parseInt(s.trim(), 10)).filter(n => n > 0);
+      if (ids.length) {
+        estado.institucion_id = ids.join(',');
+        estado.instituciones = ids.map(id => ({ id, nombre: `#${id}` }));
+        _cargarNombresInstituciones(ids);
+      }
     }
     if (params.has('comunas')) {
       estado.comunas = (params.get('comunas') || '').split(',').map((c) => c.trim()).filter(Boolean);
@@ -5167,7 +5259,19 @@ Promise.all([
   mostrarUltimaActualizacion(),
   cargarSiteConfig(),
 ]);
-setInterval(mostrarUltimaActualizacion, 5 * 60 * 1000); // refresco cada 5 min
+// Polling inteligente: pausa cuando el tab está oculto para no gastar requests.
+let _pollingActualizacion = setInterval(mostrarUltimaActualizacion, 5 * 60 * 1000);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    clearInterval(_pollingActualizacion);
+    _pollingActualizacion = null;
+  } else {
+    if (!_pollingActualizacion) {
+      mostrarUltimaActualizacion();
+      _pollingActualizacion = setInterval(mostrarUltimaActualizacion, 5 * 60 * 1000);
+    }
+  }
+});
 
 // ── Parte 10 — Aviso de nuevas ofertas sin F5 ─────────────────────────────
 // Polling liviano (90 s + al recuperar el foco) comparando el `total` del
