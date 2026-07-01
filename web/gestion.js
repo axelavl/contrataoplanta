@@ -529,7 +529,7 @@ async function destSearch() {
   if (!q) { cont.innerHTML = '<p class="text-muted" style="padding:8px">Escribe un cargo o institución para buscar.</p>'; return; }
   cont.innerHTML = '<span class="spinner"></span>';
   try {
-    var r = await api('/ofertas?pagina=1&por_pagina=20&cargo=' + encodeURIComponent(q) + '&destacada=false');
+    var r = await api('/ofertas?pagina=1&por_pagina=20&q=' + encodeURIComponent(q) + '&destacada=false&activa=true');
     var ofertas = r.ofertas || r.data || [];
     if (!ofertas.length) { cont.innerHTML = '<p class="text-muted" style="padding:8px">Sin resultados para «' + esc(q) + '».</p>'; return; }
     cont.innerHTML = '<table style="width:100%"><thead><tr><th>ID</th><th>Cargo</th><th>Institución</th><th>Región</th><th>Acción</th></tr></thead><tbody>'
@@ -1879,6 +1879,22 @@ async function revalidarUrls() {
   } catch(e) { toast('Error: '+e.message,'error'); }
 }
 
+async function reindexarMeili() {
+  var res = document.getElementById('meili-result');
+  if (!confirm('¿Reconstruir el índice de búsqueda completo?')) return;
+  if (res) { res.style.display = 'block'; res.innerHTML = '<span class="spinner"></span> Reindexando…'; }
+  try {
+    var r = await api('/meilisearch/reindexar', { method: 'POST' });
+    var msg = '✅ Reindexación completada';
+    if (r.indexados != null) msg += ' — ' + r.indexados + ' ofertas indexadas';
+    if (res) res.innerHTML = msg;
+    toast('Índice de búsqueda actualizado ✓');
+  } catch(e) {
+    if (res) res.innerHTML = '<span style="color:var(--red)">Error: ' + e.message + '</span>';
+    toast('Error: ' + e.message, 'error');
+  }
+}
+
 async function loadCatalog() {
   const tbody = document.getElementById('catalog-tbody');
   tbody.innerHTML = `<tr class="loading-row"><td colspan="6"><span class="spinner"></span> Cargando catálogo…</td></tr>`;
@@ -2044,6 +2060,7 @@ document.addEventListener('click', e => {
     case 'run-scraper':        runScraper(); break;
     case 'bulk-desactivar':    bulkDesactivar(d.tipo); break;
     case 'revalidar-urls':     revalidarUrls(); break;
+    case 'reindexar-meili':    reindexarMeili(); break;
     case 'load-catalog':       loadCatalog(); break;
     case 'load-procesos':      loadProcesos(); break;
     case 'cerrar-log':         cerrarLog(); break;

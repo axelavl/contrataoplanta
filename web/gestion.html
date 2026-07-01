@@ -774,6 +774,16 @@
         </div>
       </div>
 
+      <!-- Meilisearch -->
+      <div class="table-wrap" style="padding:20px;margin-bottom:20px">
+        <h3 style="font-size:14px;font-weight:600;margin-bottom:14px">🔍 Índice de búsqueda (Meilisearch)</h3>
+        <div style="display:flex;gap:12px;align-items:center">
+          <div style="color:var(--muted);font-size:13px;flex:1">Reconstruye el índice de búsqueda completo. Útil si las búsquedas del sitio no devuelven ofertas recientes.</div>
+          <button class="btn btn-primary" data-action="reindexar-meili">↻ Reindexar ahora</button>
+        </div>
+        <div id="meili-result" style="display:none;margin-top:12px;padding:12px;background:var(--bg);border-radius:var(--radius);border:1px solid var(--border);font-size:13px"></div>
+      </div>
+
       <!-- Catálogo de scrapers -->
       <div class="section-header" style="margin-top:8px">
         <h2>Catálogo de instituciones y cómo se recolectan</h2>
