@@ -220,7 +220,7 @@ def _ofertas_a_validar(limit: int | None, max_edad_h: int) -> list[dict[str, Any
     sql = """
         SELECT id, url_oferta, url_bases
         FROM ofertas
-        WHERE COALESCE(estado, 'activo') = 'activo'
+        WHERE activa = TRUE
           AND (url_valida_chequeada_en IS NULL
                OR url_valida_chequeada_en < NOW() - (%s || ' hours')::INTERVAL)
         ORDER BY url_valida_chequeada_en NULLS FIRST, id
