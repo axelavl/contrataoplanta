@@ -771,6 +771,14 @@ def get_sugerencias(q: str = Query(..., min_length=1, max_length=100)) -> list[s
 
 @router.post("/api/alertas")
 def crear_alerta(request: Request, payload: AlertaPayload) -> dict[str, Any]:
+    """Crea (o reactiva) una suscripción a alertas con doble opt-in.
+
+    Las suscripciones nuevas nacen con ``activa=FALSE`` + token de
+    verificación y se envía un correo de confirmación; sólo se activan
+    cuando el dueño del correo abre el enlace (``/api/alertas/confirmar``).
+    Sin esto, cualquiera podía suscribir direcciones ajenas (spam/abuso).
+    Re-suscribir una combinación YA confirmada la reactiva sin nuevo correo.
+    """
     _check_public_rate(request)
     email         = validate_email(payload.email)
     region        = payload.region.strip()        if payload.region        else None
@@ -786,30 +794,130 @@ def crear_alerta(request: Request, payload: AlertaPayload) -> dict[str, Any]:
     if not check["valido"]:
         raise HTTPException(status_code=422, detail=check["motivo"])
 
+    # Defensivo: si la migración 20260702_0001 aún no corrió (columnas de
+    # confirmación ausentes), caemos al flujo anterior sin opt-in para no
+    # romper el registro durante el deploy.
+    opt_in_disponible = "confirmada" in _table_columns("alertas_suscripciones")
+
+    if not opt_in_disponible:
+        with get_cursor() as (connection, cursor):
+            cursor.execute(
+                """
+                INSERT INTO alertas_suscripciones (
+                    email, region, termino, tipo_contrato, sector, frecuencia,
+                    activa, creada_en, actualizada_en
+                ) VALUES (%s, %s, %s, %s, %s, %s, TRUE, NOW(), NOW())
+                ON CONFLICT (
+                    LOWER(email),
+                    COALESCE(region, ''),
+                    COALESCE(termino, ''),
+                    COALESCE(tipo_contrato, ''),
+                    COALESCE(sector, '')
+                ) DO UPDATE SET activa = TRUE, frecuencia = EXCLUDED.frecuencia,
+                               actualizada_en = NOW()
+                """,
+                [email, region, termino, tipo_contrato, sector, frecuencia],
+            )
+            connection.commit()
+        response: dict[str, Any] = {"ok": True, "mensaje": "Alerta registrada correctamente"}
+        if check.get("sugerencia"):
+            response["sugerencia_email"] = check["sugerencia"]
+        return response
+
+    token = secrets.token_urlsafe(32)
     with get_cursor() as (connection, cursor):
+        # Los CASE preservan el estado de las filas YA confirmadas: se
+        # reactivan sin regenerar token ni volver a pedir confirmación.
+        # Las nuevas/pendientes quedan inactivas con token fresco.
         cursor.execute(
             """
             INSERT INTO alertas_suscripciones (
                 email, region, termino, tipo_contrato, sector, frecuencia,
-                activa, creada_en, actualizada_en
-            ) VALUES (%s, %s, %s, %s, %s, %s, TRUE, NOW(), NOW())
+                activa, confirmada, token_verificacion, token_creado_en,
+                creada_en, actualizada_en
+            ) VALUES (%s, %s, %s, %s, %s, %s, FALSE, FALSE, %s, NOW(), NOW(), NOW())
             ON CONFLICT (
                 LOWER(email),
                 COALESCE(region, ''),
                 COALESCE(termino, ''),
                 COALESCE(tipo_contrato, ''),
                 COALESCE(sector, '')
-            ) DO UPDATE SET activa = TRUE, frecuencia = EXCLUDED.frecuencia,
-                           actualizada_en = NOW()
+            ) DO UPDATE SET
+                frecuencia = EXCLUDED.frecuencia,
+                actualizada_en = NOW(),
+                activa = alertas_suscripciones.confirmada,
+                token_verificacion = CASE
+                    WHEN alertas_suscripciones.confirmada THEN alertas_suscripciones.token_verificacion
+                    ELSE EXCLUDED.token_verificacion END,
+                token_creado_en = CASE
+                    WHEN alertas_suscripciones.confirmada THEN alertas_suscripciones.token_creado_en
+                    ELSE EXCLUDED.token_creado_en END
+            RETURNING confirmada
             """,
-            [email, region, termino, tipo_contrato, sector, frecuencia],
+            [email, region, termino, tipo_contrato, sector, frecuencia, token],
         )
+        row = cursor.fetchone()
         connection.commit()
+    confirmada = bool((row["confirmada"] if isinstance(row, dict) else row[0]) if row else False)
 
-    response: dict[str, Any] = {"ok": True, "mensaje": "Alerta registrada correctamente"}
+    response = {"ok": True}
+    if confirmada:
+        response["mensaje"] = "Alerta reactivada correctamente"
+    else:
+        envio = enviar_verificacion(email, token)
+        response["pendiente_confirmacion"] = True
+        response["mensaje"] = (
+            "Te enviamos un correo para confirmar la suscripción. "
+            "Revisa tu bandeja (y spam) y haz clic en el enlace para activar las alertas."
+        )
+        if not envio.get("ok"):
+            # Sin Resend configurado (o error de envío) la suscripción queda
+            # pendiente; se avisa para que el usuario no espere un correo
+            # que no va a llegar. Reintentar el POST re-envía.
+            response["mensaje"] = (
+                "Suscripción registrada, pero no pudimos enviar el correo de "
+                "confirmación. Inténtalo de nuevo más tarde."
+            )
     if check.get("sugerencia"):
         response["sugerencia_email"] = check["sugerencia"]
     return response
+
+
+@router.get("/api/alertas/confirmar")
+def confirmar_alerta(
+    request: Request,
+    token: str = Query(..., min_length=16, max_length=100),
+) -> dict[str, Any]:
+    """Confirma una suscripción a alertas (enlace del correo de verificación).
+
+    El token es de un solo uso (se borra al confirmar) y vence a los 7 días.
+    Activa la suscripción: ``confirmada=TRUE, activa=TRUE``.
+    """
+    _check_public_rate(request, max_hits=30)
+    if "confirmada" not in _table_columns("alertas_suscripciones"):
+        raise HTTPException(503, "Confirmación no disponible (migración pendiente)")
+    with get_cursor() as (connection, cursor):
+        cursor.execute(
+            """
+            UPDATE alertas_suscripciones
+            SET confirmada = TRUE, activa = TRUE,
+                token_verificacion = NULL, token_creado_en = NULL,
+                actualizada_en = NOW()
+            WHERE token_verificacion = %s
+              AND confirmada = FALSE
+              AND token_creado_en >= NOW() - INTERVAL '7 days'
+            RETURNING email
+            """,
+            [token],
+        )
+        row = cursor.fetchone()
+        connection.commit()
+    if not row:
+        raise HTTPException(
+            status_code=404,
+            detail="Enlace de confirmación inválido o vencido. Vuelve a suscribirte para recibir uno nuevo.",
+        )
+    return {"ok": True, "mensaje": "¡Suscripción confirmada! Ya vas a recibir alertas de empleo."}
 
 
 # ──────────────────── Analítica interna (beacon de tráfico) ─────────────────
@@ -1110,6 +1218,7 @@ def root() -> dict[str, Any]:
             "GET /api/scraper/resumen",
             "GET /api/scraper/fuentes",
             "POST /api/alertas",
+            "GET /api/alertas/confirmar",
             "POST /api/alertas/enviar",
             "POST /api/meilisearch/reindexar",
             "GET /api/site-config",

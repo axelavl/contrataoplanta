@@ -2188,29 +2188,42 @@ def admin_diagnostico(
 def admin_suscripciones(
     activa: bool | None = Query(None),
     limit: int = Query(200, ge=1, le=1000),
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
-    """Lista de suscriptores de alertas con estadísticas."""
+    """Lista de suscriptores de alertas con estadísticas.
+
+    Requiere rol editor: expone PII (correos de suscriptores) — fuera del
+    alcance de `lector`, consistente con el resto del clúster de alertas.
+    """
     where = ""
     params: list[Any] = []
     if activa is not None:
         where = "WHERE activa = %s"
         params = [activa]
 
+    # `confirmada` viene de la migración 20260702_0001 (doble opt-in);
+    # en DBs sin migrar se reporta NULL para no romper la query.
+    tiene_confirmada = "confirmada" in _table_columns("alertas_suscripciones")
+    confirmada_col = "confirmada" if tiene_confirmada else "NULL AS confirmada"
     subs = execute_fetch_all(
         f"""SELECT id, email, region, termino, tipo_contrato, sector,
-                   frecuencia, activa, creada_en, actualizada_en
+                   frecuencia, activa, {confirmada_col}, creada_en, actualizada_en
             FROM alertas_suscripciones
             {where}
             ORDER BY creada_en DESC
             LIMIT %s""",
         params + [limit],
     )
+    pendientes_sql = (
+        "COUNT(*) FILTER(WHERE NOT confirmada) AS pendientes,"
+        if tiene_confirmada else "0 AS pendientes,"
+    )
     resumen = execute_fetch_one(
-        """SELECT
+        f"""SELECT
             COUNT(*)                     AS total,
             COUNT(*) FILTER(WHERE activa)                     AS activas,
             COUNT(*) FILTER(WHERE NOT activa)                 AS inactivas,
+            {pendientes_sql}
             COUNT(DISTINCT LOWER(email))                      AS emails_unicos,
             COUNT(*) FILTER(WHERE region IS NOT NULL)         AS con_region,
             COUNT(*) FILTER(WHERE termino IS NOT NULL)        AS con_termino,
@@ -2275,9 +2288,11 @@ def admin_test_email(
 def admin_email_eventos(
     limit: int = Query(50, ge=1, le=500),
     email: str | None = Query(None),
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Métricas de entrega de emails (webhooks de Resend) + últimos eventos.
+
+    Requiere rol editor: los eventos incluyen correos de destinatarios (PII).
 
     Requiere la migración 0004 (tabla email_eventos) y el webhook
     configurado en Resend apuntando a `POST /api/webhooks/resend` con
@@ -2322,9 +2337,12 @@ def admin_email_eventos(
 
 @router.get(f"/api/{ADMIN_PATH}/suscripciones/export", tags=["admin"])
 def admin_export_suscripciones(
-    _user: str = Depends(_verify_admin_jwt),
+    _user: str = Depends(_require_editor),
 ) -> Response:
-    """Exporta suscripciones activas como CSV."""
+    """Exporta suscripciones activas como CSV.
+
+    Requiere rol editor: el CSV contiene la lista completa de correos (PII).
+    """
     import csv, io
     subs = execute_fetch_all(
         "SELECT id, email, region, termino, tipo_contrato, sector, frecuencia, creada_en FROM alertas_suscripciones WHERE activa=TRUE ORDER BY creada_en",

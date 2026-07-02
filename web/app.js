@@ -3954,8 +3954,21 @@ async function enviarAlerta() {
 
     if (resp.ok) {
       const data = await resp.json();
-      btn.textContent = '✓ ¡Alerta activada!';
+      // Doble opt-in: si la suscripción quedó pendiente de confirmación,
+      // el CTA lo dice explícitamente — la alerta NO está activa hasta que
+      // el usuario abra el enlace del correo.
+      btn.textContent = data.pendiente_confirmacion
+        ? '📩 Revisa tu correo para confirmar'
+        : '✓ ¡Alerta activada!';
       btn.style.background = 'var(--verde)';
+      if (data.mensaje && data.pendiente_confirmacion) {
+        const sugDiv = document.getElementById('mailcheck-suggestion');
+        if (sugDiv) {
+          sugDiv.textContent = data.mensaje;
+          sugDiv.style.color = 'var(--texto2)';
+          sugDiv.style.display = 'block';
+        }
+      }
       // Limpiar el formulario
       document.getElementById('alerta-email').value = '';
       document.getElementById('alerta-keywords').value = '';
@@ -4645,6 +4658,48 @@ restaurarFiltrosDesdeURL();
       // Esperar al primer pintado para no pelear con la animación de carga.
       window.addEventListener('load', () => setTimeout(() => abrirModal(id), 200));
     }
+  } catch { /* ignorar */ }
+})();
+
+// ── 8.c Confirmación de alertas: ?verificar=TOKEN (enlace del correo) ──
+// El correo de verificación (doble opt-in de /api/alertas) apunta a
+// `SITE_URL?verificar=<token>`. Al cargar con ese parámetro, se llama al
+// endpoint de confirmación y se muestra el resultado en un banner.
+(function confirmarAlertaDesdeURL() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const token = (params.get('verificar') || '').trim();
+    if (!token) return;
+    // Limpiar el token de la URL (evita re-confirmaciones al recargar y
+    // que quede en el historial).
+    params.delete('verificar');
+    const qs = params.toString();
+    history.replaceState(null, '', window.location.pathname + (qs ? '?' + qs : ''));
+
+    const banner = document.createElement('div');
+    banner.setAttribute('role', 'status');
+    banner.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);' +
+      'z-index:9999;max-width:480px;padding:12px 20px;border-radius:10px;font-size:14px;' +
+      'box-shadow:var(--sombra);background:var(--bg);border:1px solid var(--borde);color:var(--texto)';
+    banner.textContent = '⏳ Confirmando tu suscripción…';
+    document.body.appendChild(banner);
+    const cerrar = (ms) => setTimeout(() => banner.remove(), ms);
+
+    fetchApi(`/api/alertas/confirmar?token=${encodeURIComponent(token)}`)
+      .then(async (resp) => {
+        const data = await resp.json().catch(() => ({}));
+        if (resp.ok && data.ok) {
+          banner.textContent = '✅ ' + (data.mensaje || '¡Suscripción confirmada!');
+          cerrar(8000);
+        } else {
+          banner.textContent = '⚠️ ' + (data.detail || 'No se pudo confirmar la suscripción. El enlace puede haber vencido — vuelve a suscribirte.');
+          cerrar(12000);
+        }
+      })
+      .catch(() => {
+        banner.textContent = '⚠️ Error de red al confirmar. Recarga la página para reintentar.';
+        cerrar(12000);
+      });
   } catch { /* ignorar */ }
 })();
 

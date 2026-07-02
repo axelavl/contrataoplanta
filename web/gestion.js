@@ -133,11 +133,19 @@ function showApp() {
 // muestra un aviso de solo lectura. La seguridad real la impone el backend.
 function aplicarRol() {
   const esAdmin = _rol === 'admin';
+  const esEditor = esAdmin || _rol === 'editor';
   const tabsAdmin = ['programacion', 'usuarios'];
+  // Pestañas que exponen PII (correos de suscriptores) — el backend exige
+  // rol editor, así que a un lector se le oculta la pestaña directamente.
+  const tabsEditor = ['alertas'];
   document.querySelectorAll('.sidebar button[data-rol="admin"]').forEach(b => {
     b.style.display = esAdmin ? '' : 'none';
   });
-  if (!esAdmin) {
+  document.querySelectorAll('.sidebar button[data-rol="editor"]').forEach(b => {
+    b.style.display = esEditor ? '' : 'none';
+  });
+  const tabsOcultas = esAdmin ? [] : (esEditor ? tabsAdmin : tabsAdmin.concat(tabsEditor));
+  if (tabsOcultas.length) {
     // Si un admin cerró sesión con una pestaña solo-admin activa y entra un
     // editor/lector sin recargar, hay que sacarlo de esa pestaña y limpiar lo
     // ya renderizado (datos de usuarios/programación no deben quedar a la vista).
@@ -145,8 +153,14 @@ function aplicarRol() {
     if (usuariosTb) usuariosTb.innerHTML = '';
     const schedEstado = document.getElementById('sched-estado');
     if (schedEstado) schedEstado.innerHTML = '';
+    if (!esEditor) {
+      const subsTb = document.getElementById('subs-tbody');
+      if (subsTb) subsTb.innerHTML = '';
+      const alertasStats = document.getElementById('alertas-stats');
+      if (alertasStats) alertasStats.innerHTML = '';
+    }
     const activa = document.querySelector('.tab-panel.active');
-    if (activa && tabsAdmin.some(t => activa.id === 'tab-' + t)) {
+    if (activa && tabsOcultas.some(t => activa.id === 'tab-' + t)) {
       const nav = document.querySelector('.sidebar button[data-tab="dashboard"]');
       if (nav) nav.click();
     }
@@ -1376,6 +1390,7 @@ async function loadAlertas() {
     document.getElementById('alertas-stats').innerHTML = `
       <div class="stat-card blue"><div class="label">Total suscriptores</div><div class="value">${r.total??0}</div></div>
       <div class="stat-card green"><div class="label">Activos</div><div class="value">${r.activas??0}</div></div>
+      <div class="stat-card yellow"><div class="label">Pendientes de confirmar</div><div class="value">${r.pendientes??0}</div></div>
       <div class="stat-card"><div class="label">Emails únicos</div><div class="value">${r.emails_unicos??0}</div></div>
       <div class="stat-card"><div class="label">Con región</div><div class="value">${r.con_region??0}</div></div>
       <div class="stat-card"><div class="label">Con término</div><div class="value">${r.con_termino??0}</div></div>
@@ -1386,15 +1401,18 @@ async function loadAlertas() {
       tbody.innerHTML='<tr class="empty-row"><td colspan="10">Sin suscriptores</td></tr>';
       return;
     }
+    // Escapar SIEMPRE email/término/etc.: `termino` es input libre del
+    // formulario público de alertas — sin escape es XSS almacenado en el panel.
+    // Estado: activa → verde; pendiente de confirmar (doble opt-in) → amarillo.
     tbody.innerHTML = subs.map(s=>`<tr>
       <td class="text-muted text-small">${s.id}</td>
-      <td>${s.email}</td>
-      <td class="text-small text-muted">${s.region||'—'}</td>
-      <td class="text-small text-muted">${s.termino||'—'}</td>
-      <td class="text-small text-muted">${s.sector||'—'}</td>
-      <td class="text-small text-muted">${s.tipo_contrato||'—'}</td>
-      <td><span class="pill gray">${s.frecuencia||'diaria'}</span></td>
-      <td>${s.activa?pill('activo','green'):pill('inactivo','gray')}</td>
+      <td>${esc(s.email)}</td>
+      <td class="text-small text-muted">${esc(s.region)||'—'}</td>
+      <td class="text-small text-muted">${esc(s.termino)||'—'}</td>
+      <td class="text-small text-muted">${esc(s.sector)||'—'}</td>
+      <td class="text-small text-muted">${esc(s.tipo_contrato)||'—'}</td>
+      <td><span class="pill gray">${esc(s.frecuencia)||'diaria'}</span></td>
+      <td>${s.activa?pill('activo','green'):(s.confirmada===false?pill('pendiente','yellow'):pill('inactivo','gray'))}</td>
       <td class="text-small text-muted">${fmtDate(s.creada_en)}</td>
       <td style="white-space:nowrap">
         <button class="btn btn-ghost btn-sm" data-action="test-email-sub" data-email="${escAttr(s.email)}">✉️</button>
@@ -1426,7 +1444,7 @@ async function enviarAlertas() {
       ${r.detalles?.length?`<details style="margin-top:8px"><summary style="cursor:pointer;color:var(--accent)">Ver detalle (${r.detalles.length})</summary>
         <div style="margin-top:8px;display:grid;gap:4px">
           ${r.detalles.map(d=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid var(--border)">
-            <span>${d.email}</span>
+            <span>${esc(d.email)}</span>
             <span style="color:${d.resultado==='enviado'?'var(--green)':d.resultado==='error'?'var(--red)':'var(--muted)'}">
               ${d.resultado} · ${d.coincidencias} oferta${d.coincidencias!==1?'s':''}
             </span>
