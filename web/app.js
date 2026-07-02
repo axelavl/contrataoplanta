@@ -176,6 +176,28 @@ document.addEventListener('click', function (e) {
       }
       break;
     }
+    case 'copiar-id': {
+      // Copia el ID de la oferta al portapapeles (útil para buscarla en el
+      // panel admin). Feedback breve en el propio chip, sin depender del toast.
+      var copiaId = el.getAttribute('data-oferta-id') || '';
+      if (!copiaId) break;
+      var textoPrevio = el.textContent;
+      var okCopia = function () {
+        el.textContent = '✓ copiado';
+        setTimeout(function () { el.textContent = textoPrevio; }, 1200);
+      };
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(copiaId).then(okCopia).catch(okCopia);
+        } else {
+          var ta = document.createElement('textarea');
+          ta.value = copiaId; ta.style.position = 'fixed'; ta.style.opacity = '0';
+          document.body.appendChild(ta); ta.focus(); ta.select();
+          document.execCommand('copy'); document.body.removeChild(ta); okCopia();
+        }
+      } catch (_) { okCopia(); }
+      break;
+    }
     case 'set-orden-header':
       if (typeof setOrdenDesdeHeader === 'function') {
         setOrdenDesdeHeader(el.getAttribute('data-orden') || '');
@@ -1677,6 +1699,7 @@ function renderCard(oferta) {
         ${oferta.fecha_cierre ? `<span class="oferta-plazo-fecha">· ${formatFecha(oferta.fecha_cierre)}</span>` : ''}
       </div>
       <div class="oferta-acciones">
+        <button class="oferta-id-chip" type="button" data-action="copiar-id" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}" title="ID de la oferta — clic para copiar" aria-label="Copiar ID de la oferta ${Number(oferta.id) || 0}">#${Number(oferta.id) || 0}</button>
         <button class="btn-detalle" type="button" data-action="abrir-modal" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}">${UI.CTA_VER_DETALLE || 'Ver detalles'}</button>
         <button class="cop-cmp-btn cop-cmp-btn--icon" type="button" data-action="toggle-comparar" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}" title="Comparar oferta" aria-label="Comparar oferta">${CMP_SVG_SWAP}</button>
       </div>
@@ -1776,6 +1799,7 @@ function renderRowCompacta(oferta) {
     </div>
     <div class="row-renta">${rentaHtml || ''}</div>
     <div class="row-acciones" style="display:flex;gap:6px;align-items:center;justify-content:flex-end">
+      <button class="oferta-id-chip" type="button" data-action="copiar-id" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}" title="ID de la oferta — clic para copiar" aria-label="Copiar ID de la oferta ${Number(oferta.id) || 0}">#${Number(oferta.id) || 0}</button>
       <button class="cop-cmp-btn cop-cmp-btn--icon" type="button" data-action="toggle-comparar" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}" title="Comparar oferta" aria-label="Comparar oferta">${CMP_SVG_SWAP}</button>
       <button class="btn-fav-row${esFav ? ' activo' : ''}"
         data-id="${oferta.id}"

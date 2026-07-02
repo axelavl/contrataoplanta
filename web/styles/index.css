@@ -989,6 +989,18 @@ nav {
   transition: background .15s;
 }
 .btn-detalle:hover { background: var(--azul-m); }
+/* Chip con el ID de la oferta (identificarla / copiar para el panel admin). */
+.oferta-id-chip {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: 11px; font-weight: 600; line-height: 1;
+  padding: 5px 8px; border-radius: 6px;
+  background: var(--surface2, #f1f0ec); color: var(--text-muted, #6b7280);
+  border: 1px solid var(--border, #e0ded7);
+  cursor: pointer; white-space: nowrap;
+  transition: background .15s, color .15s;
+}
+.oferta-id-chip:hover { background: var(--border, #e0ded7); color: var(--text, #1f2937); }
+.oferta-id-chip:focus-visible { outline: 2px solid var(--azul); outline-offset: 1px; }
 .btn-ver {
   font-size: 12px; font-weight: 500;
   padding: 7px 16px; border-radius: 7px;
