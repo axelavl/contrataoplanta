@@ -66,16 +66,26 @@ Cloudflare+Railway conviene fijar el número de proxies de confianza para extrae
 la IP real; no se cambió aquí porque depende de la topología exacta del proxy y
 un valor incorrecto agruparía a todos los clientes bajo una IP.
 
-## Recomendaciones pendientes
+### Protección de "último admin" (implementado)
+`admin_editar_usuario` y `admin_borrar_usuario` rechazan (409) la operación si
+degradaría, desactivaría o eliminaría la **única** cuenta `admin` activa. Helper
+`_es_ultimo_admin_activo`. La contraseña maestra `ops` sigue siendo respaldo,
+pero ya no se puede quedar sin admins nominales por accidente.
 
-### Otros (defensa en profundidad)
+## Recomendaciones pendientes (trade-offs deliberados — no cambiar a ciegas)
+
+- **`img-src https:` — se mantiene a propósito.** Revisado: la cadena de fallback
+  de logos institucionales carga imágenes desde DuckDuckGo, Google s2 y los
+  dominios de cada institución (`app.js` ~1414-1417). Restringir `img-src` a
+  orígenes propios rompería los logos en todo el sitio. El riesgo que habilita
+  (exfiltración vía beacon de imagen) requiere una inyección de HTML previa, ya
+  mitigada por el escapado + `script-src 'self'`. Es un trade-off aceptado.
 - **CSP `style-src 'unsafe-inline'`**: trade-off ya documentado; migrar los
-  `style=` inline a clases lo cerraría (refactor grande, bajo beneficio).
-- **`img-src https:`** amplio: si ocurriera inyección de HTML, permitiría
-  exfiltración vía beacon de imagen a cualquier host. Acotar a orígenes propios.
+  ~263 `style=` inline a clases lo cerraría (refactor grande y frágil, bajo
+  beneficio — el vector es CSS injection, que exige inyección de HTML previa).
 - **Bundles sin minificar** (`app.js` 238 KB, `gestion.js` 115 KB) con
   `max-age=0, must-revalidate`: versionar el nombre (hash) permitiría cachear
-  `immutable` y mejorar la carga percibida.
-- **Protección de "último admin"**: hoy un admin puede degradarse/borrar a todos
-  los admins (recuperable vía contraseña maestra `ops`). Opcional: impedir dejar
-  cero admins activos.
+  `immutable` y mejorar la carga percibida. Requiere pipeline de build (hoy los
+  archivos se sirven tal cual); es perf, no seguridad.
+- **`client_ip` / `X-Forwarded-For`**: fijar el número de proxies de confianza al
+  extraer la IP (depende de la topología exacta Cloudflare+Railway).

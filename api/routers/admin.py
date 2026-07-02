@@ -2477,6 +2477,28 @@ def admin_crear_usuario(
     return {"id": nuevo_id, "usuario": usuario, "rol": rol}
 
 
+def _es_ultimo_admin_activo(cur, usuario_id: int) -> bool:
+    """True si `usuario_id` es un admin activo y el ÚNICO que queda.
+
+    Evita que una edición/baja deje el panel sin administradores nominales. La
+    contraseña maestra `ops` sigue siendo un respaldo, pero perder a todos los
+    admins con cuenta propia obliga a operar con la maestra, que es lo que se
+    quiere evitar.
+    """
+    cur.execute(
+        "SELECT COUNT(*) AS n FROM admin_usuarios WHERE rol = 'admin' AND activo = TRUE"
+    )
+    row = cur.fetchone()
+    total = int((row["n"] if isinstance(row, dict) else row[0]) or 0)
+    if total > 1:
+        return False
+    cur.execute(
+        "SELECT 1 FROM admin_usuarios WHERE id = %s AND rol = 'admin' AND activo = TRUE",
+        [usuario_id],
+    )
+    return cur.fetchone() is not None
+
+
 @router.put(f"/api/{ADMIN_PATH}/usuarios/{{usuario_id}}", tags=["admin"])
 def admin_editar_usuario(
     usuario_id: int,
@@ -2500,6 +2522,17 @@ def admin_editar_usuario(
         updates["password_hash"] = hash_password(str(payload["password"]))
     if not updates:
         raise HTTPException(400, "Sin campos para actualizar")
+    # No dejar el panel sin administradores: si esta edición quita el rol admin
+    # (degradación) o desactiva la cuenta, y es el último admin activo, se rechaza.
+    quita_admin = (updates.get("rol") not in (None, "admin")) or (updates.get("activo") is False)
+    if quita_admin:
+        with get_cursor() as (_c, _cur):
+            if _es_ultimo_admin_activo(_cur, usuario_id):
+                raise HTTPException(
+                    409,
+                    "No puedes quitar el rol admin ni desactivar la única cuenta de "
+                    "administrador activa. Crea o promueve otro admin primero.",
+                )
     from psycopg2 import sql as _sql
     set_parts = [_sql.SQL("{} = %s").format(_sql.Identifier(c)) for c in updates]
     query = _sql.SQL("UPDATE admin_usuarios SET {} WHERE id = %s").format(
@@ -2522,6 +2555,13 @@ def admin_borrar_usuario(
 ) -> dict[str, Any]:
     """Elimina una cuenta del panel."""
     with get_cursor() as (conn, cur):
+        # No dejar el panel sin administradores nominales.
+        if _es_ultimo_admin_activo(cur, usuario_id):
+            raise HTTPException(
+                409,
+                "No puedes eliminar la única cuenta de administrador activa. "
+                "Crea o promueve otro admin primero.",
+            )
         cur.execute("DELETE FROM admin_usuarios WHERE id = %s", [usuario_id])
         if cur.rowcount == 0:
             raise HTTPException(404, "Usuario no encontrado")
