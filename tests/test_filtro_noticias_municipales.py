@@ -33,6 +33,13 @@ TITULOS_NOTICIA = (
     "Departamento de tránsito te ayuda: descarga el nuevo manual del conductor 2025",
     "Alcalde José Linco encabezó entrega de terreno y presentación de empresa a cargo de obra de reconstrucción de Posta Loncotripay",
     "Inspectoría de Vialidad ya es una realidad en Tirúa: ¡Juntos trabajamos por mejor conectividad y conservación de caminos!",
+    # Caso real (jul-2026): noticia de gestión de Talca publicada como oferta
+    # porque el cuerpo decía "bases ya están disponibles".
+    "Talca da un nuevo paso en la actualización de su Plan Regulador",
+    "Municipio aprueba Presupuesto Participativo 2026",
+    "Consulta ciudadana por el nuevo PLADECO se realizará en agosto",
+    "Licitación pública para el mejoramiento de la Plaza de Armas",
+    "Anuncian avance del Plan de Desarrollo Comunal",
 )
 
 # Titulares reales de concursos legítimos que deben seguir pasando.
@@ -49,6 +56,9 @@ TITULOS_OFERTA = (
     "Concurso Publico Encargado Red Local",
     "Llamado a Concurso Público de Antecedentes.",
     "Concurso Público para Proveer el Cargo de Coordinadora o Coordinador Programa 4 a 7",
+    # Un concurso real puede mencionar el Plan Regulador: la señal laboral
+    # fuerte debe anular el patrón noticioso.
+    "Concurso Público Profesional Asesor Urbanista para la actualización del Plan Regulador",
 )
 
 

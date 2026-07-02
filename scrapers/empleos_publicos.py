@@ -595,6 +595,18 @@ class EmpleosPublicosScraper(BaseScraper):
         session: aiohttp.ClientSession,
         request: PageRequest,
     ) -> str:
+        texto, _ = await self._request_text_y_url(session, request)
+        return texto
+
+    async def _request_text_y_url(
+        self,
+        session: aiohttp.ClientSession,
+        request: PageRequest,
+    ) -> tuple[str, str]:
+        """Como ``_request_text`` pero devuelve además la URL FINAL tras seguir
+        redirects. Los avisos pizarrón pueden redirigir al portal de empleo
+        propio de la institución (p.ej. junji.myfront.cl) y el parser necesita
+        saberlo para no leer esa página como si fuera una ficha del portal."""
         last_error: Exception | None = None
         # 4 intentos (1 + 3 retries) con backoff exponencial corto. Antes
         # eran 3 intentos lo que hacía que ofertas se perdieran cuando el
@@ -618,7 +630,8 @@ class EmpleosPublicosScraper(BaseScraper):
                         response.raise_for_status()
                     if response.status in {403, 429, 500, 502, 503, 504}:
                         response.raise_for_status()
-                    return await response.text(encoding="utf-8", errors="ignore")
+                    texto = await response.text(encoding="utf-8", errors="ignore")
+                    return texto, str(response.url)
             except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
                 last_error = exc
                 if attempt >= DEFAULT_MAX_ATTEMPTS:
@@ -745,11 +758,28 @@ class EmpleosPublicosScraper(BaseScraper):
         session: aiohttp.ClientSession,
         oferta: dict[str, Any],
     ) -> dict[str, Any]:
-        html = await self._request_text(
+        html, url_final = await self._request_text_y_url(
             session,
             PageRequest(method="GET", url=oferta["url_oferta"]),
         )
         soup = BeautifulSoup(html, "html.parser")
+
+        # Aviso con postulación en portal externo (junji.myfront.cl, hiring
+        # room de la institución, etc.): esa página NO es una ficha del portal
+        # y parsearla con los selectores de empleospublicos mezclaba datos de
+        # otra página. Va por un extractor propio, conservador.
+        if not self._es_url_del_portal(url_final):
+            return self._parsear_detalle_externo(soup, oferta, url_final)
+
+        # La ficha redirigió al home del SPA (aviso caído o URL vieja): no hay
+        # nada que parsear, y el heading-map sobre el home mezclaría cargos e
+        # instituciones de OTROS avisos. Conservamos los datos de la API.
+        if self._es_home_del_portal(url_final, oferta["url_oferta"]):
+            resultado = dict(oferta)
+            self._anexar_como_postular(
+                resultado, self._componer_como_postular(BeautifulSoup("", "html.parser"))
+            )
+            return resultado
 
         iframe = soup.select_one('iframe#ifFicha[src], iframe[src*="avisopizarronficha.aspx"][src]')
         if iframe and iframe.get("src"):
@@ -762,6 +792,24 @@ class EmpleosPublicosScraper(BaseScraper):
             session, resultado.get("url_bases"),
         )
         return resultado
+
+    @staticmethod
+    def _es_url_del_portal(url: str | None) -> bool:
+        host = (urlparse(url or "").netloc or "").lower()
+        return not host or host == "empleospublicos.cl" or host.endswith(".empleospublicos.cl")
+
+    @staticmethod
+    def _es_home_del_portal(url_final: str, url_pedida: str) -> bool:
+        """True si pedimos una ficha (URL con path/query) y terminamos en el
+        home del SPA — el patrón de redirect del portal reescrito (jun-2026)
+        cuando el aviso ya no existe."""
+        final = urlparse(url_final or "")
+        pedida = urlparse(url_pedida or "")
+        return (
+            not final.path.strip("/")
+            and not final.query
+            and bool(pedida.path.strip("/") or pedida.query)
+        )
 
     def _parsear_detalle(self, soup: BeautifulSoup, oferta: dict[str, Any]) -> dict[str, Any]:
         resultado = dict(oferta)
@@ -822,21 +870,7 @@ class EmpleosPublicosScraper(BaseScraper):
         # instrucción genérica del portal. Se anexa en líneas propias para que
         # el front lo clasifique como su propia sección.
         como_postular = self._componer_como_postular(soup, correo=correo)
-        if como_postular:
-            base = resultado.get("descripcion") or ""
-            low = base.lower()
-            if "cómo postular" not in low and "como postular" not in low:
-                # Reservamos espacio para el bloque "Cómo postular": recortamos
-                # PRIMERO la descripción base, así la sección siempre llega
-                # completa al front aunque la ficha traiga funciones muy largas
-                # (de lo contrario el truncado final la cortaba por el extremo).
-                sep = "\n\n" if base else ""
-                margen = 2000 - len(como_postular) - len(sep)
-                if margen <= 0:
-                    resultado["descripcion"] = como_postular[:2000]
-                else:
-                    base_cap = truncate(base, margen) if base else ""
-                    resultado["descripcion"] = base_cap + sep + como_postular
+        self._anexar_como_postular(resultado, como_postular)
 
         renta_texto = self._extraer_renta_texto(soup, metadata)
         renta_min, renta_max, grado_eus = parse_renta(renta_texto)
@@ -867,10 +901,221 @@ class EmpleosPublicosScraper(BaseScraper):
         inst_id, inst_nombre = self._resolver_institucion(
             metadata.get("institucion_jerarquia") or resultado.get("institucion_nombre")
         )
-        resultado["institucion_id"] = resultado.get("institucion_id") or inst_id
-        if inst_nombre:
+        api_inst_id = resultado.get("institucion_id")
+        if not api_inst_id:
+            resultado["institucion_id"] = inst_id
+            if inst_nombre:
+                resultado["institucion_nombre"] = truncate(inst_nombre, 300)
+        elif inst_id == api_inst_id and inst_nombre:
             resultado["institucion_nombre"] = truncate(inst_nombre, 300)
+        elif inst_id and inst_id != api_inst_id:
+            # La ficha resolvió una institución DISTINTA a la de la API (pasa
+            # cuando el detalle redirige a otra página): la API manda.
+            self.logger.info(
+                "evento=institucion_ficha_descartada scraper=%s api=%s ficha=%s url=%s",
+                self.nombre, api_inst_id, inst_id, resultado.get("url_oferta"),
+            )
         return resultado
+
+    def _anexar_como_postular(
+        self, resultado: dict[str, Any], como_postular: str | None
+    ) -> None:
+        """Anexa el bloque "Cómo postular" a la descripción reservándole
+        espacio: se recorta PRIMERO la descripción base, así la sección siempre
+        llega completa al front aunque la ficha traiga funciones muy largas
+        (de lo contrario el truncado final la cortaba por el extremo)."""
+        if not como_postular:
+            return
+        base = resultado.get("descripcion") or ""
+        low = base.lower()
+        if "cómo postular" in low or "como postular" in low:
+            return
+        sep = "\n\n" if base else ""
+        margen = 2000 - len(como_postular) - len(sep)
+        if margen <= 0:
+            resultado["descripcion"] = como_postular[:2000]
+        else:
+            base_cap = truncate(base, margen) if base else ""
+            resultado["descripcion"] = base_cap + sep + como_postular
+
+    # ── Avisos con postulación en portal externo (myfront/hirefront, etc.) ──
+
+    _RE_VACANTES_EXTERNO = re.compile(
+        r"\bvacantes?\b\s*:?\s*(\d{1,3})\b|\b(\d{1,3})\s+vacantes?\b", re.IGNORECASE
+    )
+    _RE_ESTAMENTO_EXTERNO = re.compile(
+        r"\bestamento\s+(profesional|t[eé]cnico|administrativo|auxiliar|"
+        r"directivo|fiscalizador|jefatura)\b",
+        re.IGNORECASE,
+    )
+    _RE_CORREO_CONSULTAS = re.compile(
+        r"correos?\s+(?:de\s+)?(?:consultas?|contacto|postulaci[oó]n(?:es)?)\s*:?\s*"
+        r"([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})",
+        re.IGNORECASE,
+    )
+
+    def _parsear_detalle_externo(
+        self,
+        soup: BeautifulSoup,
+        oferta: dict[str, Any],
+        url_final: str,
+    ) -> dict[str, Any]:
+        """Extrae datos cuando el aviso redirige al portal de empleo propio de
+        la institución (p.ej. junji.myfront.cl). Esa página no tiene los
+        selectores del portal, así que se lee de forma conservadora: JSON-LD
+        JobPosting si existe + regex sobre el texto. NUNCA pisa la institución
+        que ya resolvió la API (leer encabezados de una página ajena era lo que
+        producía avisos atribuidos a otra institución)."""
+        resultado = dict(oferta)
+        # El botón "Postular" del front usa url_bases cuando la oferta no es
+        # postulable en el portal: apuntarla directo al portal externo evita
+        # un redirect y sobrevive aunque el aviso salga de empleospublicos.
+        resultado["url_bases"] = url_final
+
+        job = self._jobposting_desde_jsonld(soup)
+        descripcion = None
+        if job:
+            descripcion = self._html_a_texto(job.get("description"))
+            if not resultado.get("jornada"):
+                empleo = normalize_key(job.get("employmentType"))
+                if "full" in empleo or "completa" in empleo:
+                    resultado["jornada"] = "jornada completa"
+                elif "part" in empleo or "parcial" in empleo:
+                    resultado["jornada"] = "media jornada"
+            if not resultado.get("fecha_cierre"):
+                cierre = parse_date(clean_text(job.get("validThrough"))[:10])
+                if cierre:
+                    resultado["fecha_cierre"] = cierre
+            if not resultado.get("institucion_id"):
+                organizacion = job.get("hiringOrganization")
+                if isinstance(organizacion, dict):
+                    organizacion = organizacion.get("name")
+                inst_id = self.match_institucion_id(clean_text(organizacion))
+                if inst_id:
+                    resultado["institucion_id"] = inst_id
+                    resultado["institucion_nombre"] = truncate(
+                        clean_text(organizacion), 300
+                    )
+            if not resultado.get("lugar_desempenio"):
+                resultado["lugar_desempenio"] = truncate(
+                    self._direccion_desde_jsonld(job), 300
+                ) or None
+
+        if not descripcion:
+            descripcion = self._texto_bajo_encabezado(soup, "descripcion")
+
+        texto_pagina = clean_text(soup.get_text(" ", strip=True))
+
+        if not resultado.get("numero_vacantes"):
+            m = self._RE_VACANTES_EXTERNO.search(texto_pagina)
+            if m:
+                resultado["numero_vacantes"] = int(m.group(1) or m.group(2))
+        if not resultado.get("estamento"):
+            m = self._RE_ESTAMENTO_EXTERNO.search(descripcion or texto_pagina)
+            if m:
+                resultado["estamento"] = truncate(m.group(1).capitalize(), 60)
+        if not resultado.get("jornada"):
+            resultado["jornada"] = self._extraer_jornada(descripcion or texto_pagina)
+
+        # Renta/grado sólo desde la descripción (el resto de la página ajena
+        # puede traer cifras que no son remuneración).
+        renta_min, renta_max, grado_eus = parse_renta(descripcion or "")
+        if renta_min and not resultado.get("renta_bruta_min"):
+            resultado["renta_bruta_min"] = renta_min
+            resultado["renta_bruta_max"] = renta_max
+        if grado_eus and not resultado.get("grado_eus"):
+            resultado["grado_eus"] = grado_eus
+
+        correo = None
+        m = self._RE_CORREO_CONSULTAS.search(descripcion or "") or (
+            self._RE_CORREO_CONSULTAS.search(texto_pagina)
+        )
+        if m:
+            correo = truncate(m.group(1), 200)
+            resultado["email_consultas"] = resultado.get("email_consultas") or correo
+
+        if descripcion:
+            resultado["descripcion"] = descripcion
+        self._anexar_como_postular(resultado, self._como_postular_externo(correo))
+        return resultado
+
+    def _como_postular_externo(self, correo: str | None) -> str:
+        """Instrucción genérica cuando la postulación NO es en empleospublicos:
+        decir "portal de Empleos Públicos" aquí mandaba al usuario al lugar
+        equivocado."""
+        pasos = [
+            "Postula en línea en el portal de postulación de la institución "
+            "con el botón “Postular”, dentro del plazo de la convocatoria."
+        ]
+        if correo:
+            pasos.append(f"Ante dudas o consultas, escribe a {correo}.")
+        return "Cómo postular:\n" + "\n".join(f"- {p}" for p in pasos)
+
+    def _jobposting_desde_jsonld(self, soup: BeautifulSoup) -> dict[str, Any] | None:
+        """Primer bloque JSON-LD con @type JobPosting (los portales de empleo
+        tipo myfront/hiringroom lo publican para SEO — es la fuente más
+        confiable en una página cuyo HTML no controlamos)."""
+        for script in soup.select('script[type="application/ld+json"]'):
+            crudo = script.string or script.get_text(" ", strip=True)
+            if not crudo:
+                continue
+            try:
+                data = json.loads(crudo)
+            except (ValueError, TypeError):
+                continue
+            pila: list[Any] = [data]
+            while pila:
+                item = pila.pop()
+                if isinstance(item, list):
+                    pila.extend(item)
+                    continue
+                if not isinstance(item, dict):
+                    continue
+                if normalize_key(item.get("@type")) == "jobposting":
+                    return item
+                pila.extend(v for v in item.values() if isinstance(v, (dict, list)))
+        return None
+
+    @staticmethod
+    def _direccion_desde_jsonld(job: dict[str, Any]) -> str | None:
+        lugar = job.get("jobLocation")
+        if isinstance(lugar, list):
+            lugar = lugar[0] if lugar else None
+        if not isinstance(lugar, dict):
+            return None
+        direccion = lugar.get("address")
+        if isinstance(direccion, str):
+            return clean_text(direccion) or None
+        if not isinstance(direccion, dict):
+            return None
+        partes = [
+            clean_text(direccion.get("streetAddress")),
+            clean_text(direccion.get("addressLocality")),
+        ]
+        return ", ".join(p for p in partes if p) or None
+
+    @staticmethod
+    def _html_a_texto(html: Any) -> str | None:
+        """Descripción JSON-LD (viene como HTML embebido) → texto plano
+        conservando saltos de línea entre párrafos."""
+        if not html:
+            return None
+        texto = BeautifulSoup(html_unescape(str(html)), "html.parser").get_text(
+            "\n", strip=True
+        )
+        texto = re.sub(r"[ \t]+", " ", texto)
+        texto = re.sub(r"\n{3,}", "\n\n", texto).strip()
+        return texto or None
+
+    def _texto_bajo_encabezado(self, soup: BeautifulSoup, clave: str) -> str | None:
+        """Texto que sigue a un encabezado cuyo texto normalizado es ``clave``
+        (p.ej. "Descripción" en las páginas myfront)."""
+        for heading in soup.find_all(HEADING_TAGS):
+            if normalize_key(heading.get_text(" ", strip=True)) == clave:
+                texto = self._extraer_texto_despues_de_heading(heading)
+                if texto:
+                    return texto
+        return None
 
     def _detectar_siguiente_pagina(self, html: str, current_url: str) -> PageRequest | None:
         soup = BeautifulSoup(html, "html.parser")
@@ -972,13 +1217,55 @@ class EmpleosPublicosScraper(BaseScraper):
         partes = [p.strip() for p in texto.split("/") if p.strip()]
         return partes[-1] if partes else None
 
+    # Unidades organizacionales que NO identifican por sí solas a la
+    # institución empleadora ("Dirección Regional de Magallanes" puede ser de
+    # JUNJI, de Reinserción Juvenil, de Aduanas...). Sobre estos segmentos solo
+    # se acepta match EXACTO contra el catálogo (que sí tiene aliases con
+    # sigla, p.ej. "Dirección Regional de Magallanes SNRSJ"); el matching
+    # difuso/substring los cruzaba de institución: el aviso de JUNJI
+    # "... / Dirección Regional de Magallanes" terminaba atribuido al Servicio
+    # Nacional de Reinserción Social Juvenil por su alias regional.
+    _RE_UNIDAD_TERRITORIAL = re.compile(
+        r"^(?:sub)?direccion\s+(?:regional|provincial|zonal|metropolitana)\b"
+        r"|^oficina\s+(?:regional|provincial)\b"
+        r"|^departamento\s+provincial\b"
+        r"|^secretaria\s+regional\b"
+        r"|^seremi\b"
+        r"|^coordinacion\s+(?:regional|provincial)\b"
+    )
+
+    @classmethod
+    def _es_unidad_territorial(cls, segmento: str | None) -> bool:
+        return bool(cls._RE_UNIDAD_TERRITORIAL.match(normalize_key(segmento)))
+
+    def _match_institucion_exacta(self, nombre: str | None) -> int | None:
+        """Match por igualdad de clave normalizada (nombre, sigla o alias),
+        sin substring ni fuzzy."""
+        clave = normalize_key(nombre)
+        if not clave:
+            return None
+        lookup = getattr(self, "_institucion_lookup", None)
+        if isinstance(lookup, dict):
+            return lookup.get("exact", {}).get(clave)
+        # Modo standalone (shim sin lookup precalculado).
+        catalogo = getattr(self, "instituciones", None) or getattr(
+            self, "_instituciones", None
+        ) or []
+        for inst in catalogo:
+            candidatos = {inst.get("nombre"), inst.get("sigla"), *(inst.get("aliases") or [])}
+            if any(normalize_key(c) == clave for c in candidatos if c):
+                return inst.get("id")
+        return None
+
     def _resolver_institucion(self, jerarquia: str | None) -> tuple[int | None, str | None]:
         """Resuelve (institucion_id, institucion_nombre) desde la jerarquía del
         aviso ("Ministerio de Salud / Servicio de Salud X / Hospital Y").
 
         Prueba los segmentos del más específico al más general y se queda con el
         primero que matchee el catálogo (los hospitales/CRS no suelen estar, pero
-        el Servicio de Salud sí). Si nada matchea, devuelve como nombre el
+        el Servicio de Salud sí). Los segmentos de unidad territorial genérica
+        ("Dirección Regional de X") solo matchean por igualdad exacta — ver
+        ``_RE_UNIDAD_TERRITORIAL``. Si nada matchea, devuelve como nombre el
         segmento "Servicio de Salud" cuando existe, para no dejarlo sin organismo.
         """
         texto = clean_text(jerarquia)
@@ -988,13 +1275,26 @@ class EmpleosPublicosScraper(BaseScraper):
         if not segmentos:
             return None, None
         for seg in reversed(segmentos):
+            if self._es_unidad_territorial(seg):
+                iid = self._match_institucion_exacta(seg)
+                if iid:
+                    return iid, seg
+                continue
             iid = self.match_institucion_id(seg)
             if iid:
                 return iid, seg
         servicio = next(
             (sg for sg in segmentos if "servicio de salud" in normalize_key(sg)), None
         )
-        return None, servicio or segmentos[-1]
+        if servicio:
+            return None, servicio
+        # Como nombre de respaldo, preferir el segmento más específico que no
+        # sea una unidad territorial genérica.
+        identificable = next(
+            (sg for sg in reversed(segmentos) if not self._es_unidad_territorial(sg)),
+            None,
+        )
+        return None, identificable or segmentos[-1]
 
     @staticmethod
     def _solo_entero(valor: Any) -> int | None:

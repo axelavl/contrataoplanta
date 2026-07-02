@@ -780,6 +780,11 @@
             <div style="color:var(--muted);font-size:12px;margin-bottom:12px">Relanza validate_offer_urls.py en background</div>
             <button class="btn btn-primary btn-sm" data-action="revalidar-urls">Revalidar</button>
           </div>
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
+            <div style="font-weight:600;margin-bottom:6px">Noticias / no laborales</div>
+            <div style="color:var(--muted);font-size:12px;margin-bottom:12px">Re-pasa las ofertas activas por el filtro de intake y desactiva las que no son empleos (noticias municipales, actas, licitaciones)</div>
+            <button class="btn btn-danger btn-sm" data-action="limpiar-no-laborales">Limpiar</button>
+          </div>
         </div>
       </div>
 
@@ -918,6 +923,7 @@
             <option value="desactivar_fuente">desactivar_fuente</option>
             <option value="scraper_run">scraper_run</option>
             <option value="revalidar_urls">revalidar_urls</option>
+            <option value="limpiar_no_laborales">limpiar_no_laborales</option>
             <option value="enviar_alertas">enviar_alertas</option>
             <option value="test_email">test_email</option>
             <option value="desactivar_suscripcion">desactivar_suscripcion</option>

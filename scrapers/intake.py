@@ -219,6 +219,18 @@ _NEWS_TITLE_PATTERNS: tuple[str, ...] = (
     r"\bnuevas? jefaturas?\b", r"\bcaptura\b", r"\bretiran?\b",
     r"\bbienvenida\b", r"\b[eé]xito total\b", r"\bfue un [eé]xito\b",
     r"\bse reun(?:e|en|i[oó])\b",
+    # — Noticias de gestión/planificación municipal (caso real: "Talca da un
+    #   nuevo paso en la actualización de su Plan Regulador" se publicó como
+    #   oferta porque el cuerpo decía "bases ya están disponibles") —
+    r"\bplan regulador\b", r"\bpladeco\b", r"\bplan comunal\b",
+    r"\bplan de desarrollo\b",
+    r"\bda (?:un nuevo|el primer|un gran|otro) paso\b", r"\bnuevo paso\b",
+    r"\bconsulta ciudadana\b", r"\bparticipaci[oó]n ciudadana\b",
+    r"\baudiencia p[uú]blica\b", r"\bpresupuestos? participativos?\b",
+    r"\blicitaci[oó]n\b", r"\badjudican?\b",
+    r"\baprueban?\b", r"\baprob[oó]\b", r"\banuncian?\b", r"\banunci[oó]\b",
+    r"\bavanzan?\b", r"\bavanz[oó]\b", r"\binvitan? a\b",
+    r"\bse realiza(?:r[aá]n?|n)?\b", r"\brealiz[oó]\b", r"\brealizaron\b",
 )
 _NEWS_TITLE_RE = re.compile("|".join(_NEWS_TITLE_PATTERNS), re.IGNORECASE)
 
