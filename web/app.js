@@ -5176,32 +5176,6 @@ async function cargarSiteConfig() {
     }
   }
 
-  // Recuadro promocional de cursos (widget del sidebar). Se muestra sólo si el
-  // admin lo activa (cursos_promo_activo === 'true'); título/texto/CTA/URL son
-  // editables desde el panel. Todo el texto va escapado (escHtml/escAttr) y el
-  // href se restringe a http(s) o ruta relativa para no permitir `javascript:`.
-  if (conf.cursos_promo_activo === 'true') {
-    const sidebar = document.querySelector('.sidebar');
-    if (sidebar && !document.getElementById('site-config-cursos-promo')) {
-      const titulo = (conf.cursos_promo_titulo || '🎓 Capacítate para el sector público').trim();
-      const texto  = (conf.cursos_promo_texto  || 'Cursos gratuitos y especializaciones para postular con ventaja.').trim();
-      const cta     = (conf.cursos_promo_cta    || 'Ver cursos →').trim();
-      let url = (conf.cursos_promo_url || 'cursos.html').trim();
-      if (/^[a-z][a-z0-9+.-]*:/i.test(url) && !/^https?:/i.test(url)) url = 'cursos.html';
-      const w = document.createElement('div');
-      w.className = 'widget';
-      w.id = 'site-config-cursos-promo';
-      w.innerHTML =
-        '<div class="widget-header"><div class="widget-titulo">' + escHtml(titulo) + '</div></div>' +
-        '<div class="widget-body">' +
-          '<p style="font-size:13px;color:var(--texto2);line-height:1.5;margin:0 0 10px">' + escHtml(texto) + '</p>' +
-          '<a class="btn-detalle" style="display:inline-block;text-decoration:none" href="' + escAttr(url) + '">' + escHtml(cta) + '</a>' +
-        '</div>';
-      const alertas = document.getElementById('alertas');
-      if (alertas && alertas.parentNode === sidebar) alertas.insertAdjacentElement('afterend', w);
-      else sidebar.insertBefore(w, sidebar.firstChild);
-    }
-  }
 }
 
 // ── Integración: chips de profesión + mapa de vacantes ──────────────

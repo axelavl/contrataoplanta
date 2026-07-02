@@ -1241,9 +1241,8 @@ _SITE_CONFIG_PUBLICA = {
     # identificadores públicos, van en el HTML; no son secretos).
     "ads_enabled", "ads_client",
     "ads_slot_resultados", "ads_slot_sidebar", "ads_slot_contenido",
-    # Recuadro promocional de cursos en la home (contenido editable + on/off).
-    "cursos_promo_activo", "cursos_promo_titulo", "cursos_promo_texto",
-    "cursos_promo_cta", "cursos_promo_url",
+    # Recuadro "Anúnciate" (oferta + valores para publicar) en cursos.html.
+    "cursos_anunciate_activo",
 }
 
 

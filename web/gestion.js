@@ -2016,12 +2016,9 @@ async function loadConfig() {
     const _aco=document.getElementById('cfg-ads-contenido'); if(_aco) _aco.value = c.ads_slot_contenido||'';
     // Criterio automático de destacadas
     const _da=document.getElementById('cfg-destacadas-auto'); if(_da) _da.checked = (c.destacadas_auto==='1'||c.destacadas_auto==='true');
-    // Recuadro de cursos
-    const _ca=document.getElementById('cfg-cursos-activo'); if(_ca) _ca.checked = (c.cursos_promo_activo==='true');
-    const _ct=document.getElementById('cfg-cursos-titulo'); if(_ct) _ct.value = c.cursos_promo_titulo||'';
-    const _cx=document.getElementById('cfg-cursos-texto'); if(_cx) _cx.value = c.cursos_promo_texto||'';
-    const _cc=document.getElementById('cfg-cursos-cta'); if(_cc) _cc.value = c.cursos_promo_cta||'';
-    const _cu=document.getElementById('cfg-cursos-url'); if(_cu) _cu.value = c.cursos_promo_url||'';
+    // Recuadro "Anúnciate" en la página de Cursos: visible por defecto, se
+    // apaga solo si el admin lo puso explícitamente en 'false'.
+    const _ca=document.getElementById('cfg-cursos-anunciate'); if(_ca) _ca.checked = (c.cursos_anunciate_activo!=='false');
   } catch(e) {
     document.getElementById('env-info').textContent = 'Error: '+e.message;
   }
@@ -2085,15 +2082,9 @@ async function saveConfig() {
   // Criterio automático de destacadas
   const _da = document.getElementById('cfg-destacadas-auto');
   if (_da) payload.destacadas_auto = _da.checked ? 'true':'false';
-  // Recuadro de cursos (home)
-  const _ca = document.getElementById('cfg-cursos-activo');
-  if (_ca) {
-    payload.cursos_promo_activo = _ca.checked ? 'true':'false';
-    payload.cursos_promo_titulo = _gv('cfg-cursos-titulo');
-    payload.cursos_promo_texto  = _gv('cfg-cursos-texto');
-    payload.cursos_promo_cta    = _gv('cfg-cursos-cta');
-    payload.cursos_promo_url    = _gv('cfg-cursos-url');
-  }
+  // Recuadro "Anúnciate" en la página de Cursos
+  const _ca = document.getElementById('cfg-cursos-anunciate');
+  if (_ca) payload.cursos_anunciate_activo = _ca.checked ? 'true':'false';
   try {
     const r = await api('/config', { method:'PUT', body:JSON.stringify(payload) });
     toast(`Config guardada: ${r.updated.join(', ')} ✓`);

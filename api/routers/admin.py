@@ -1644,9 +1644,8 @@ def admin_set_config(
         "ads_slot_resultados", "ads_slot_sidebar", "ads_slot_contenido",
         # Toggle del criterio automático de Destacadas (público).
         "destacadas_auto",
-        # Recuadro promocional de cursos en la home (on/off + contenido).
-        "cursos_promo_activo", "cursos_promo_titulo", "cursos_promo_texto",
-        "cursos_promo_cta", "cursos_promo_url",
+        # Recuadro "Anúnciate" (oferta + valores para publicar) en cursos.html.
+        "cursos_anunciate_activo",
     }
     updated: list[str] = []
     for clave, valor in payload.items():

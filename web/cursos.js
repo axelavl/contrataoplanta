@@ -233,6 +233,18 @@
       })
       .catch(function () { /* sin conexión: queda el fallback estático */ });
 
+    // Recuadro "Anúnciate" (oferta + valores para publicar): visible por
+    // defecto; se oculta solo si el admin lo desactiva desde el panel
+    // (site_config.cursos_anunciate_activo === 'false').
+    fetch(API + '/api/site-config')
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        var conf = (d && d.config) || {};
+        var sec = document.getElementById('anunciate');
+        if (sec && conf.cursos_anunciate_activo === 'false') sec.style.display = 'none';
+      })
+      .catch(function () { /* sin config: queda visible */ });
+
     // Categorías administrables: si la API responde, reemplaza las del archivo
     // y repinta los chips.
     fetch(API + '/api/cursos/categorias')
