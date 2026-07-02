@@ -67,7 +67,8 @@ async def get_comunas(codigo_region: str) -> list[dict[str, Any]]:
         return cached["data"]
 
     try:
-        raw = await _fetch_json(f"{_DPA_BASE}/regiones/{codigo_region}/comunas")
+        from urllib.parse import quote
+        raw = await _fetch_json(f"{_DPA_BASE}/regiones/{quote(codigo_region, safe='')}/comunas")
         comunas = sorted(
             [{"codigo": c["codigo"], "nombre": c["nombre"]} for c in raw],
             key=lambda c: c["nombre"],

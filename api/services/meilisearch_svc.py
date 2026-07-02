@@ -190,14 +190,22 @@ def buscar(
         return {"hits": [], "total": 0, "ms": 0, "disponible": False}
 
     try:
+        # Escapa `"` y `\` en los valores antes de interpolarlos en el filtro
+        # de Meilisearch. Sin esto, un valor como `x" OR activo = "true` (vía
+        # los query params región/sector/tipo del endpoint público /api/buscar)
+        # inyecta lógica en el DSL del filtro — bypass del `activo = true` o
+        # error 500 por sintaxis rota.
+        def _mf(valor: str) -> str:
+            return str(valor).replace("\\", "\\\\").replace('"', '\\"')
+
         filter_parts = []
         if filtros:
             if filtros.get("region"):
-                filter_parts.append(f'region = "{filtros["region"]}"')
+                filter_parts.append(f'region = "{_mf(filtros["region"])}"')
             if filtros.get("sector"):
-                filter_parts.append(f'sector = "{filtros["sector"]}"')
+                filter_parts.append(f'sector = "{_mf(filtros["sector"])}"')
             if filtros.get("tipo_contrato"):
-                filter_parts.append(f'tipo_contrato = "{filtros["tipo_contrato"]}"')
+                filter_parts.append(f'tipo_contrato = "{_mf(filtros["tipo_contrato"])}"')
             if filtros.get("activo"):
                 filter_parts.append("activo = true")
 

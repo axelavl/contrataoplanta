@@ -183,18 +183,18 @@ footer { background: #0A2E6E; padding: 40px 24px; margin-top: 0; }
   <div class="filtros-wrap">
     <div class="filtro-campo" style="flex:2">
       <label for="f-q">Buscar</label>
-      <input type="text" id="f-q" placeholder="Cargo o institución…" onkeydown="if(event.key==='Enter')buscar()">
+      <input type="text" id="f-q" placeholder="Cargo o institución…">
     </div>
     <div class="filtro-campo">
       <label for="f-region">Región</label>
-      <select id="f-region" onchange="buscar()">
+      <select id="f-region">
         <option value="">Todas las regiones</option>
         <!-- Se carga dinámicamente desde API DPA -->
       </select>
     </div>
     <div class="filtro-campo">
       <label for="f-tipo">Tipo de contrato</label>
-      <select id="f-tipo" onchange="buscar()">
+      <select id="f-tipo">
         <option value="">Todos</option>
         <option value="planta">Planta</option>
         <option value="contrata">Contrata</option>

@@ -4933,8 +4933,6 @@ function initMeilisearchAutocomplete() {
         dropdown.innerHTML = sugerencias.map(s => `
           <div class="meili-item" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--bg2);
             font-size:13px;transition:background .1s"
-            onmouseenter="this.style.background='var(--bg2)'"
-            onmouseleave="this.style.background=''"
             data-cargo="${escAttr(s.cargo)}">
             <div style="font-weight:500;color:var(--texto)">${s.cargo_highlight ? sanitizeHighlightHtml(s.cargo_highlight) : escHtml(s.cargo)}</div>
             <div style="font-size:11px;color:var(--texto3);margin-top:2px">${escHtml(s.institucion)}${s.region ? ' · ' + escHtml(s.region) : ''}</div>
@@ -4943,6 +4941,11 @@ function initMeilisearchAutocomplete() {
         dropdown.style.display = 'block';
 
         dropdown.querySelectorAll('.meili-item').forEach(item => {
+          // Hover CSP-safe: la CSP (`script-src 'self'`, sin 'unsafe-inline')
+          // bloquea los `onmouseenter=`/`onmouseleave=` inline, así que el
+          // resaltado se hace con listeners reales.
+          item.addEventListener('mouseenter', () => { item.style.background = 'var(--bg2)'; });
+          item.addEventListener('mouseleave', () => { item.style.background = ''; });
           item.addEventListener('click', () => {
             input.value = item.dataset.cargo;
             dropdown.style.display = 'none';

@@ -443,7 +443,12 @@ function runPill(s) {
 }
 function trunc(s, n=38) {
   if (!s) return '<span class="text-muted">—</span>';
-  return s.length > n ? s.slice(0,n) + '…' : s;
+  const t = s.length > n ? s.slice(0,n) + '…' : s;
+  // Escapamos SIEMPRE el contenido: `trunc()` se interpola en `innerHTML`
+  // en decenas de tablas del panel con datos scrapeados (cargo, institución,
+  // región, asunto de email). Sin escape, un `<img>`/markup inyectado en un
+  // campo scrapeado se renderiza en la sesión autenticada del admin.
+  return esc(t);
 }
 // Escapa un valor para insertarlo en un atributo HTML de las filas
 // generadas (data-nombre, data-email, title=, …).
@@ -765,7 +770,7 @@ function renderAnaliticaLista(tbodyId, rows, keyLabel, keyVal, vacioLabel) {
     const pct = Math.round((val/max)*100);
     return `<tr>
       <td style="max-width:280px">
-        <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escAttr(label)}">${escAttr(trunc(label,40))}</div>
+        <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escAttr(label)}">${trunc(label,40)}</div>
         <div style="height:4px;background:var(--surface2);border-radius:3px;margin-top:5px;overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--accent)"></div></div>
       </td>
       <td style="text-align:right;font-weight:600;white-space:nowrap">${val.toLocaleString()}</td>
@@ -803,8 +808,8 @@ function renderOfertasVistas(rows) {
   if (!rows.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="4">Sin vistas de ofertas en el período</td></tr>'; return; }
   tbody.innerHTML = rows.map(r => `<tr>
     <td class="text-muted text-small">${r.oferta_id}</td>
-    <td style="max-width:280px"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escAttr(r.cargo)}">${escAttr(trunc(r.cargo,42))}</div></td>
-    <td class="text-small text-muted">${escAttr(trunc(r.institucion||'',26))}</td>
+    <td style="max-width:280px"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escAttr(r.cargo)}">${trunc(r.cargo,42)}</div></td>
+    <td class="text-small text-muted">${trunc(r.institucion||'',26)}</td>
     <td style="text-align:right;font-weight:600">${(r.vistas||0).toLocaleString()}</td>
   </tr>`).join('');
 }

@@ -243,6 +243,14 @@ async function abrirFichaHist(id) {
 }
 
 document.getElementById('btn-filtrar')?.addEventListener('click', buscar);
+// La CSP (`script-src 'self'`, sin 'unsafe-inline') bloquea los
+// `onchange=`/`onkeydown=` inline del HTML, así que los reconectamos como
+// listeners reales: cambiar región/tipo o pulsar Enter vuelve a buscar.
+document.getElementById('f-region')?.addEventListener('change', buscar);
+document.getElementById('f-tipo')?.addEventListener('change', buscar);
+document.getElementById('f-q')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') buscar();
+});
 document.getElementById('lista')?.addEventListener('click', (e) => {
   const b = e.target.closest('.hist-detalle');
   if (!b) return;

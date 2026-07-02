@@ -267,7 +267,11 @@ async def buscar_ley_bcn(termino: str) -> list[dict[str, Any]]:
         return [result] if result else []
 
     try:
-        url = f"{_BCN_SEARCH}?q={termino}&limit=5"
+        # URL-encode del término: sin esto, un `q` con `&`/`#`/espacios (viene
+        # del query param público /api/leyes/buscar) inyecta parámetros extra
+        # en la URL de BCN o rompe el request. `quote_plus` lo neutraliza.
+        from urllib.parse import quote_plus
+        url = f"{_BCN_SEARCH}?q={quote_plus(termino)}&limit=5"
         timeout = aiohttp.ClientTimeout(total=10)
         async with aiohttp.ClientSession(timeout=timeout) as session:
             async with session.get(url) as resp:
