@@ -899,6 +899,38 @@
             <input id="cfg-ads-contenido" type="text" placeholder="Slot id (número)">
           </div>
 
+          <hr style="margin:18px 0;border:none;border-top:1px solid var(--border,#e5e5e5)">
+          <h4 style="margin:0 0 4px">Destacadas — criterio automático</h4>
+          <p class="text-muted" style="margin:0 0 12px;font-size:13px">Si está activo, la pestaña pública <strong>Destacadas</strong> incluye automáticamente las ofertas con renta publicada, además de las que marcas a mano con ⭐. Si lo apagas, Destacadas muestra <strong>solo</strong> las marcadas a mano (público y panel coinciden).</p>
+          <div class="form-group" style="display:flex;align-items:center;gap:10px">
+            <label style="margin:0;white-space:nowrap">Criterio automático activo</label>
+            <input id="cfg-destacadas-auto" type="checkbox">
+          </div>
+
+          <hr style="margin:18px 0;border:none;border-top:1px solid var(--border,#e5e5e5)">
+          <h4 style="margin:0 0 4px">Recuadro de cursos (home)</h4>
+          <p class="text-muted" style="margin:0 0 12px;font-size:13px">Muestra u oculta un recuadro promocional de cursos en la barra lateral de la portada. Puedes editar el título, el texto, el botón y el enlace.</p>
+          <div class="form-group" style="display:flex;align-items:center;gap:10px">
+            <label style="margin:0;white-space:nowrap">Recuadro de cursos activo</label>
+            <input id="cfg-cursos-activo" type="checkbox">
+          </div>
+          <div class="form-group">
+            <label>Título</label>
+            <input id="cfg-cursos-titulo" type="text" placeholder="🎓 Capacítate para el sector público">
+          </div>
+          <div class="form-group">
+            <label>Texto</label>
+            <textarea id="cfg-cursos-texto" rows="2" placeholder="Cursos gratuitos y especializaciones para postular con ventaja."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Texto del botón</label>
+            <input id="cfg-cursos-cta" type="text" placeholder="Ver cursos →">
+          </div>
+          <div class="form-group">
+            <label>Enlace del botón</label>
+            <input id="cfg-cursos-url" type="text" placeholder="cursos.html">
+          </div>
+
           <button class="btn btn-primary" data-action="save-config">Guardar configuración</button>
         </div>
       </div>

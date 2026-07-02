@@ -62,6 +62,7 @@ from api.services.formatters import (
 )
 from api.services.sql import (
     ACTIVE_OFFER_SQL,
+    DESTACADAS_AUTO,
     OFFER_STATUS_SQL,
     STATUS_LEGACY_MAP,
     build_cargo_relevance,
@@ -69,6 +70,24 @@ from api.services.sql import (
     ofertas_base_sql,
     ofertas_select_sql,
 )
+
+
+def _destacadas_auto_activo() -> bool:
+    """Lee el toggle `destacadas_auto` de `site_config` (panel admin).
+
+    Controla si la pestaña pública "Destacadas" incluye el criterio automático
+    (ofertas con renta) además de las marcadas a mano. Si la clave no existe o la
+    DB no responde, cae a la constante `DESTACADAS_AUTO` (apagado por defecto).
+    """
+    try:
+        row = execute_fetch_one(
+            "SELECT valor FROM site_config WHERE clave = 'destacadas_auto'", []
+        )
+        if row and row.get("valor") is not None:
+            return str(row["valor"]).strip().lower() in ("1", "true", "yes")
+    except Exception:
+        pass
+    return DESTACADAS_AUTO
 from api.services.seo import (
     build_offer_meta,
     fetch_offer_for_meta,
@@ -205,6 +224,8 @@ def get_ofertas(
         sin_experiencia=sin_experiencia,
         solo_activas=only_active,
         closed_only=only_closed,
+        # Solo se consulta el toggle cuando es la pestaña Destacadas.
+        destacadas_auto=(_destacadas_auto_activo() if destacadas else None),
     )
 
     # Ofertas sin fecha_cierre van al final;
@@ -1220,6 +1241,9 @@ _SITE_CONFIG_PUBLICA = {
     # identificadores públicos, van en el HTML; no son secretos).
     "ads_enabled", "ads_client",
     "ads_slot_resultados", "ads_slot_sidebar", "ads_slot_contenido",
+    # Recuadro promocional de cursos en la home (contenido editable + on/off).
+    "cursos_promo_activo", "cursos_promo_titulo", "cursos_promo_texto",
+    "cursos_promo_cta", "cursos_promo_url",
 }
 
 

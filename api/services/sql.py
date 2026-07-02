@@ -72,10 +72,16 @@ DESTACADAS_AUTO = False
 DESTACADAS_AUTO_SQL = "(o.renta_bruta_min IS NOT NULL OR o.renta_bruta_max IS NOT NULL)"
 
 
-def _destacadas_where() -> str:
-    """Cláusula WHERE para la sección 'Destacadas' (sin parámetros)."""
+def _destacadas_where(auto: bool = DESTACADAS_AUTO) -> str:
+    """Cláusula WHERE para la sección 'Destacadas' (sin parámetros).
+
+    `auto` decide si además de las marcadas a mano entran las que cumplen el
+    criterio automático (`DESTACADAS_AUTO_SQL`). El valor efectivo lo resuelve
+    el caller desde `site_config` (toggle del panel admin); si no se pasa, cae
+    a la constante `DESTACADAS_AUTO`.
+    """
     manual = "COALESCE(o.destacada, FALSE) = TRUE"
-    if DESTACADAS_AUTO:
+    if auto:
         return f"({manual} OR {DESTACADAS_AUTO_SQL})"
     return manual
 
@@ -277,6 +283,7 @@ def build_ofertas_filters(
     sin_experiencia: bool = False,
     solo_activas: bool = True,
     closed_only: bool = False,
+    destacadas_auto: bool | None = None,
 ) -> tuple[str, list[Any]]:
     where: list[str] = []
     params: list[Any] = []
@@ -287,9 +294,11 @@ def build_ofertas_filters(
         where.append(f"{OFFER_STATUS_SQL} = 'closed'")
 
     if solo_destacadas:
-        # Pestaña "Destacadas": curaduría manual (+ criterio automático si
-        # DESTACADAS_AUTO está encendido). Ver _destacadas_where() arriba.
-        where.append(_destacadas_where())
+        # Pestaña "Destacadas": curaduría manual (+ criterio automático si el
+        # toggle del panel lo enciende). `destacadas_auto` None → constante del
+        # módulo. Ver _destacadas_where() arriba.
+        auto = DESTACADAS_AUTO if destacadas_auto is None else destacadas_auto
+        where.append(_destacadas_where(auto))
 
     if solo_con_correo:
         # "Postular por correo": ofertas con email de contacto capturado en las

@@ -1060,13 +1060,17 @@ def admin_destacadas_stats(
     _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
     """Estadísticas de ofertas destacadas y criterio auto."""
-    from api.services.sql import DESTACADAS_AUTO, DESTACADAS_AUTO_SQL
+    from api.services.sql import DESTACADAS_AUTO_SQL
+    # El estado del criterio automático lo gobierna el toggle `destacadas_auto`
+    # de site_config (panel), no la constante del módulo.
+    conf = _get_site_config_db()
+    auto_activo = str(conf.get("destacadas_auto", "")).strip().lower() in ("1", "true", "yes")
     manual = execute_fetch_one(
         "SELECT COUNT(*) AS n FROM ofertas WHERE activa AND COALESCE(destacada, FALSE) = TRUE", []
     )
     auto = execute_fetch_one(
         f"SELECT COUNT(*) AS n FROM ofertas WHERE activa AND {DESTACADAS_AUTO_SQL}", []
-    ) if DESTACADAS_AUTO else {"n": 0}
+    ) if auto_activo else {"n": 0}
     total_activas = execute_fetch_one(
         "SELECT COUNT(*) AS n FROM ofertas WHERE activa", []
     )
@@ -1074,8 +1078,8 @@ def admin_destacadas_stats(
         "manual": int((manual or {}).get("n", 0)),
         "auto": int((auto or {}).get("n", 0)),
         "total_activas": int((total_activas or {}).get("n", 0)),
-        "auto_activo": DESTACADAS_AUTO,
-        "auto_criterio": "Ofertas con renta bruta publicada" if DESTACADAS_AUTO else None,
+        "auto_activo": auto_activo,
+        "auto_criterio": "Ofertas con renta bruta publicada" if auto_activo else None,
     }
 
 
@@ -1638,6 +1642,11 @@ def admin_set_config(
         "max_resultados_pagina", "alertas_activas", "footer_extra",
         "ads_enabled", "ads_client",
         "ads_slot_resultados", "ads_slot_sidebar", "ads_slot_contenido",
+        # Toggle del criterio automático de Destacadas (público).
+        "destacadas_auto",
+        # Recuadro promocional de cursos en la home (on/off + contenido).
+        "cursos_promo_activo", "cursos_promo_titulo", "cursos_promo_texto",
+        "cursos_promo_cta", "cursos_promo_url",
     }
     updated: list[str] = []
     for clave, valor in payload.items():
