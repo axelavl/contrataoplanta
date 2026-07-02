@@ -1894,6 +1894,16 @@ async function revalidarUrls() {
   } catch(e) { toast('Error: '+e.message,'error'); }
 }
 
+async function limpiarNoLaborales() {
+  if (!confirm('¿Desactivar las ofertas activas que el filtro actual clasifica como no laborales (noticias municipales, actas, licitaciones)?')) return;
+  try {
+    const r = await api('/ofertas/limpiar-no-laborales', { method:'POST', body: JSON.stringify({ apply:true }) });
+    toast(`Limpieza iniciada — PID ${r.pid} ✓`);
+    loadProcesos();
+    if (r.log) verLog(r.log);
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
 async function reindexarMeili() {
   var res = document.getElementById('meili-result');
   if (!confirm('¿Reconstruir el índice de búsqueda completo?')) return;
@@ -2090,6 +2100,7 @@ document.addEventListener('click', e => {
     case 'run-scraper':        runScraper(); break;
     case 'bulk-desactivar':    bulkDesactivar(d.tipo); break;
     case 'revalidar-urls':     revalidarUrls(); break;
+    case 'limpiar-no-laborales': limpiarNoLaborales(); break;
     case 'reindexar-meili':    reindexarMeili(); break;
     case 'load-catalog':       loadCatalog(); break;
     case 'load-procesos':      loadProcesos(); break;

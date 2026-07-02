@@ -1746,6 +1746,46 @@ async def admin_revalidar_urls(
     }
 
 
+@router.post(f"/api/{ADMIN_PATH}/ofertas/limpiar-no-laborales", tags=["admin"])
+async def admin_limpiar_no_laborales(
+    payload: dict[str, Any],
+    _user: str = Depends(_require_editor),
+) -> dict[str, Any]:
+    """
+    Lanza scripts/limpiar_ofertas_no_laborales.py en background: re-pasa las
+    ofertas activas por el intake actual y desactiva las que hoy serían
+    rechazadas (noticias municipales, actas, decretos, licitaciones, etc.).
+
+    Body: { apply: bool (default true; false = dry-run), limit: int (opcional) }
+    """
+    import sys as _sys
+
+    script = _PROJECT_ROOT / "scripts" / "limpiar_ofertas_no_laborales.py"
+    if not script.exists():
+        raise HTTPException(404, "limpiar_ofertas_no_laborales.py no encontrado")
+
+    aplicar = bool(payload.get("apply", True))
+    limite = payload.get("limit")
+    cmd = [_sys.executable, str(script)]
+    if aplicar:
+        cmd.append("--apply")
+    if limite:
+        cmd += ["--limit", str(int(limite))]
+
+    logger.info(f"[admin] limpiar no laborales: {cmd}")
+    try:
+        proceso = _lanzar_proceso(cmd, tipo="limpiar-no-laborales")
+    except Exception as exc:
+        raise HTTPException(500, f"No se pudo lanzar el proceso: {exc}") from exc
+    _auditar(_user, "limpiar_no_laborales", "proceso", proceso.pid, {
+        "apply": aplicar, "limit": limite, "log": proceso.log_path.name,
+    })
+    return {
+        "ok": True, "pid": proceso.pid, "apply": aplicar,
+        "log": proceso.log_path.name,
+    }
+
+
 # ── Admin: gestión de fuentes (instituciones) ────────────────────────────────
 
 @router.get(f"/api/{ADMIN_PATH}/fuentes/{{fuente_id}}", tags=["admin"])
