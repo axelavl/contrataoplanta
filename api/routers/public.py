@@ -72,22 +72,48 @@ from api.services.sql import (
 )
 
 
-def _destacadas_auto_activo() -> bool:
-    """Lee el toggle `destacadas_auto` de `site_config` (panel admin).
+def _destacadas_config() -> tuple[bool, list[dict[str, Any]] | None, str]:
+    """Lee la config de Destacadas de `site_config` (panel admin).
 
-    Controla si la pestaña pública "Destacadas" incluye el criterio automático
-    (ofertas con renta) además de las marcadas a mano. Si la clave no existe o la
-    DB no responde, cae a la constante `DESTACADAS_AUTO` (apagado por defecto).
+    Devuelve ``(auto, criterios, modo)``:
+    - ``auto``: si la pestaña pública incluye los criterios automáticos además de
+      las marcadas a mano. Si la clave falta / DB caída → constante `DESTACADAS_AUTO`.
+    - ``criterios``: lista ``[{tipo, valor}]`` parseada del JSON `destacadas_criterios`
+      (o None si no hay / es inválido → se usa el criterio por defecto).
+    - ``modo``: 'any' (OR) | 'all' (AND).
     """
+    auto = DESTACADAS_AUTO
+    criterios: list[dict[str, Any]] | None = None
+    modo = "any"
     try:
-        row = execute_fetch_one(
-            "SELECT valor FROM site_config WHERE clave = 'destacadas_auto'", []
+        rows = execute_fetch_all(
+            "SELECT clave, valor FROM site_config "
+            "WHERE clave IN ('destacadas_auto','destacadas_criterios','destacadas_criterios_modo')",
+            [],
         )
-        if row and row.get("valor") is not None:
-            return str(row["valor"]).strip().lower() in ("1", "true", "yes")
+        conf = {r["clave"]: r["valor"] for r in rows}
+        if conf.get("destacadas_auto") is not None:
+            auto = str(conf["destacadas_auto"]).strip().lower() in ("1", "true", "yes")
+        if str(conf.get("destacadas_criterios_modo", "")).strip().lower() == "all":
+            modo = "all"
+        raw = conf.get("destacadas_criterios")
+        if raw:
+            parsed = json.loads(raw)
+            if isinstance(parsed, list):
+                criterios = [c for c in parsed if isinstance(c, dict)]
     except Exception:
         pass
-    return DESTACADAS_AUTO
+    return auto, criterios, modo
+
+
+def _destacadas_filtros() -> dict[str, Any]:
+    """kwargs de Destacadas para `build_ofertas_filters` (solo en esa pestaña)."""
+    auto, criterios, modo = _destacadas_config()
+    return {
+        "destacadas_auto": auto,
+        "destacadas_criterios": criterios,
+        "destacadas_modo": modo,
+    }
 from api.services.seo import (
     build_offer_meta,
     fetch_offer_for_meta,
@@ -224,8 +250,8 @@ def get_ofertas(
         sin_experiencia=sin_experiencia,
         solo_activas=only_active,
         closed_only=only_closed,
-        # Solo se consulta el toggle cuando es la pestaña Destacadas.
-        destacadas_auto=(_destacadas_auto_activo() if destacadas else None),
+        # Solo se consulta la config de Destacadas cuando es esa pestaña.
+        **(_destacadas_filtros() if destacadas else {}),
     )
 
     # Ofertas sin fecha_cierre van al final;

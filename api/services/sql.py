@@ -72,18 +72,138 @@ DESTACADAS_AUTO = False
 DESTACADAS_AUTO_SQL = "(o.renta_bruta_min IS NOT NULL OR o.renta_bruta_max IS NOT NULL)"
 
 
-def _destacadas_where(auto: bool = DESTACADAS_AUTO) -> str:
-    """Cláusula WHERE para la sección 'Destacadas' (sin parámetros).
+# ── Catálogo de criterios AUTOMÁTICOS de Destacadas ──────────────────────────
+#
+# El panel admin permite armar la lista de criterios (agregar/editar/eliminar),
+# pero SIEMPRE eligiendo de este catálogo cerrado: NUNCA se acepta SQL arbitrario
+# desde el cliente (sería inyección). Cada builder valida su valor y devuelve
+# `(fragmento_sql, params)` o `None` si el valor es inválido (se descarta).
+def _crit_con_renta(_v: Any) -> tuple[str, list[Any]] | None:
+    return ("(o.renta_bruta_min IS NOT NULL OR o.renta_bruta_max IS NOT NULL)", [])
 
-    `auto` decide si además de las marcadas a mano entran las que cumplen el
-    criterio automático (`DESTACADAS_AUTO_SQL`). El valor efectivo lo resuelve
-    el caller desde `site_config` (toggle del panel admin); si no se pasa, cae
-    a la constante `DESTACADAS_AUTO`.
+
+def _crit_renta_min(v: Any) -> tuple[str, list[Any]] | None:
+    try:
+        n = int(v)
+    except (TypeError, ValueError):
+        return None
+    if n <= 0:
+        return None
+    return ("(COALESCE(o.renta_bruta_max, o.renta_bruta_min) >= %s)", [n])
+
+
+def _crit_cierra_dias(v: Any) -> tuple[str, list[Any]] | None:
+    try:
+        n = int(v)
+    except (TypeError, ValueError):
+        return None
+    if n < 0:
+        return None
+    return (
+        "(o.fecha_cierre IS NOT NULL AND o.fecha_cierre <= "
+        "(NOW() AT TIME ZONE 'America/Santiago')::date + make_interval(days => %s))",
+        [n],
+    )
+
+
+def _crit_nuevas_horas(v: Any) -> tuple[str, list[Any]] | None:
+    try:
+        n = int(v)
+    except (TypeError, ValueError):
+        return None
+    if n <= 0:
+        return None
+    return (
+        "(COALESCE(o.fecha_scraped, o.detectada_en, o.actualizada_en, o.creada_en) "
+        ">= NOW() - make_interval(hours => %s))",
+        [n],
+    )
+
+
+def _crit_con_correo(_v: Any) -> tuple[str, list[Any]] | None:
+    return ("(o.email_postulacion IS NOT NULL OR o.email_consultas IS NOT NULL)", [])
+
+
+def _crit_sector(v: Any) -> tuple[str, list[Any]] | None:
+    s = str(v or "").strip()
+    if not s:
+        return None
+    return ("(COALESCE(i.sector, o.sector, i.tipo, '') ILIKE %s)", [f"%{s[:100]}%"])
+
+
+def _crit_region(v: Any) -> tuple[str, list[Any]] | None:
+    s = str(v or "").strip()
+    if not s:
+        return None
+    return ("(COALESCE(o.region, i.region, '') ILIKE %s)", [f"%{s[:100]}%"])
+
+
+#: tipo → metadata (label + tipo de valor para la UI) + builder. `valor`:
+#: None = sin parámetro; "numero"/"texto" = pide un valor al admin.
+DESTACADAS_CRITERIOS_CATALOGO: dict[str, dict[str, Any]] = {
+    "con_renta":    {"label": "Tiene renta publicada",            "valor": None,     "build": _crit_con_renta},
+    "renta_min":    {"label": "Renta bruta desde (CLP)",          "valor": "numero", "build": _crit_renta_min},
+    "cierra_dias":  {"label": "Cierra dentro de (días)",          "valor": "numero", "build": _crit_cierra_dias},
+    "nuevas_horas": {"label": "Publicadas en últimas (horas)",    "valor": "numero", "build": _crit_nuevas_horas},
+    "con_correo":   {"label": "Tiene correo de postulación",      "valor": None,     "build": _crit_con_correo},
+    "sector":       {"label": "Sector contiene",                  "valor": "texto",  "build": _crit_sector},
+    "region":       {"label": "Región contiene",                  "valor": "texto",  "build": _crit_region},
+}
+
+
+def catalogo_criterios_destacadas() -> list[dict[str, Any]]:
+    """Lista serializable del catálogo (para que el panel arme el editor)."""
+    return [
+        {"tipo": k, "label": v["label"], "valor": v["valor"]}
+        for k, v in DESTACADAS_CRITERIOS_CATALOGO.items()
+    ]
+
+
+def build_destacadas_auto_sql(
+    criterios: list[dict[str, Any]] | None, modo: str = "any"
+) -> tuple[str | None, list[Any]]:
+    """De una lista ``[{tipo, valor}]`` arma ``(sql, params)`` combinando los
+    criterios válidos con OR (``modo='any'``) o AND (``modo='all'``). Ignora
+    entradas desconocidas o con valor inválido. Si no queda ninguno, devuelve
+    ``(None, [])`` para que el caller use el criterio por defecto."""
+    frags: list[str] = []
+    params: list[Any] = []
+    for c in (criterios or []):
+        if not isinstance(c, dict):
+            continue
+        entry = DESTACADAS_CRITERIOS_CATALOGO.get(str(c.get("tipo", "")))
+        if not entry:
+            continue
+        built = entry["build"](c.get("valor"))
+        if not built:
+            continue
+        sql, ps = built
+        frags.append(sql)
+        params.extend(ps)
+    if not frags:
+        return (None, [])
+    joiner = " AND " if str(modo).lower() == "all" else " OR "
+    return ("(" + joiner.join(frags) + ")", params)
+
+
+def _destacadas_where(
+    auto: bool = DESTACADAS_AUTO,
+    criterios: list[dict[str, Any]] | None = None,
+    modo: str = "any",
+) -> tuple[str, list[Any]]:
+    """Cláusula WHERE + params para la sección 'Destacadas'.
+
+    Siempre incluye las marcadas a mano (`destacada = TRUE`). Si `auto`, además
+    OR-ea el conjunto de criterios automáticos configurados desde el panel; si no
+    hay criterios válidos, cae al criterio legacy (`DESTACADAS_AUTO_SQL`).
     """
     manual = "COALESCE(o.destacada, FALSE) = TRUE"
-    if auto:
-        return f"({manual} OR {DESTACADAS_AUTO_SQL})"
-    return manual
+    if not auto:
+        return (manual, [])
+    auto_sql, params = build_destacadas_auto_sql(criterios, modo)
+    if auto_sql is None:
+        auto_sql = DESTACADAS_AUTO_SQL
+    return (f"({manual} OR {auto_sql})", params)
 
 # Normalización sin extensiones: permite que búsquedas como "contraloria" o
 # "educacion" encuentren instituciones/cargos con tildes. Se usa translate()
@@ -284,6 +404,8 @@ def build_ofertas_filters(
     solo_activas: bool = True,
     closed_only: bool = False,
     destacadas_auto: bool | None = None,
+    destacadas_criterios: list[dict[str, Any]] | None = None,
+    destacadas_modo: str = "any",
 ) -> tuple[str, list[Any]]:
     where: list[str] = []
     params: list[Any] = []
@@ -294,11 +416,13 @@ def build_ofertas_filters(
         where.append(f"{OFFER_STATUS_SQL} = 'closed'")
 
     if solo_destacadas:
-        # Pestaña "Destacadas": curaduría manual (+ criterio automático si el
+        # Pestaña "Destacadas": curaduría manual (+ criterios automáticos si el
         # toggle del panel lo enciende). `destacadas_auto` None → constante del
-        # módulo. Ver _destacadas_where() arriba.
+        # módulo. Los criterios y su modo (any/all) vienen de site_config.
         auto = DESTACADAS_AUTO if destacadas_auto is None else destacadas_auto
-        where.append(_destacadas_where(auto))
+        dest_sql, dest_params = _destacadas_where(auto, destacadas_criterios, destacadas_modo)
+        where.append(dest_sql)
+        params.extend(dest_params)
 
     if solo_con_correo:
         # "Postular por correo": ofertas con email de contacto capturado en las

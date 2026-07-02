@@ -1985,6 +1985,42 @@ async function runInstancia(id, nombre) {
 }
 
 // ── CONFIG ─────────────────────────────────────────────────────
+// ── Editor de criterios automáticos de Destacadas ─────────────────
+let _criteriosCatalogo = [];
+function _catEntry(tipo){ return _criteriosCatalogo.find(c => c.tipo === tipo) || null; }
+function renderCriterioRow(crit) {
+  crit = crit || {};
+  const row = document.createElement('div');
+  row.className = 'criterio-row';
+  row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:6px';
+  const sel = document.createElement('select');
+  sel.className = 'crit-tipo';
+  sel.innerHTML = _criteriosCatalogo.map(c => `<option value="${esc(c.tipo)}">${esc(c.label)}</option>`).join('');
+  if (crit.tipo) sel.value = crit.tipo;
+  const val = document.createElement('input');
+  val.className = 'crit-valor'; val.style.maxWidth = '160px';
+  if (crit.valor != null) val.value = crit.valor;
+  const del = document.createElement('button');
+  del.type = 'button'; del.className = 'btn btn-ghost btn-sm';
+  del.textContent = '✕'; del.title = 'Eliminar criterio';
+  del.setAttribute('data-action', 'del-criterio-destacada');
+  function syncValor() {
+    const e = _catEntry(sel.value);
+    const needs = e && e.valor;               // 'numero' | 'texto' | null
+    val.style.display = needs ? '' : 'none';
+    val.type = needs === 'numero' ? 'number' : 'text';
+    val.placeholder = needs === 'numero' ? 'valor' : 'texto';
+  }
+  sel.addEventListener('change', syncValor);
+  syncValor();
+  row.appendChild(sel); row.appendChild(val); row.appendChild(del);
+  return row;
+}
+function addCriterioRow(crit) {
+  const cont = document.getElementById('cfg-destacadas-criterios');
+  if (cont) cont.appendChild(renderCriterioRow(crit));
+}
+
 async function loadConfig() {
   try {
     const d = await api('/config');
@@ -2014,8 +2050,16 @@ async function loadConfig() {
     const _ar=document.getElementById('cfg-ads-resultados'); if(_ar) _ar.value = c.ads_slot_resultados||'';
     const _as=document.getElementById('cfg-ads-sidebar'); if(_as) _as.value = c.ads_slot_sidebar||'';
     const _aco=document.getElementById('cfg-ads-contenido'); if(_aco) _aco.value = c.ads_slot_contenido||'';
-    // Criterio automático de destacadas
+    // Criterios automáticos de destacadas: toggle + modo + lista editable
     const _da=document.getElementById('cfg-destacadas-auto'); if(_da) _da.checked = (c.destacadas_auto==='1'||c.destacadas_auto==='true');
+    _criteriosCatalogo = d.criterios_catalogo || [];
+    const _dm=document.getElementById('cfg-destacadas-modo'); if(_dm) _dm.value = (c.destacadas_criterios_modo==='all')?'all':'any';
+    const _cc=document.getElementById('cfg-destacadas-criterios');
+    if(_cc){
+      _cc.innerHTML='';
+      let list=[]; try{ list=JSON.parse(c.destacadas_criterios||'[]'); }catch(_){ list=[]; }
+      if(Array.isArray(list)) list.forEach(x=>addCriterioRow(x));
+    }
     // Recuadro "Anúnciate" en la página de Cursos: visible por defecto, se
     // apaga solo si el admin lo puso explícitamente en 'false'.
     const _ca=document.getElementById('cfg-cursos-anunciate'); if(_ca) _ca.checked = (c.cursos_anunciate_activo!=='false');
@@ -2079,9 +2123,22 @@ async function saveConfig() {
     payload.ads_slot_sidebar = _gv('cfg-ads-sidebar');
     payload.ads_slot_contenido = _gv('cfg-ads-contenido');
   }
-  // Criterio automático de destacadas
+  // Criterios automáticos de destacadas: toggle + modo + lista JSON
   const _da = document.getElementById('cfg-destacadas-auto');
   if (_da) payload.destacadas_auto = _da.checked ? 'true':'false';
+  const _dm = document.getElementById('cfg-destacadas-modo');
+  if (_dm) payload.destacadas_criterios_modo = (_dm.value === 'all') ? 'all':'any';
+  const _cc = document.getElementById('cfg-destacadas-criterios');
+  if (_cc) {
+    const crits = [...(_cc.querySelectorAll('.criterio-row'))].map(r => {
+      const tipo = r.querySelector('.crit-tipo').value;
+      const entry = _criteriosCatalogo.find(c => c.tipo === tipo);
+      const o = { tipo };
+      if (entry && entry.valor) o.valor = r.querySelector('.crit-valor').value.trim();
+      return o;
+    }).filter(o => o.tipo);
+    payload.destacadas_criterios = JSON.stringify(crits);
+  }
   // Recuadro "Anúnciate" en la página de Cursos
   const _ca = document.getElementById('cfg-cursos-anunciate');
   if (_ca) payload.cursos_anunciate_activo = _ca.checked ? 'true':'false';
@@ -2118,6 +2175,8 @@ document.addEventListener('click', e => {
     case 'cerrar-log':         cerrarLog(); break;
     case 'load-config':        loadConfig(); break;
     case 'save-config':        saveConfig(); break;
+    case 'add-criterio-destacada': addCriterioRow({}); break;
+    case 'del-criterio-destacada': { const _r=el.closest('.criterio-row'); if(_r) _r.remove(); break; }
     case 'load-audit':         loadAudit(); break;
     case 'crear-fuente':       openCrearFuente(); break;
     case 'nueva-oferta':       openCrearOferta(); break;

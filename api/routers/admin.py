@@ -1623,7 +1623,13 @@ def admin_get_config(
         "MEILISEARCH_URL_set": bool(os.getenv("MEILISEARCH_URL")),
         "RESEND_API_KEY_set": bool(os.getenv("RESEND_API_KEY")),
     }
-    return {"config": conf, "env": env_info}
+    # Catálogo de criterios de Destacadas (para que el panel arme el editor).
+    try:
+        from api.services.sql import catalogo_criterios_destacadas
+        criterios_catalogo = catalogo_criterios_destacadas()
+    except Exception:
+        criterios_catalogo = []
+    return {"config": conf, "env": env_info, "criterios_catalogo": criterios_catalogo}
 
 
 @router.put(f"/api/{ADMIN_PATH}/config", tags=["admin"])
@@ -1642,11 +1648,22 @@ def admin_set_config(
         "max_resultados_pagina", "alertas_activas", "footer_extra",
         "ads_enabled", "ads_client",
         "ads_slot_resultados", "ads_slot_sidebar", "ads_slot_contenido",
-        # Toggle del criterio automático de Destacadas (público).
-        "destacadas_auto",
+        # Destacadas: toggle del criterio automático + lista de criterios (JSON)
+        # y modo de combinación (any/all). Ver catálogo en api/services/sql.py.
+        "destacadas_auto", "destacadas_criterios", "destacadas_criterios_modo",
         # Recuadro "Anúnciate" (oferta + valores para publicar) en cursos.html.
         "cursos_anunciate_activo",
     }
+    # `destacadas_criterios` debe ser JSON de una lista [{tipo,valor}]; si llega
+    # algo que no parsea a lista, se descarta para no guardar basura.
+    if "destacadas_criterios" in payload:
+        import json as _json
+        try:
+            _parsed = _json.loads(payload["destacadas_criterios"] or "[]")
+            if not isinstance(_parsed, list):
+                raise ValueError
+        except Exception:
+            raise HTTPException(400, "destacadas_criterios debe ser una lista JSON")
     updated: list[str] = []
     for clave, valor in payload.items():
         if clave not in CLAVES_PERMITIDAS:

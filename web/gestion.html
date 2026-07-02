@@ -900,11 +900,23 @@
           </div>
 
           <hr style="margin:18px 0;border:none;border-top:1px solid var(--border,#e5e5e5)">
-          <h4 style="margin:0 0 4px">Destacadas — criterio automático</h4>
-          <p class="text-muted" style="margin:0 0 12px;font-size:13px">Si está activo, la pestaña pública <strong>Destacadas</strong> incluye automáticamente las ofertas con renta publicada, además de las que marcas a mano con ⭐. Si lo apagas, Destacadas muestra <strong>solo</strong> las marcadas a mano (público y panel coinciden).</p>
+          <h4 style="margin:0 0 4px">Destacadas — criterios automáticos</h4>
+          <p class="text-muted" style="margin:0 0 12px;font-size:13px">Si está activo, la pestaña pública <strong>Destacadas</strong> incluye automáticamente las ofertas que cumplan los criterios de abajo, además de las que marcas a mano con ⭐. Si lo apagas, Destacadas muestra <strong>solo</strong> las marcadas a mano (público y panel coinciden).</p>
           <div class="form-group" style="display:flex;align-items:center;gap:10px">
-            <label style="margin:0;white-space:nowrap">Criterio automático activo</label>
+            <label style="margin:0;white-space:nowrap">Criterios automáticos activos</label>
             <input id="cfg-destacadas-auto" type="checkbox">
+          </div>
+          <div id="cfg-destacadas-editor" style="margin:4px 0 6px">
+            <div class="form-group" style="display:flex;align-items:center;gap:10px">
+              <label style="margin:0;white-space:nowrap">Deben cumplirse</label>
+              <select id="cfg-destacadas-modo" style="max-width:240px">
+                <option value="any">Cualquiera de los criterios (OR)</option>
+                <option value="all">Todos los criterios (AND)</option>
+              </select>
+            </div>
+            <div id="cfg-destacadas-criterios"></div>
+            <button type="button" class="btn btn-ghost btn-sm" data-action="add-criterio-destacada">+ Agregar criterio</button>
+            <p class="text-muted" style="margin:8px 0 0;font-size:12px">Si no agregas ninguno y los criterios están activos, se usa el criterio por defecto (ofertas con renta publicada).</p>
           </div>
 
           <hr style="margin:18px 0;border:none;border-top:1px solid var(--border,#e5e5e5)">
