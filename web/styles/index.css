@@ -1097,7 +1097,27 @@ nav {
 
 /* Row cells — widths MUST match header :nth-child widths above */
 .row-main  { flex: 1 1 0; min-width: 0; overflow: hidden; padding: 12px 10px 12px 0; }
-.row-meta  { flex: 0 0 82px;  width: 82px;  overflow: hidden; display: flex; align-items: center; }
+/* min-width:0 evita que la columna TIPO se EXPANDA hasta el ancho del badge
+   (un flex-item trae min-width:auto = no baja del tamaño de su contenido). Sin
+   esto, "Código del Trabajo" ensanchaba la columna de forma inconsistente entre
+   filas o la forzaba a envolver en un recuadro grande. */
+.row-meta  { flex: 0 0 82px;  width: 82px;  min-width: 0; overflow: hidden; display: flex; align-items: center; }
+/* Badge de tipo en la vista lista: recuadro compacto. La etiqueta más larga
+   ("Código del Trabajo") queda como 2 líneas pequeñas y prolijas dentro de la
+   columna, con el mismo ancho en todas las filas. Alta especificidad
+   (`.oferta-row .row-meta`) para ganar al `.badge` de redesign-overrides.css. */
+.oferta-row .row-meta .badge-tipo-row {
+  display: inline-block;
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  font-size: 9px !important;
+  padding: 2px 6px !important;
+  line-height: 1.1 !important;
+  letter-spacing: 0;
+  white-space: normal !important;
+  text-align: center;
+}
 .row-plazo { flex: 0 0 118px; width: 118px; overflow: hidden; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--texto3); white-space: normal; line-height: 1.3; }
 .row-renta { flex: 0 0 132px; width: 132px; overflow: hidden; font-size: 12.5px; font-weight: 700; color: var(--texto); text-align: right; padding-right: 6px; line-height: 1.25;
   display: flex; flex-direction: column; justify-content: center; align-items: flex-end; }

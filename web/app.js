@@ -1791,7 +1791,7 @@ function renderRowCompacta(oferta) {
       </div>
     </div>
     <div class="row-meta">
-      ${tipoLabel ? `<span class="badge ${tipoCss}" style="font-size:10px;white-space:nowrap">${tipoLabel}</span>` : ''}
+      ${tipoLabel ? `<span class="badge badge-tipo-row ${tipoCss}">${tipoLabel}</span>` : ''}
     </div>
     <div class="row-plazo">
       <div class="plazo-dot ${plazo.clase}"></div>

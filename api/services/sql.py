@@ -60,12 +60,15 @@ STATUS_LEGACY_MAP = {
 # equipo realmente publica en Instagram / TikTok / LinkedIn. Así la sección
 # queda 100% curada y honesta (lo que viste en redes está acá).
 #
-# Enganche automático OPCIONAL — APAGADO por defecto. Si se enciende
-# (``DESTACADAS_AUTO = True``), además de las marcadas a mano entran las
-# ofertas que cumplan ``DESTACADAS_AUTO_SQL``. El criterio por defecto son las
-# ofertas con renta bruta publicada (las más "compartibles" y con mejor data).
-# Para cambiar el criterio, editar SÓLO la expresión de abajo (un único lugar).
-DESTACADAS_AUTO = True
+# Enganche automático OPCIONAL — APAGADO. Estaba en True, lo que hacía que la
+# pestaña pública "Destacadas" mostrara CUALQUIER oferta con renta publicada
+# (el criterio de abajo), aunque nadie la hubiera marcado a mano. Eso rompía la
+# consistencia con el panel admin, que gestiona SOLO las marcadas (`destacada =
+# TRUE`): en público aparecían "varias" y en el panel "ninguna". Con AUTO en
+# False, la sección es 100% curada y público = panel. Para poblarla, marca
+# ofertas con el ⭐ del panel (o busca por ID y destácala). Si algún día quieres
+# reactivar el enganche automático, pon True y ajusta SÓLO la expresión de abajo.
+DESTACADAS_AUTO = False
 DESTACADAS_AUTO_SQL = "(o.renta_bruta_min IS NOT NULL OR o.renta_bruta_max IS NOT NULL)"
 
 
