@@ -222,6 +222,7 @@ def get_ofertas(
     solo_con_correo: bool = Query(False, description="Solo ofertas con correo de postulación/contacto."),
     destacadas: bool = Query(False, description="Solo ofertas destacadas (las que se publican en redes sociales)."),
     sin_experiencia: bool = Query(False, description="Solo ofertas que no exigen experiencia previa (best-effort por texto)."),
+    excluir_empleos_publicos: bool = Query(False, description="Excluir ofertas del portal empleospublicos.cl."),
     vista: str = Query("vigentes", pattern="^(vigentes|cerradas|todas)$"),
     orden: str = Query("recientes"),
     pagina: int = Query(1, ge=1, le=10000),
@@ -248,6 +249,7 @@ def get_ofertas(
         solo_con_correo=solo_con_correo,
         solo_destacadas=destacadas,
         sin_experiencia=sin_experiencia,
+        excluir_empleos_publicos=excluir_empleos_publicos,
         solo_activas=only_active,
         closed_only=only_closed,
         # Solo se consulta la config de Destacadas cuando es esa pestaña.

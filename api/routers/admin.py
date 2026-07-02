@@ -492,6 +492,7 @@ def admin_ofertas(
     needs_review: bool | None = Query(None),
     sin_renta: bool | None = Query(None, description="true: sin renta_bruta_min ni max"),
     destacada: str | None = Query(None, description="true/false: filtrar por destacada"),
+    excluir_empleos_publicos: bool | None = Query(None, description="true: excluir ofertas de empleospublicos.cl"),
     orden: str = Query("reciente", description="reciente|cierre|cargo|renta"),
     _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
@@ -503,6 +504,12 @@ def admin_ofertas(
         conditions.append("o.activa = TRUE")
     elif activa == "false":
         conditions.append("o.activa = FALSE")
+
+    if excluir_empleos_publicos is True:
+        conditions.append(
+            "(COALESCE(o.url_oferta, '') NOT ILIKE '%empleospublicos.cl%' "
+            "AND COALESCE(o.url_original, '') NOT ILIKE '%empleospublicos.cl%')"
+        )
 
     if url_rota is True:
         conditions.append("o.url_oferta_valida = FALSE")

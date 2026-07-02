@@ -426,6 +426,7 @@ const estado = {
   cierra_pronto: false,
   nuevas: false,
   solo_con_correo: false,
+  excluir_empleos_publicos: false,
   orden:        ORDEN_POR_DEFECTO,
   por_pagina:   _prefs.por_pagina || POR_PAGINA_CONFIG[_prefs.vista || 'cards']?.porDefecto || 20,
   vista:        (_prefs.vista === 'grid' ? 'cards' : _prefs.vista) || 'cards',
@@ -2132,6 +2133,7 @@ async function cargarOfertas() {
     if (estado.nuevas)         params.set('nuevas', 'true');
     if (estado.solo_con_correo) params.set('solo_con_correo', 'true');
     if (estado.sin_experiencia) params.set('sin_experiencia', 'true');
+    if (estado.excluir_empleos_publicos) params.set('excluir_empleos_publicos', 'true');
     if (estado.institucion_id) params.set('institucion', estado.institucion_id);
     if (estado.renta_min)      params.set('renta_min', estado.renta_min);
     if (estado.renta_max)      params.set('renta_max', estado.renta_max);
@@ -3893,6 +3895,9 @@ function toggleFiltro(btn, filtro) {
     estado.sin_experiencia = btn.classList.contains('activo');
   } else if (filtro === 'con-correo') {
     estado.solo_con_correo = btn.classList.contains('activo');
+  } else if (filtro === 'sin-portal') {
+    // Excluir ofertas del portal empleospublicos.cl
+    estado.excluir_empleos_publicos = btn.classList.contains('activo');
   } else {
     // Filtro de tipo de contrato
     if (btn.classList.contains('activo')) {
@@ -4290,6 +4295,7 @@ function construirUrlBusqueda() {
   setOrDel('cierra_pronto', estado.cierra_pronto && estado.vista_listado === 'vigentes' ? 'true' : '');
   setOrDel('nuevas', estado.nuevas ? 'true' : '');
   setOrDel('solo_con_correo', estado.solo_con_correo ? 'true' : '');
+  setOrDel('excluir_empleos_publicos', estado.excluir_empleos_publicos ? 'true' : '');
   setOrDel('vista', estado.vista_listado !== 'vigentes' ? estado.vista_listado : '');
   setOrDel('pagina', estado.pagina > 1 ? estado.pagina : '');
   return url.toString();
@@ -4319,6 +4325,7 @@ function sincronizarURL() {
     setOrDel('cierra_pronto', estado.cierra_pronto && estado.vista_listado === 'vigentes' ? 'true' : '');
     setOrDel('nuevas', estado.nuevas ? 'true' : '');
     setOrDel('solo_con_correo', estado.solo_con_correo ? 'true' : '');
+    setOrDel('excluir_empleos_publicos', estado.excluir_empleos_publicos ? 'true' : '');
     setOrDel('vista', estado.vista_listado !== 'vigentes' ? estado.vista_listado : '');
     setOrDel('pagina', estado.pagina > 1 ? estado.pagina : '');
     window.history.replaceState(null, '', url.toString());
@@ -4338,6 +4345,7 @@ function hayFiltrosActivos() {
   return Boolean(
     estado.q?.trim() || estado.region || estado.sector || estado.ciudad || (estado.comunas || []).length ||
     estado.renta_min || estado.instituciones.length || estado.cierra_pronto || estado.nuevas || estado.solo_con_correo ||
+    estado.excluir_empleos_publicos ||
     estado.vista_listado !== 'vigentes' || estado.orden !== ORDEN_POR_DEFECTO ||
     tiposFiltran
   );
@@ -4356,6 +4364,7 @@ function hayEstadoCompartibleReal() {
     estado.q || estado.region || estado.sector || estado.ciudad || (estado.comunas || []).length ||
     estado.renta_min || estado.instituciones.length ||
     estado.cierra_pronto || estado.nuevas || estado.sin_experiencia || estado.solo_con_correo ||
+    estado.excluir_empleos_publicos ||
     tieneTiposPersonalizados
   );
 }
@@ -4417,6 +4426,7 @@ function limpiarTodosLosFiltros() {
   estado.nuevas = false;
   estado.sin_experiencia = false;
   estado.solo_con_correo = false;
+  estado.excluir_empleos_publicos = false;
   estado.pagina = 1;
 
   // Volvemos a la pestaña "Vigentes" — si el usuario estaba en "Cerradas",
@@ -4617,6 +4627,7 @@ function restaurarFiltrosDesdeURL() {
     estado.cierra_pronto = params.get('cierra_pronto') === 'true';
     estado.nuevas = params.get('nuevas') === 'true';
     estado.solo_con_correo = params.get('solo_con_correo') === 'true';
+    estado.excluir_empleos_publicos = params.get('excluir_empleos_publicos') === 'true';
     if (params.has('vista')) {
       const vista = params.get('vista');
       if (vista === 'cerradas' || vista === 'vigentes' || vista === 'destacadas') estado.vista_listado = vista;
@@ -4625,6 +4636,7 @@ function restaurarFiltrosDesdeURL() {
     document.querySelector('.filtro-tag[data-filtro="cierra-hoy"]')?.classList.toggle('activo', estado.cierra_pronto);
     document.querySelector('.filtro-tag[data-filtro="nuevos"]')?.classList.toggle('activo', estado.nuevas);
     document.querySelector('.filtro-tag[data-filtro="con-correo"]')?.classList.toggle('activo', estado.solo_con_correo);
+    document.querySelector('.filtro-tag[data-filtro="sin-portal"]')?.classList.toggle('activo', estado.excluir_empleos_publicos);
     sincronizarTabsListado(estado.vista_listado);
     const copyListadoInit = document.getElementById('estado-listado-copy');
     if (copyListadoInit) copyListadoInit.textContent = LISTADO_COPYS[estado.vista_listado] || LISTADO_COPYS.vigentes;

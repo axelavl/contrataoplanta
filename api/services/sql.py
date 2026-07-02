@@ -403,12 +403,22 @@ def build_ofertas_filters(
     sin_experiencia: bool = False,
     solo_activas: bool = True,
     closed_only: bool = False,
+    excluir_empleos_publicos: bool = False,
     destacadas_auto: bool | None = None,
     destacadas_criterios: list[dict[str, Any]] | None = None,
     destacadas_modo: str = "any",
 ) -> tuple[str, list[Any]]:
     where: list[str] = []
     params: list[Any] = []
+
+    if excluir_empleos_publicos:
+        # Excluye las ofertas del portal intermediario empleospublicos.cl
+        # (Servicio Civil). Se identifican por la URL de la oferta / original;
+        # el dominio es una constante, no entra input del usuario.
+        where.append(
+            "(COALESCE(o.url_oferta, '') NOT ILIKE '%empleospublicos.cl%' "
+            "AND COALESCE(o.url_original, '') NOT ILIKE '%empleospublicos.cl%')"
+        )
 
     if solo_activas:
         where.append(ACTIVE_OFFER_SQL)
