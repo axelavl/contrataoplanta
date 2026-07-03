@@ -1788,7 +1788,10 @@ function renderRowCompacta(oferta) {
       <div class="row-textcol">
         <div class="row-inst">${escHtml(_aplicarAcronimosForzados(oferta.institucion || '')) || 'Institución pública'}</div>
         <div class="row-cargo" title="${escAttr(cargoDisplay)}">${oferta.destacada ? '<span title="Oferta destacada en redes sociales">⭐ </span>' : ''}${escHtml(cargoDisplay)}</div>
-        ${regionChip ? `<div class="row-region">🗺 ${escHtml(regionChip)}</div>` : ''}
+        <div class="row-sub">
+          ${regionChip ? `<span class="row-region">🗺 ${escHtml(regionChip)}</span>` : ''}
+          <button class="oferta-id-chip oferta-id-chip--row" type="button" data-action="copiar-id" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}" title="ID de la oferta — clic para copiar" aria-label="Copiar ID de la oferta ${Number(oferta.id) || 0}">#${Number(oferta.id) || 0}</button>
+        </div>
       </div>
     </div>
     <div class="row-meta">
@@ -1800,7 +1803,6 @@ function renderRowCompacta(oferta) {
     </div>
     <div class="row-renta">${rentaHtml || ''}</div>
     <div class="row-acciones" style="display:flex;gap:6px;align-items:center;justify-content:flex-end">
-      <button class="oferta-id-chip" type="button" data-action="copiar-id" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}" title="ID de la oferta — clic para copiar" aria-label="Copiar ID de la oferta ${Number(oferta.id) || 0}">#${Number(oferta.id) || 0}</button>
       <button class="cop-cmp-btn cop-cmp-btn--icon" type="button" data-action="toggle-comparar" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}" title="Comparar oferta" aria-label="Comparar oferta">${CMP_SVG_SWAP}</button>
       <button class="btn-fav-row${esFav ? ' activo' : ''}"
         data-id="${oferta.id}"
