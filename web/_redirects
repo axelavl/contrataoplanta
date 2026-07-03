@@ -29,3 +29,8 @@
 # previews `<branch>.estadoemplea.pages.dev` no coinciden y siguen sirviendo para
 # CI, y las peticiones que ya llegan a contrataoplanta.cl no se tocan (sin loop).
 https://estadoemplea.pages.dev/* https://contrataoplanta.cl/:splat 301
+
+# Consolidación www → apex (SEO): el dominio canónico es SIN www
+# (contrataoplanta.cl). Google rastreó variantes con www que duplican cada URL;
+# este 301 las unifica al apex. Solo afecta al host www; el apex no se toca.
+https://www.contrataoplanta.cl/* https://contrataoplanta.cl/:splat 301
