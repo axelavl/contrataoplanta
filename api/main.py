@@ -412,12 +412,18 @@ async def add_security_headers(request: Request, call_next):
             "Cache-Control", "public, max-age=120, stale-while-revalidate=600"
         )
     elif path.startswith("/api/ofertas/"):
+        # Detalle de una oferta. El editor del panel admin actualiza estos datos
+        # a mano, así que la caché NO puede ser agresiva o los cambios tardan en
+        # verse (antes: max-age=300 + stale-while-revalidate=3600 → hasta ~1 h
+        # sirviendo copia vieja). Con esto un cambio se refleja en ~1 min.
         response.headers.setdefault(
-            "Cache-Control", "public, max-age=300, stale-while-revalidate=3600"
+            "Cache-Control", "public, max-age=60, stale-while-revalidate=120"
         )
     elif path == "/api/ofertas":
+        # Listado. Igual: ventana corta para que las ediciones del panel aparezcan
+        # pronto, sin pegarle a la DB en cada scroll (antes SWR=300).
         response.headers.setdefault(
-            "Cache-Control", "public, max-age=60, stale-while-revalidate=300"
+            "Cache-Control", "public, max-age=60, stale-while-revalidate=120"
         )
     return response
 
