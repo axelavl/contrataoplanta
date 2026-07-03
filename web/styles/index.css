@@ -1151,6 +1151,12 @@ nav {
   margin-top: 2px;
 }
 .row-region { font-size: 10.5px; color: var(--texto3); overflow: hidden; text-overflow: ellipsis; margin-top: 3px; }
+/* Línea inferior de la celda izquierda: región + chip de ID. El ID se movió aquí
+   desde la columna de acciones, donde se superponía con la renta en anchos
+   medios (601–900px). Aquí tiene espacio propio y nunca choca con la renta. */
+.row-sub { display: flex; align-items: center; gap: 8px; margin-top: 3px; min-width: 0; }
+.row-sub .row-region { margin-top: 0; min-width: 0; flex: 0 1 auto; }
+.oferta-id-chip--row { flex: 0 0 auto; padding: 1px 6px; font-size: 10px; line-height: 1.5; }
 
 /* ═══ SIDEBAR ═════════════════════════════════════════════════════════ */
 .sidebar { display: flex; flex-direction: column; gap: 16px; }
