@@ -237,6 +237,34 @@ def _fechas_de_plazo(plazo: str) -> tuple[date | None, date | None]:
     return None, fin
 
 
+def _titulo_desde_contexto(a_tag, link_text: str, ctx: str) -> str:
+    """Extrae el título real del cargo del contexto circundante.
+
+    En la página "trabaja con nosotros" el texto del link suele ser solo el
+    código del perfil (ej: "PERFIL PROFCRIORG-01 + RESOLEX 152") pero el
+    nombre legible del cargo aparece antes, en un heading o párrafo previo.
+    """
+    if len(link_text) > 40 and not link_text.upper().startswith("PERFIL"):
+        return link_text
+
+    for sib in a_tag.parent.previous_siblings if a_tag.parent else []:
+        t = limpiar_texto(getattr(sib, "get_text", lambda *_: str(sib))(" ", strip=True))
+        if not t or len(t) < 15:
+            continue
+        t_low = t.lower()
+        if any(w in t_low for w in ("cargos vigentes", "perfil", "resolex",
+                                     "descargar", "click")):
+            continue
+        return t[:500]
+
+    if ctx and len(ctx) > len(link_text) + 20:
+        before = ctx.split(link_text)[0].strip() if link_text in ctx else ""
+        if len(before) > 20:
+            return before[:500]
+
+    return link_text
+
+
 def parsear_trabaja_con_nosotros(html: str) -> list[dict[str, Any]]:
     """Cargos vigentes (contrata/jornal) publicados como links a PDF de perfil."""
     soup = BeautifulSoup(html, "html.parser")
@@ -245,15 +273,17 @@ def parsear_trabaja_con_nosotros(html: str) -> list[dict[str, Any]]:
         href = a["href"]
         if ".pdf" not in href.lower() or "/docs/" not in href:
             continue
-        titulo = limpiar_texto(a.get_text(" ", strip=True))
+        link_text = limpiar_texto(a.get_text(" ", strip=True))
         cont = a.find_parent(["li", "p", "div", "td"])
         ctx = limpiar_texto(cont.get_text(" ", strip=True)) if cont else ""
         plazo_m = _RE_PLAZO.search(ctx)
-        # Filtrar documentos genéricos: un cargo real tiene plazo de
-        # postulación en su contexto o vive en la carpeta de concursos
-        es_cargo = bool(plazo_m) or ("concurso" in href.lower() and len(titulo) > 25)
-        if not es_cargo or len(titulo) < 20:
+        es_perfil = "perfil-" in href.lower() or "perfil " in link_text.lower()
+        es_cargo = (bool(plazo_m)
+                    or ("concurso" in href.lower() and len(link_text) > 25)
+                    or es_perfil)
+        if not es_cargo or len(link_text) < 10:
             continue
+        titulo = _titulo_desde_contexto(a, link_text, ctx)
         url_pdf = urljoin(BASE, quote(href, safe=":/%?=&"))
         ini, fin = _fechas_de_plazo(plazo_m.group(1)) if plazo_m else (None, None)
         grado = None
