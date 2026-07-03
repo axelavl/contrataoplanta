@@ -106,13 +106,23 @@ SUPPORTED_RUNTIME_EXTRACTORS = {
 }
 
 # Mapa de ScraperKind (override) → (ExtractorKind, profile_name) para bypass del gatekeeper.
-# Cuando source_overrides.json declara explícitamente uno de estos kinds, se omite la
-# evaluación HTTP (que puede fallar por WAF, JS-render, etc.) y se despacha directamente.
+# Cuando classify_source (source_overrides.json o clasificación automática) declara uno de
+# estos kinds, se omite la evaluación HTTP (que puede fallar por WAF, JS-render, geobloqueo
+# por IP, etc.) y se despacha directamente con Decision.EXTRACT.
+#
+# empleos_publicos va acá por una razón crítica: el portal se reescribió (jun-2026) como una
+# SPA que responde un shell JS sin markup de ofertas, y además geobloquea por IP a los runners
+# de GitHub (datacenter EE.UU.). El gatekeeper, al evaluar https://www.empleospublicos.cl en
+# vivo, obtenía availability != OK → Decision.SOURCE_STATUS_ONLY → el batch legacy del portal
+# central (la fuente #1 del sitio) NUNCA se despachaba y quedaba en 0 ofertas en silencio. El
+# scraper ya no lee el HTML del portal: consume la API JSON apiConvocatorias.ashx (ver
+# empleos_publicos.py), así que su despacho no debe depender de que la home SPA sea evaluable.
 _KIND_BYPASS: dict[str, tuple[ExtractorKind, str]] = {
     ScraperKind.CUSTOM_TRABAJANDO.value: (ExtractorKind.SCRAPER_EXTERNAL_ATS, "ats_trabajando"),
     ScraperKind.CUSTOM_HIRINGROOM.value:  (ExtractorKind.SCRAPER_EXTERNAL_ATS,  "ats_hiringroom"),
     ScraperKind.CUSTOM_BUK.value:         (ExtractorKind.SCRAPER_EXTERNAL_ATS,  "ats_buk"),
     ScraperKind.CUSTOM_FFAA.value:        (ExtractorKind.SCRAPER_CUSTOM_DETAIL, "ffaa_waf"),
+    ScraperKind.EMPLEOS_PUBLICOS.value:   (ExtractorKind.SCRAPER_EMPLEOS_PUBLICOS, "empleos_publicos"),
 }
 # custom_policia depende del ID: 161=Carabineros, 162=PDI — se resuelve en _bypass_evaluation.
 _POLICIA_PROFILES = {

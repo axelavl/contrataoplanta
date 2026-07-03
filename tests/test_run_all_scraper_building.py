@@ -4,7 +4,12 @@ from types import SimpleNamespace
 
 from scrapers.evaluation.models import Decision, ExtractorKind
 from scrapers.evaluation.reason_codes import ReasonCode
-from scrapers.run_all import RuntimeSource, _build_scrapers, _enforce_playwright_capability
+from scrapers.run_all import (
+    RuntimeSource,
+    _bypass_evaluation,
+    _build_scrapers,
+    _enforce_playwright_capability,
+)
 
 
 def _runtime_source(*, inst_id: int, extractor: ExtractorKind, profile_name: str) -> RuntimeSource:
@@ -81,6 +86,35 @@ def test_build_scrapers_flags_empleos_publicos_for_legacy_batch():
     names = [type(assignment.scraper).__name__ for assignment in assignments]
     # ats_trabajando migrado a módulo ejecutar(): cae al genérico en el dispatch.
     assert names == ["GenericSiteScraper"]
+
+
+def test_bypass_dispatches_empleos_publicos_without_http_eval():
+    """El portal central (empleospublicos.cl) se reescribió como SPA y geobloquea
+    a los runners de GitHub, así que evaluarlo en vivo devuelve availability != OK
+    y el gatekeeper NUNCA gatillaba su batch (la fuente #1 quedaba en 0 en silencio).
+    Debe despacharse por bypass de kind, sin petición HTTP, con Decision.EXTRACT.
+    """
+    # Fuente típica del catálogo cuyo url_empleo apunta al portal central.
+    source = {
+        "id": 5,
+        "nombre": "Ministerio de Hacienda",
+        "url_empleo": "https://www.empleospublicos.cl",
+        "sitio_web": "https://www.hacienda.cl",
+        "plataforma_empleo": "empleospublicos.cl",
+        "publica_en_empleospublicos": "Sí",
+    }
+    evaluation = _bypass_evaluation(source)
+    assert evaluation is not None, "empleos_publicos debe entrar por bypass de kind"
+    assert evaluation.decision == Decision.EXTRACT
+    assert evaluation.recommended_extractor == ExtractorKind.SCRAPER_EMPLEOS_PUBLICOS
+    assert evaluation.profile_name == "empleos_publicos"
+
+    # End-to-end: una fuente empleos_publicos bypassed debe gatillar el batch legacy.
+    runtime_sources = [
+        RuntimeSource(institucion=source, fuente_id=None, evaluation=evaluation),
+    ]
+    _, run_empleos_publicos = _build_scrapers(runtime_sources)
+    assert run_empleos_publicos is True
 
 
 def test_playwright_without_runtime_is_demoted_to_source_status_only(monkeypatch):
