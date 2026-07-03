@@ -475,6 +475,26 @@ def admin_analitica_export(
     )
 
 
+# Portales/scrapers de origen reconocibles por el dominio de la URL de la oferta.
+# clave (para el filtro `origen`) → lista de dominios. "propio" = sitio
+# institucional (URL que no cae en ningún portal). Los dominios son constantes,
+# no entra input del usuario, así que interpolarlos en el ILIKE es seguro
+# (igual se pasan como parámetros).
+_ORIGEN_DOMINIOS: dict[str, list[str]] = {
+    "empleospublicos":    ["empleospublicos.cl"],
+    "trabajando":         ["trabajando.com", "trabajando.cl"],
+    "hiringroom":         ["hiringroom.com"],
+    "buk":                ["buk.cl"],
+    "chileatiende":       ["chileatiende.cl"],
+    "empleos_gob":        ["empleos.gob.cl"],
+    "postulaciones":      ["postulaciones.cl"],
+    "sistemadeconcursos": ["sistemadeconcursos.cl"],
+    "mitrabajodigno":     ["mitrabajodigno.cl"],
+    "ucampus":            ["ucampus.net"],
+}
+_ORIGEN_TODOS_PORTALES = [d for doms in _ORIGEN_DOMINIOS.values() for d in doms]
+
+
 @router.get(f"/api/{ADMIN_PATH}/ofertas", tags=["admin"])
 def admin_ofertas(
     pagina: int = Query(1, ge=1),
@@ -492,7 +512,7 @@ def admin_ofertas(
     needs_review: bool | None = Query(None),
     sin_renta: bool | None = Query(None, description="true: sin renta_bruta_min ni max"),
     destacada: str | None = Query(None, description="true/false: filtrar por destacada"),
-    excluir_empleos_publicos: bool | None = Query(None, description="true: excluir ofertas de empleospublicos.cl"),
+    origen: str | None = Query(None, description="Portal/scraper de origen (dominio de la URL) o 'propio'"),
     orden: str = Query("reciente", description="reciente|cierre|cargo|renta"),
     _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
@@ -505,11 +525,25 @@ def admin_ofertas(
     elif activa == "false":
         conditions.append("o.activa = FALSE")
 
-    if excluir_empleos_publicos is True:
-        conditions.append(
-            "(COALESCE(o.url_oferta, '') NOT ILIKE '%empleospublicos.cl%' "
-            "AND COALESCE(o.url_original, '') NOT ILIKE '%empleospublicos.cl%')"
-        )
+    # Filtro por origen (portal/scraper). Los dominios salen de un allowlist
+    # fijo; el valor del cliente sólo selecciona una clave conocida.
+    if origen:
+        if origen == "propio":
+            # Sitio institucional propio: la URL no está en ningún portal.
+            clauses = []
+            for dom in _ORIGEN_TODOS_PORTALES:
+                clauses.append("COALESCE(o.url_oferta, '') NOT ILIKE %s")
+                clauses.append("COALESCE(o.url_original, '') NOT ILIKE %s")
+                params.extend([f"%{dom}%", f"%{dom}%"])
+            conditions.append("(" + " AND ".join(clauses) + ")")
+        elif origen in _ORIGEN_DOMINIOS:
+            clauses = []
+            for dom in _ORIGEN_DOMINIOS[origen]:
+                clauses.append("COALESCE(o.url_oferta, '') ILIKE %s")
+                clauses.append("COALESCE(o.url_original, '') ILIKE %s")
+                params.extend([f"%{dom}%", f"%{dom}%"])
+            conditions.append("(" + " OR ".join(clauses) + ")")
+        # origen desconocido → se ignora
 
     if url_rota is True:
         conditions.append("o.url_oferta_valida = FALSE")

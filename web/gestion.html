@@ -506,9 +506,20 @@
         <label style="display:flex;align-items:center;gap:6px;color:var(--muted);cursor:pointer;font-size:13px">
           <input id="f-sin-renta" type="checkbox" data-change="ofertas"> Sin renta
         </label>
-        <label style="display:flex;align-items:center;gap:6px;color:var(--muted);cursor:pointer;font-size:13px" title="Excluir ofertas del portal empleospublicos.cl">
-          <input id="f-excluir-portal" type="checkbox" data-change="ofertas"> Sin empleospublicos.cl
-        </label>
+        <select id="f-origen" data-change="ofertas" title="Ver ofertas por portal/scraper de origen" style="min-width:190px">
+          <option value="">Origen: todos</option>
+          <option value="empleospublicos">empleospublicos.cl</option>
+          <option value="trabajando">trabajando.com</option>
+          <option value="hiringroom">hiringroom.com</option>
+          <option value="buk">buk.cl</option>
+          <option value="chileatiende">chileatiende.cl</option>
+          <option value="empleos_gob">empleos.gob.cl</option>
+          <option value="postulaciones">postulaciones.cl</option>
+          <option value="sistemadeconcursos">sistemadeconcursos.cl</option>
+          <option value="mitrabajodigno">mitrabajodigno.cl</option>
+          <option value="ucampus">ucampus.net</option>
+          <option value="propio">Sitio propio (institucional)</option>
+        </select>
       </div>
       <div id="ofertas-bulkbar" style="display:none;align-items:center;gap:10px;margin-bottom:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:8px 14px">
         <span id="sel-count" class="text-small" style="color:var(--accent);font-weight:600"></span>

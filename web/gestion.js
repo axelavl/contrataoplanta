@@ -1018,7 +1018,7 @@ async function loadOfertas(pag=1) {
   const cHasta = document.getElementById('f-cierre-hasta').value;
   const nrev   = document.getElementById('f-needs-review').value;
   const sinRenta = document.getElementById('f-sin-renta').checked;
-  const sinPortal = document.getElementById('f-excluir-portal')?.checked;
+  const origen = document.getElementById('f-origen')?.value;
   const dest = document.getElementById('f-destacada').value;
   if (instId) p.set('institucion_id', instId);
   if (estado) p.set('estado', estado);
@@ -1026,7 +1026,7 @@ async function loadOfertas(pag=1) {
   if (cHasta) p.set('cierre_hasta', cHasta);
   if (nrev)   p.set('needs_review', nrev);
   if (sinRenta) p.set('sin_renta', 'true');
-  if (sinPortal) p.set('excluir_empleos_publicos', 'true');
+  if (origen) p.set('origen', origen);
   if (dest) p.set('destacada', dest);
 
   _limpiarSeleccion();
