@@ -4172,6 +4172,19 @@ summary:focus-visible,
   color: #86EFAC !important;
 }
 
+/* En móvil la frescura "no nueva" ("Publicada hace X días") es texto discreto
+   (ver bloque @media 600px). La regla global de tema oscuro de arriba le
+   re-ponía fondo dorado, pero en móvil el padding/radius quedan en 0 → se veía
+   como texto RESALTADO por error. En móvil la dejamos como texto plano
+   atenuado (consistente con tema claro); el pill dorado con padding se conserva
+   sólo en desktop. Las ofertas "✨ Nueva" mantienen su pill verde. */
+@media (max-width: 600px) {
+  :root[data-theme="dark"] .oferta-frescura:not(.frescura-nueva) {
+    background: transparent !important;
+    color: rgba(255, 255, 255, 0.55) !important;
+  }
+}
+
 /* ── 6. FOOTER · plazo y acciones con mejor contraste ───────────────── */
 .oferta-footer {
   padding-top: 12px !important;
