@@ -1175,6 +1175,13 @@ const EDIT_SECTORES = [
   'Desarrollo Social','Cultura','Deporte','Ciencia y Tecnología','Energía',
   'Minería','Relaciones Exteriores','Gobierno','Otro',
 ];
+const EDIT_ESTAMENTOS = [
+  'Directivo','Jefatura','Profesional','Fiscalizador','Técnico',
+  'Administrativo','Auxiliar','Otro',
+];
+const EDIT_RENTA_TIPOS = [
+  ['bruta','Bruta'], ['liquida','Líquida'], ['indeterminada','Indeterminada'],
+];
 
 // Llena un <select> con las opciones estándar y selecciona el valor actual. Si
 // el valor guardado no está en la lista (dato heredado no estandarizado), se
@@ -1183,12 +1190,16 @@ function poblarSelectEdit(id, opciones, valorActual) {
   const el = document.getElementById(id);
   if (!el) return;
   const actual = (valorActual == null ? '' : String(valorActual)).trim();
-  const extra = (actual && !opciones.includes(actual))
+  // Cada opción puede ser un string ('Salud') o un par [valor, etiqueta]
+  // (['bruta','Bruta']) cuando el valor guardado difiere de lo mostrado.
+  const pares = opciones.map(o => Array.isArray(o) ? o : [o, o]);
+  const valores = pares.map(p => p[0]);
+  const extra = (actual && !valores.includes(actual))
     ? `<option value="${escAttr(actual)}" selected>${escAttr(actual)} (actual)</option>`
     : '';
   el.innerHTML =
     `<option value="">— Sin especificar —</option>` + extra +
-    opciones.map(o => `<option value="${escAttr(o)}"${o === actual ? ' selected' : ''}>${escAttr(o)}</option>`).join('');
+    pares.map(([v, lbl]) => `<option value="${escAttr(v)}"${v === actual ? ' selected' : ''}>${escAttr(lbl)}</option>`).join('');
   el.value = actual || '';
 }
 
@@ -1199,12 +1210,17 @@ function openCrearOferta() {
   document.getElementById('edit-id').textContent = '';
   document.getElementById('edit-institucion-group').style.display = '';
   document.getElementById('edit-save-btn').textContent = 'Crear';
-  ['edit-cargo','edit-institucion','edit-descripcion','edit-requisitos','edit-fecha-cierre',
-   'edit-renta-min','edit-renta-max','edit-url-oferta','edit-url-bases']
+  ['edit-cargo','edit-institucion','edit-descripcion','edit-requisitos',
+   'edit-fecha-publicacion','edit-fecha-cierre','edit-ciudad','edit-lugar-desempenio',
+   'edit-calidad-juridica','edit-jornada','edit-vacantes','edit-renta-min',
+   'edit-renta-max','edit-grado-eus','edit-area-profesional','edit-email-postulacion',
+   'edit-email-consultas','edit-url-oferta','edit-url-bases']
     .forEach(id => { document.getElementById(id).value = ''; });
   poblarSelectEdit('edit-region', EDIT_REGIONES, '');
   poblarSelectEdit('edit-tipo-contrato', EDIT_TIPOS_CONTRATO, '');
   poblarSelectEdit('edit-sector', EDIT_SECTORES, '');
+  poblarSelectEdit('edit-estamento', EDIT_ESTAMENTOS, '');
+  poblarSelectEdit('edit-renta-tipo', EDIT_RENTA_TIPOS, '');
   document.getElementById('edit-estado').value = 'activa';
   document.getElementById('edit-modal').classList.add('open');
 }
@@ -1220,11 +1236,23 @@ function openEdit(id, o) {
   document.getElementById('edit-cargo').value = o.cargo||'';
   document.getElementById('edit-descripcion').value = o.descripcion||'';
   document.getElementById('edit-requisitos').value = o.requisitos||o.requisitos_texto||'';
+  document.getElementById('edit-fecha-publicacion').value = o.fecha_publicacion ? String(o.fecha_publicacion).slice(0,10) : '';
   document.getElementById('edit-fecha-cierre').value = o.fecha_cierre ? o.fecha_cierre.slice(0,10) : '';
   document.getElementById('edit-estado').value = o.estado||'activa';
+  document.getElementById('edit-ciudad').value = o.ciudad||'';
+  document.getElementById('edit-lugar-desempenio').value = o.lugar_desempenio||'';
+  document.getElementById('edit-calidad-juridica').value = o.calidad_juridica||'';
+  document.getElementById('edit-jornada').value = o.jornada||'';
+  document.getElementById('edit-vacantes').value = o.numero_vacantes??'';
+  document.getElementById('edit-grado-eus').value = o.grado_eus||'';
+  document.getElementById('edit-area-profesional').value = o.area_profesional||'';
+  document.getElementById('edit-email-postulacion').value = o.email_postulacion||'';
+  document.getElementById('edit-email-consultas').value = o.email_consultas||'';
   poblarSelectEdit('edit-region', EDIT_REGIONES, o.region);
   poblarSelectEdit('edit-tipo-contrato', EDIT_TIPOS_CONTRATO, o.tipo_contrato);
   poblarSelectEdit('edit-sector', EDIT_SECTORES, o.sector);
+  poblarSelectEdit('edit-estamento', EDIT_ESTAMENTOS, o.estamento);
+  poblarSelectEdit('edit-renta-tipo', EDIT_RENTA_TIPOS, o.renta_tipo);
   document.getElementById('edit-renta-min').value = o.renta_bruta_min??'';
   document.getElementById('edit-renta-max').value = o.renta_bruta_max??'';
   document.getElementById('edit-url-oferta').value = o.url_oferta||'';
@@ -1239,18 +1267,30 @@ function closeModal() {
 async function saveEdit() {
   if (!_editingId && !_creandoOferta) return;
   const raw = {
-    cargo:         document.getElementById('edit-cargo').value,
-    descripcion:   document.getElementById('edit-descripcion').value||null,
-    requisitos:    document.getElementById('edit-requisitos').value||null,
-    fecha_cierre:  document.getElementById('edit-fecha-cierre').value||null,
-    estado:        document.getElementById('edit-estado').value,
-    region:        document.getElementById('edit-region').value||null,
-    tipo_contrato: document.getElementById('edit-tipo-contrato').value||null,
-    sector:        document.getElementById('edit-sector').value||null,
+    cargo:           document.getElementById('edit-cargo').value,
+    descripcion:     document.getElementById('edit-descripcion').value||null,
+    requisitos:      document.getElementById('edit-requisitos').value||null,
+    fecha_publicacion: document.getElementById('edit-fecha-publicacion').value||null,
+    fecha_cierre:    document.getElementById('edit-fecha-cierre').value||null,
+    estado:          document.getElementById('edit-estado').value,
+    region:          document.getElementById('edit-region').value||null,
+    ciudad:          document.getElementById('edit-ciudad').value||null,
+    lugar_desempenio: document.getElementById('edit-lugar-desempenio').value||null,
+    tipo_contrato:   document.getElementById('edit-tipo-contrato').value||null,
+    calidad_juridica: document.getElementById('edit-calidad-juridica').value||null,
+    jornada:         document.getElementById('edit-jornada').value||null,
+    sector:          document.getElementById('edit-sector').value||null,
+    estamento:       document.getElementById('edit-estamento').value||null,
+    area_profesional: document.getElementById('edit-area-profesional').value||null,
+    numero_vacantes: parseInt(document.getElementById('edit-vacantes').value)||null,
     renta_bruta_min: parseInt(document.getElementById('edit-renta-min').value)||null,
     renta_bruta_max: parseInt(document.getElementById('edit-renta-max').value)||null,
-    url_oferta:    document.getElementById('edit-url-oferta').value.trim()||null,
-    url_bases:     document.getElementById('edit-url-bases').value.trim()||null,
+    renta_tipo:      document.getElementById('edit-renta-tipo').value||null,
+    grado_eus:       document.getElementById('edit-grado-eus').value||null,
+    email_postulacion: document.getElementById('edit-email-postulacion').value.trim()||null,
+    email_consultas: document.getElementById('edit-email-consultas').value.trim()||null,
+    url_oferta:      document.getElementById('edit-url-oferta').value.trim()||null,
+    url_bases:       document.getElementById('edit-url-bases').value.trim()||null,
   };
   const payload = Object.fromEntries(Object.entries(raw).filter(([,v])=>v!=null&&v!==''));
   try {
