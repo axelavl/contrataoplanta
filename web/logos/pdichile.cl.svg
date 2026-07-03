@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Policía de Investigaciones de Chile">
+  <defs>
+    <linearGradient id="pbg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2b3340"/>
+      <stop offset="1" stop-color="#171d26"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="26" fill="url(#pbg)"/>
+  <circle cx="64" cy="64" r="46" fill="none" stroke="#e7c14a" stroke-width="3" opacity="0.85"/>
+  <!-- Escudo -->
+  <path fill="none" stroke="#f2ce5b" stroke-width="4" stroke-linejoin="round"
+        d="M64 32 L88 42 V64 C88 82 78 92 64 98 C50 92 40 82 40 64 V42 Z"/>
+  <path fill="#f2ce5b" d="M64 50 l4.6 9.4 10.4 1.5-7.5 7.3 1.8 10.3L64 83.4 54.7 78.3l1.8-10.3-7.5-7.3 10.4-1.5z"/>
+</svg>
