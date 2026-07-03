@@ -1157,6 +1157,41 @@ async function toggleDestacada(id) {
 // ── EDIT MODAL ────────────────────────────────────────────────
 let _creandoOferta = false;
 
+// Valores estandarizados para el editor de ofertas. Selects en vez de texto
+// libre → datos consistentes (evita "R.M." vs "Metropolitana", "cod. trabajo"
+// vs "Código del Trabajo", etc.).
+const EDIT_REGIONES = [
+  'Arica y Parinacota','Tarapacá','Antofagasta','Atacama','Coquimbo','Valparaíso',
+  'Metropolitana de Santiago',"O'Higgins",'Maule','Ñuble','Biobío','La Araucanía',
+  'Los Ríos','Los Lagos','Aysén','Magallanes',
+];
+const EDIT_TIPOS_CONTRATO = [
+  'Planta','Contrata','Honorarios','Código del Trabajo','Reemplazo','Suplencia','Otro',
+];
+const EDIT_SECTORES = [
+  'Salud','Educación','Municipal','Justicia','Seguridad','Defensa','Interior',
+  'Obras Públicas','Vivienda y Urbanismo','Transportes','Agricultura',
+  'Medio Ambiente','Economía','Hacienda','Trabajo y Previsión Social',
+  'Desarrollo Social','Cultura','Deporte','Ciencia y Tecnología','Energía',
+  'Minería','Relaciones Exteriores','Gobierno','Otro',
+];
+
+// Llena un <select> con las opciones estándar y selecciona el valor actual. Si
+// el valor guardado no está en la lista (dato heredado no estandarizado), se
+// antepone como opción para NO perderlo al editar otro campo.
+function poblarSelectEdit(id, opciones, valorActual) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const actual = (valorActual == null ? '' : String(valorActual)).trim();
+  const extra = (actual && !opciones.includes(actual))
+    ? `<option value="${escAttr(actual)}" selected>${escAttr(actual)} (actual)</option>`
+    : '';
+  el.innerHTML =
+    `<option value="">— Sin especificar —</option>` + extra +
+    opciones.map(o => `<option value="${escAttr(o)}"${o === actual ? ' selected' : ''}>${escAttr(o)}</option>`).join('');
+  el.value = actual || '';
+}
+
 function openCrearOferta() {
   _creandoOferta = true;
   _editingId = null;
@@ -1164,9 +1199,12 @@ function openCrearOferta() {
   document.getElementById('edit-id').textContent = '';
   document.getElementById('edit-institucion-group').style.display = '';
   document.getElementById('edit-save-btn').textContent = 'Crear';
-  ['edit-cargo','edit-institucion','edit-descripcion','edit-fecha-cierre','edit-region',
-   'edit-tipo-contrato','edit-sector','edit-renta-min','edit-renta-max','edit-url-oferta','edit-url-bases']
+  ['edit-cargo','edit-institucion','edit-descripcion','edit-requisitos','edit-fecha-cierre',
+   'edit-renta-min','edit-renta-max','edit-url-oferta','edit-url-bases']
     .forEach(id => { document.getElementById(id).value = ''; });
+  poblarSelectEdit('edit-region', EDIT_REGIONES, '');
+  poblarSelectEdit('edit-tipo-contrato', EDIT_TIPOS_CONTRATO, '');
+  poblarSelectEdit('edit-sector', EDIT_SECTORES, '');
   document.getElementById('edit-estado').value = 'activa';
   document.getElementById('edit-modal').classList.add('open');
 }
@@ -1181,11 +1219,12 @@ function openEdit(id, o) {
   document.getElementById('edit-id').textContent = `#${id}`;
   document.getElementById('edit-cargo').value = o.cargo||'';
   document.getElementById('edit-descripcion').value = o.descripcion||'';
+  document.getElementById('edit-requisitos').value = o.requisitos||o.requisitos_texto||'';
   document.getElementById('edit-fecha-cierre').value = o.fecha_cierre ? o.fecha_cierre.slice(0,10) : '';
   document.getElementById('edit-estado').value = o.estado||'activa';
-  document.getElementById('edit-region').value = o.region||'';
-  document.getElementById('edit-tipo-contrato').value = o.tipo_contrato||'';
-  document.getElementById('edit-sector').value = o.sector||'';
+  poblarSelectEdit('edit-region', EDIT_REGIONES, o.region);
+  poblarSelectEdit('edit-tipo-contrato', EDIT_TIPOS_CONTRATO, o.tipo_contrato);
+  poblarSelectEdit('edit-sector', EDIT_SECTORES, o.sector);
   document.getElementById('edit-renta-min').value = o.renta_bruta_min??'';
   document.getElementById('edit-renta-max').value = o.renta_bruta_max??'';
   document.getElementById('edit-url-oferta').value = o.url_oferta||'';
@@ -1202,6 +1241,7 @@ async function saveEdit() {
   const raw = {
     cargo:         document.getElementById('edit-cargo').value,
     descripcion:   document.getElementById('edit-descripcion').value||null,
+    requisitos:    document.getElementById('edit-requisitos').value||null,
     fecha_cierre:  document.getElementById('edit-fecha-cierre').value||null,
     estado:        document.getElementById('edit-estado').value,
     region:        document.getElementById('edit-region').value||null,
