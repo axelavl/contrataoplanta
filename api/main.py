@@ -453,7 +453,10 @@ async def on_startup_scheduler() -> None:
         logger.info("Programador in-app deshabilitado por SCHEDULER_DISABLED")
         return
     try:
-        from api.services.scheduler import scheduler_loop
+        from api.services.scheduler import scheduler_loop, _desactivar_vencidas
+        n = await asyncio.to_thread(_desactivar_vencidas)
+        if n:
+            logger.info("Startup: %d ofertas vencidas desactivadas", n)
         app.state.scheduler_task = asyncio.create_task(scheduler_loop())
         logger.info("Programador in-app activo (loop en background)")
     except Exception as exc:

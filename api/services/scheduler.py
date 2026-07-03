@@ -213,18 +213,78 @@ def _lanzar_run_all(modo: str, limite_fuentes: int | None) -> int | None:
         return None
 
 
+def _desactivar_vencidas() -> int:
+    """Desactiva ofertas cuya fecha_cierre ya pasó (hora de Chile).
+
+    Devuelve la cantidad de ofertas desactivadas. Registra la acción en
+    admin_audit_log para trazabilidad (best-effort).
+    """
+    try:
+        from api.services.db import get_cursor
+        with get_cursor() as (conn, cur):
+            cur.execute(
+                "UPDATE ofertas "
+                "SET activa = FALSE, estado = 'cerrada', actualizada_en = NOW() "
+                "WHERE activa = TRUE "
+                "  AND fecha_cierre IS NOT NULL "
+                "  AND fecha_cierre < (NOW() AT TIME ZONE 'America/Santiago')::date "
+                "RETURNING id",
+            )
+            ids = [row["id"] for row in cur.fetchall()]
+            count = len(ids)
+            if count:
+                try:
+                    cur.execute(
+                        "INSERT INTO admin_audit_log "
+                        "(usuario, accion, entidad, detalle) "
+                        "VALUES (%s, %s, %s, %s)",
+                        [
+                            "scheduler",
+                            "auto_desactivar_vencidas",
+                            "ofertas",
+                            __import__("json").dumps({
+                                "desactivadas": count,
+                                "ids": ids[:50],
+                            }),
+                        ],
+                    )
+                except Exception:
+                    pass
+            conn.commit()
+        return count
+    except Exception as exc:
+        logger.warning("[scheduler] error desactivando vencidas: %s", exc)
+        return 0
+
+
+_DESACTIVAR_CADA_TICKS = 30
+
+
 async def scheduler_loop() -> None:
-    """Loop infinito: cada `_TICK_SEG` revisa y, si toca, lanza la corrida."""
+    """Loop infinito: cada `_TICK_SEG` revisa y, si toca, lanza la corrida.
+
+    También desactiva automáticamente ofertas vencidas cada
+    `_DESACTIVAR_CADA_TICKS` ticks (~30 min con tick=60s).
+    """
     logger.info("[scheduler] loop iniciado (tick=%ss)", _TICK_SEG)
+    tick_count = 0
     while True:
         try:
             await asyncio.sleep(_TICK_SEG)
+            tick_count += 1
+
             claim = await asyncio.to_thread(_claim_due_run)
             if claim:
                 await asyncio.to_thread(
                     _lanzar_run_all, claim.get("modo", "completa"),
                     claim.get("limite_fuentes"),
                 )
+
+            if tick_count % _DESACTIVAR_CADA_TICKS == 0:
+                n = await asyncio.to_thread(_desactivar_vencidas)
+                if n:
+                    logger.info("[scheduler] %d ofertas vencidas desactivadas", n)
+
         except asyncio.CancelledError:
             logger.info("[scheduler] loop detenido")
             raise
