@@ -629,7 +629,7 @@ def admin_ofertas(
             o.url_bases, o.url_bases_valida,
             o.renta_bruta_min, o.renta_bruta_max,
             o.fecha_scraped, o.detectada_en,
-            o.institucion_id, o.descripcion,
+            o.institucion_id, o.descripcion, o.requisitos, o.requisitos_texto,
             o.overall_quality_score, o.needs_review,
             i.sector AS inst_sector, i.nombre AS inst_nombre_catalogo,
             i.url_empleo AS inst_url_empleo
@@ -938,8 +938,8 @@ def admin_editar_oferta(
     que el próximo pase de `validate_offer_urls.py` la chequee.
     """
     CAMPOS_PERMITIDOS = {
-        "cargo", "descripcion", "fecha_cierre", "activa", "estado", "region",
-        "sector", "tipo_contrato", "renta_bruta_min", "renta_bruta_max",
+        "cargo", "descripcion", "requisitos", "fecha_cierre", "activa", "estado",
+        "region", "sector", "tipo_contrato", "renta_bruta_min", "renta_bruta_max",
         "url_oferta", "url_bases",
     }
     updates = {k: v for k, v in payload.items() if k in CAMPOS_PERMITIDOS}
@@ -1017,6 +1017,7 @@ def admin_crear_oferta(
         "institucion_nombre": institucion[:300],
         "institucion_id": _int_o_none(payload.get("institucion_id")),
         "descripcion": payload.get("descripcion") or None,
+        "requisitos": payload.get("requisitos") or None,
         "fecha_cierre": payload.get("fecha_cierre") or None,
         "fecha_publicacion": payload.get("fecha_publicacion") or date.today(),
         "region": (payload.get("region") or None),
