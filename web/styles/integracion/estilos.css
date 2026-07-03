@@ -57,6 +57,19 @@ mark.cop-hl {
   border-radius: 9px; border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.08);
   color: #fff; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .cop-close:hover { background: rgba(255,255,255,.16); }
+/* Chip con el ID de la oferta, arriba a la izquierda del encabezado oscuro.
+   Va en el flujo (empuja el kicker hacia abajo) para no tapar el botón cerrar.
+   Copia el número al portapapeles (mismo gesto que el chip de la tarjeta). */
+.cop-id-chip { display: inline-flex; align-items: center; margin: 0 0 12px;
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: 11px; font-weight: 700; line-height: 1; letter-spacing: .3px;
+  padding: 6px 9px; border-radius: 7px; min-width: 44px; justify-content: center;
+  background: rgba(255,255,255,.10); color: rgba(255,255,255,.92);
+  border: 1px solid rgba(255,255,255,.22); cursor: pointer; white-space: nowrap;
+  transition: background .15s; }
+.cop-id-chip[hidden] { display: none; }
+.cop-id-chip:hover { background: rgba(255,255,255,.2); }
+.cop-id-chip:focus-visible { outline: 2px solid var(--gold-brilliant, #F2C26A); outline-offset: 2px; }
 .cop-kicker { font-size: 10.5px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
   color: var(--gold-brilliant, #F2C26A); margin-bottom: 9px; }
 .cop-inst { font-size: 13px; font-weight: 600; color: rgba(255,255,255,.85);
@@ -132,6 +145,15 @@ mark.cop-hl {
 /* Recorte a una altura estándar (6 líneas) con "Ver más" para expandir. */
 .cop-objetivo.cop-clamp { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; overflow: hidden; }
 .cop-objetivo.cop-clamp.cop-expandida { -webkit-line-clamp: unset; overflow: visible; }
+/* Cuerpo de sección (listas/tablas): abierto por defecto. Si excede la altura
+   estándar se recorta con un degradado inferior y aparece "Ver más"; el JS
+   quita .cop-clamp cuando NO excede, para no dejar degradado en secciones
+   cortas. `.cop-expandida` (toggle "Ver más") libera el recorte. */
+.cop-sec-body.cop-clamp { max-height: 340px; overflow: hidden;
+  -webkit-mask-image: linear-gradient(180deg, #000 78%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 78%, transparent 100%); }
+.cop-sec-body.cop-clamp.cop-expandida { max-height: none; overflow: visible;
+  -webkit-mask-image: none; mask-image: none; }
 .cop-desc-toggle { margin-top: 6px; padding: 0; border: none; background: none; cursor: pointer;
   color: var(--cielo, #1A6BCC); font: 600 12.5px/1 'Inter', system-ui, sans-serif; }
 .cop-desc-toggle:hover { text-decoration: underline; }
