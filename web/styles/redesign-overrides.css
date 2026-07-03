@@ -3205,14 +3205,17 @@ summary:focus-visible,
   /* Institución: pasa de "shouty" (uppercase + bold + azul) a subline
      discreta. El lector ya tiene al cargo como ancla principal. */
   .oferta-institucion {
-    font-size: 11px !important;
+    font-size: 11.5px !important;
     font-weight: 600 !important;
     color: var(--texto3, #6b7280) !important;
     text-transform: none !important;
     letter-spacing: 0 !important;
     margin-bottom: 3px !important;
-    -webkit-line-clamp: 1 !important;
-    line-clamp: 1 !important;
+    line-height: 1.32 !important;
+    /* 2 líneas: el nombre completo ("Servicio de Salud Valparaíso - San
+       Antonio") ya no se corta con "…" en una sola línea. */
+    -webkit-line-clamp: 2 !important;
+    line-clamp: 2 !important;
   }
   :root[data-theme="dark"] .oferta-institucion {
     color: rgba(255, 255, 255, 0.58) !important;
@@ -3268,43 +3271,47 @@ summary:focus-visible,
     padding: 2px 7px;
   }
 
-  /* Footer: sin border-top (reduce ruido visual), inline en 1 fila
-     cuando entre — plazo a la izquierda, botón como ancla derecha. */
+  /* Footer apilado: el plazo va en su propia línea (texto completo, sin
+     recortes) y las acciones (ID + "Ver detalles" + comparar) en otra línea
+     de ancho completo. Antes iba todo en 1 fila y el plazo se exprimía a
+     "24 dí…" por el chip de ID + el botón grande. */
   .oferta-footer {
     border-top: none !important;
-    padding-top: 6px !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    gap: 10px !important;
+    padding-top: 8px !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 9px !important;
   }
   .oferta-plazo {
-    flex: 1 1 auto;
+    flex: none;
     min-width: 0;
     font-size: 12.5px;
   }
-  /* El estado ("12 días disponibles") se partía en dos renglones junto al
-     botón. Lo mantenemos en una sola línea; si no cupiera, se recorta con
-     elipsis en vez de apilarse palabra por palabra. */
+  /* Texto del plazo completo (cabe en su propia línea): sin nowrap/elipsis. */
   .oferta-plazo .plazo-text {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    min-width: 0;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
   }
-  /* En la columna angosta del footer, la fecha absoluta se apilaba palabra
-     por palabra ("· 25 / de / junio…"). En móvil basta el plazo relativo
-     ("7 días disponibles" / "Cierra mañana"); la fecha exacta sigue en el
-     detalle de la oferta. */
+  /* La fecha absoluta se apilaba palabra por palabra; en móvil basta el plazo
+     relativo ("24 días disponibles" / "Cierra mañana"). Fecha exacta → detalle. */
   .oferta-plazo-fecha { display: none !important; }
   .oferta-acciones {
-    width: auto !important;
-    flex: 0 0 auto;
+    width: 100% !important;
+    flex-wrap: nowrap;
+    gap: 8px !important;
+    align-items: center;
   }
+  /* "Ver detalles" ocupa el espacio disponible = target táctil grande. El chip
+     de ID y el botón comparar quedan a los costados con su tamaño natural. */
+  .oferta-acciones .oferta-id-chip { flex: 0 0 auto; }
+  .oferta-acciones .cop-cmp-btn { flex: 0 0 auto; }
   .btn-detalle {
-    flex: 0 0 auto !important;
-    padding: 8px 18px !important;
-    font-size: 13px !important;
-    min-height: 38px;
+    flex: 1 1 auto !important;
+    padding: 9px 16px !important;
+    font-size: 13.5px !important;
+    min-height: 40px;
+    text-align: center;
   }
 
   /* Favorito: tappeable pero sin dominar la esquina. */
