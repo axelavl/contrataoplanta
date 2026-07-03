@@ -338,6 +338,9 @@ def parsear_perfil_pdf(texto: str) -> dict[str, Any]:
             d["plazo_ini"] = ini
         if fin:
             d["plazo_fin"] = fin
+    # Email de postulación: "enviar sus antecedentes al correo, postulapdi3@..."
+    if m := re.search(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", texto):
+        d["email_postulacion"] = m.group(0).lower()
     t = texto.lower()
     if "jornal" in t:
         d["tipo"] = "Jornal"
@@ -393,6 +396,7 @@ def construir_oferta_contrata(c: dict[str, Any], perfil: dict[str, Any]) -> dict
         "fecha_publicacion": c["plazo_ini"] or perfil.get("fecha_publicacion") or perfil.get("plazo_ini") or _hoy_cl(),
         "fecha_cierre": c["plazo_fin"] or perfil.get("plazo_fin"),
         "requisitos_texto": perfil.get("requisitos"),
+        "email_postulacion": perfil.get("email_postulacion"),
         "url_bases": c.get("url_pdf"),
     }
 
