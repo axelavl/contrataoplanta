@@ -30,7 +30,7 @@ from urllib.parse import quote_plus, urlencode, urlparse
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, Response, StreamingResponse
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 import time as _time
 from collections import defaultdict
@@ -41,10 +41,10 @@ from api.deps import (
     SITE_URL,
     WEB_INDEX_PATH,
     _PROJECT_ROOT,
+    check_public_rate_limit,
     client_ip,
 )
 from api.services.db import (
-    DB_CONFIG,
     execute_fetch_all,
     execute_fetch_one,
     get_cursor,
@@ -62,6 +62,7 @@ from api.services.formatters import (
 )
 from api.services.sql import (
     ACTIVE_OFFER_SQL,
+    DESTACADAS_AUTO,
     OFFER_STATUS_SQL,
     STATUS_LEGACY_MAP,
     build_cargo_relevance,
@@ -69,6 +70,50 @@ from api.services.sql import (
     ofertas_base_sql,
     ofertas_select_sql,
 )
+
+
+def _destacadas_config() -> tuple[bool, list[dict[str, Any]] | None, str]:
+    """Lee la config de Destacadas de `site_config` (panel admin).
+
+    Devuelve ``(auto, criterios, modo)``:
+    - ``auto``: si la pestaña pública incluye los criterios automáticos además de
+      las marcadas a mano. Si la clave falta / DB caída → constante `DESTACADAS_AUTO`.
+    - ``criterios``: lista ``[{tipo, valor}]`` parseada del JSON `destacadas_criterios`
+      (o None si no hay / es inválido → se usa el criterio por defecto).
+    - ``modo``: 'any' (OR) | 'all' (AND).
+    """
+    auto = DESTACADAS_AUTO
+    criterios: list[dict[str, Any]] | None = None
+    modo = "any"
+    try:
+        rows = execute_fetch_all(
+            "SELECT clave, valor FROM site_config "
+            "WHERE clave IN ('destacadas_auto','destacadas_criterios','destacadas_criterios_modo')",
+            [],
+        )
+        conf = {r["clave"]: r["valor"] for r in rows}
+        if conf.get("destacadas_auto") is not None:
+            auto = str(conf["destacadas_auto"]).strip().lower() in ("1", "true", "yes")
+        if str(conf.get("destacadas_criterios_modo", "")).strip().lower() == "all":
+            modo = "all"
+        raw = conf.get("destacadas_criterios")
+        if raw:
+            parsed = json.loads(raw)
+            if isinstance(parsed, list):
+                criterios = [c for c in parsed if isinstance(c, dict)]
+    except Exception:
+        pass
+    return auto, criterios, modo
+
+
+def _destacadas_filtros() -> dict[str, Any]:
+    """kwargs de Destacadas para `build_ofertas_filters` (solo en esa pestaña)."""
+    auto, criterios, modo = _destacadas_config()
+    return {
+        "destacadas_auto": auto,
+        "destacadas_criterios": criterios,
+        "destacadas_modo": modo,
+    }
 from api.services.seo import (
     build_offer_meta,
     fetch_offer_for_meta,
@@ -109,24 +154,23 @@ except Exception:  # pragma: no cover
 router = APIRouter(tags=["public"])
 
 
-_public_rate: dict[str, list[float]] = defaultdict(list)
 _PUBLIC_RATE_WINDOW = 600
 _PUBLIC_RATE_MAX = 20
 
 
-def _check_public_rate(request: Request, max_hits: int = _PUBLIC_RATE_MAX) -> None:
-    """Rate limit liviano por IP para endpoints públicos sensibles."""
-    ip = client_ip(request)
-    ahora = _time.time()
-    corte = ahora - _PUBLIC_RATE_WINDOW
-    hits = _public_rate[ip] = [t for t in _public_rate[ip] if t > corte]
-    if len(hits) >= max_hits:
-        raise HTTPException(
-            status_code=429,
-            detail="Demasiadas solicitudes. Intente en unos minutos.",
-            headers={"Retry-After": str(_PUBLIC_RATE_WINDOW)},
-        )
-    _public_rate[ip].append(ahora)
+def _check_public_rate(
+    request: Request, max_hits: int = _PUBLIC_RATE_MAX, *, bucket: str = "publico"
+) -> None:
+    """Rate limit por IP para endpoints públicos sensibles.
+
+    Estado compartido entre workers en Postgres (tabla `public_rate_hits`), con
+    fallback en memoria si la DB no responde. `bucket` separa el presupuesto por
+    familia de endpoint para que el abuso de uno no consuma la cuota de otro.
+    """
+    check_public_rate_limit(
+        client_ip(request), bucket,
+        window_seg=_PUBLIC_RATE_WINDOW, max_hits=max_hits,
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -134,11 +178,16 @@ def _check_public_rate(request: Request, max_hits: int = _PUBLIC_RATE_MAX) -> No
 # ═══════════════════════════════════════════════════════════════════════════
 
 class AlertaPayload(BaseModel):
-    email: str
-    region: str | None = None
-    termino: str | None = None
-    tipo_contrato: str | None = None
-    sector: str | None = None
+    # Límites de longitud explícitos: sin ellos, el body POST aceptaba
+    # cadenas ilimitadas que (a) alimentaban el regex de validación de email
+    # con entradas enormes y (b) reventaban con 500 al superar el límite
+    # VARCHAR de la columna en el INSERT. Un email válido cabe en 254 chars
+    # (RFC 5321); el resto son términos cortos de filtro.
+    email: str = Field(..., min_length=3, max_length=254)
+    region: str | None = Field(default=None, max_length=100)
+    termino: str | None = Field(default=None, max_length=200)
+    tipo_contrato: str | None = Field(default=None, max_length=50)
+    sector: str | None = Field(default=None, max_length=100)
     frecuencia: str | None = "diaria"
 
 
@@ -173,9 +222,10 @@ def get_ofertas(
     solo_con_correo: bool = Query(False, description="Solo ofertas con correo de postulación/contacto."),
     destacadas: bool = Query(False, description="Solo ofertas destacadas (las que se publican en redes sociales)."),
     sin_experiencia: bool = Query(False, description="Solo ofertas que no exigen experiencia previa (best-effort por texto)."),
+    excluir_empleos_publicos: bool = Query(False, description="Excluir ofertas del portal empleospublicos.cl."),
     vista: str = Query("vigentes", pattern="^(vigentes|cerradas|todas)$"),
     orden: str = Query("recientes"),
-    pagina: int = Query(1, ge=1),
+    pagina: int = Query(1, ge=1, le=10000),
     por_pagina: int = Query(20, ge=1, le=100),
 ) -> dict[str, Any]:
     pag = Paginacion(pagina=pagina, por_pagina=por_pagina)
@@ -199,8 +249,11 @@ def get_ofertas(
         solo_con_correo=solo_con_correo,
         solo_destacadas=destacadas,
         sin_experiencia=sin_experiencia,
+        excluir_empleos_publicos=excluir_empleos_publicos,
         solo_activas=only_active,
         closed_only=only_closed,
+        # Solo se consulta la config de Destacadas cuando es esa pestaña.
+        **(_destacadas_filtros() if destacadas else {}),
     )
 
     # Ofertas sin fecha_cierre van al final;
@@ -361,7 +414,11 @@ def og_image_oferta(
         from api.services.og_image import render_offer_card
         png = render_offer_card(oferta, fmt=format)  # type: ignore[arg-type]
     except ImportError as exc:  # Pillow no instalado
-        raise HTTPException(status_code=503, detail=f"Generador OG no disponible: {exc}") from exc
+        # El detalle de la excepción (rutas/versiones internas) queda en logs;
+        # al cliente se le devuelve un mensaje genérico.
+        import logging
+        logging.getLogger("api.routers.public").warning("Generador OG no disponible: %s", exc)
+        raise HTTPException(status_code=503, detail="Generador de imágenes no disponible") from exc
 
     filename = f"oferta-{oferta_id}-{format}.png"
     return Response(
@@ -554,7 +611,7 @@ def get_instituciones(
     q: str | None = Query(None),
     sector: str | None = Query(None),
     region: str | None = Query(None),
-    pagina: int = Query(1, ge=1),
+    pagina: int = Query(1, ge=1, le=10000),
     por_pagina: int = Query(50, ge=1, le=200),
 ) -> dict[str, Any]:
     pag = Paginacion(pagina=pagina, por_pagina=por_pagina)
@@ -608,7 +665,7 @@ def get_instituciones(
 @router.get("/api/instituciones/{institucion_id}/ofertas")
 def get_institucion_ofertas(
     institucion_id: int,
-    pagina: int = Query(1, ge=1),
+    pagina: int = Query(1, ge=1, le=10000),
     por_pagina: int = Query(20, ge=1, le=100),
 ) -> dict[str, Any]:
     pag = Paginacion(pagina=pagina, por_pagina=por_pagina)
@@ -706,7 +763,7 @@ def get_historial(
     comunas: str | None = Query(None, description="Lista de comunas separadas por coma"),
     solo_con_correo: bool = Query(False),
     sin_experiencia: bool = Query(False),
-    pagina: int = Query(1, ge=1),
+    pagina: int = Query(1, ge=1, le=10000),
     por_pagina: int = Query(50, ge=1, le=200),
 ) -> dict[str, Any]:
     pag = Paginacion(pagina=pagina, por_pagina=por_pagina)
@@ -771,7 +828,7 @@ def get_sugerencias(q: str = Query(..., min_length=1, max_length=100)) -> list[s
 
 @router.post("/api/alertas")
 def crear_alerta(request: Request, payload: AlertaPayload) -> dict[str, Any]:
-    _check_public_rate(request)
+    _check_public_rate(request, bucket="alertas")
     email         = validate_email(payload.email)
     region        = payload.region.strip()        if payload.region        else None
     termino       = payload.termino.strip()       if payload.termino       else None
@@ -786,36 +843,118 @@ def crear_alerta(request: Request, payload: AlertaPayload) -> dict[str, Any]:
     if not check["valido"]:
         raise HTTPException(status_code=422, detail=check["motivo"])
 
+    # Doble opt-in: la suscripción NO se activa para envíos hasta que se
+    # confirma el correo. Así se evita que alguien suscriba a un tercero y le
+    # llegue spam (y se protege la reputación del dominio remitente). Si Resend
+    # NO está configurado (dev/staging sin RESEND_API_KEY), no habría forma de
+    # confirmar, así que se degrada al comportamiento anterior: se marca como
+    # verificada de inmediato.
+    email_configurado = bool(os.getenv("RESEND_API_KEY") or os.getenv("EMAIL_API_KEY"))
+    token = secrets.token_urlsafe(32) if email_configurado else None
+    verificada_inicial = not email_configurado
+
     with get_cursor() as (connection, cursor):
         cursor.execute(
             """
             INSERT INTO alertas_suscripciones (
                 email, region, termino, tipo_contrato, sector, frecuencia,
-                activa, creada_en, actualizada_en
-            ) VALUES (%s, %s, %s, %s, %s, %s, TRUE, NOW(), NOW())
+                activa, verificada, token_verificacion, creada_en, actualizada_en
+            ) VALUES (%s, %s, %s, %s, %s, %s, TRUE, %s, %s, NOW(), NOW())
             ON CONFLICT (
                 LOWER(email),
                 COALESCE(region, ''),
                 COALESCE(termino, ''),
                 COALESCE(tipo_contrato, ''),
                 COALESCE(sector, '')
-            ) DO UPDATE SET activa = TRUE, frecuencia = EXCLUDED.frecuencia,
-                           actualizada_en = NOW()
+            ) DO UPDATE SET
+                activa = TRUE,
+                frecuencia = EXCLUDED.frecuencia,
+                actualizada_en = NOW(),
+                -- Sólo (re)generar token si la suscripción NO estaba verificada;
+                -- una re-suscripción de un correo ya confirmado no exige
+                -- reconfirmar (queda activa y verificada).
+                token_verificacion = CASE
+                    WHEN alertas_suscripciones.verificada THEN alertas_suscripciones.token_verificacion
+                    ELSE EXCLUDED.token_verificacion END
+            RETURNING verificada, token_verificacion
             """,
-            [email, region, termino, tipo_contrato, sector, frecuencia],
+            [email, region, termino, tipo_contrato, sector, frecuencia,
+             verificada_inicial, token],
         )
+        row = cursor.fetchone()
         connection.commit()
 
-    response: dict[str, Any] = {"ok": True, "mensaje": "Alerta registrada correctamente"}
+    row = dict(row) if row else {}
+    ya_verificada = bool(row.get("verificada"))
+    token_envio = row.get("token_verificacion")
+
+    response: dict[str, Any] = {"ok": True}
+    if ya_verificada:
+        response["mensaje"] = "Alerta registrada correctamente"
+        response["verificada"] = True
+    else:
+        # Pendiente de confirmación: enviar (o reenviar) el correo de verificación.
+        if token_envio:
+            try:
+                enviar_verificacion(email, token_envio)
+            except Exception as exc:  # noqa: BLE001 — no romper el alta por un fallo de envío
+                import logging
+                logging.getLogger("api.routers.public").warning(
+                    "No se pudo enviar verificación de alerta a %s: %s", email, exc
+                )
+        response["mensaje"] = "Te enviamos un correo para confirmar tu suscripción. Revisa tu bandeja (y spam)."
+        response["verificada"] = False
+
     if check.get("sugerencia"):
         response["sugerencia_email"] = check["sugerencia"]
     return response
+
+
+@router.get("/api/alertas/confirmar")
+def confirmar_alerta(request: Request, token: str = Query(..., min_length=16, max_length=64)) -> dict[str, Any]:
+    """Confirma una suscripción a alertas a partir del token del correo.
+
+    Marca la fila como `verificada = TRUE`, la deja activa y consume el token
+    (un solo uso). Idempotente en la práctica: si el token ya se usó no existe
+    ninguna fila con él y se responde 404, pero una fila ya verificada no se ve
+    afectada.
+    """
+    _check_public_rate(request, max_hits=30, bucket="alertas_confirmar")
+    with get_cursor() as (connection, cursor):
+        cursor.execute(
+            """
+            UPDATE alertas_suscripciones
+               SET verificada = TRUE,
+                   activa = TRUE,
+                   verificada_en = NOW(),
+                   token_verificacion = NULL,
+                   actualizada_en = NOW()
+             WHERE token_verificacion = %s
+            RETURNING email
+            """,
+            [token],
+        )
+        row = cursor.fetchone()
+        connection.commit()
+
+    if not row:
+        raise HTTPException(
+            status_code=404,
+            detail="Enlace de confirmación inválido o ya utilizado.",
+        )
+    return {"ok": True, "mensaje": "Suscripción confirmada. Ya recibirás tus alertas."}
 
 
 # ──────────────────── Analítica interna (beacon de tráfico) ─────────────────
 
 #: Límite holgado y propio para el beacon: una sesión normal genera muchas
 #: vistas, así que no comparte presupuesto con `/api/alertas`.
+#:
+#: A diferencia de `_check_public_rate`, este límite se mantiene EN MEMORIA a
+#: propósito: el beacon es alto volumen (hasta 120/min por IP) y su valor de
+#: seguridad es bajo (protege sólo contra spam de analítica, no toca DB de
+#: negocio ni envía correos). Un INSERT por hit en Postgres sería un costo de
+#: escritura desproporcionado. La fragmentación por worker es aceptable acá.
 _track_rate: dict[str, list[float]] = defaultdict(list)
 _TRACK_RATE_WINDOW = 60
 _TRACK_RATE_MAX = 120
@@ -1038,7 +1177,7 @@ def api_validar_email(request: Request, email: str = Query(..., min_length=3, ma
     Valida un email: detecta dominios temporales/desechables y sugiere
     correcciones de typos comunes (gmial→gmail, hotnail→hotmail).
     """
-    _check_public_rate(request, max_hits=30)
+    _check_public_rate(request, max_hits=30, bucket="validar_email")
     return mailcheck_validar(email)
 
 
@@ -1090,7 +1229,6 @@ def root() -> dict[str, Any]:
         "nombre": "contrata o planta .cl - API",
         "version": "3.0.0",
         "docs": "/docs",
-        "db_host": DB_CONFIG["host"],
         "endpoints": [
             "GET /api/ofertas",
             "GET /api/ofertas/{id}",
@@ -1131,6 +1269,8 @@ _SITE_CONFIG_PUBLICA = {
     # identificadores públicos, van en el HTML; no son secretos).
     "ads_enabled", "ads_client",
     "ads_slot_resultados", "ads_slot_sidebar", "ads_slot_contenido",
+    # Recuadro "Anúnciate" (oferta + valores para publicar) en cursos.html.
+    "cursos_anunciate_activo",
 }
 
 

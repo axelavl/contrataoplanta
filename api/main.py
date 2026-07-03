@@ -258,6 +258,13 @@ def ensure_api_schema() -> None:
         "CREATE INDEX IF NOT EXISTS idx_alertas_email ON alertas_suscripciones (LOWER(email))",
         "ALTER TABLE alertas_suscripciones ADD COLUMN IF NOT EXISTS sector VARCHAR(100)",
         "ALTER TABLE alertas_suscripciones ADD COLUMN IF NOT EXISTS frecuencia VARCHAR(20) DEFAULT 'diaria'",
+        # Doble opt-in (verificación de email). Ver migración
+        # 20260701_0002_alertas_doble_optin. Las filas heredadas se marcan
+        # verificadas para no cortar envíos existentes.
+        "ALTER TABLE alertas_suscripciones ADD COLUMN IF NOT EXISTS verificada BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE alertas_suscripciones ADD COLUMN IF NOT EXISTS token_verificacion VARCHAR(64)",
+        "ALTER TABLE alertas_suscripciones ADD COLUMN IF NOT EXISTS verificada_en TIMESTAMPTZ",
+        "UPDATE alertas_suscripciones SET verificada = TRUE WHERE verificada = FALSE AND verificada_en IS NULL",
         # Columnas extendidas para scraper_runs (compatibilidad con admin panel)
         "ALTER TABLE scraper_runs ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ",
         "ALTER TABLE scraper_runs ADD COLUMN IF NOT EXISTS finished_at TIMESTAMPTZ",

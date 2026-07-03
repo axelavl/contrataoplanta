@@ -176,6 +176,28 @@ document.addEventListener('click', function (e) {
       }
       break;
     }
+    case 'copiar-id': {
+      // Copia el ID de la oferta al portapapeles (útil para buscarla en el
+      // panel admin). Feedback breve en el propio chip, sin depender del toast.
+      var copiaId = el.getAttribute('data-oferta-id') || '';
+      if (!copiaId) break;
+      var textoPrevio = el.textContent;
+      var okCopia = function () {
+        el.textContent = '✓ copiado';
+        setTimeout(function () { el.textContent = textoPrevio; }, 1200);
+      };
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(copiaId).then(okCopia).catch(okCopia);
+        } else {
+          var ta = document.createElement('textarea');
+          ta.value = copiaId; ta.style.position = 'fixed'; ta.style.opacity = '0';
+          document.body.appendChild(ta); ta.focus(); ta.select();
+          document.execCommand('copy'); document.body.removeChild(ta); okCopia();
+        }
+      } catch (_) { okCopia(); }
+      break;
+    }
     case 'set-orden-header':
       if (typeof setOrdenDesdeHeader === 'function') {
         setOrdenDesdeHeader(el.getAttribute('data-orden') || '');
@@ -404,6 +426,7 @@ const estado = {
   cierra_pronto: false,
   nuevas: false,
   solo_con_correo: false,
+  excluir_empleos_publicos: false,
   orden:        ORDEN_POR_DEFECTO,
   por_pagina:   _prefs.por_pagina || POR_PAGINA_CONFIG[_prefs.vista || 'cards']?.porDefecto || 20,
   vista:        (_prefs.vista === 'grid' ? 'cards' : _prefs.vista) || 'cards',
@@ -866,7 +889,9 @@ function formatRenta(min, max, grado, tipo) {
     return minF + suf;
   }
   if (tieneMax) return 'Hasta $' + max.toLocaleString('es-CL') + suf;
-  if (grado) return 'Grado ' + grado + ' EUS';
+  // `grado` (grado EUS) es scrapeado; el resultado se inyecta con innerHTML en
+  // la tarjeta, así que se escapa. El resto de ramas son montos numéricos.
+  if (grado) return 'Grado ' + escHtml(String(grado)) + ' EUS';
   return null;
 }
 
@@ -887,7 +912,7 @@ function formatRentaRow(min, max, grado, tipo) {
     return `<span class="renta-principal">${minF}</span>${sufHtml}`;
   }
   if (tieneMax) return `<span class="renta-principal">hasta $${max.toLocaleString('es-CL')}</span>${sufHtml}`;
-  if (grado) return `<span class="renta-principal" style="font-size:11.5px">Grado ${grado} EUS</span>`;
+  if (grado) return `<span class="renta-principal" style="font-size:11.5px">Grado ${escHtml(String(grado))} EUS</span>`;
   return null;
 }
 
@@ -1675,6 +1700,7 @@ function renderCard(oferta) {
         ${oferta.fecha_cierre ? `<span class="oferta-plazo-fecha">· ${formatFecha(oferta.fecha_cierre)}</span>` : ''}
       </div>
       <div class="oferta-acciones">
+        <button class="oferta-id-chip" type="button" data-action="copiar-id" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}" title="ID de la oferta — clic para copiar" aria-label="Copiar ID de la oferta ${Number(oferta.id) || 0}">#${Number(oferta.id) || 0}</button>
         <button class="btn-detalle" type="button" data-action="abrir-modal" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}">${UI.CTA_VER_DETALLE || 'Ver detalles'}</button>
         <button class="cop-cmp-btn cop-cmp-btn--icon" type="button" data-action="toggle-comparar" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}" title="Comparar oferta" aria-label="Comparar oferta">${CMP_SVG_SWAP}</button>
       </div>
@@ -1766,7 +1792,7 @@ function renderRowCompacta(oferta) {
       </div>
     </div>
     <div class="row-meta">
-      ${tipoLabel ? `<span class="badge ${tipoCss}" style="font-size:10px;white-space:nowrap">${tipoLabel}</span>` : ''}
+      ${tipoLabel ? `<span class="badge badge-tipo-row ${tipoCss}">${tipoLabel}</span>` : ''}
     </div>
     <div class="row-plazo">
       <div class="plazo-dot ${plazo.clase}"></div>
@@ -1774,6 +1800,7 @@ function renderRowCompacta(oferta) {
     </div>
     <div class="row-renta">${rentaHtml || ''}</div>
     <div class="row-acciones" style="display:flex;gap:6px;align-items:center;justify-content:flex-end">
+      <button class="oferta-id-chip" type="button" data-action="copiar-id" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}" title="ID de la oferta — clic para copiar" aria-label="Copiar ID de la oferta ${Number(oferta.id) || 0}">#${Number(oferta.id) || 0}</button>
       <button class="cop-cmp-btn cop-cmp-btn--icon" type="button" data-action="toggle-comparar" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}" title="Comparar oferta" aria-label="Comparar oferta">${CMP_SVG_SWAP}</button>
       <button class="btn-fav-row${esFav ? ' activo' : ''}"
         data-id="${oferta.id}"
@@ -2106,6 +2133,7 @@ async function cargarOfertas() {
     if (estado.nuevas)         params.set('nuevas', 'true');
     if (estado.solo_con_correo) params.set('solo_con_correo', 'true');
     if (estado.sin_experiencia) params.set('sin_experiencia', 'true');
+    if (estado.excluir_empleos_publicos) params.set('excluir_empleos_publicos', 'true');
     if (estado.institucion_id) params.set('institucion', estado.institucion_id);
     if (estado.renta_min)      params.set('renta_min', estado.renta_min);
     if (estado.renta_max)      params.set('renta_max', estado.renta_max);
@@ -3154,6 +3182,11 @@ async function _abrirModalLegacy(ofertaId) {
       btnPostular.disabled = false;
       btnPostular.textContent = UI.CTA_POSTULAR || 'Ir al portal de postulación →';
       btnPostular.onclick = () => {
+        // Defensa en profundidad: aunque el flag backend marque la URL como
+        // válida, re-verificamos el esquema http(s) antes de abrirla para no
+        // navegar nunca a un `javascript:`/`data:` scrapeado si el backend
+        // marcara mal una fila.
+        if (!isValidHttpUrl(urlPostular)) return;
         registrarClicPostular(o);
         window.open(urlPostular, '_blank', 'noopener,noreferrer');
       };
@@ -3862,6 +3895,9 @@ function toggleFiltro(btn, filtro) {
     estado.sin_experiencia = btn.classList.contains('activo');
   } else if (filtro === 'con-correo') {
     estado.solo_con_correo = btn.classList.contains('activo');
+  } else if (filtro === 'sin-portal') {
+    // Excluir ofertas del portal empleospublicos.cl
+    estado.excluir_empleos_publicos = btn.classList.contains('activo');
   } else {
     // Filtro de tipo de contrato
     if (btn.classList.contains('activo')) {
@@ -3954,22 +3990,29 @@ async function enviarAlerta() {
 
     if (resp.ok) {
       const data = await resp.json();
-      btn.textContent = '✓ ¡Alerta activada!';
+      // Doble opt-in: si la suscripción quedó PENDIENTE de confirmación, no
+      // decimos "activada" (aún no lo está); guiamos a revisar el correo.
+      const pendiente = data.verificada === false;
+      btn.textContent = pendiente ? '✉️ Revisa tu correo' : '✓ ¡Alerta activada!';
       btn.style.background = 'var(--verde)';
       // Limpiar el formulario
       document.getElementById('alerta-email').value = '';
       document.getElementById('alerta-keywords').value = '';
+      // Mensaje del backend (confirmación pendiente o alta directa).
+      const sugDiv = document.getElementById('mailcheck-suggestion');
+      if (sugDiv && data.mensaje) {
+        sugDiv.textContent = data.mensaje;
+        sugDiv.style.color = pendiente ? 'var(--azul, #1557C0)' : 'var(--verde)';
+        sugDiv.style.display = 'block';
+      }
       // Trackeo: dispara Umami + el beacon interno (window.track), para que
       // el embudo de conversión del panel cuente las suscripciones.
       (window.track || trackUmami)('alert-subscribe', { region: region || 'todas', frecuencia });
       // Show email typo suggestion if any
-      if (data.sugerencia_email) {
-        const sugDiv = document.getElementById('mailcheck-suggestion');
-        if (sugDiv) {
-          sugDiv.innerHTML = `Nota: ¿Tu email correcto es <strong>${escHtml(data.sugerencia_email)}</strong>?`;
-          sugDiv.style.color = 'var(--naran)';
-          sugDiv.style.display = 'block';
-        }
+      if (data.sugerencia_email && sugDiv) {
+        sugDiv.innerHTML = `Nota: ¿Tu email correcto es <strong>${escHtml(data.sugerencia_email)}</strong>?`;
+        sugDiv.style.color = 'var(--naran)';
+        sugDiv.style.display = 'block';
       }
     } else {
       const errData = await resp.json().catch(() => ({}));
@@ -3989,6 +4032,49 @@ async function enviarAlerta() {
 // Nota: el botón "Crear alerta" fue retirado del header. El widget de alertas
 // sigue disponible en el sidebar (#alertas) y su formulario en #btn-alerta-submit.
 document.getElementById('btn-alerta-submit')?.addEventListener('click', enviarAlerta);
+
+// ── Confirmación de suscripción (doble opt-in) ──────────────────────────────
+// El correo de verificación enlaza a `?verificar=<token>`. Al cargar la home
+// con ese parámetro, confirmamos la suscripción contra la API y mostramos el
+// resultado; luego limpiamos el token de la URL para no reintentar al recargar.
+async function confirmarSuscripcionDesdeURL() {
+  let token = '';
+  try {
+    token = new URLSearchParams(window.location.search).get('verificar') || '';
+  } catch { return; }
+  if (!token) return;
+
+  let mensaje, ok = false;
+  try {
+    const resp = await fetchApi(`/api/alertas/confirmar?token=${encodeURIComponent(token)}`);
+    const data = await resp.json().catch(() => ({}));
+    ok = resp.ok;
+    mensaje = data.mensaje || data.detail ||
+      (ok ? 'Suscripción confirmada.' : 'No se pudo confirmar la suscripción.');
+  } catch {
+    mensaje = 'No se pudo confirmar la suscripción. Revisa tu conexión e intenta de nuevo.';
+  }
+
+  // Banner simple, accesible, sin markup no confiable (todo por textContent).
+  const banner = document.createElement('div');
+  banner.setAttribute('role', 'status');
+  banner.style.cssText =
+    'position:fixed;left:50%;top:16px;transform:translateX(-50%);z-index:9999;' +
+    'max-width:92%;padding:12px 18px;border-radius:10px;font-size:14px;font-weight:600;' +
+    'box-shadow:0 6px 24px rgba(0,0,0,.18);color:#fff;background:' +
+    (ok ? '#16a34a' : '#dc2626');
+  banner.textContent = (ok ? '✓ ' : '⚠️ ') + mensaje;
+  document.body.appendChild(banner);
+  setTimeout(() => banner.remove(), 6000);
+
+  // Quitar el token de la URL sin recargar (evita reconfirmar / filtrarlo).
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('verificar');
+    window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+  } catch { /* noop */ }
+}
+confirmarSuscripcionDesdeURL();
 
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
@@ -4209,6 +4295,7 @@ function construirUrlBusqueda() {
   setOrDel('cierra_pronto', estado.cierra_pronto && estado.vista_listado === 'vigentes' ? 'true' : '');
   setOrDel('nuevas', estado.nuevas ? 'true' : '');
   setOrDel('solo_con_correo', estado.solo_con_correo ? 'true' : '');
+  setOrDel('excluir_empleos_publicos', estado.excluir_empleos_publicos ? 'true' : '');
   setOrDel('vista', estado.vista_listado !== 'vigentes' ? estado.vista_listado : '');
   setOrDel('pagina', estado.pagina > 1 ? estado.pagina : '');
   return url.toString();
@@ -4238,6 +4325,7 @@ function sincronizarURL() {
     setOrDel('cierra_pronto', estado.cierra_pronto && estado.vista_listado === 'vigentes' ? 'true' : '');
     setOrDel('nuevas', estado.nuevas ? 'true' : '');
     setOrDel('solo_con_correo', estado.solo_con_correo ? 'true' : '');
+    setOrDel('excluir_empleos_publicos', estado.excluir_empleos_publicos ? 'true' : '');
     setOrDel('vista', estado.vista_listado !== 'vigentes' ? estado.vista_listado : '');
     setOrDel('pagina', estado.pagina > 1 ? estado.pagina : '');
     window.history.replaceState(null, '', url.toString());
@@ -4257,6 +4345,7 @@ function hayFiltrosActivos() {
   return Boolean(
     estado.q?.trim() || estado.region || estado.sector || estado.ciudad || (estado.comunas || []).length ||
     estado.renta_min || estado.instituciones.length || estado.cierra_pronto || estado.nuevas || estado.solo_con_correo ||
+    estado.excluir_empleos_publicos ||
     estado.vista_listado !== 'vigentes' || estado.orden !== ORDEN_POR_DEFECTO ||
     tiposFiltran
   );
@@ -4275,6 +4364,7 @@ function hayEstadoCompartibleReal() {
     estado.q || estado.region || estado.sector || estado.ciudad || (estado.comunas || []).length ||
     estado.renta_min || estado.instituciones.length ||
     estado.cierra_pronto || estado.nuevas || estado.sin_experiencia || estado.solo_con_correo ||
+    estado.excluir_empleos_publicos ||
     tieneTiposPersonalizados
   );
 }
@@ -4336,6 +4426,7 @@ function limpiarTodosLosFiltros() {
   estado.nuevas = false;
   estado.sin_experiencia = false;
   estado.solo_con_correo = false;
+  estado.excluir_empleos_publicos = false;
   estado.pagina = 1;
 
   // Volvemos a la pestaña "Vigentes" — si el usuario estaba en "Cerradas",
@@ -4536,6 +4627,7 @@ function restaurarFiltrosDesdeURL() {
     estado.cierra_pronto = params.get('cierra_pronto') === 'true';
     estado.nuevas = params.get('nuevas') === 'true';
     estado.solo_con_correo = params.get('solo_con_correo') === 'true';
+    estado.excluir_empleos_publicos = params.get('excluir_empleos_publicos') === 'true';
     if (params.has('vista')) {
       const vista = params.get('vista');
       if (vista === 'cerradas' || vista === 'vigentes' || vista === 'destacadas') estado.vista_listado = vista;
@@ -4544,6 +4636,7 @@ function restaurarFiltrosDesdeURL() {
     document.querySelector('.filtro-tag[data-filtro="cierra-hoy"]')?.classList.toggle('activo', estado.cierra_pronto);
     document.querySelector('.filtro-tag[data-filtro="nuevos"]')?.classList.toggle('activo', estado.nuevas);
     document.querySelector('.filtro-tag[data-filtro="con-correo"]')?.classList.toggle('activo', estado.solo_con_correo);
+    document.querySelector('.filtro-tag[data-filtro="sin-portal"]')?.classList.toggle('activo', estado.excluir_empleos_publicos);
     sincronizarTabsListado(estado.vista_listado);
     const copyListadoInit = document.getElementById('estado-listado-copy');
     if (copyListadoInit) copyListadoInit.textContent = LISTADO_COPYS[estado.vista_listado] || LISTADO_COPYS.vigentes;
@@ -5079,7 +5172,11 @@ async function cargarSiteConfig() {
   // Solo se habilitan si el admin las activó (alertas_activas === 'true').
   aplicarEstadoAlertas(conf.alertas_activas === 'true');
 
-  // Footer extra (HTML simple, definido por el administrador del sitio)
+  // Footer extra: HTML de confianza del OPERADOR. `footer_extra` sólo se puede
+  // escribir vía `PUT /config`, protegido por rol `admin` (require_admin). Es un
+  // sink de innerHTML intencional (permite markup en el footer); su seguridad
+  // depende de que la escritura de site-config siga exigiendo admin. No inyectar
+  // aquí datos de fuentes no confiables (scrapers, usuarios).
   if ((conf.footer_extra || '').trim()) {
     const anchor = document.getElementById('site-footer');
     if (anchor) {
@@ -5090,6 +5187,7 @@ async function cargarSiteConfig() {
       anchor.insertAdjacentElement('afterend', extra);
     }
   }
+
 }
 
 // ── Integración: chips de profesión + mapa de vacantes ──────────────

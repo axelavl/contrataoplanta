@@ -506,6 +506,20 @@
         <label style="display:flex;align-items:center;gap:6px;color:var(--muted);cursor:pointer;font-size:13px">
           <input id="f-sin-renta" type="checkbox" data-change="ofertas"> Sin renta
         </label>
+        <select id="f-origen" data-change="ofertas" title="Ver ofertas por portal/scraper de origen" style="min-width:190px">
+          <option value="">Origen: todos</option>
+          <option value="empleospublicos">empleospublicos.cl</option>
+          <option value="trabajando">trabajando.com</option>
+          <option value="hiringroom">hiringroom.com</option>
+          <option value="buk">buk.cl</option>
+          <option value="chileatiende">chileatiende.cl</option>
+          <option value="empleos_gob">empleos.gob.cl</option>
+          <option value="postulaciones">postulaciones.cl</option>
+          <option value="sistemadeconcursos">sistemadeconcursos.cl</option>
+          <option value="mitrabajodigno">mitrabajodigno.cl</option>
+          <option value="ucampus">ucampus.net</option>
+          <option value="propio">Sitio propio (institucional)</option>
+        </select>
       </div>
       <div id="ofertas-bulkbar" style="display:none;align-items:center;gap:10px;margin-bottom:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:8px 14px">
         <span id="sel-count" class="text-small" style="color:var(--accent);font-weight:600"></span>
@@ -902,6 +916,34 @@
           <div class="form-group">
             <label>Slot — dentro del contenido</label>
             <input id="cfg-ads-contenido" type="text" placeholder="Slot id (número)">
+          </div>
+
+          <hr style="margin:18px 0;border:none;border-top:1px solid var(--border,#e5e5e5)">
+          <h4 style="margin:0 0 4px">Destacadas — criterios automáticos</h4>
+          <p class="text-muted" style="margin:0 0 12px;font-size:13px">Si está activo, la pestaña pública <strong>Destacadas</strong> incluye automáticamente las ofertas que cumplan los criterios de abajo, además de las que marcas a mano con ⭐. Si lo apagas, Destacadas muestra <strong>solo</strong> las marcadas a mano (público y panel coinciden).</p>
+          <div class="form-group" style="display:flex;align-items:center;gap:10px">
+            <label style="margin:0;white-space:nowrap">Criterios automáticos activos</label>
+            <input id="cfg-destacadas-auto" type="checkbox">
+          </div>
+          <div id="cfg-destacadas-editor" style="margin:4px 0 6px">
+            <div class="form-group" style="display:flex;align-items:center;gap:10px">
+              <label style="margin:0;white-space:nowrap">Deben cumplirse</label>
+              <select id="cfg-destacadas-modo" style="max-width:240px">
+                <option value="any">Cualquiera de los criterios (OR)</option>
+                <option value="all">Todos los criterios (AND)</option>
+              </select>
+            </div>
+            <div id="cfg-destacadas-criterios"></div>
+            <button type="button" class="btn btn-ghost btn-sm" data-action="add-criterio-destacada">+ Agregar criterio</button>
+            <p class="text-muted" style="margin:8px 0 0;font-size:12px">Si no agregas ninguno y los criterios están activos, se usa el criterio por defecto (ofertas con renta publicada).</p>
+          </div>
+
+          <hr style="margin:18px 0;border:none;border-top:1px solid var(--border,#e5e5e5)">
+          <h4 style="margin:0 0 4px">Recuadro “Anúnciate” (página de Cursos)</h4>
+          <p class="text-muted" style="margin:0 0 12px;font-size:13px">Muestra u oculta el recuadro de la página <strong>Cursos</strong> que ofrece publicar cursos con sus planes y valores referenciales (“¿Ofreces capacitación para el sector público?”). Si lo apagas, la sección deja de aparecer para los visitantes.</p>
+          <div class="form-group" style="display:flex;align-items:center;gap:10px">
+            <label style="margin:0;white-space:nowrap">Recuadro “Anúnciate” visible</label>
+            <input id="cfg-cursos-anunciate" type="checkbox">
           </div>
 
           <button class="btn btn-primary" data-action="save-config">Guardar configuración</button>

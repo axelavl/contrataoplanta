@@ -228,6 +228,19 @@ DEFAULT_MAX_ATTEMPTS = 4
 FUENTE_ID = 1  # id de empleospublicos.cl como fuente agregadora
 SECTOR_DEFAULT = "Gobierno Central / Servicio Civil"
 
+# empleospublicos.cl es un PORTAL DE EMPLEOS: se confía en que sus registros son
+# vacantes reales. Por eso, en vez de un allowlist estrecho de estados "abiertos"
+# (que descartaba avisos con estados válidos no listados — p. ej. "en evaluación",
+# "recepción", "prórroga" — y además cortaba la paginación antes de tiempo), se
+# usa un DENYLIST por substring: sólo se descartan los estados claramente
+# CERRADOS/terminales. Cualquier otro estado (incl. desconocido o vacío) se
+# CONSERVA; su vigencia real la resuelve la fecha de cierre + OFFER_STATUS_SQL.
+# Los términos están normalizados (minúsculas, sin tildes) como normalize_key.
+_ESTADOS_CERRADOS_EP = (
+    "cerrad", "finaliz", "vencid", "desiert", "anulad", "adjudicad",
+    "expirad", "suspendid", "concluid", "eliminad", "rechazad", "no vigente",
+)
+
 CAMPOS_EXPORT = ["id_externo", "fuente_id", "institucion_nombre", "sector", "cargo",
                  "area_profesional", "tipo_cargo", "nivel", "region", "ciudad",
                  "renta_bruta_min", "renta_bruta_max", "renta_texto",
@@ -481,7 +494,10 @@ class EmpleosPublicosScraper(BaseScraper):
         después en ``_enriquecer_con_detalle`` desde la ficha del aviso (``url``).
         """
         estado = normalize_key(registro.get("EstadoInferencia"))
-        if estado and estado not in {"abierta", "vigente", "publicada"}:
+        # Denylist: sólo se descartan estados claramente cerrados; el resto se
+        # conserva (ver nota en _ESTADOS_CERRADOS_EP). Antes era un allowlist
+        # estrecho que botaba avisos válidos y cortaba la paginación temprano.
+        if estado and any(term in estado for term in _ESTADOS_CERRADOS_EP):
             return None
 
         url = clean_text(registro.get("url"))

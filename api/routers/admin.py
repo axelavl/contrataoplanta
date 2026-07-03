@@ -228,14 +228,18 @@ def api_enviar_alertas_pendientes(
     except (TypeError, ValueError):
         horas = 24
 
+    # Sólo suscripciones VERIFICADAS (doble opt-in): nunca enviar a un correo
+    # que no confirmó su alta. Las filas heredadas quedaron verificada=TRUE en
+    # la migración, así que no se pierden envíos existentes.
     if email_filtro:
         suscripciones = execute_fetch_all(
-            "SELECT * FROM alertas_suscripciones WHERE activa = TRUE AND LOWER(email) = %s",
+            "SELECT * FROM alertas_suscripciones "
+            "WHERE activa = TRUE AND verificada = TRUE AND LOWER(email) = %s",
             [email_filtro],
         )
     else:
         suscripciones = execute_fetch_all(
-            "SELECT * FROM alertas_suscripciones WHERE activa = TRUE"
+            "SELECT * FROM alertas_suscripciones WHERE activa = TRUE AND verificada = TRUE"
         )
     if not suscripciones:
         return {
@@ -471,6 +475,26 @@ def admin_analitica_export(
     )
 
 
+# Portales/scrapers de origen reconocibles por el dominio de la URL de la oferta.
+# clave (para el filtro `origen`) → lista de dominios. "propio" = sitio
+# institucional (URL que no cae en ningún portal). Los dominios son constantes,
+# no entra input del usuario, así que interpolarlos en el ILIKE es seguro
+# (igual se pasan como parámetros).
+_ORIGEN_DOMINIOS: dict[str, list[str]] = {
+    "empleospublicos":    ["empleospublicos.cl"],
+    "trabajando":         ["trabajando.com", "trabajando.cl"],
+    "hiringroom":         ["hiringroom.com"],
+    "buk":                ["buk.cl"],
+    "chileatiende":       ["chileatiende.cl"],
+    "empleos_gob":        ["empleos.gob.cl"],
+    "postulaciones":      ["postulaciones.cl"],
+    "sistemadeconcursos": ["sistemadeconcursos.cl"],
+    "mitrabajodigno":     ["mitrabajodigno.cl"],
+    "ucampus":            ["ucampus.net"],
+}
+_ORIGEN_TODOS_PORTALES = [d for doms in _ORIGEN_DOMINIOS.values() for d in doms]
+
+
 @router.get(f"/api/{ADMIN_PATH}/ofertas", tags=["admin"])
 def admin_ofertas(
     pagina: int = Query(1, ge=1),
@@ -488,6 +512,7 @@ def admin_ofertas(
     needs_review: bool | None = Query(None),
     sin_renta: bool | None = Query(None, description="true: sin renta_bruta_min ni max"),
     destacada: str | None = Query(None, description="true/false: filtrar por destacada"),
+    origen: str | None = Query(None, description="Portal/scraper de origen (dominio de la URL) o 'propio'"),
     orden: str = Query("reciente", description="reciente|cierre|cargo|renta"),
     _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
@@ -499,6 +524,26 @@ def admin_ofertas(
         conditions.append("o.activa = TRUE")
     elif activa == "false":
         conditions.append("o.activa = FALSE")
+
+    # Filtro por origen (portal/scraper). Los dominios salen de un allowlist
+    # fijo; el valor del cliente sólo selecciona una clave conocida.
+    if origen:
+        if origen == "propio":
+            # Sitio institucional propio: la URL no está en ningún portal.
+            clauses = []
+            for dom in _ORIGEN_TODOS_PORTALES:
+                clauses.append("COALESCE(o.url_oferta, '') NOT ILIKE %s")
+                clauses.append("COALESCE(o.url_original, '') NOT ILIKE %s")
+                params.extend([f"%{dom}%", f"%{dom}%"])
+            conditions.append("(" + " AND ".join(clauses) + ")")
+        elif origen in _ORIGEN_DOMINIOS:
+            clauses = []
+            for dom in _ORIGEN_DOMINIOS[origen]:
+                clauses.append("COALESCE(o.url_oferta, '') ILIKE %s")
+                clauses.append("COALESCE(o.url_original, '') ILIKE %s")
+                params.extend([f"%{dom}%", f"%{dom}%"])
+            conditions.append("(" + " OR ".join(clauses) + ")")
+        # origen desconocido → se ignora
 
     if url_rota is True:
         conditions.append("o.url_oferta_valida = FALSE")
@@ -1056,13 +1101,17 @@ def admin_destacadas_stats(
     _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
     """Estadísticas de ofertas destacadas y criterio auto."""
-    from api.services.sql import DESTACADAS_AUTO, DESTACADAS_AUTO_SQL
+    from api.services.sql import DESTACADAS_AUTO_SQL
+    # El estado del criterio automático lo gobierna el toggle `destacadas_auto`
+    # de site_config (panel), no la constante del módulo.
+    conf = _get_site_config_db()
+    auto_activo = str(conf.get("destacadas_auto", "")).strip().lower() in ("1", "true", "yes")
     manual = execute_fetch_one(
         "SELECT COUNT(*) AS n FROM ofertas WHERE activa AND COALESCE(destacada, FALSE) = TRUE", []
     )
     auto = execute_fetch_one(
         f"SELECT COUNT(*) AS n FROM ofertas WHERE activa AND {DESTACADAS_AUTO_SQL}", []
-    ) if DESTACADAS_AUTO else {"n": 0}
+    ) if auto_activo else {"n": 0}
     total_activas = execute_fetch_one(
         "SELECT COUNT(*) AS n FROM ofertas WHERE activa", []
     )
@@ -1070,8 +1119,8 @@ def admin_destacadas_stats(
         "manual": int((manual or {}).get("n", 0)),
         "auto": int((auto or {}).get("n", 0)),
         "total_activas": int((total_activas or {}).get("n", 0)),
-        "auto_activo": DESTACADAS_AUTO,
-        "auto_criterio": "Ofertas con renta bruta publicada" if DESTACADAS_AUTO else None,
+        "auto_activo": auto_activo,
+        "auto_criterio": "Ofertas con renta bruta publicada" if auto_activo else None,
     }
 
 
@@ -1615,7 +1664,13 @@ def admin_get_config(
         "MEILISEARCH_URL_set": bool(os.getenv("MEILISEARCH_URL")),
         "RESEND_API_KEY_set": bool(os.getenv("RESEND_API_KEY")),
     }
-    return {"config": conf, "env": env_info}
+    # Catálogo de criterios de Destacadas (para que el panel arme el editor).
+    try:
+        from api.services.sql import catalogo_criterios_destacadas
+        criterios_catalogo = catalogo_criterios_destacadas()
+    except Exception:
+        criterios_catalogo = []
+    return {"config": conf, "env": env_info, "criterios_catalogo": criterios_catalogo}
 
 
 @router.put(f"/api/{ADMIN_PATH}/config", tags=["admin"])
@@ -1634,7 +1689,22 @@ def admin_set_config(
         "max_resultados_pagina", "alertas_activas", "footer_extra",
         "ads_enabled", "ads_client",
         "ads_slot_resultados", "ads_slot_sidebar", "ads_slot_contenido",
+        # Destacadas: toggle del criterio automático + lista de criterios (JSON)
+        # y modo de combinación (any/all). Ver catálogo en api/services/sql.py.
+        "destacadas_auto", "destacadas_criterios", "destacadas_criterios_modo",
+        # Recuadro "Anúnciate" (oferta + valores para publicar) en cursos.html.
+        "cursos_anunciate_activo",
     }
+    # `destacadas_criterios` debe ser JSON de una lista [{tipo,valor}]; si llega
+    # algo que no parsea a lista, se descarta para no guardar basura.
+    if "destacadas_criterios" in payload:
+        import json as _json
+        try:
+            _parsed = _json.loads(payload["destacadas_criterios"] or "[]")
+            if not isinstance(_parsed, list):
+                raise ValueError
+        except Exception:
+            raise HTTPException(400, "destacadas_criterios debe ser una lista JSON")
     updated: list[str] = []
     for clave, valor in payload.items():
         if clave not in CLAVES_PERMITIDAS:
@@ -1966,6 +2036,21 @@ def admin_set_override(
         raise HTTPException(400, "Se requiere status o kind")
     if status and status not in _OVERRIDE_STATUSES:
         raise HTTPException(400, f"status inválido. Válidos: {sorted(_OVERRIDE_STATUSES)}")
+    if kind:
+        # `kind` gobierna qué módulo scraper se despacha para la fuente; un
+        # valor fuera del enum quedaría persistido y rompería el dispatch.
+        # Se valida contra ScraperKind, igual que en `admin_scraper_run`.
+        try:
+            from scrapers.source_status import ScraperKind
+            _kinds_validos = {k.value for k in ScraperKind}
+        except Exception:
+            _kinds_validos = {
+                "empleos_publicos", "wordpress", "generic",
+                "custom_trabajando", "custom_hiringroom", "custom_buk",
+                "custom_playwright", "custom_policia", "custom_ffaa", "skip",
+            }
+        if kind not in _kinds_validos:
+            raise HTTPException(400, f"kind inválido. Válidos: {sorted(_kinds_validos)}")
     try:
         _set_override_db(fuente_id, status=status, kind=kind, reason=reason, usuario=_user)
     except Exception as exc:
@@ -2228,7 +2313,10 @@ def admin_diagnostico(
 def admin_suscripciones(
     activa: bool | None = Query(None),
     limit: int = Query(200, ge=1, le=1000),
-    _user: str = Depends(_verify_admin_jwt),
+    # PII (correos de suscriptores): el rol `lector` (solo-lectura del
+    # dashboard) no debe poder listar/exportar el padrón. Se exige `editor`,
+    # alineado con el trato que se le da a `/usuarios`.
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Lista de suscriptores de alertas con estadísticas."""
     where = ""
@@ -2239,7 +2327,7 @@ def admin_suscripciones(
 
     subs = execute_fetch_all(
         f"""SELECT id, email, region, termino, tipo_contrato, sector,
-                   frecuencia, activa, creada_en, actualizada_en
+                   frecuencia, activa, verificada, creada_en, actualizada_en
             FROM alertas_suscripciones
             {where}
             ORDER BY creada_en DESC
@@ -2251,6 +2339,8 @@ def admin_suscripciones(
             COUNT(*)                     AS total,
             COUNT(*) FILTER(WHERE activa)                     AS activas,
             COUNT(*) FILTER(WHERE NOT activa)                 AS inactivas,
+            COUNT(*) FILTER(WHERE verificada)                 AS verificadas,
+            COUNT(*) FILTER(WHERE NOT verificada)             AS sin_verificar,
             COUNT(DISTINCT LOWER(email))                      AS emails_unicos,
             COUNT(*) FILTER(WHERE region IS NOT NULL)         AS con_region,
             COUNT(*) FILTER(WHERE termino IS NOT NULL)        AS con_termino,
@@ -2315,7 +2405,8 @@ def admin_test_email(
 def admin_email_eventos(
     limit: int = Query(50, ge=1, le=500),
     email: str | None = Query(None),
-    _user: str = Depends(_verify_admin_jwt),
+    # Expone correos de destinatarios (PII): mínimo rol `editor`.
+    _user: str = Depends(_require_editor),
 ) -> dict[str, Any]:
     """Métricas de entrega de emails (webhooks de Resend) + últimos eventos.
 
@@ -2362,7 +2453,8 @@ def admin_email_eventos(
 
 @router.get(f"/api/{ADMIN_PATH}/suscripciones/export", tags=["admin"])
 def admin_export_suscripciones(
-    _user: str = Depends(_verify_admin_jwt),
+    # Exporta el padrón completo de correos (PII): mínimo rol `editor`.
+    _user: str = Depends(_require_editor),
 ) -> Response:
     """Exporta suscripciones activas como CSV."""
     import csv, io
@@ -2491,6 +2583,28 @@ def admin_crear_usuario(
     return {"id": nuevo_id, "usuario": usuario, "rol": rol}
 
 
+def _es_ultimo_admin_activo(cur, usuario_id: int) -> bool:
+    """True si `usuario_id` es un admin activo y el ÚNICO que queda.
+
+    Evita que una edición/baja deje el panel sin administradores nominales. La
+    contraseña maestra `ops` sigue siendo un respaldo, pero perder a todos los
+    admins con cuenta propia obliga a operar con la maestra, que es lo que se
+    quiere evitar.
+    """
+    cur.execute(
+        "SELECT COUNT(*) AS n FROM admin_usuarios WHERE rol = 'admin' AND activo = TRUE"
+    )
+    row = cur.fetchone()
+    total = int((row["n"] if isinstance(row, dict) else row[0]) or 0)
+    if total > 1:
+        return False
+    cur.execute(
+        "SELECT 1 FROM admin_usuarios WHERE id = %s AND rol = 'admin' AND activo = TRUE",
+        [usuario_id],
+    )
+    return cur.fetchone() is not None
+
+
 @router.put(f"/api/{ADMIN_PATH}/usuarios/{{usuario_id}}", tags=["admin"])
 def admin_editar_usuario(
     usuario_id: int,
@@ -2514,6 +2628,17 @@ def admin_editar_usuario(
         updates["password_hash"] = hash_password(str(payload["password"]))
     if not updates:
         raise HTTPException(400, "Sin campos para actualizar")
+    # No dejar el panel sin administradores: si esta edición quita el rol admin
+    # (degradación) o desactiva la cuenta, y es el último admin activo, se rechaza.
+    quita_admin = (updates.get("rol") not in (None, "admin")) or (updates.get("activo") is False)
+    if quita_admin:
+        with get_cursor() as (_c, _cur):
+            if _es_ultimo_admin_activo(_cur, usuario_id):
+                raise HTTPException(
+                    409,
+                    "No puedes quitar el rol admin ni desactivar la única cuenta de "
+                    "administrador activa. Crea o promueve otro admin primero.",
+                )
     from psycopg2 import sql as _sql
     set_parts = [_sql.SQL("{} = %s").format(_sql.Identifier(c)) for c in updates]
     query = _sql.SQL("UPDATE admin_usuarios SET {} WHERE id = %s").format(
@@ -2536,6 +2661,13 @@ def admin_borrar_usuario(
 ) -> dict[str, Any]:
     """Elimina una cuenta del panel."""
     with get_cursor() as (conn, cur):
+        # No dejar el panel sin administradores nominales.
+        if _es_ultimo_admin_activo(cur, usuario_id):
+            raise HTTPException(
+                409,
+                "No puedes eliminar la única cuenta de administrador activa. "
+                "Crea o promueve otro admin primero.",
+            )
         cur.execute("DELETE FROM admin_usuarios WHERE id = %s", [usuario_id])
         if cur.rowcount == 0:
             raise HTTPException(404, "Usuario no encontrado")

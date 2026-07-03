@@ -1550,7 +1550,10 @@ class BaseScraper(abc.ABC):
                     fecha_publicacion, fecha_cierre,
                     activa, es_nueva, detectada_en, ultima_vista_en
                 ) VALUES (
-                    %s, %s, %s, %s, %s, %s,
+                    -- fuente_id defensivo: NULL si la fuente no está en `fuentes`
+                    -- (evita ForeignKeyViolation ofertas_fuente_id_fkey que
+                    -- descartaba la oferta entera). Ver nota en db/database.py.
+                    (SELECT id FROM fuentes WHERE id = %s), %s, %s, %s, %s, %s,
                     %s, %s, %s, %s, %s,
                     %s, %s, %s, %s, %s,
                     %s, %s, %s, %s, %s, %s,

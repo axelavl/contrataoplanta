@@ -173,6 +173,73 @@ def record_failure(ip: str) -> None:
         _auth_failures[ip].append(ahora)
 
 
+# ── Rate limit de endpoints PÚBLICOS (Postgres compartido, fallback memoria) ──
+#
+# Mismo patrón que el rate limit de auth, pero keyed por (bucket, ip): `bucket`
+# separa el presupuesto por familia de endpoint (alertas, confirmar, validar
+# email) para que no compartan cuota. Cada request permitido inserta una fila;
+# la ventana se purga perezosamente. Fuente de verdad: tabla `public_rate_hits`.
+# Fallback en memoria por proceso si la DB no responde (degradación intencional).
+
+_public_hits_mem: dict[tuple[str, str], list[float]] = defaultdict(list)
+
+
+def check_public_rate_limit(
+    ip: str, bucket: str, *, window_seg: int, max_hits: int
+) -> None:
+    """Cuenta el request en `(ip, bucket)` y levanta 429 si excede `max_hits`
+    dentro de `window_seg`. Estado compartido en Postgres; si la DB falla,
+    degrada a un contador en memoria por proceso."""
+    ahora = _time.time()
+    corte = ahora - window_seg
+    try:
+        from api.services.db import get_cursor
+        with get_cursor() as (conn, cur):
+            cur.execute(
+                "DELETE FROM public_rate_hits WHERE ts < to_timestamp(%s)",
+                [corte],
+            )
+            cur.execute(
+                "SELECT COUNT(*) AS n FROM public_rate_hits "
+                "WHERE bucket = %s AND ip = %s AND ts >= to_timestamp(%s)",
+                [bucket, ip, corte],
+            )
+            row = cur.fetchone()
+            n = int((row["n"] if isinstance(row, dict) else row[0]) or 0)
+            if n >= max_hits:
+                conn.commit()
+                _raise_rate_limited(window_seg)
+            cur.execute(
+                "INSERT INTO public_rate_hits (ip, bucket, ts) "
+                "VALUES (%s, %s, to_timestamp(%s))",
+                [ip, bucket, ahora],
+            )
+            conn.commit()
+        return
+    except HTTPException:
+        raise
+    except Exception as exc:  # noqa: BLE001 — degradación intencional
+        _auth_store_warn_once(exc)
+
+    # Fallback en memoria: poda la ventana (y descarta la clave si queda vacía
+    # para no crecer sin límite con IPs rotativas).
+    clave = (bucket, ip)
+    vigentes = [t for t in _public_hits_mem[clave] if t > corte]
+    if len(vigentes) >= max_hits:
+        _public_hits_mem[clave] = vigentes
+        _raise_rate_limited(window_seg)
+    vigentes.append(ahora)
+    _public_hits_mem[clave] = vigentes
+
+
+def _raise_rate_limited(window_seg: int) -> None:
+    raise HTTPException(
+        status_code=429,
+        detail="Demasiadas solicitudes. Intenta de nuevo en unos minutos.",
+        headers={"Retry-After": str(window_seg)},
+    )
+
+
 def client_ip(request: Request) -> str:
     """IP real del cliente considerando ``X-Forwarded-For`` del proxy.
 
@@ -324,9 +391,14 @@ def verify_admin_jwt(request: Request) -> str:
     user = str(payload.get("sub") or "")
     if not user:
         raise HTTPException(status_code=401, detail="Token inválido")
-    # El rol viaja firmado en el token. Tokens antiguos (anteriores a los
-    # usuarios con rol) no lo traen → se asumen admin para no romper sesiones.
-    rol = payload.get("rol") or "admin"
+    # El rol viaja firmado en el token. Un token sin `rol` (o con uno inválido)
+    # degrada a `lector` (fail-safe): antes defaulteaba a `admin`, lo que abría
+    # una escalada silenciosa si alguna vez se emitiera/aceptara un token sin
+    # el claim. Los tokens legítimos actuales siempre incluyen `rol`, y el
+    # usuario maestro `ops` recibe `admin` explícito en `create_admin_token`,
+    # así que este default sólo cubre el caso anómalo — donde menos privilegio
+    # es lo correcto.
+    rol = payload.get("rol") or "lector"
     if rol not in ROLES_VALIDOS:
         rol = "lector"
     # Para cuentas nominales (admin_usuarios), la BD es la fuente de verdad del

@@ -40,13 +40,11 @@
      que el override de `window.imgFavFallback` y `window.imgFavCheckQuality`
      esté activo desde el primer image error.
 
-     Cadena de resolución (primero a último):
+     Cadena de resolución RECORTADA (primero a último) — ver nota en sourcesFor:
        0. Logo local pre-cacheado en /logos/{dominio}.png (CDN, instantáneo)
        1. DuckDuckGo ip3 (mejor icono del sitio, 60-180 px)
        2. Google s2 favicons @ sz=128
        3. apple-touch-icon del dominio (suele ser 180 px+)
-       4. apple-touch-icon-precomposed
-       5. favicon del dominio raíz (suele ser 32 px o menos)
      Si ninguna supera el chequeo de calidad (naturalWidth >= 40 px), se
      reemplaza la <img> por un ícono SVG según sector institucional — nunca
      quedamos con recuadros vacíos ni con emojis.
@@ -102,16 +100,22 @@
 
     function sourcesFor(domain) {
       var enc = encodeURIComponent(domain);
+      // Cadena RECORTADA (antes eran 9 fuentes → hasta 8 requests externas por
+      // institución sin logo local; en una home con ~7 instituciones eso eran
+      // ~80 peticiones a terceros por carga: latencia, jank y fuga de navegación
+      // a Google/DuckDuckGo). Se dejan sólo las de mejor calidad/cobertura:
+      //   0. logo local pre-cacheado (instantáneo)
+      //   1. DuckDuckGo ip3 (mejor icono del sitio, 60-180 px)
+      //   2. Google s2 @ 128 px (cobertura amplia)
+      //   3. apple-touch-icon del dominio (180 px+ cuando existe)
+      // Se descartan: gstatic faviconV2 (redundante con Google s2), la variante
+      // www del apple-touch-icon, -precomposed y favicon.ico (16-32 px, casi
+      // siempre bajo el umbral de calidad). Si ninguna sirve → ícono de sector.
       return [
         '/logos/' + domain + '.png',
         'https://icons.duckduckgo.com/ip3/' + domain + '.ico',
         'https://www.google.com/s2/favicons?domain=' + enc + '&sz=128',
-        'https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://' + enc + '&size=128',
-        'https://' + domain + '/apple-touch-icon.png',
-        'https://www.' + domain + '/apple-touch-icon.png',
-        'https://' + domain + '/apple-touch-icon-precomposed.png',
-        'https://' + domain + '/favicon.ico',
-        'https://www.' + domain + '/favicon.ico'
+        'https://' + domain + '/apple-touch-icon.png'
       ];
     }
 

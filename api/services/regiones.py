@@ -61,6 +61,13 @@ async def get_regiones() -> list[dict[str, Any]]:
 
 async def get_comunas(codigo_region: str) -> list[dict[str, Any]]:
     """Return comunas for a given region code, cached 24h."""
+    # El código de región proviene del path param `/api/regiones/{codigo}/comunas`.
+    # Los códigos DPA son numéricos (1..16); validamos antes de interpolarlo en
+    # la URL saliente para descartar segmentos como `..` o rutas arbitrarias.
+    codigo_region = (codigo_region or "").strip()
+    if not codigo_region.isdigit():
+        return []
+
     now = time.time()
     cached = _comunas_cache.get(codigo_region)
     if cached and (now - cached["ts"]) < _CACHE_TTL:

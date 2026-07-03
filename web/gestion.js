@@ -445,6 +445,17 @@ function trunc(s, n=38) {
   if (!s) return '<span class="text-muted">—</span>';
   return s.length > n ? s.slice(0,n) + '…' : s;
 }
+// Igual que trunc() pero escapa el contenido para insertarlo en el CUERPO de
+// una celda. Datos como cargo/institución vienen scrapeados (no confiables):
+// sin escapar, markup como <img src=x onerror=...> se inyecta en el mismo
+// origin donde vive el JWT admin (la CSP hoy bloquea la ejecución de scripts,
+// pero la inyección de HTML es un sink real). El placeholder "—" es HTML propio
+// y se conserva sin escapar.
+function truncEsc(s, n=38) {
+  if (!s) return '<span class="text-muted">—</span>';
+  const t = s.length > n ? s.slice(0,n) + '…' : s;
+  return esc(t);
+}
 // Escapa un valor para insertarlo en un atributo HTML de las filas
 // generadas (data-nombre, data-email, title=, …).
 function escAttr(s) {
@@ -1007,6 +1018,7 @@ async function loadOfertas(pag=1) {
   const cHasta = document.getElementById('f-cierre-hasta').value;
   const nrev   = document.getElementById('f-needs-review').value;
   const sinRenta = document.getElementById('f-sin-renta').checked;
+  const origen = document.getElementById('f-origen')?.value;
   const dest = document.getElementById('f-destacada').value;
   if (instId) p.set('institucion_id', instId);
   if (estado) p.set('estado', estado);
@@ -1014,6 +1026,7 @@ async function loadOfertas(pag=1) {
   if (cHasta) p.set('cierre_hasta', cHasta);
   if (nrev)   p.set('needs_review', nrev);
   if (sinRenta) p.set('sin_renta', 'true');
+  if (origen) p.set('origen', origen);
   if (dest) p.set('destacada', dest);
 
   _limpiarSeleccion();
@@ -1088,8 +1101,8 @@ function renderOfertasTable(ofertas) {
       <td><input type="checkbox" class="sel-oferta" data-id="${o.id}"></td>
       <td class="text-muted text-small">${o.id}</td>
       <td style="max-width:220px">
-        <div title="${escAttr(o.cargo)}" style="font-weight:500">${destacada?'<span title="Destacada en redes sociales">⭐ </span>':''}${trunc(o.cargo,36)}</div>
-        <div class="text-small text-muted" title="${escAttr(inst)}">${trunc(inst,34)}</div>
+        <div title="${escAttr(o.cargo)}" style="font-weight:500">${destacada?'<span title="Destacada en redes sociales">⭐ </span>':''}${truncEsc(o.cargo,36)}</div>
+        <div class="text-small text-muted" title="${escAttr(inst)}">${truncEsc(inst,34)}</div>
       </td>
       <td class="text-small text-muted">${trunc(o.sector_real||'',18)}</td>
       <td class="text-small text-muted">${trunc(o.region||'',14)}</td>
@@ -1249,7 +1262,7 @@ async function loadScrapers() {
                 </tr></thead>
                 <tbody>
                   ${insts.map(i=>`<tr style="border-bottom:1px solid #ffffff08">
-                    <td style="padding:2px 6px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escAttr(i.nombre)}">${trunc(i.nombre,32)}</td>
+                    <td style="padding:2px 6px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escAttr(i.nombre)}">${truncEsc(i.nombre,32)}</td>
                     <td style="text-align:right;padding:2px 4px;color:var(--muted)">${i.encontradas}</td>
                     <td style="text-align:right;padding:2px 4px;color:${i.nuevas>0?'var(--green)':'var(--muted)'};font-weight:${i.nuevas>0?600:400}">${i.nuevas}</td>
                     <td style="text-align:right;padding:2px 4px;color:var(--muted)">${i.existian}</td>
@@ -1298,7 +1311,7 @@ async function loadFuentes() {
                 custom_buk:'orange',empleos_publicos:'blue',custom_playwright:'yellow'};
     tbody.innerHTML = fs.map(f=>`<tr>
       <td class="text-muted text-small">${f.id}</td>
-      <td style="max-width:220px"><div title="${escAttr(f.nombre)}">${trunc(f.nombre||'—',32)}</div></td>
+      <td style="max-width:220px"><div title="${escAttr(f.nombre)}">${truncEsc(f.nombre||'—',32)}</div></td>
       <td class="text-small text-muted">${trunc(f.sector||'—',20)}</td>
       <td>${f.recommended_extractor?`<span class="pill ${em[f.recommended_extractor]||'gray'}">${f.recommended_extractor}</span>`:'<span class="text-muted">—</span>'}</td>
       <td>${decisionPill(f.ultima_decision||'sin_evaluar')}</td>
@@ -1825,7 +1838,7 @@ async function loadProcesos() {
         <td><span class="pill gray">${p.tipo}</span></td>
         <td class="text-muted text-small">${p.pid}</td>
         <td>${pill(p.estado, ep[p.estado]||'gray')}${p.returncode!=null&&p.returncode!==0?` <span class="text-small" style="color:var(--red)">rc=${p.returncode}</span>`:''}</td>
-        <td class="text-small text-muted" style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escAttr(p.cmd)}">${p.cmd}</td>
+        <td class="text-small text-muted" style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escAttr(p.cmd)}">${esc(p.cmd)}</td>
         <td><button class="btn btn-ghost btn-sm" data-action="ver-log" data-log="${escAttr(p.log)}">📜 Ver</button></td>
       </tr>`).join('');
     }
@@ -1984,6 +1997,42 @@ async function runInstancia(id, nombre) {
 }
 
 // ── CONFIG ─────────────────────────────────────────────────────
+// ── Editor de criterios automáticos de Destacadas ─────────────────
+let _criteriosCatalogo = [];
+function _catEntry(tipo){ return _criteriosCatalogo.find(c => c.tipo === tipo) || null; }
+function renderCriterioRow(crit) {
+  crit = crit || {};
+  const row = document.createElement('div');
+  row.className = 'criterio-row';
+  row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:6px';
+  const sel = document.createElement('select');
+  sel.className = 'crit-tipo';
+  sel.innerHTML = _criteriosCatalogo.map(c => `<option value="${esc(c.tipo)}">${esc(c.label)}</option>`).join('');
+  if (crit.tipo) sel.value = crit.tipo;
+  const val = document.createElement('input');
+  val.className = 'crit-valor'; val.style.maxWidth = '160px';
+  if (crit.valor != null) val.value = crit.valor;
+  const del = document.createElement('button');
+  del.type = 'button'; del.className = 'btn btn-ghost btn-sm';
+  del.textContent = '✕'; del.title = 'Eliminar criterio';
+  del.setAttribute('data-action', 'del-criterio-destacada');
+  function syncValor() {
+    const e = _catEntry(sel.value);
+    const needs = e && e.valor;               // 'numero' | 'texto' | null
+    val.style.display = needs ? '' : 'none';
+    val.type = needs === 'numero' ? 'number' : 'text';
+    val.placeholder = needs === 'numero' ? 'valor' : 'texto';
+  }
+  sel.addEventListener('change', syncValor);
+  syncValor();
+  row.appendChild(sel); row.appendChild(val); row.appendChild(del);
+  return row;
+}
+function addCriterioRow(crit) {
+  const cont = document.getElementById('cfg-destacadas-criterios');
+  if (cont) cont.appendChild(renderCriterioRow(crit));
+}
+
 async function loadConfig() {
   try {
     const d = await api('/config');
@@ -2013,6 +2062,19 @@ async function loadConfig() {
     const _ar=document.getElementById('cfg-ads-resultados'); if(_ar) _ar.value = c.ads_slot_resultados||'';
     const _as=document.getElementById('cfg-ads-sidebar'); if(_as) _as.value = c.ads_slot_sidebar||'';
     const _aco=document.getElementById('cfg-ads-contenido'); if(_aco) _aco.value = c.ads_slot_contenido||'';
+    // Criterios automáticos de destacadas: toggle + modo + lista editable
+    const _da=document.getElementById('cfg-destacadas-auto'); if(_da) _da.checked = (c.destacadas_auto==='1'||c.destacadas_auto==='true');
+    _criteriosCatalogo = d.criterios_catalogo || [];
+    const _dm=document.getElementById('cfg-destacadas-modo'); if(_dm) _dm.value = (c.destacadas_criterios_modo==='all')?'all':'any';
+    const _cc=document.getElementById('cfg-destacadas-criterios');
+    if(_cc){
+      _cc.innerHTML='';
+      let list=[]; try{ list=JSON.parse(c.destacadas_criterios||'[]'); }catch(_){ list=[]; }
+      if(Array.isArray(list)) list.forEach(x=>addCriterioRow(x));
+    }
+    // Recuadro "Anúnciate" en la página de Cursos: visible por defecto, se
+    // apaga solo si el admin lo puso explícitamente en 'false'.
+    const _ca=document.getElementById('cfg-cursos-anunciate'); if(_ca) _ca.checked = (c.cursos_anunciate_activo!=='false');
   } catch(e) {
     document.getElementById('env-info').textContent = 'Error: '+e.message;
   }
@@ -2047,7 +2109,7 @@ async function loadAudit() {
         <td class="text-small text-muted">${a.usuario}</td>
         <td><span class="pill blue">${a.accion}</span></td>
         <td class="text-small text-muted">${a.entidad?`${a.entidad}${a.entidad_id?` #${a.entidad_id}`:''}`:'—'}</td>
-        <td class="text-small text-muted" style="max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escAttr(det)}">${det}</td>
+        <td class="text-small text-muted" style="max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escAttr(det)}">${esc(det)}</td>
       </tr>`;
     }).join('');
   } catch(e) {
@@ -2064,15 +2126,34 @@ async function saveConfig() {
     alertas_activas:      document.getElementById('cfg-alertas').checked ? 'true':'false',
     footer_extra:         document.getElementById('cfg-footer-extra').value,
   };
+  const _gv = id => { const e=document.getElementById(id); return e?e.value.trim():''; };
   const _ae = document.getElementById('cfg-ads-enabled');
   if (_ae) {
-    const _gv = id => { const e=document.getElementById(id); return e?e.value.trim():''; };
     payload.ads_enabled = _ae.checked ? '1':'0';
     payload.ads_client = _gv('cfg-ads-client');
     payload.ads_slot_resultados = _gv('cfg-ads-resultados');
     payload.ads_slot_sidebar = _gv('cfg-ads-sidebar');
     payload.ads_slot_contenido = _gv('cfg-ads-contenido');
   }
+  // Criterios automáticos de destacadas: toggle + modo + lista JSON
+  const _da = document.getElementById('cfg-destacadas-auto');
+  if (_da) payload.destacadas_auto = _da.checked ? 'true':'false';
+  const _dm = document.getElementById('cfg-destacadas-modo');
+  if (_dm) payload.destacadas_criterios_modo = (_dm.value === 'all') ? 'all':'any';
+  const _cc = document.getElementById('cfg-destacadas-criterios');
+  if (_cc) {
+    const crits = [...(_cc.querySelectorAll('.criterio-row'))].map(r => {
+      const tipo = r.querySelector('.crit-tipo').value;
+      const entry = _criteriosCatalogo.find(c => c.tipo === tipo);
+      const o = { tipo };
+      if (entry && entry.valor) o.valor = r.querySelector('.crit-valor').value.trim();
+      return o;
+    }).filter(o => o.tipo);
+    payload.destacadas_criterios = JSON.stringify(crits);
+  }
+  // Recuadro "Anúnciate" en la página de Cursos
+  const _ca = document.getElementById('cfg-cursos-anunciate');
+  if (_ca) payload.cursos_anunciate_activo = _ca.checked ? 'true':'false';
   try {
     const r = await api('/config', { method:'PUT', body:JSON.stringify(payload) });
     toast(`Config guardada: ${r.updated.join(', ')} ✓`);
@@ -2107,6 +2188,8 @@ document.addEventListener('click', e => {
     case 'cerrar-log':         cerrarLog(); break;
     case 'load-config':        loadConfig(); break;
     case 'save-config':        saveConfig(); break;
+    case 'add-criterio-destacada': addCriterioRow({}); break;
+    case 'del-criterio-destacada': { const _r=el.closest('.criterio-row'); if(_r) _r.remove(); break; }
     case 'load-audit':         loadAudit(); break;
     case 'crear-fuente':       openCrearFuente(); break;
     case 'nueva-oferta':       openCrearOferta(); break;

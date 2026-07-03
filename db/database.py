@@ -234,7 +234,14 @@ def upsert_oferta(db: Session, datos: dict) -> tuple[bool, bool]:
                     requisitos_texto, url_bases, modalidad, horas_semanales,
                     activa, es_nueva, detectada_en
                 ) VALUES (
-                    :id_externo, :fuente_id, :url_original, :url_hash, :dedup_hash,
+                    :id_externo,
+                    -- fuente_id defensivo: si la fuente no existe en `fuentes`,
+                    -- queda NULL en vez de reventar todo el INSERT con
+                    -- ForeignKeyViolation (ofertas_fuente_id_fkey). Mismo patrón
+                    -- que institucion_id abajo. Recupera fuentes cuyo id del
+                    -- catálogo no está poblado en la tabla `fuentes` de prod.
+                    (SELECT id FROM fuentes WHERE id = :fuente_id),
+                    :url_original, :url_hash, :dedup_hash,
                     :cargo, :descripcion,
                     (SELECT id FROM instituciones WHERE id = :institucion_id), :institucion_nombre, :sector, :area_profesional,
                     :tipo_cargo, :nivel,

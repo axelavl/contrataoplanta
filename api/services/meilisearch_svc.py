@@ -192,12 +192,21 @@ def buscar(
     try:
         filter_parts = []
         if filtros:
+            # Los valores de filtro llegan crudos desde los query params de
+            # `/api/buscar`. Se interpolan dentro de una expresión de filtro de
+            # Meilisearch entre comillas dobles, así que una comilla doble sin
+            # escapar rompería la expresión y permitiría inyectar cláusulas
+            # (p. ej. anular el `activo = true` y exponer ofertas inactivas).
+            # Escapamos `\` y `"` como manda el DSL de filtros de Meili.
+            def _esc_meili(valor: str) -> str:
+                return str(valor).replace("\\", "\\\\").replace('"', '\\"')
+
             if filtros.get("region"):
-                filter_parts.append(f'region = "{filtros["region"]}"')
+                filter_parts.append(f'region = "{_esc_meili(filtros["region"])}"')
             if filtros.get("sector"):
-                filter_parts.append(f'sector = "{filtros["sector"]}"')
+                filter_parts.append(f'sector = "{_esc_meili(filtros["sector"])}"')
             if filtros.get("tipo_contrato"):
-                filter_parts.append(f'tipo_contrato = "{filtros["tipo_contrato"]}"')
+                filter_parts.append(f'tipo_contrato = "{_esc_meili(filtros["tipo_contrato"])}"')
             if filtros.get("activo"):
                 filter_parts.append("activo = true")
 

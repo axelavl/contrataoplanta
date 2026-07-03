@@ -243,6 +243,13 @@ async function abrirFichaHist(id) {
 }
 
 document.getElementById('btn-filtrar')?.addEventListener('click', buscar);
+// Los handlers inline (onchange/onkeydown) los bloquea la CSP (`script-src 'self'`
+// sin unsafe-inline), así que los dropdowns no filtraban al cambiar. Se cablean acá.
+document.getElementById('f-region')?.addEventListener('change', buscar);
+document.getElementById('f-tipo')?.addEventListener('change', buscar);
+document.getElementById('f-q')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') buscar();
+});
 document.getElementById('lista')?.addEventListener('click', (e) => {
   const b = e.target.closest('.hist-detalle');
   if (!b) return;
