@@ -630,6 +630,9 @@ def admin_ofertas(
             o.renta_bruta_min, o.renta_bruta_max,
             o.fecha_scraped, o.detectada_en,
             o.institucion_id, o.descripcion, o.requisitos, o.requisitos_texto,
+            o.ciudad, o.lugar_desempenio, o.area_profesional, o.calidad_juridica,
+            o.estamento, o.jornada, o.numero_vacantes, o.renta_tipo, o.grado_eus,
+            o.fecha_publicacion, o.email_postulacion, o.email_consultas,
             o.overall_quality_score, o.needs_review,
             i.sector AS inst_sector, i.nombre AS inst_nombre_catalogo,
             i.url_empleo AS inst_url_empleo
@@ -938,20 +941,30 @@ def admin_editar_oferta(
     que el próximo pase de `validate_offer_urls.py` la chequee.
     """
     CAMPOS_PERMITIDOS = {
-        "cargo", "descripcion", "requisitos", "fecha_cierre", "activa", "estado",
-        "region", "sector", "tipo_contrato", "renta_bruta_min", "renta_bruta_max",
+        "cargo", "descripcion", "requisitos", "fecha_cierre", "fecha_publicacion",
+        "activa", "estado", "region", "ciudad", "lugar_desempenio", "sector",
+        "area_profesional", "tipo_contrato", "calidad_juridica", "estamento",
+        "jornada", "numero_vacantes", "renta_bruta_min", "renta_bruta_max",
+        "renta_tipo", "grado_eus", "email_postulacion", "email_consultas",
         "url_oferta", "url_bases",
     }
     updates = {k: v for k, v in payload.items() if k in CAMPOS_PERMITIDOS}
     if not updates:
         raise HTTPException(400, "Sin campos válidos para actualizar")
 
-    for campo in ("renta_bruta_min", "renta_bruta_max"):
+    for campo in ("renta_bruta_min", "renta_bruta_max", "numero_vacantes"):
         if campo in updates and updates[campo] not in (None, ""):
             try:
                 updates[campo] = int(updates[campo])
             except (TypeError, ValueError):
                 raise HTTPException(400, f"{campo} debe ser numérico") from None
+
+    for campo in ("email_postulacion", "email_consultas"):
+        if campo in updates and updates[campo]:
+            correo = str(updates[campo]).strip()
+            if correo and "@" not in correo:
+                raise HTTPException(400, f"{campo} debe ser un correo válido")
+            updates[campo] = correo or None
 
     for campo in ("url_oferta", "url_bases"):
         if campo in updates:
@@ -1021,10 +1034,21 @@ def admin_crear_oferta(
         "fecha_cierre": payload.get("fecha_cierre") or None,
         "fecha_publicacion": payload.get("fecha_publicacion") or date.today(),
         "region": (payload.get("region") or None),
+        "ciudad": (payload.get("ciudad") or None),
+        "lugar_desempenio": (payload.get("lugar_desempenio") or None),
         "sector": (payload.get("sector") or None),
+        "area_profesional": (payload.get("area_profesional") or None),
         "tipo_contrato": (payload.get("tipo_contrato") or None),
+        "calidad_juridica": (payload.get("calidad_juridica") or None),
+        "estamento": (payload.get("estamento") or None),
+        "jornada": (payload.get("jornada") or None),
+        "numero_vacantes": _int_o_none(payload.get("numero_vacantes")),
         "renta_bruta_min": _int_o_none(payload.get("renta_bruta_min")),
         "renta_bruta_max": _int_o_none(payload.get("renta_bruta_max")),
+        "renta_tipo": (payload.get("renta_tipo") or None),
+        "grado_eus": (payload.get("grado_eus") or None),
+        "email_postulacion": (payload.get("email_postulacion") or None),
+        "email_consultas": (payload.get("email_consultas") or None),
         "url_oferta": url_oferta,
         "url_bases": url_bases,
         "activa": True,

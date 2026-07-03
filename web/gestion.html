@@ -1165,7 +1165,8 @@
     <div class="form-group" id="edit-institucion-group" style="display:none"><label>Institución *</label><input id="edit-institucion" type="text" placeholder="Nombre de la institución"></div>
     <div class="form-group"><label>Descripción del cargo</label><textarea id="edit-descripcion" rows="4" placeholder="Funciones, objetivo del cargo, contexto…"></textarea></div>
     <div class="form-group"><label>Requisitos</label><textarea id="edit-requisitos" rows="3" placeholder="Formación, experiencia, competencias exigidas…"></textarea></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+      <div class="form-group"><label>Fecha publicación</label><input id="edit-fecha-publicacion" type="date"></div>
       <div class="form-group"><label>Fecha cierre</label><input id="edit-fecha-cierre" type="date"></div>
       <div class="form-group"><label>Estado</label>
         <select id="edit-estado">
@@ -1176,12 +1177,31 @@
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
       <div class="form-group"><label>Región</label><select id="edit-region"></select></div>
-      <div class="form-group"><label>Tipo de contrato</label><select id="edit-tipo-contrato"></select></div>
-      <div class="form-group"><label>Sector</label><select id="edit-sector"></select></div>
+      <div class="form-group"><label>Ciudad / Comuna</label><input id="edit-ciudad" type="text" placeholder="Ej: Santiago"></div>
+      <div class="form-group"><label>Lugar de desempeño</label><input id="edit-lugar-desempenio" type="text" placeholder="Dirección o dependencia"></div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+      <div class="form-group"><label>Tipo de contrato</label><select id="edit-tipo-contrato"></select></div>
+      <div class="form-group"><label>Calidad jurídica</label><input id="edit-calidad-juridica" type="text" placeholder="Ej: Contrata, Honorarios"></div>
+      <div class="form-group"><label>Jornada</label><input id="edit-jornada" type="text" placeholder="Ej: 44 hrs / semana"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+      <div class="form-group"><label>Sector</label><select id="edit-sector"></select></div>
+      <div class="form-group"><label>Estamento</label><select id="edit-estamento"></select></div>
+      <div class="form-group"><label>N° de vacantes</label><input id="edit-vacantes" type="number" min="0" placeholder="Ej: 1"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
       <div class="form-group"><label>Renta bruta mín.</label><input id="edit-renta-min" type="number" min="0" placeholder="CLP"></div>
       <div class="form-group"><label>Renta bruta máx.</label><input id="edit-renta-max" type="number" min="0" placeholder="CLP"></div>
+      <div class="form-group"><label>Tipo de renta</label><select id="edit-renta-tipo"></select></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>Grado EUS</label><input id="edit-grado-eus" type="text" placeholder="Ej: 12"></div>
+      <div class="form-group"><label>Área profesional</label><input id="edit-area-profesional" type="text" placeholder="Ej: Administración"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>Correo de postulación</label><input id="edit-email-postulacion" type="email" placeholder="postulaciones@servicio.cl"></div>
+      <div class="form-group"><label>Correo de consultas</label><input id="edit-email-consultas" type="email" placeholder="consultas@servicio.cl"></div>
     </div>
     <div class="form-group"><label>URL oferta <span style="color:var(--muted);font-weight:400">(al cambiarla se revalida)</span></label><input id="edit-url-oferta" type="url" placeholder="https://…"></div>
     <div class="form-group"><label>URL bases</label><input id="edit-url-bases" type="url" placeholder="https://…"></div>
