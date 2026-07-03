@@ -117,8 +117,11 @@
   const kv = (k, v, isRenta) => v ? `<div class="cop-kv"><div class="cop-kv-k">${k}</div><div class="cop-kv-v${isRenta ? ' is-renta' : ''}">${escHtml(v)}</div></div>` : '';
   const sub = (t, items) => (items && items.length)
     ? `<div class="cop-sub"><h6>${t}</h6><ul class="cop-list">${items.map((x) => `<li>${hl(x)}</li>`).join('')}</ul></div>` : '';
-  const sec = (t, items, check, collapsed) => (items && items.length)
-    ? `<div class="cop-sec${collapsed ? ' is-collapsed' : ''}"><div class="cop-sec-t">${t}</div><ul class="cop-list${check ? ' is-check' : ''}">${items.map((x) => `<li>${hl(x)}</li>`).join('')}</ul></div>` : '';
+  // Sección abierta por defecto: el cuerpo se muestra completo y solo se recorta
+  // (clamp por altura + "Ver más") cuando excede la altura estándar. Antes las
+  // secciones nacían colapsadas y parecían vacías (solo el título).
+  const sec = (t, items, check) => (items && items.length)
+    ? `<div class="cop-sec"><div class="cop-sec-t">${t}</div><div class="cop-sec-body cop-clamp"><ul class="cop-list${check ? ' is-check' : ''}">${items.map((x) => `<li>${hl(x)}</li>`).join('')}</ul></div><button class="cop-desc-toggle" type="button" hidden>Ver más</button></div>` : '';
 
   const ICONO_VERIF = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 11 4.6-2.5 8-6 8-11V5l-8-3Z" opacity=".22"/><path d="m9.5 12 1.8 1.8 3.4-3.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
@@ -131,6 +134,7 @@
       <div class="cop-modal" role="dialog" aria-modal="true" aria-labelledby="cop-cargo">
         <div class="cop-head">
           <button class="cop-close" type="button" aria-label="Cerrar">✕</button>
+          <button class="cop-id-chip" id="cop-id" type="button" hidden title="ID de la oferta — clic para copiar" aria-label="Copiar ID de la oferta"></button>
           <div class="cop-kicker" id="cop-kicker"></div>
           <div class="cop-inst" id="cop-inst"></div>
           <h2 class="cop-cargo" id="cop-cargo"></h2>
@@ -155,6 +159,22 @@
       </div>`;
     document.body.appendChild(overlay);
     overlay.querySelector('.cop-close').addEventListener('click', cerrar);
+    // Copiar el ID de la oferta al portapapeles (mismo gesto que el chip de la
+    // tarjeta): útil para pegarlo en el buscador del panel admin.
+    overlay.addEventListener('click', (e) => {
+      const chip = e.target.closest && e.target.closest('.cop-id-chip');
+      if (!chip) return;
+      const id = chip.dataset.id || (chip.textContent || '').replace(/^#/, '');
+      if (!id) return;
+      const _ok = () => {
+        const prev = chip.textContent;
+        chip.textContent = '¡Copiado!';
+        setTimeout(() => { chip.textContent = prev; }, 1200);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(id).then(_ok).catch(_ok);
+      } else { _ok(); }
+    });
     overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrar(); });
     // Expandir/contraer texto largo (objetivo) recortado a una altura estándar.
     overlay.addEventListener('click', (e) => {
@@ -225,6 +245,18 @@
     const $ = (id) => overlay.querySelector('#' + id);
 
     // cabecera
+    // ID de la oferta (para identificarla / copiar al panel admin).
+    const _ofId = oferta.id != null ? oferta.id : (oferta.ID != null ? oferta.ID : null);
+    const _idChip = $('cop-id');
+    if (_idChip) {
+      if (_ofId != null && _ofId !== '') {
+        _idChip.textContent = '#' + _ofId;
+        _idChip.dataset.id = String(_ofId);
+        _idChip.hidden = false;
+      } else {
+        _idChip.hidden = true;
+      }
+    }
     $('cop-kicker').textContent = [oferta.sector, oferta.tipo].filter(Boolean).join(' · ');
     $('cop-inst').innerHTML = hl(oferta.institucion || '') +
       (oferta.verificada ? ` <span class="cop-vf" title="Institución verificada">${ICONO_VERIF}</span>` : '');
@@ -283,7 +315,7 @@
       sub('Deseables', rq.deseables);
     // Los subgrupos fluyen en 2 columnas (.cop-subgrid) para reducir la altura.
     const requisitos = reqInner
-      ? `<div class="cop-sec is-collapsed"><div class="cop-sec-t">Requisitos para postular</div><div class="cop-subgrid">${reqInner}</div></div>` : '';
+      ? `<div class="cop-sec"><div class="cop-sec-t">Requisitos para postular</div><div class="cop-sec-body cop-clamp"><div class="cop-subgrid">${reqInner}</div></div><button class="cop-desc-toggle" type="button" hidden>Ver más</button></div>` : '';
 
     // Parte 6.6 — tabla compacta de renta por región (solo si el backend la
     // entregó parseada; si no, queda el campo "Renta bruta" del grid).
@@ -292,23 +324,23 @@
     const _thS = 'padding:6px 8px;border-bottom:1px solid var(--borde,#e5e5e5);color:var(--texto3,#6b7280);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.4px';
     const _tdS = 'padding:6px 8px;border-bottom:1px solid var(--borde,#eee);font-size:13px';
     const rentaTabla = _rentaReg.length
-      ? `<div class="cop-sec is-collapsed"><div class="cop-sec-t">Renta por región</div>`
+      ? `<div class="cop-sec"><div class="cop-sec-t">Renta por región</div><div class="cop-sec-body cop-clamp">`
         + `<table style="width:100%;border-collapse:collapse;margin-top:4px">`
         + `<thead><tr><th style="${_thS};text-align:left">Región</th><th style="${_thS};text-align:right">Sin bono</th><th style="${_thS};text-align:right">Con bono</th></tr></thead>`
         + `<tbody>` + _rentaReg.map((r) =>
             `<tr><td style="${_tdS}">${escHtml(r.region || '—')}</td>`
             + `<td style="${_tdS};text-align:right">${_fmtPesos(r.sin_bono)}</td>`
             + `<td style="${_tdS};text-align:right">${_fmtPesos(r.con_bono)}</td></tr>`).join('')
-        + `</tbody></table></div>`
+        + `</tbody></table></div><button class="cop-desc-toggle" type="button" hidden>Ver más</button></div>`
       : '';
 
-    // Las secciones largas arrancan colapsadas: la primera pantalla muestra
-    // cargo + plazo + resumen (grid) + contacto + objetivo sin scroll, y el
-    // resto se expande tocando su título.
+    // Las secciones arrancan ABIERTAS (texto visible): si una excede la altura
+    // estándar se recorta con "Ver más" (clamp por altura, se mide tras abrir).
+    // El título sigue permitiendo contraer/expandir la sección completa.
     $('cop-body').innerHTML = grid + rentaTabla + contacto + objetivo + requisitos +
-      sec('Funciones principales', oferta.funciones, false, true) +
-      sec('Condiciones del cargo', oferta.condiciones, false, true) +
-      sec('Cómo postular', oferta.comoPostular, true, true);
+      sec('Funciones principales', oferta.funciones, false) +
+      sec('Condiciones del cargo', oferta.condiciones, false) +
+      sec('Cómo postular', oferta.comoPostular, true);
 
     // Cada título de sección es un botón de contraer/expandir (accesible por
     // teclado). El chevron y el ocultamiento del cuerpo los maneja el CSS.
@@ -385,6 +417,21 @@
     const _objP = overlay.querySelector('.cop-objetivo.cop-clamp');
     const _objBtn = _objP && _objP.parentElement.querySelector('.cop-desc-toggle');
     if (_objP && _objBtn) _objBtn.hidden = _objP.scrollHeight <= _objP.clientHeight + 2;
+
+    // Secciones (funciones, condiciones, cómo postular, requisitos, renta por
+    // región): abiertas por defecto. El cuerpo nace con .cop-clamp (recorte por
+    // altura); si NO excede la altura estándar se quita el clamp para mostrarlo
+    // completo sin degradado; si excede, se deja recortado y aparece "Ver más".
+    overlay.querySelectorAll('.cop-sec-body.cop-clamp').forEach((body) => {
+      const btn = body.parentElement.querySelector('.cop-desc-toggle');
+      const excede = body.scrollHeight > body.clientHeight + 2;
+      if (excede) {
+        if (btn) btn.hidden = false;
+      } else {
+        body.classList.remove('cop-clamp');
+        if (btn) btn.hidden = true;
+      }
+    });
   }
 
   function cerrar() {
