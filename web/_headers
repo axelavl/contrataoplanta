@@ -47,6 +47,15 @@
 /*.js
   Cache-Control: public, max-age=0, must-revalidate
 
+# El glob `/*.js` (comodín + extensión) NO siempre matchea en Cloudflare Pages,
+# así que el `app.js`/`gestion.js` viejo quedaba cacheado y los cambios no se
+# veían. Reglas EXPLÍCITAS (siempre matchean) para los dos bundles principales.
+# El `?v=` de su <script> rompe además la caché ya guardada de una sola vez.
+/app.js
+  Cache-Control: public, max-age=0, must-revalidate
+/gestion.js
+  Cache-Control: public, max-age=0, must-revalidate
+
 /logo/*
   Cache-Control: public, max-age=604800
 
