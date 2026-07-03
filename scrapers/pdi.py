@@ -220,7 +220,7 @@ def pdf_a_texto(contenido: bytes) -> str:
 
 _RE_PLAZO = re.compile(r"plazo de postulaci[oó]n\s*:?\s*([^)]{5,80})\)", re.I)
 _RE_RANGO_CORTO = re.compile(
-    r"(\d{1,2})\s+(?:de\s+\w+\s+)?al\s+(\d{1,2})\s+de\s+(\w+)\s+de(?:l)?\s+(\d{4})", re.I)
+    r"(\d{1,2})\s+(?:de\s+\w+\s+)?al\s+(\d{1,2})\s+de\s+(\w+)\s+(?:de(?:l)?\s+)?(\d{4})", re.I)
 
 
 def _fechas_de_plazo(plazo: str) -> tuple[date | None, date | None]:
@@ -324,6 +324,20 @@ def parsear_perfil_pdf(texto: str) -> dict[str, Any]:
         d["requisitos"] = v
     if v := _seccion("OBJETIVO DEL CARGO"):
         d["objetivo"] = v[:1500]
+    # Fechas: "Fecha de publicación 03 de julio de 2026"
+    if m := re.search(r"fecha\s+de\s+publicaci[oó]n\s*:?\s*(.{10,50})", texto, re.I):
+        d["fecha_publicacion"] = _fecha_es(m.group(1))
+    # Plazo: "Etapa de Reclutamiento 03 al 06 de julio 2026"
+    # o "Etapa de Reclutamiento 03 al 06 de julio de 2026"
+    if m := re.search(
+        r"(?:etapa\s+de\s+reclutamiento|plazo\s+de\s+postulaci[oó]n)\s*:?\s*(.{10,80})",
+        texto, re.I,
+    ):
+        ini, fin = _fechas_de_plazo(m.group(1))
+        if ini:
+            d["plazo_ini"] = ini
+        if fin:
+            d["plazo_fin"] = fin
     t = texto.lower()
     if "jornal" in t:
         d["tipo"] = "Jornal"
@@ -376,8 +390,8 @@ def construir_oferta_contrata(c: dict[str, Any], perfil: dict[str, Any]) -> dict
         "renta_bruta_min": perfil.get("renta"),
         "renta_bruta_max": None,
         "renta_texto": perfil.get("renta_texto"),
-        "fecha_publicacion": c["plazo_ini"] or _hoy_cl(),
-        "fecha_cierre": c["plazo_fin"],
+        "fecha_publicacion": c["plazo_ini"] or perfil.get("fecha_publicacion") or perfil.get("plazo_ini") or _hoy_cl(),
+        "fecha_cierre": c["plazo_fin"] or perfil.get("plazo_fin"),
         "requisitos_texto": perfil.get("requisitos"),
         "url_bases": c.get("url_pdf"),
     }
