@@ -1,0 +1,17 @@
+# Cloudflare Pages publica ESTE directorio (web/) como raíz del sitio, así que
+# robots.txt debe vivir aquí para servirse en https://contrataoplanta.cl/robots.txt
+# (el robots.txt de la raíz del repo NO se publica).
+User-agent: *
+Allow: /
+
+# Panel de administración: no debe indexarse.
+Disallow: /gestion.html
+
+# Páginas de utilidad personales (estado en el navegador, sin contenido único).
+Disallow: /favoritos.html
+Disallow: /historial.html
+
+# Sitemap de páginas estáticas (este dominio) + sitemap dinámico de ofertas
+# (backend en Railway; requiere ambos dominios verificados en Search Console).
+Sitemap: https://contrataoplanta.cl/sitemap.xml
+Sitemap: https://contrataoplanta-production.up.railway.app/sitemap.xml
