@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Armada de Chile">
+  <defs>
+    <linearGradient id="abg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#123a78"/>
+      <stop offset="1" stop-color="#0a2450"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="26" fill="url(#abg)"/>
+  <circle cx="64" cy="64" r="46" fill="none" stroke="#e7c14a" stroke-width="3" opacity="0.85"/>
+  <!-- Estrella superior -->
+  <path fill="#f2ce5b" d="M64 24 l3.1 6.4 7 1-5.1 4.9 1.2 7L64 46.9 57.8 50.2 59 43.3 53.9 38.4l7-1z"/>
+  <!-- Ancla (emblema naval) -->
+  <g fill="none" stroke="#f2ce5b" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="64" y1="52" x2="64" y2="96"/>
+    <line x1="50" y1="60" x2="78" y2="60"/>
+    <path d="M40 78 a24 24 0 0 0 48 0"/>
+    <path d="M40 78 l-6 -3 M40 78 l6 -4"/>
+    <path d="M88 78 l6 -3 M88 78 l-6 -4"/>
+  </g>
+  <circle cx="64" cy="50" r="4.6" fill="none" stroke="#f2ce5b" stroke-width="4.2"/>
+</svg>
