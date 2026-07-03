@@ -1428,6 +1428,13 @@ function sectorIconHtml(nombreInstitucion) {
 const LOGOS_LOCALES = {
   'carabineros.cl': '/logos/carabineros.cl.svg',
   'armada.cl': '/logos/armada.cl.svg',
+  'ejercito.cl': '/logos/ejercito.cl.svg',
+  'fach.mil.cl': '/logos/fach.mil.cl.svg',
+  'gendarmeria.gob.cl': '/logos/gendarmeria.gob.cl.svg',
+  // PDI resuelve a pdichile.cl (catálogo maestro) o investigaciones.cl
+  // (catálogo curado por nombre) según los datos de la oferta → ambos al mismo.
+  'pdichile.cl': '/logos/pdichile.cl.svg',
+  'investigaciones.cl': '/logos/pdichile.cl.svg',
 };
 
 function getInstIcon(oferta) {

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Gendarmería de Chile">
+  <defs>
+    <linearGradient id="gbg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7a2933"/>
+      <stop offset="1" stop-color="#571b23"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="26" fill="url(#gbg)"/>
+  <circle cx="64" cy="64" r="46" fill="none" stroke="#e7c14a" stroke-width="3" opacity="0.85"/>
+  <!-- Llave (símbolo penitenciario) en diagonal -->
+  <g stroke="#f2ce5b" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <circle cx="49" cy="49" r="10"/>
+    <line x1="56" y1="56" x2="84" y2="84"/>
+    <line x1="76" y1="76" x2="84" y2="68"/>
+    <line x1="84" y1="84" x2="92" y2="76"/>
+  </g>
+</svg>
