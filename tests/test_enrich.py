@@ -72,3 +72,27 @@ def test_idempotente_no_duplica_funciones(oferta_base):
     # Ya tiene "Funciones"/"Cómo postular" → no se vuelven a anexar.
     assert oferta_base["descripcion"].count("Funciones del cargo:") == 1
     assert oferta_base["descripcion"].count("Cómo postular:") == 1
+
+
+def test_email_postulacion_puebla_campo_dedicado(oferta_base):
+    # Correo claramente de postulación → se puebla el campo dedicado que la
+    # ficha muestra como "Correo de postulación".
+    txt = "Los antecedentes deben remitir postulación al correo reclutamiento@muni.cl"
+    enriquecer_oferta(oferta_base, texto_html=txt, descargar_pdfs=False)
+    assert oferta_base.get("email_postulacion") == "reclutamiento@muni.cl"
+
+
+def test_email_ambiguo_no_puebla_campo(oferta_base):
+    # Clasificación ambigua → NO se toca el campo (evita etiqueta equivocada);
+    # el correo igual queda en la descripción para el extractor del front.
+    txt = "Escribir al correo contacto@muni.cl para más información."
+    enriquecer_oferta(oferta_base, texto_html=txt, descargar_pdfs=False)
+    assert oferta_base.get("email_postulacion") is None
+
+
+def test_email_postulacion_scraper_tiene_prioridad(oferta_base):
+    # Si el scraper ya trajo el correo, enrich no lo pisa.
+    oferta_base["email_postulacion"] = "ya@muni.cl"
+    txt = "Remitir postulación a otro@muni.cl"
+    enriquecer_oferta(oferta_base, texto_html=txt, descargar_pdfs=False)
+    assert oferta_base["email_postulacion"] == "ya@muni.cl"

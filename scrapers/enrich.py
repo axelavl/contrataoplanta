@@ -196,6 +196,24 @@ def _extraer_email(texto: str, oferta: dict) -> None:
     result = extract_and_classify_emails(texto)
     if not result.classified:
         return
+
+    # Poblar los CAMPOS dedicados (email_postulacion / email_consultas) si el
+    # scraper no los trajo: son los que la ficha muestra como "Correo de
+    # postulación / consultas". Antes sólo se anexaban al texto de la descripción
+    # y las columnas quedaban NULL, así que la tarjeta no mostraba el correo.
+    #
+    # Conservador a propósito: sólo poblamos `email_postulacion` y sólo con
+    # clasificación EXPLÍCITA (kind == email_postulacion). El clasificador no
+    # siempre acierta postulación vs consultas; ante la duda NO tocamos la
+    # columna para no mostrar un correo bajo una etiqueta equivocada — el
+    # extractor del front igual lo encuentra en el texto de la descripción (que
+    # se sigue anexando abajo). No auto-poblamos `email_consultas` desde aquí
+    # por ese riesgo de mala clasificación; los scrapers que lo sepan con
+    # certeza (p.ej. municipios) lo setean directo.
+    posts = [e.email for e in result.classified if "email_postulacion" in e.kinds]
+    if posts and not oferta.get("email_postulacion"):
+        oferta["email_postulacion"] = ", ".join(dict.fromkeys(posts))[:200]
+
     desc = oferta.get("descripcion") or ""
     emails_ya = re.findall(r"\b[\w.+-]+@[\w.-]+\.\w{2,}\b", desc.lower())
     emails_nuevos = [
