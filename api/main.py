@@ -399,9 +399,42 @@ _SECURITY_HEADERS = {
 }
 
 
+# Regex de orígenes permitidos (branch previews de Pages), en paralelo al que
+# consume CORSMiddleware. Se usa para poder re-adjuntar los headers CORS cuando
+# una excepción NO controlada escapa del handler: en ese caso Starlette genera
+# el 500 en su capa más externa (ServerErrorMiddleware), POR FUERA del
+# CORSMiddleware, así que la respuesta llegaría sin `Access-Control-Allow-Origin`
+# y el navegador reportaría un opaco "Failed to fetch" en vez del error real.
+_ALLOW_ORIGIN_REGEX = re.compile(r"https://([a-z0-9-]+\.)?estadoemplea\.pages\.dev$")
+
+
+def _cors_headers_para(origin: str | None) -> dict[str, str]:
+    """Headers CORS a echar de vuelta si el Origin está permitido."""
+    if not origin:
+        return {}
+    if origin in ALLOW_ORIGINS or _ALLOW_ORIGIN_REGEX.match(origin):
+        return {
+            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Credentials": "true",
+            "Vary": "Origin",
+        }
+    return {}
+
+
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
-    response = await call_next(request)
+    try:
+        response = await call_next(request)
+    except Exception:
+        # Red de seguridad: una excepción no controlada aquí (p.ej. un error de
+        # DB que no se convirtió en HTTPException) escaparía al 500 de Starlette
+        # SIN headers CORS. La atrapamos en la capa más externa de la app y
+        # devolvemos un 500 con CORS + headers de seguridad, para que el panel
+        # admin muestre "Error interno" en vez de "Failed to fetch".
+        logger.exception("Excepción no controlada en %s %s", request.method, request.url.path)
+        response = JSONResponse(status_code=500, content={"detail": "Error interno del servidor"})
+        for name, value in _cors_headers_para(request.headers.get("origin")).items():
+            response.headers[name] = value
     for name, value in _SECURITY_HEADERS.items():
         # setdefault para no sobrescribir si un endpoint ya los setea
         # (ej: un iframe embebible podría querer X-Frame-Options distinto).

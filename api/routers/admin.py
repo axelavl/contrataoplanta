@@ -43,6 +43,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import quote_plus, urlencode
 
+import psycopg2
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response, StreamingResponse
 from pydantic import BaseModel
@@ -109,6 +110,30 @@ except Exception:  # pragma: no cover
 logger = logging.getLogger("api.routers.admin")
 
 router = APIRouter(tags=["admin"])
+
+
+# ── Límites VARCHAR de `ofertas` (crear/editar manual) ───────────────────────
+# Los campos de texto libre del editor (jornada, lugar, grado, correos…) tienen
+# tope de longitud en el schema. Sin recortarlos, un valor largo hacía que el
+# INSERT/UPDATE lanzara `StringDataRightTruncation`; esa excepción no controlada
+# escapaba sin headers CORS y el navegador mostraba "Failed to fetch" en vez del
+# error real. Recortamos a la longitud de columna antes de escribir.
+_LIMITES_VARCHAR = {
+    "cargo": 500, "institucion_nombre": 300, "sector": 80, "area_profesional": 100,
+    "tipo_contrato": 50, "calidad_juridica": 60, "estamento": 60, "region": 80,
+    "ciudad": 80, "lugar_desempenio": 200, "renta_texto": 200, "renta_tipo": 20,
+    "grado_eus": 20, "jornada": 100, "email_postulacion": 200, "email_consultas": 200,
+    "estado": 20,
+}
+
+
+def _recortar_varchar(fila: dict[str, Any]) -> dict[str, Any]:
+    """Recorta in-place los valores de texto al largo de su columna."""
+    for col, limite in _LIMITES_VARCHAR.items():
+        val = fila.get(col)
+        if isinstance(val, str) and len(val) > limite:
+            fila[col] = val[:limite]
+    return fila
 
 
 # ── Auditoría de acciones admin ──────────────────────────────────────────────
@@ -973,6 +998,8 @@ def admin_editar_oferta(
                 raise HTTPException(400, f"{campo} debe ser una URL http(s)")
             updates[campo] = valor or None
 
+    _recortar_varchar(updates)
+
     from psycopg2 import sql as _sql
     set_parts = [_sql.SQL("{} = %s").format(_sql.Identifier(col)) for col in updates]
     if "url_oferta" in updates:
@@ -984,11 +1011,16 @@ def admin_editar_oferta(
     )
     vals = list(updates.values()) + [oferta_id]
 
-    with get_cursor() as (conn, cur):
-        cur.execute(query, vals)
-        if cur.rowcount == 0:
-            raise HTTPException(404, "Oferta no encontrada")
-        conn.commit()
+    try:
+        with get_cursor() as (conn, cur):
+            cur.execute(query, vals)
+            if cur.rowcount == 0:
+                raise HTTPException(404, "Oferta no encontrada")
+            conn.commit()
+    except psycopg2.Error as exc:
+        detalle = (getattr(exc, "diag", None) and exc.diag.message_primary) or str(exc)
+        logger.warning("Error editando oferta %s: %s", oferta_id, detalle)
+        raise HTTPException(400, f"No se pudo actualizar la oferta: {detalle}") from exc
 
     _auditar(_user, "editar_oferta", "oferta", oferta_id, {"campos": sorted(updates)})
     return {"id": oferta_id, "updated": list(updates.keys())}
@@ -1057,17 +1089,25 @@ def admin_crear_oferta(
     # Sólo columnas que existan en el schema actual (estado/tipo_contrato
     # vienen de migraciones; en DBs viejas pueden faltar).
     fila = {k: v for k, v in fila.items() if k in cols}
+    _recortar_varchar(fila)
 
     from psycopg2 import sql as _sql
     query = _sql.SQL("INSERT INTO ofertas ({}) VALUES ({}) RETURNING id").format(
         _sql.SQL(", ").join(_sql.Identifier(c) for c in fila),
         _sql.SQL(", ").join(_sql.Placeholder() for _ in fila),
     )
-    with get_cursor() as (conn, cur):
-        cur.execute(query, list(fila.values()))
-        row = cur.fetchone()
-        nuevo_id = (row["id"] if isinstance(row, dict) else row[0]) if row else None
-        conn.commit()
+    try:
+        with get_cursor() as (conn, cur):
+            cur.execute(query, list(fila.values()))
+            row = cur.fetchone()
+            nuevo_id = (row["id"] if isinstance(row, dict) else row[0]) if row else None
+            conn.commit()
+    except psycopg2.Error as exc:
+        # Convertimos el error de DB en un 400 legible (con CORS) en vez de
+        # dejar que escape como 500 opaco → "Failed to fetch" en el panel.
+        detalle = (getattr(exc, "diag", None) and exc.diag.message_primary) or str(exc)
+        logger.warning("Error creando oferta manual: %s", detalle)
+        raise HTTPException(400, f"No se pudo crear la oferta: {detalle}") from exc
 
     _auditar(_user, "crear_oferta", "oferta", nuevo_id, {"cargo": cargo[:80], "institucion": institucion[:80]})
     return {"id": nuevo_id, "cargo": cargo}
