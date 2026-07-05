@@ -118,6 +118,11 @@ from api.services.seo import (  # noqa: E402
 
 DEFAULT_ALLOW_ORIGINS = [
     "https://contrataoplanta.cl",
+    # Variante con www: aunque el sitio redirige www→apex a nivel de Cloudflare,
+    # si un usuario queda en www (redirect cacheado/lento) el fetch a la API se
+    # hace con Origin https://www.contrataoplanta.cl. Sin este entry, el CORS lo
+    # rechaza y el navegador reporta "Failed to fetch" en TODAS las llamadas.
+    "https://www.contrataoplanta.cl",
     "https://estadoemplea.pages.dev",
 ]
 
