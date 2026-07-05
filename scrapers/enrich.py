@@ -308,6 +308,32 @@ def _extraer_postulacion(texto: str, oferta: dict) -> None:
     oferta["descripcion"] = _limpiar_lineas(desc + sep + bloque)[:2000]
 
 
+# Extractor de fecha de cierre reutilizado del intake (frases "postular hasta
+# el …", "recepción de antecedentes hasta …"). Opcional para no romper imports.
+try:  # pragma: no cover
+    from scrapers.intake import fecha_cierre_desde_texto as _fecha_cierre_desde_texto
+except Exception:  # pragma: no cover
+    _fecha_cierre_desde_texto = None  # type: ignore[assignment]
+
+
+def _extraer_fecha_cierre(texto: str, oferta: dict) -> None:
+    """Deriva `fecha_cierre` del texto (HTML + PDF de bases) cuando la oferta no
+    la trae. Es la causa nº1 de revisión manual: sin cierre, `assess_vigencia`
+    marca el aviso para revisión (o lo descarta al envejecer). Muchos municipios
+    e instituciones sólo publican el plazo dentro del PDF/descripción, así que
+    minarlo aquí evita la revisión.
+
+    Sólo fija fechas FUTURAS (un plazo real y vigente); las pasadas las maneja el
+    intake por sus propias vías para no provocar descartes erróneos desde aquí.
+    """
+    if _fecha_cierre_desde_texto is None or oferta.get("fecha_cierre"):
+        return
+    from datetime import date as _date
+    f = _fecha_cierre_desde_texto(texto)
+    if f and f >= _date.today():
+        oferta["fecha_cierre"] = f
+
+
 # ── Función principal ─────────────────────────────────────────────────────
 
 def enriquecer_oferta(
@@ -372,6 +398,7 @@ def enriquecer_oferta(
     _extraer_contrato(texto_combinado, oferta)
     _extraer_funciones(texto_combinado, oferta)
     _extraer_postulacion(texto_combinado, oferta)
+    _extraer_fecha_cierre(texto_combinado, oferta)
 
     return oferta
 
