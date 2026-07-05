@@ -79,9 +79,19 @@ def test_no_matchea_si_falta_una_raiz():
 def test_where_incluye_requisitos_y_descripcion():
     where, params = build_ofertas_filters(q="administrador publico")
     assert "o.requisitos" in where
+    assert "o.requisitos_texto" in where   # AMBAS columnas de requisitos
     assert "o.descripcion" in where
     assert "o.area_profesional" in where
     assert where.count("%s") == len(params)
+
+
+def test_titulo_en_requisitos_texto_matchea():
+    # El título vive en `requisitos_texto` mientras `requisitos` trae otra cosa:
+    # con COALESCE se perdía; concatenando ambas ahora matchea.
+    cargo = "Profesional de Apoyo"
+    requisitos = "Disponibilidad inmediata."
+    requisitos_texto = "Título profesional de Administrador Público o afín."
+    assert _matchea("administrador publico", cargo, "", "", requisitos, requisitos_texto, "")
 
 
 # ── Ranking: título exacto primero, requisitos después ───────────────────────
