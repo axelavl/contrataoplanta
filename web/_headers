@@ -55,6 +55,8 @@
   Cache-Control: public, max-age=0, must-revalidate
 /gestion.js
   Cache-Control: public, max-age=0, must-revalidate
+/rich-text.js
+  Cache-Control: public, max-age=0, must-revalidate
 
 /logo/*
   Cache-Control: public, max-age=604800

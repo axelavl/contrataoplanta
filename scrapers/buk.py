@@ -128,6 +128,68 @@ TITLE_SELECTORS = (".job__card-name b", ".job__card-name", "[class*='card-name']
 _RE_RENTA_RANGO = re.compile(r"\$\s*([\d.]{5,12})(?:\s*[-–]\s*\$\s*([\d.]{5,12}))?")
 _RE_FECHA_PROCESO = re.compile(r"Proceso iniciado el\s+(\d{1,2}/\d{1,2}/\d{4})", re.I)
 
+# Marcadores de proceso CERRADO en la página de detalle. Buk deja procesos ya
+# finalizados en el listado; el detalle muestra un aviso. Exigimos contexto
+# (proceso/postulación/oferta/vacante) para no confundir con "sistema cerrado"
+# o texto libre de la descripción. Cubre las variantes vistas en producción.
+_RE_PROCESO_CERRADO = re.compile(
+    r"(?:proceso|postulaci[oó]n(?:es)?|convocatoria|oferta|vacante|b[uú]squeda)"
+    r"[^.]{0,45}?"
+    r"(?:cerrad[oa]s?|finaliz(?:ad|ó|o)|expirad[oa]s?|vencid[oa]s?|"
+    r"no\s+(?:se\s+encuentra|est[aá])\s+disponible|"
+    r"ya\s+(?:fue|est[aá])\s+(?:cerrad|complet|cubiert)|"
+    r"no\s+disponible)"
+    r"|(?:esta|la)\s+oferta\s+ya\s+no\s+(?:est[aá]|se\s+encuentra)\s+(?:disponible|vigente)"
+    r"|postulaciones\s+cerrad[oa]s"
+    r"|proceso\s+no\s+disponible",
+    re.I,
+)
+
+# Fecha límite de postulación cuando el detalle sí la publica (no siempre).
+# "Postula hasta el DD/MM/AAAA", "Fecha de cierre: DD/MM/AAAA",
+# "Cierre de postulaciones DD/MM/AAAA", "Vigente hasta el DD de mes de AAAA".
+_RE_FECHA_CIERRE = re.compile(
+    r"(?:postula(?:ci[oó]n)?(?:es)?\s+hasta(?:\s+el)?|"
+    r"fecha\s+de\s+(?:cierre|expiraci[oó]n|t[eé]rmino)|"
+    r"cierre\s+de\s+(?:postulaci[oó]n(?:es)?|convocatoria)|"
+    r"vigente\s+hasta(?:\s+el)?|"
+    r"plazo(?:\s+de\s+postulaci[oó]n)?\s+hasta(?:\s+el)?)"
+    r"\s*:?\s*"
+    r"(\d{1,2}\s*[/-]\s*\d{1,2}\s*[/-]\s*\d{2,4}"
+    r"|\d{1,2}\s+de\s+[a-záéíóú]+\s+(?:de\s+)?\d{4})",
+    re.I,
+)
+
+_MESES = {
+    "enero": 1, "febrero": 2, "marzo": 3, "abril": 4, "mayo": 5, "junio": 6,
+    "julio": 7, "agosto": 8, "septiembre": 9, "setiembre": 9, "octubre": 10,
+    "noviembre": 11, "diciembre": 12,
+}
+
+
+def _parse_fecha_cierre(texto: str) -> date | None:
+    """Extrae la fecha límite de postulación del detalle, si la publica."""
+    m = _RE_FECHA_CIERRE.search(texto or "")
+    if not m:
+        return None
+    val = m.group(1).strip()
+    mnum = re.match(r"(\d{1,2})\s+de\s+([a-záéíóú]+)\s+(?:de\s+)?(\d{4})", val, re.I)
+    if mnum:
+        mes = _MESES.get(mnum.group(2).lower())
+        if not mes:
+            return None
+        try:
+            return date(int(mnum.group(3)), mes, int(mnum.group(1)))
+        except ValueError:
+            return None
+    val = re.sub(r"\s+", "", val)
+    for fmt in ("%d/%m/%Y", "%d-%m-%Y", "%d/%m/%y", "%d-%m-%y"):
+        try:
+            return datetime.strptime(val, fmt).date()
+        except ValueError:
+            continue
+    return None
+
 _EXTRA_SOURCES: list[dict[str, Any]] = [
     {
         "id": 294,
@@ -257,6 +319,12 @@ def parsear_detalle(html: str) -> dict[str, Any]:
     texto = limpiar_texto(soup.get_text(" ", strip=True))
     d: dict[str, Any] = {}
 
+    # Estado de vigencia: proceso ya cerrado, o fecha límite en el detalle.
+    if _RE_PROCESO_CERRADO.search(texto):
+        d["cerrada"] = True
+    if fc := _parse_fecha_cierre(texto):
+        d["fecha_cierre"] = fc
+
     def cap(patron: str) -> str | None:
         m = re.search(patron, texto, re.I)
         return limpiar_texto(m.group(1)) if m else None
@@ -360,7 +428,9 @@ def construir_oferta(item: dict[str, Any], det: dict[str, Any],
         "renta_bruta_max": renta_max,
         "renta_texto": item.get("renta_texto"),
         "fecha_publicacion": item["fecha_publicacion"] or date.today(),
-        "fecha_cierre": None,  # Buk no publica fecha de cierre
+        # Buk normalmente no publica cierre; cuando el detalle sí lo trae,
+        # lo propagamos para que la validación de vigencia lo respete.
+        "fecha_cierre": det.get("fecha_cierre"),
         "requisitos_texto": det.get("requisitos"),
         "url_bases": None,
     }
@@ -401,15 +471,26 @@ def _recolectar_fuente(fuente: dict[str, Any], max_results: int | None,
             break
 
     ofertas = []
+    hoy = date.today()
+    omitidas = 0
     for it in items:
         det: dict[str, Any] = {}
         texto_detalle = None
+        rd = None
         if con_detalle:
             time.sleep(delay)
             rd = _get(session, it["url"])
             if rd is not None:
                 det = parsear_detalle(rd.text)
                 texto_detalle = BeautifulSoup(rd.text, "html.parser").get_text(" ", strip=True)
+                # Omitir procesos ya cerrados o con fecha de cierre pasada: Buk
+                # deja avisos vencidos en el listado y contaminan la web.
+                fc = det.get("fecha_cierre")
+                if det.get("cerrada") or (isinstance(fc, date) and fc < hoy):
+                    omitidas += 1
+                    motivo = "cerrada" if det.get("cerrada") else f"vencida ({fc})"
+                    logger.info("  ✗ omitida %s: %s", motivo, it["titulo"][:60])
+                    continue
         oferta = construir_oferta(it, det, fuente)
         try:
             from scrapers.enrich import enriquecer_oferta, encontrar_pdf_urls
@@ -423,6 +504,8 @@ def _recolectar_fuente(fuente: dict[str, Any], max_results: int | None,
         except Exception:
             pass
         ofertas.append(oferta)
+    if omitidas:
+        logger.info("  %d oferta(s) omitida(s) por vigencia (cerradas/vencidas)", omitidas)
     return ofertas
 
 
