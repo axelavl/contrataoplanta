@@ -834,7 +834,16 @@ def _procesar_fuente(fuente, session, delay, incluir_cerrados):
             continue
         try:
             from scrapers.enrich import enriquecer_oferta
-            enriquecer_oferta(o, texto_html=o.get("descripcion"))
+            # Si la oferta apunta a un PDF de bases y la fuente NO lo parseó ya
+            # (pdf_con_texto lo hace en _extraer_de_pdf), dejamos que enrich lo
+            # descargue y mine: fecha de cierre, renta, requisitos y funciones.
+            # Así avisos cuyo detalle vive en el PDF dejan de ir a revisión.
+            pdf_urls = None
+            ub = (o.get("url_bases") or "")
+            if not fuente.get("pdf_con_texto") and ub.lower().endswith(".pdf"):
+                pdf_urls = [ub]
+            enriquecer_oferta(o, texto_html=o.get("descripcion"),
+                              pdf_urls=pdf_urls, session=session)
         except Exception:
             pass
         ofertas.append(o)

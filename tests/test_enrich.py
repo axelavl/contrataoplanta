@@ -96,3 +96,34 @@ def test_email_postulacion_scraper_tiene_prioridad(oferta_base):
     txt = "Remitir postulación a otro@muni.cl"
     enriquecer_oferta(oferta_base, texto_html=txt, descargar_pdfs=False)
     assert oferta_base["email_postulacion"] == "ya@muni.cl"
+
+
+def test_fecha_cierre_se_deriva_del_texto():
+    # Sin fecha_cierre estructurada: enrich la deriva de "postular hasta el …".
+    # Es la causa nº1 de revisión manual (assess_vigencia).
+    from datetime import date, timedelta
+    _MESES = ['', 'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
+              'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+    futuro = date.today() + timedelta(days=45)
+    txt = (f"Las postulaciones se reciben hasta el {futuro.day} de "
+           f"{_MESES[futuro.month]} de {futuro.year}.")
+    o = {"cargo": "Analista", "descripcion": "Cargo del área."}
+    enriquecer_oferta(o, texto_html=txt, descargar_pdfs=False)
+    assert o.get("fecha_cierre") == futuro
+
+
+def test_fecha_cierre_no_pisa_la_existente():
+    from datetime import date, timedelta
+    futuro = date.today() + timedelta(days=45)
+    o = {"cargo": "Analista", "fecha_cierre": date(2027, 1, 1)}
+    enriquecer_oferta(o, texto_html=f"hasta el {futuro.day} de julio de {futuro.year}",
+                      descargar_pdfs=False)
+    assert o["fecha_cierre"] == date(2027, 1, 1)
+
+
+def test_fecha_cierre_pasada_no_se_fija():
+    # Una fecha ya vencida NO se fija desde enrich (el intake maneja la expiración).
+    o = {"cargo": "Analista", "descripcion": "z"}
+    enriquecer_oferta(o, texto_html="Se recibió hasta el 10 de marzo de 2020.",
+                      descargar_pdfs=False)
+    assert o.get("fecha_cierre") is None
