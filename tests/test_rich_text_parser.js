@@ -470,5 +470,43 @@ assert(sPasos.postulacion.length >= 3, true, 'Los 3 pasos reales caen en postula
 assertInBlock(sPasos, 'postulacion', 'Formulario de Postulación Online', 'Paso del formulario en postulacion');
 assertNotInBlock(sPasos, 'condiciones', 'renta líquida', 'El paso de renta líquida NO cae en condiciones');
 
+console.log('\n## Objetivo del cargo — inline, multilínea y recorte');
+// (1) Contenido en la misma línea del header.
+const sObjInline = rt.buildSemanticSections({
+  descripcion: 'Objetivo del cargo: Contribuir al desarrollo de políticas públicas '
+    + 'apoyando la gestión del departamento.\nFunciones\n- Redactar informes.',
+  requisitos: '',
+});
+assert(sObjInline.objetivo,
+  'Contribuir al desarrollo de políticas públicas apoyando la gestión del departamento.',
+  'Objetivo en el mismo renglón del header se captura');
+
+// (2) Objetivo que abarca dos renglones — antes sólo tomaba el primero.
+const sObjMulti = rt.buildSemanticSections({
+  descripcion: 'Objetivo del cargo\nApoyar la gestión administrativa de la unidad\n'
+    + 'coordinando con los equipos para asegurar el cumplimiento de metas.\n'
+    + 'Requisitos\n- Título profesional.',
+  requisitos: '',
+});
+assert(/coordinando con los equipos/.test(sObjMulti.objetivo), true,
+  'Objetivo multilínea captura ambos renglones');
+
+// (3) Objetivo largo (>400 chars): antes se descartaba; ahora se recorta.
+const largo = 'Coordinar y supervisar la ejecución de los programas de la institución, '
+  + 'velando por el cumplimiento de los objetivos estratégicos. ';
+const sObjLargo = rt.buildSemanticSections({
+  descripcion: 'Objetivo del cargo\n' + largo.repeat(4) + '\nFunciones\n- x procedimientos.',
+  requisitos: '',
+});
+assert(sObjLargo.objetivo.length > 0 && sObjLargo.objetivo.length <= 505, true,
+  'Objetivo largo se recorta en vez de descartarse');
+
+// (4) Volcado de requisitos bajo el header "Objetivo" se descarta (no duplica).
+const sObjDump = rt.buildSemanticSections({
+  descripcion: 'Objetivo del cargo\nRequisitos: título profesional, 3 años de experiencia.\nFunciones',
+  requisitos: '',
+});
+assert(sObjDump.objetivo, '', 'Volcado de requisitos bajo "Objetivo" se descarta');
+
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed > 0 ? 1 : 0);

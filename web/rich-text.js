@@ -1379,20 +1379,67 @@
   // frases de condiciones/requisitos sueltas que el resto de reglas no atrapó.
   var OBJECTIVE_SENTENCE_RE = /^(el\s+|la\s+|este\s+)?(objetivo|prop[oó]sito|misi[oó]n|finalidad)\b|^(contribuir|apoyar|asesorar|colaborar|coordinar|gestionar|administrar|liderar|dirigir|planificar|desarrollar|brindar|prestar|proveer|otorgar|garantizar|asegurar|velar|promover|facilitar|aportar)\b/i;
 
+  // Detecta si una línea es un encabezado de OTRA sección (para saber dónde
+  // corta el objetivo). Un heading suele ser corto y o bien termina en ":" o
+  // mapea a una categoría conocida distinta de "objetivo".
+  function _looksLikeSectionHeading(line) {
+    var l = trim(line);
+    if (!l || l.length > 70) return false;
+    var cat = _categoryFromHeading(l);
+    if (cat && cat !== 'objetivo') return true;
+    // "Perfil:", "Funciones Principales", "Requisitos", etc. sin dos puntos.
+    if (/^[-•]/.test(l)) return true; // una viñeta ya no es prosa de objetivo
+    if (/:\s*$/.test(l) && l.split(/\s+/).length <= 6) return true;
+    return false;
+  }
+
+  // Recorta un objetivo largo a la primera (o dos) oración(es) completas sin
+  // pasarnos de `cap` caracteres, en vez de descartarlo por completo. Muchos
+  // avisos legítimos escriben un objetivo de propósito de 2-3 frases.
+  function _trimObjective(text, cap) {
+    var t = trim(text).replace(/\s+/g, ' ');
+    if (t.length <= cap) return t.replace(/[.;,\s]+$/, '') + '.';
+    // Cortar en el último punto final antes del cap; si no hay, cortar en el
+    // último espacio para no partir una palabra.
+    var slice = t.slice(0, cap);
+    var lastDot = slice.lastIndexOf('. ');
+    if (lastDot >= 60) return slice.slice(0, lastDot).replace(/[.;,\s]+$/, '') + '.';
+    var lastSpace = slice.lastIndexOf(' ');
+    if (lastSpace >= 60) slice = slice.slice(0, lastSpace);
+    return slice.replace(/[.;,\s]+$/, '') + '…';
+  }
+
   function extractObjective(text) {
     if (!text) return '';
-    var lines = String(text).split('\n').map(trim).filter(Boolean);
+    var lines = String(text).split('\n').map(trim);
     for (var i = 0; i < lines.length; i++) {
-      if (!OBJECTIVE_HEADER_RE.test(lines[i])) continue;
-      var next = trim(lines[i + 1] || '');
-      if (next.length < 18) continue;
-      // (a) arranca con otra categoría → volcado, no es objetivo.
-      if (NON_OBJECTIVE_START_RE.test(next)) return '';
-      // (b) un objetivo real es una declaración breve de propósito; un muro
-      // de texto (>400 chars) es casi siempre condiciones/requisitos pegados
-      // que ya viven parseados en sus secciones → se omite para no duplicar.
-      if (next.length > 400) return '';
-      return next.replace(/\.$/, '') + '.';
+      var line = lines[i];
+      if (!OBJECTIVE_HEADER_RE.test(line)) continue;
+
+      // (1) Contenido en la MISMA línea del header: "Objetivo del cargo: ...".
+      // Quitamos el header y el separador inicial (": " / " - ").
+      var inline = trim(line.replace(OBJECTIVE_HEADER_RE, '').replace(/^[\s:：\-–—.]+/, ''));
+
+      // (2) Acumular líneas siguientes hasta un heading/viñeta/línea vacía, para
+      // capturar objetivos que abarcan varias líneas y no sólo la primera.
+      var collected = inline ? [inline] : [];
+      for (var j = i + 1; j < lines.length; j++) {
+        var nxt = lines[j];
+        if (!nxt) { if (collected.length) break; else continue; }
+        if (_looksLikeSectionHeading(nxt)) break;
+        collected.push(nxt);
+        // Un párrafo de objetivo rara vez pasa de ~3 líneas de prosa; cortamos
+        // para no absorber el resto del aviso cuando falta separación clara.
+        if (collected.join(' ').length > 650) break;
+      }
+
+      var body = trim(collected.join(' '));
+      if (body.length < 18) continue;
+      // (a) arranca con otra categoría → volcado mal clasificado, no es objetivo.
+      if (NON_OBJECTIVE_START_RE.test(body)) return '';
+      // (b) recortamos objetivos largos a sus primeras frases en vez de
+      // descartarlos: un objetivo de 2-3 oraciones es legítimo y útil.
+      return _trimObjective(body, 500);
     }
     return '';
   }
