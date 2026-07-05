@@ -971,10 +971,22 @@ def admin_editar_oferta(
         "area_profesional", "tipo_contrato", "calidad_juridica", "estamento",
         "jornada", "numero_vacantes", "renta_bruta_min", "renta_bruta_max",
         "renta_tipo", "grado_eus", "email_postulacion", "email_consultas",
-        "url_oferta", "url_bases",
+        "url_oferta", "url_bases", "institucion_nombre",
     }
     updates = {k: v for k, v in payload.items() if k in CAMPOS_PERMITIDOS}
-    if not updates:
+
+    # `institucion_id` (FK a instituciones) se maneja aparte con subselect
+    # defensivo: si el id del catálogo no está en la tabla `instituciones`,
+    # queda NULL en vez de romper el UPDATE con ForeignKeyViolation. Permite
+    # reasignar la institución de una oferta desde el listado del panel.
+    inst_id = None
+    if payload.get("institucion_id") not in (None, ""):
+        try:
+            inst_id = int(payload["institucion_id"])
+        except (TypeError, ValueError):
+            raise HTTPException(400, "institucion_id debe ser numérico") from None
+
+    if not updates and inst_id is None:
         raise HTTPException(400, "Sin campos válidos para actualizar")
 
     for campo in ("renta_bruta_min", "renta_bruta_max", "numero_vacantes"):
@@ -1006,10 +1018,16 @@ def admin_editar_oferta(
         set_parts.append(_sql.SQL("url_oferta_valida = NULL"))
     if "url_bases" in updates:
         set_parts.append(_sql.SQL("url_bases_valida = NULL"))
+    extra_vals: list[Any] = []
+    if inst_id is not None:
+        # Subselect defensivo: NULL si el id no existe en `instituciones`.
+        set_parts.append(_sql.SQL(
+            "institucion_id = (SELECT id FROM instituciones WHERE id = %s)"))
+        extra_vals.append(inst_id)
     query = _sql.SQL("UPDATE ofertas SET {}, actualizada_en = NOW() WHERE id = %s").format(
         _sql.SQL(", ").join(set_parts),
     )
-    vals = list(updates.values()) + [oferta_id]
+    vals = list(updates.values()) + extra_vals + [oferta_id]
 
     try:
         with get_cursor() as (conn, cur):
@@ -1022,8 +1040,11 @@ def admin_editar_oferta(
         logger.warning("Error editando oferta %s: %s", oferta_id, detalle)
         raise HTTPException(400, f"No se pudo actualizar la oferta: {detalle}") from exc
 
-    _auditar(_user, "editar_oferta", "oferta", oferta_id, {"campos": sorted(updates)})
-    return {"id": oferta_id, "updated": list(updates.keys())}
+    campos_tocados = list(updates.keys())
+    if inst_id is not None:
+        campos_tocados.append("institucion_id")
+    _auditar(_user, "editar_oferta", "oferta", oferta_id, {"campos": sorted(campos_tocados)})
+    return {"id": oferta_id, "updated": campos_tocados}
 
 
 @router.post(f"/api/{ADMIN_PATH}/ofertas", tags=["admin"])

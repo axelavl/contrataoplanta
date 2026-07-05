@@ -192,6 +192,11 @@ FUENTES: list[dict[str, Any]] = [
      "detalle_re": r"/(?:oferta-laboral|oferta-de-trabajo|concurso-publico-para|"
                    r"proceso-de-seleccion)[^/\"']*",
      "pdf_host": "cerronavia.cl"},
+    {"clave": "independencia", "id": 387, "nombre": "Municipalidad de Independencia",
+     "region": RM, "ciudad": "Independencia", "modo": "enlaces_detalle",
+     "url": "https://www.independencia.cl/concursos-publicos/",
+     "detalle_re": r"/concurso-publico[^/\"']*",
+     "pdf_host": "independencia.cl", "pdf_con_texto": True},
     {"clave": "santabarbara", "id": 537, "nombre": "Municipalidad de Santa Bárbara",
      "region": "Biobío", "ciudad": "Santa Bárbara", "modo": "lista_o_vacio",
      "url": "https://www.santabarbara.cl/municipalidad/concursos-publicos/",
@@ -457,6 +462,10 @@ def _limpiar_cargo(cargo: str) -> str:
         prev = c
         c = _RE_CARGO_PREFIJO.sub("", c)
         c = _RE_CARGO_PROVEER.sub("", c)
+    # "Concurso público para Coordinador/a …" -> tras quitar el prefijo queda
+    # "para Coordinador…"; sacamos ese "para (proveer el cargo de)" residual.
+    c = re.sub(r"^para\s+(?:proveer\s+(?:el\s+|la\s+)?)?(?:cargo\s+de\s+)?", "",
+               c, flags=re.I)
     # Cola con fecha ("… 12 de julio 2026") que a veces arrastra el título.
     c = re.sub(r"\s+\d{1,2}\s+(?:de\s+)?(?:ene|feb|mar|abr|may|jun|jul|ago|sep|"
                r"oct|nov|dic)\w*\s*\d{0,4}$", "", c, flags=re.I)
@@ -464,8 +473,11 @@ def _limpiar_cargo(cargo: str) -> str:
 
 
 def _bases_pdf(soup, base_url: str) -> str | None:
-    """Primer PDF que sea BASES/perfil de concurso, excluyendo formularios y
-    declaraciones juradas (Formulario 1-A/1-B/1-C NO son bases del concurso)."""
+    """PDF de BASES/perfil del concurso, excluyendo formularios y declaraciones
+    juradas (Formulario 1-A/1-B/1-C NO son bases). Si no hay ninguno cuyo nombre
+    lo delate pero sí hay UN único PDF no-excluido en la página, se asume que ese
+    es la base (caso Independencia: la página enlaza sólo el PDF del concurso)."""
+    candidatos: list[str] = []
     for a in soup.find_all("a", href=True):
         href = a["href"]
         if ".pdf" not in href.lower():
@@ -475,10 +487,12 @@ def _bases_pdf(soup, base_url: str) -> str | None:
         if any(x in low for x in _PDF_EXCLUIR):
             continue  # formulario / declaracion / anexo / solicitud → no es base
         texto_a = limpiar_texto(a.get_text(" ", strip=True)).lower()
-        if re.search(r"(base|perfil|descriptor|convocatoria|t[ée]rminos de ref)",
+        if re.search(r"(base|perfil|descriptor|convocatoria|concurso|t[ée]rminos de ref)",
                      low + " " + texto_a):
             return url
-    return None
+        if url not in candidatos:
+            candidatos.append(url)
+    return candidatos[0] if len(candidatos) == 1 else None
 
 
 def _nivel(cargo: str) -> str:
@@ -532,7 +546,9 @@ def _pdf_texto(contenido: bytes) -> str:
 
 # ── Modos de extracción ──────────────────────────────────────────────────────
 def _extraer_de_pdf(session, url_pdf, fuente, delay):
-    """Devuelve (requisitos, descripcion, cierre, tipo, renta_texto)."""
+    """Parsea el PDF de bases y devuelve requisitos, cierre, tipo, renta, correos
+    y un extracto de texto (`texto_pdf`) para páginas de detalle con HTML pobre
+    (p.ej. Independencia, donde el aviso real vive en el PDF)."""
     if not fuente.get("pdf_con_texto"):
         return {}
     time.sleep(delay / 2)
@@ -542,18 +558,22 @@ def _extraer_de_pdf(session, url_pdf, fuente, delay):
     t = limpiar_texto(_pdf_texto(rp.content))
     if not t:
         return {}
-    d: dict[str, Any] = {}
+    d: dict[str, Any] = {"texto_pdf": t[:1800]}
     if m := re.search(r"Requisitos[^:]{0,25}:?\s*(.{30,1500})", t, re.I):
         bloque = m.group(1)
         c = re.search(r"(Funciones|Competencias|Postulaci|Proceso de selec|Etapas)",
                       bloque, re.I)
         d["requisitos"] = limpiar_texto(bloque[: c.start()] if c else bloque)[:2000]
-    if cierre := _cierre_envio(t):
+    # Cierre: "hasta el …" o rango "02 al 07 de julio" dentro de las bases.
+    if cierre := (_cierre_envio(t) or _cierre_rango(t)):
         d["fecha_cierre"] = cierre
     d["tipo"] = _tipo(t)
     if m := re.search(r"(Renta|Remuneraci[oó]n|Sueldo|Grado)[^.\n]{0,60}"
                       r"\$?\s*[\d.]{4,12}", t, re.I):
         d["renta_texto"] = limpiar_texto(m.group(0))[:120]
+    # Correos de postulación citados en las bases.
+    if correos := _emails_postulacion(t):
+        d["email_postulacion"] = correos
     return d
 
 
@@ -700,13 +720,26 @@ def extraer_enlaces_detalle(html, fuente, session, delay):
         h1 = s2.find(["h1", "h2"])
         cargo_bruto = (limpiar_texto(h1.get_text(" ", strip=True)) if h1 else "") or titulo
         cargo = _limpiar_cargo(cargo_bruto) or _limpiar_cargo(titulo) or "Proceso de selección"
-        # Cierre: primero "hasta el …", luego rango "02 al 07 de julio".
-        cierre = _cierre_envio(texto_full) or _cierre_rango(texto_full)
+        url_bases = _bases_pdf(s2, url)
+        # Cuando la página de detalle enlaza el PDF de bases y la fuente lo marca
+        # con texto (Independencia), el aviso REAL vive en el PDF: lo parseamos
+        # para completar cierre / requisitos / tipo / renta / correos. El HTML de
+        # estas páginas suele ser sólo el título + "descargar bases".
+        pdf = _extraer_de_pdf(session, url_bases, fuente, delay) if url_bases else {}
+        # Descripción: usa el HTML si es sustancioso; si es pobre, el extracto PDF.
+        if len(texto_full) < 200 and pdf.get("texto_pdf"):
+            bloque = pdf["texto_pdf"][:1800]
+        # Cierre: "hasta el …", luego rango "02 al 07 de julio", luego el del PDF.
+        cierre = (_cierre_envio(texto_full) or _cierre_rango(texto_full)
+                  or pdf.get("fecha_cierre"))
+        correo = _emails_postulacion(texto_full) or pdf.get("email_postulacion")
         items.append({"cargo": cargo[:500], "url": url,
                       "bloque": bloque, "fecha_cierre": cierre,
-                      "tipo": _tipo(texto_full),
-                      "email_postulacion": _emails_postulacion(texto_full),
-                      "url_bases": _bases_pdf(s2, url)})
+                      "tipo": pdf.get("tipo") or _tipo(texto_full),
+                      "requisitos": pdf.get("requisitos"),
+                      "renta_texto": pdf.get("renta_texto"),
+                      "email_postulacion": correo,
+                      "url_bases": url_bases})
     return items
 
 

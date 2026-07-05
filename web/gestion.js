@@ -1211,12 +1211,45 @@ function poblarSelectEdit(id, opciones, valorActual) {
   el.value = actual || '';
 }
 
+// Catálogo de instituciones para el <datalist> del editor. Se carga una vez y
+// se cachea; permite reasignar la institución de una oferta desde NUESTRO
+// listado (resuelve el nombre elegido a su institucion_id).
+let _CAT_INST_MAP = null;   // nombre(lower) -> id
+async function _cargarCatalogoInst() {
+  if (_CAT_INST_MAP) return;
+  _CAT_INST_MAP = {};
+  try {
+    const cat = await api('/scraper/catalog');
+    const items = (cat || [])
+      .filter(i => i && i.nombre)
+      .map(i => ({ id: i.id, nombre: String(i.nombre).trim() }))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+    const dl = document.getElementById('edit-institucion-lista');
+    const opts = [];
+    for (const i of items) {
+      _CAT_INST_MAP[i.nombre.toLowerCase()] = i.id;
+      opts.push(`<option value="${escAttr(i.nombre)}"></option>`);
+    }
+    if (dl) dl.innerHTML = opts.join('');
+  } catch (e) { /* si falla, el input queda como texto libre */ }
+}
+
+// Resuelve el institucion_id a partir del nombre escrito/elegido (match exacto,
+// case-insensitive). Devuelve null si no está en el catálogo (texto libre).
+function _resolverInstId(nombre) {
+  const k = (nombre || '').trim().toLowerCase();
+  return (_CAT_INST_MAP && _CAT_INST_MAP[k]) || null;
+}
+
 function openCrearOferta() {
   _creandoOferta = true;
   _editingId = null;
   document.getElementById('edit-modal-title').childNodes[0].textContent = 'Nueva oferta ';
   document.getElementById('edit-id').textContent = '';
   document.getElementById('edit-institucion-group').style.display = '';
+  document.getElementById('edit-institucion-req').textContent = '* (escribe para buscar en el catálogo)';
+  document.getElementById('edit-institucion-id').value = '';
+  _cargarCatalogoInst();
   document.getElementById('edit-save-btn').textContent = 'Crear';
   ['edit-cargo','edit-institucion','edit-descripcion','edit-requisitos',
    'edit-fecha-publicacion','edit-fecha-cierre','edit-ciudad','edit-lugar-desempenio',
@@ -1238,7 +1271,13 @@ function openEdit(id, o) {
   _editingId = id;
   o = o || _itemCache[id] || {};
   document.getElementById('edit-modal-title').childNodes[0].textContent = 'Editar oferta ';
-  document.getElementById('edit-institucion-group').style.display = 'none';
+  // La institución también es editable al editar: se puede reasignar desde
+  // nuestro listado (catálogo). Prellenamos con la que ya tiene la oferta.
+  document.getElementById('edit-institucion-group').style.display = '';
+  document.getElementById('edit-institucion-req').textContent = '(escribe para buscar en el catálogo)';
+  document.getElementById('edit-institucion').value = o.institucion_nombre || o.institucion_display || o.institucion || '';
+  document.getElementById('edit-institucion-id').value = o.institucion_id || '';
+  _cargarCatalogoInst();
   document.getElementById('edit-save-btn').textContent = 'Guardar';
   document.getElementById('edit-id').textContent = `#${id}`;
   document.getElementById('edit-cargo').value = o.cargo||'';
@@ -1300,10 +1339,17 @@ async function saveEdit() {
     url_oferta:      document.getElementById('edit-url-oferta').value.trim()||null,
     url_bases:       document.getElementById('edit-url-bases').value.trim()||null,
   };
+  // Institución (crear Y editar): el nombre escrito/elegido y, si coincide con
+  // el catálogo, su institucion_id para enlazarla a nuestro listado.
+  const instNombre = document.getElementById('edit-institucion').value.trim();
+  if (instNombre) {
+    raw.institucion_nombre = instNombre;
+    const instId = _resolverInstId(instNombre);
+    if (instId) raw.institucion_id = instId;
+  }
   const payload = Object.fromEntries(Object.entries(raw).filter(([,v])=>v!=null&&v!==''));
   try {
     if (_creandoOferta) {
-      payload.institucion_nombre = document.getElementById('edit-institucion').value.trim();
       if (!payload.cargo || !payload.institucion_nombre) {
         toast('Cargo e institución son requeridos', 'error');
         return;

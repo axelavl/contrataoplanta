@@ -1162,7 +1162,7 @@
   <div class="modal">
     <h3 id="edit-modal-title">Editar oferta <span id="edit-id" style="color:var(--muted);font-weight:400"></span></h3>
     <div class="form-group"><label>Cargo</label><input id="edit-cargo" type="text"></div>
-    <div class="form-group" id="edit-institucion-group" style="display:none"><label>Institución *</label><input id="edit-institucion" type="text" placeholder="Nombre de la institución"></div>
+    <div class="form-group" id="edit-institucion-group" style="display:none"><label>Institución <span id="edit-institucion-req" style="color:var(--muted);font-weight:400">(escribe para buscar en el catálogo)</span></label><input id="edit-institucion" type="text" list="edit-institucion-lista" autocomplete="off" placeholder="Ej: Municipalidad de Independencia"><datalist id="edit-institucion-lista"></datalist><input id="edit-institucion-id" type="hidden"></div>
     <div class="form-group"><label>Descripción del cargo</label><textarea id="edit-descripcion" rows="4" placeholder="Funciones, objetivo del cargo, contexto…"></textarea></div>
     <div class="form-group"><label>Requisitos</label><textarea id="edit-requisitos" rows="3" placeholder="Formación, experiencia, competencias exigidas…"></textarea></div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
@@ -1250,6 +1250,6 @@
 
 <div id="toast"></div>
 
-<script src="/gestion.js?v=20260706" defer></script>
+<script src="/gestion.js?v=20260707" defer></script>
 </body>
 </html>

@@ -153,7 +153,7 @@ _IDS_NUEVO_ESTANDAR: frozenset[int] = frozenset({
     # municipios.py (scraper agrupado, un modo por sitio): municipalidades y
     # corporaciones con extracción funcional. Las fuentes spa/bloqueada quedan
     # al genérico (no scrapean nada por ahora). Ver scrapers/municipios.py.
-    345, 363, 382, 384, 385, 401, 407, 409, 416, 419, 456, 527, 537, 580, 647, 670, 676,
+    345, 363, 382, 384, 385, 387, 401, 407, 409, 416, 419, 456, 527, 537, 580, 647, 670, 676,
     # universidades.py + universidades_wp.py + universidades_portal.py +
     # universidades_tabla.py (scrapers agrupados de universidades)
     # 254 (UTEM) → trabajando.py; 258/259 (UOH/UAysén) → universidades_wp.py
