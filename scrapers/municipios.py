@@ -187,8 +187,10 @@ FUENTES: list[dict[str, Any]] = [
      "region": RM, "ciudad": "Estación Central", "modo": "headings",
      "url": "https://www.ecentral.cl/bolsa-de-empleo-2026/"},
     {"clave": "cerronavia", "id": 382, "nombre": "Municipalidad de Cerro Navia",
-     "region": RM, "ciudad": "Cerro Navia", "modo": "lista_o_vacio",
+     "region": RM, "ciudad": "Cerro Navia", "modo": "enlaces_detalle",
      "url": "https://www.cerronavia.cl/concurso-publicos-y-ofertas-laborales/",
+     "detalle_re": r"/(?:oferta-laboral|oferta-de-trabajo|concurso-publico-para|"
+                   r"proceso-de-seleccion)[^/\"']*",
      "pdf_host": "cerronavia.cl"},
     {"clave": "santabarbara", "id": 537, "nombre": "Municipalidad de Santa Bárbara",
      "region": "Biobío", "ciudad": "Santa Bárbara", "modo": "lista_o_vacio",
@@ -365,6 +367,117 @@ def _cierre_envio(texto: str) -> date | None:
     ):
         if m := re.search(patron, ambito, re.I):
             return _fecha_es(m.group(1)) or _fecha_dmy(m.group(1))
+    return None
+
+
+# Rango de fechas "02 al 07 de julio [de 2026]" (recepción de antecedentes).
+# El cierre es el ÚLTIMO día del rango. El año es opcional en muchos avisos
+# municipales (Cerro Navia: "Recepción de antecedentes: 02 al 07 de julio").
+_RANGO_DIAS = (r"(?:del?\s+)?\d{1,2}\s+al\s+(\d{1,2})\s+de\s+([a-záéíóúñ]+)"
+               r"(?:\s+de(?:l)?\s+(\d{4}))?")
+_RE_RANGO_CTX = re.compile(
+    r"(?:recepci[oó]n|postulaci[oó]n|antecedentes|plazo|curr[ií]culum|\bcv\b|"
+    r"vence|cierre)[^\n]{0,70}?" + _RANGO_DIAS, re.I)
+_RE_RANGO_BARE = re.compile(_RANGO_DIAS, re.I)
+
+
+def _cierre_rango(texto: str, hoy: date | None = None) -> date | None:
+    """'... 02 al 07 de julio [de 2026]' -> fecha del último día del rango.
+
+    Si el aviso no trae año (frecuente en municipios), se asume el año en curso;
+    si esa fecha ya quedó muy atrás (>60 días), se entiende que apunta al año
+    siguiente (aviso de diciembre para un cierre de enero).
+    """
+    hoy = hoy or date.today()
+    t = limpiar_texto(texto)
+    m = _RE_RANGO_CTX.search(t) or _RE_RANGO_BARE.search(t)
+    if not m:
+        return None
+    mes = MESES.get(m.group(2).lower())
+    if not mes:
+        return None
+    dia = int(m.group(1))
+    anio = int(m.group(3)) if m.group(3) else hoy.year
+    try:
+        cand = date(anio, mes, dia)
+    except ValueError:
+        return None
+    if not m.group(3) and (hoy - cand).days > 60:
+        try:
+            cand = date(anio + 1, mes, dia)
+        except ValueError:
+            return None
+    return cand
+
+
+# Correos citados junto a la instrucción de envío de antecedentes. Anclamos a la
+# instrucción ("Enviar antecedentes al correo …") para no capturar el correo del
+# webmaster del pie de página. Cerro Navia lista dos correos de postulación.
+_RE_EMAIL = re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b")
+# Buzones genéricos que nunca son de postulación (evita falsos positivos del pie).
+_EMAIL_GENERICO = re.compile(r"^(webmaster|no-?reply|noresponder|mailer-daemon|"
+                             r"postmaster|info|soporte\.?web)@", re.I)
+
+
+def _emails_postulacion(texto: str) -> str | None:
+    t = texto or ""
+    zona = re.search(
+        r"(?:enviar|remitir|enviad[oa]s?|correos?|e-?mail|mail|antecedentes|"
+        r"postular|dirigir|recepci[oó]n)\b.{0,180}", t, re.I)
+    ambito = zona.group(0) if zona else t
+    vistos: set[str] = set()
+    out: list[str] = []
+    for m in _RE_EMAIL.finditer(ambito):
+        e = m.group(0).rstrip(".").lower()
+        if e in vistos or not (5 < len(e) <= 90) or _EMAIL_GENERICO.match(e):
+            continue
+        vistos.add(e)
+        out.append(e)
+        if len(out) >= 3:
+            break
+    return ", ".join(out) if out else None
+
+
+# Prefijos de aviso que NO son parte del cargo:
+# "Oferta laboral para proveer el cargo de X" -> "X".
+_RE_CARGO_PREFIJO = re.compile(
+    r"^(oferta laboral|oferta de trabajo|oferta de empleo|oferta|"
+    r"proceso de selecci[óo]n|llamado a concurso|concurso p[úu]blico|"
+    r"convocatoria|se necesita|se requiere|requiere|b[úu]squeda de)\b[ :\-–|]*", re.I)
+_RE_CARGO_PROVEER = re.compile(
+    r"^(?:para\s+)?(?:proveer\s+(?:el\s+)?)?(?:el\s+|un\s+|la\s+|una\s+)?"
+    r"cargo\s+de\s+", re.I)
+
+
+def _limpiar_cargo(cargo: str) -> str:
+    """Deja sólo el nombre del cargo, sin el envoltorio del aviso."""
+    c = limpiar_texto(cargo or "")
+    prev = None
+    while c and c != prev:
+        prev = c
+        c = _RE_CARGO_PREFIJO.sub("", c)
+        c = _RE_CARGO_PROVEER.sub("", c)
+    # Cola con fecha ("… 12 de julio 2026") que a veces arrastra el título.
+    c = re.sub(r"\s+\d{1,2}\s+(?:de\s+)?(?:ene|feb|mar|abr|may|jun|jul|ago|sep|"
+               r"oct|nov|dic)\w*\s*\d{0,4}$", "", c, flags=re.I)
+    return limpiar_texto(c)
+
+
+def _bases_pdf(soup, base_url: str) -> str | None:
+    """Primer PDF que sea BASES/perfil de concurso, excluyendo formularios y
+    declaraciones juradas (Formulario 1-A/1-B/1-C NO son bases del concurso)."""
+    for a in soup.find_all("a", href=True):
+        href = a["href"]
+        if ".pdf" not in href.lower():
+            continue
+        url = urljoin(base_url, href)
+        low = unquote(url).lower()
+        if any(x in low for x in _PDF_EXCLUIR):
+            continue  # formulario / declaracion / anexo / solicitud → no es base
+        texto_a = limpiar_texto(a.get_text(" ", strip=True)).lower()
+        if re.search(r"(base|perfil|descriptor|convocatoria|t[ée]rminos de ref)",
+                     low + " " + texto_a):
+            return url
     return None
 
 
@@ -578,18 +691,22 @@ def extraer_enlaces_detalle(html, fuente, session, delay):
             continue
         s2 = BeautifulSoup(rd.text, "html.parser")
         main = s2.select_one("main, .entry-content, article") or s2.body
-        bloque = limpiar_texto(main.get_text(" ", strip=True))[:1800] if main else ""
-        cargo = titulo or (limpiar_texto(s2.find(["h1", "h2"]).get_text())
-                           if s2.find(["h1", "h2"]) else "Proceso de selección")
-        cargo = re.sub(r"^(PROCESO DE SELECCI[ÓO]N|LLAMADO A CONCURSO|"
-                       r"OFERTA LABORAL|OFERTA DE TRABAJO)[ :\-–|]*",
-                       "", cargo, flags=re.I)
-        cargo = limpiar_texto(re.sub(r"\s+\d{1,2}\s+(?:de\s+)?(?:ene|feb|mar|abr|"
-                       r"may|jun|jul|ago|sep|oct|nov|dic)\w*\s*\d{0,4}$", "",
-                       cargo, flags=re.I))
-        items.append({"cargo": limpiar_texto(cargo)[:500], "url": url,
-                      "bloque": bloque, "fecha_cierre": _cierre_envio(bloque),
-                      "tipo": _tipo(bloque)})
+        # Texto COMPLETO del detalle para resolver cierre/correos aunque estén al
+        # final del aviso; la descripción se recorta aparte a 1800.
+        texto_full = limpiar_texto(main.get_text(" ", strip=True)) if main else ""
+        bloque = texto_full[:1800]
+        # El título de la página suele ser más completo que el anchor del listado
+        # ("Oferta laboral para proveer el cargo de …"). Preferimos el h1.
+        h1 = s2.find(["h1", "h2"])
+        cargo_bruto = (limpiar_texto(h1.get_text(" ", strip=True)) if h1 else "") or titulo
+        cargo = _limpiar_cargo(cargo_bruto) or _limpiar_cargo(titulo) or "Proceso de selección"
+        # Cierre: primero "hasta el …", luego rango "02 al 07 de julio".
+        cierre = _cierre_envio(texto_full) or _cierre_rango(texto_full)
+        items.append({"cargo": cargo[:500], "url": url,
+                      "bloque": bloque, "fecha_cierre": cierre,
+                      "tipo": _tipo(texto_full),
+                      "email_postulacion": _emails_postulacion(texto_full),
+                      "url_bases": _bases_pdf(s2, url)})
     return items
 
 
@@ -640,6 +757,8 @@ def construir_oferta(item, fuente):
         "fecha_cierre": item.get("fecha_cierre"),
         "requisitos_texto": item.get("requisitos"),
         "url_bases": item["url"] if item["url"].lower().endswith(".pdf") else item.get("url_bases"),
+        "email_postulacion": item.get("email_postulacion"),
+        "email_consultas": item.get("email_consultas"),
     }
 
 

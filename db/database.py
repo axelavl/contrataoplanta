@@ -121,6 +121,8 @@ def normalizar_datos_oferta(datos: dict) -> dict:
         "ciudad": 80,
         "renta_texto": 200,
         "modalidad": 50,
+        "email_postulacion": 200,
+        "email_consultas": 200,
     }
     for campo, limite in limites.items():
         normalizados[campo] = truncar_texto(normalizados.get(campo), limite)
@@ -165,6 +167,8 @@ def upsert_oferta(db: Session, datos: dict) -> tuple[bool, bool]:
     datos.setdefault("url_bases", None)
     datos.setdefault("modalidad", None)
     datos.setdefault("horas_semanales", None)
+    datos.setdefault("email_postulacion", None)
+    datos.setdefault("email_consultas", None)
     url_hash = url_a_hash(datos["url_original"])
 
     # Parte 1.8 — llave difusa para detectar la misma oferta entre portales.
@@ -232,6 +236,7 @@ def upsert_oferta(db: Session, datos: dict) -> tuple[bool, bool]:
                     renta_bruta_min, renta_bruta_max, renta_texto, renta_tipo, renta_regional,
                     fecha_publicacion, fecha_cierre,
                     requisitos_texto, url_bases, modalidad, horas_semanales,
+                    email_postulacion, email_consultas,
                     activa, es_nueva, detectada_en
                 ) VALUES (
                     :id_externo,
@@ -249,6 +254,7 @@ def upsert_oferta(db: Session, datos: dict) -> tuple[bool, bool]:
                     :renta_bruta_min, :renta_bruta_max, :renta_texto, :renta_tipo, CAST(:renta_regional AS JSONB),
                     :fecha_publicacion, :fecha_cierre,
                     :requisitos_texto, :url_bases, :modalidad, :horas_semanales,
+                    :email_postulacion, :email_consultas,
                     TRUE, TRUE, NOW()
                 )
             """), {**datos, "url_hash": url_hash, **params_extra})
@@ -279,6 +285,8 @@ def upsert_oferta(db: Session, datos: dict) -> tuple[bool, bool]:
                     url_bases           = COALESCE(NULLIF(:url_bases, ''), url_bases),
                     modalidad           = COALESCE(NULLIF(:modalidad, ''), modalidad),
                     horas_semanales     = COALESCE(:horas_semanales, horas_semanales),
+                    email_postulacion   = COALESCE(NULLIF(:email_postulacion, ''), email_postulacion),
+                    email_consultas     = COALESCE(NULLIF(:email_consultas, ''), email_consultas),
                     dedup_hash          = COALESCE(:dedup_hash, dedup_hash),
                     renta_regional      = COALESCE(CAST(:renta_regional AS JSONB), renta_regional),
                     activa              = TRUE,
@@ -305,6 +313,8 @@ def upsert_oferta(db: Session, datos: dict) -> tuple[bool, bool]:
                 "url_bases": datos.get("url_bases"),
                 "modalidad": datos.get("modalidad"),
                 "horas_semanales": datos.get("horas_semanales"),
+                "email_postulacion": datos.get("email_postulacion"),
+                "email_consultas": datos.get("email_consultas"),
                 "dedup_hash": dedup_hash,
                 "renta_regional": renta_regional_json,
                 "h": url_hash
