@@ -459,7 +459,9 @@ def build_ofertas_filters(
 
     if q:
         # Búsqueda SIN TILDES y POR RAÍZ sobre CARGO + INSTITUCIÓN + ÁREA +
-        # REQUISITOS + DESCRIPCIÓN. Cada palabra se pliega (quita tildes) y se
+        # REQUISITOS + DESCRIPCIÓN. Requisitos/experiencia/funciones/objetivo del
+        # cargo viven como texto libre dentro de requisitos(+texto)/descripción,
+        # así que el match los cubre. Cada palabra se pliega (quita tildes) y se
         # recorta a su raíz; TODAS deben aparecer en el campo combinado. Con esto:
         #   - "administracion" rinde IGUAL que "administración" (tilde-insensible);
         #   - se abre la morfología: ingeniero/ingeniera/ingeniería, administrador/
@@ -472,12 +474,18 @@ def build_ofertas_filters(
         #     primero los avisos cuyo CARGO contiene la frase/las raíces.
         # Todo el campo pasa por _norm_sql, así que la simetría con/sin tilde se
         # conserva también en requisitos/descripción.
+        # Se concatenan AMBAS columnas de requisitos (no COALESCE): funciones,
+        # experiencia y requisitos pueden vivir en `requisitos` O en
+        # `requisitos_texto` según el scraper; con COALESCE se perdía una. La
+        # descripción arrastra funciones/objetivo del cargo. Así el match cubre
+        # título + institución + área + requisitos(+texto) + descripción.
         norm_busqueda = _norm_sql(
             "COALESCE(o.cargo, '') || ' ' || "
             "COALESCE(i.nombre, o.institucion_nombre, '') || ' ' || "
             "COALESCE(i.sigla, i.nombre_corto, '') || ' ' || "
             "COALESCE(o.area_profesional, '') || ' ' || "
-            "COALESCE(o.requisitos, o.requisitos_texto, '') || ' ' || "
+            "COALESCE(o.requisitos, '') || ' ' || "
+            "COALESCE(o.requisitos_texto, '') || ' ' || "
             "COALESCE(o.descripcion, '')"
         )
         roots = _query_roots(q)
