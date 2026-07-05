@@ -172,7 +172,15 @@ async function api(endpoint, options = {}) {
     ...options,
     headers: { Authorization: _creds.header, 'Content-Type': 'application/json', ...(options.headers||{}) }
   };
-  const r = await fetch(`${API_BASE}/api/${ADMIN_PATH}${endpoint}`, opts);
+  let r;
+  try {
+    r = await fetch(`${API_BASE}/api/${ADMIN_PATH}${endpoint}`, opts);
+  } catch (e) {
+    // fetch() sólo rechaza con TypeError ante fallos de red/CORS (no ante 4xx/5xx,
+    // que sí devuelven Response). Traducimos el opaco "Failed to fetch" a un
+    // mensaje accionable: casi siempre el backend está caído o sin redeploy.
+    throw new Error('No se pudo conectar con el servidor (backend caído, sin desplegar o CORS). Reintenta en un momento.');
+  }
   if (r.status === 401) { logout(); throw new Error('Sesión expirada'); }
   if (r.status === 429) throw new Error('Rate limit: demasiados intentos. Espera 10 min.');
   if (!r.ok) {
