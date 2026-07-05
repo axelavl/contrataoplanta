@@ -535,7 +535,12 @@ function tipoClaveNormalizada(valor) {
 }
 
 function tipoEtiqueta(valorBruto) {
-  return TIPO_LABEL[tipoClaveNormalizada(valorBruto)] || (valorBruto || 'Sin datos');
+  const clave = tipoClaveNormalizada(valorBruto);
+  // "sin_datos"/"no_informa" = calidad jurídica NO especificada en el aviso →
+  // etiqueta vacía para que el front OCULTE el badge/campo, en vez de mostrar
+  // "Sin datos" (que se leía como si fuera un dato real).
+  if (clave === 'sin_datos' || clave === 'no_informa') return '';
+  return TIPO_LABEL[clave] || (valorBruto || '');
 }
 
 function tipoClase(valorBruto) {
@@ -1689,7 +1694,7 @@ function renderCard(oferta) {
         <div class="oferta-cargo"><span class="oferta-cargo-link">${resaltarBusqueda(cargoDisplay, estado.q)}</span></div>
         <div class="oferta-tipo-wrap">
           ${oferta.destacada ? `<span class="badge badge-destacada" title="Oferta destacada en nuestras redes sociales">⭐ Destacada</span>` : ''}
-          ${oferta.tipo_contrato ? `<span class="badge ${tipoCss}">${tipoLabel}</span>` : ''}
+          ${tipoLabel ? `<span class="badge ${tipoCss}">${tipoLabel}</span>` : ''}
           ${regionChip ? `<span class="badge badge-region">🗺 ${escHtml(regionChip)}</span>` : ''}
         </div>
       </div>

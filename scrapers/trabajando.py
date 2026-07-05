@@ -520,7 +520,7 @@ def _construir_oferta_api(
         "institucion_nombre": nombre,
         "sector": fuente.get("sector") or None,
         "area_profesional": normalizar_area(cargo),
-        "tipo_cargo": _detectar_tipo_cargo(contexto) or "Código del Trabajo",
+        "tipo_cargo": _detectar_tipo_cargo(contexto) or _default_tipo_por_categoria(fuente),
         "nivel": nivel_api or _detectar_nivel(cargo),
         "region": region or _detectar_region(contexto) or fuente.get("region") or "Nacional",
         "ciudad": ciudad or _detectar_ciudad(contexto),
@@ -739,7 +739,7 @@ def _construir_oferta_html(cargo: str, contexto: str, url: str, fuente: dict[str
         "institucion_nombre": nombre,
         "sector": fuente.get("sector") or None,
         "area_profesional": normalizar_area(cargo_limpio),
-        "tipo_cargo": _detectar_tipo_cargo(contexto) or "Código del Trabajo",
+        "tipo_cargo": _detectar_tipo_cargo(contexto) or _default_tipo_por_categoria(fuente),
         "nivel": _detectar_nivel(cargo_limpio),
         "region": _detectar_region(contexto) or fuente.get("region") or "Nacional",
         "ciudad": _detectar_ciudad(contexto),
@@ -790,6 +790,21 @@ def _detectar_tipo_cargo(texto: str) -> str | None:
     if re.search(r"\b(?:reemplazo|suplencia)\b", t, re.I):
         return "Reemplazo"
     return None
+
+
+# Categorías cuyo régimen ES Código del Trabajo (empresas del Estado, empresas
+# FF.AA., Banco Central). Espejo de CATEGORIAS_CODIGO_TRABAJO en scrapers/base.py.
+# Solo estas defaultan a "Código del Trabajo" cuando el aviso NO lo especifica;
+# el resto (universidades, ministerios, municipios…) queda SIN especificar para
+# no inventar la calidad jurídica (el front oculta el dato).
+_CATEGORIAS_CODIGO_TRABAJO = {
+    "empresa del estado", "empresa ffaa", "empresa", "banco central",
+}
+
+
+def _default_tipo_por_categoria(fuente: dict) -> str | None:
+    cat = (fuente.get("categoria") or "").strip().lower()
+    return "Código del Trabajo" if cat in _CATEGORIAS_CODIGO_TRABAJO else None
 
 
 def _detectar_nivel(cargo: str) -> str:
