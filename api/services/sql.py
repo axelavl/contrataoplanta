@@ -372,15 +372,26 @@ FAMILIAS_ROOTS: dict[str, list[str]] = {
 
 
 def build_cargo_relevance(q: str) -> tuple[str, list[Any]]:
-    """Fragmento de ORDER BY (con su parámetro) para priorizar por relevancia
-    cuando hay búsqueda: los avisos cuyo CARGO contiene la frase van primero; los
-    que solo la mencionan en la descripción quedan después. Accent-insensitive vía
-    `_norm_sql` (sin depender de unaccent). Se antepone al orden elegido.
+    """Fragmento de ORDER BY (con sus parámetros) para priorizar por relevancia
+    cuando hay búsqueda, en gradiente por dónde matchea:
+      0 = el CARGO contiene la FRASE completa ("Administrador Público"),
+      1 = el CARGO contiene TODAS las raíces (aunque no sea frase exacta),
+      2 = matcheó fuera del cargo (institución / requisitos / descripción).
+    Así los títulos exactos van primero y los avisos que sólo PIDEN el título en
+    los requisitos quedan debajo (visibles, pero sin desplazar a los mejores).
+    Accent-insensitive vía `_norm_sql`. El `cargo` es el de la CTE `base`.
 
-    Devuelve ('<expr>, ', [param]). El `cargo` referenciado es el de la CTE `base`.
+    Devuelve ('<expr>, ', [params]).
     """
     expr = _norm_sql("cargo")
-    return (f"CASE WHEN {expr} LIKE %s THEN 0 ELSE 1 END, ", [_norm_like(q)])
+    params: list[Any] = [_norm_like(q)]
+    roots = _query_roots(q)
+    if roots:
+        cargo_all = " AND ".join(f"{expr} LIKE %s" for _ in roots)
+        params.extend(f"%{r}%" for r in roots)
+        return (f"CASE WHEN {expr} LIKE %s THEN 0 "
+                f"WHEN {cargo_all} THEN 1 ELSE 2 END, ", params)
+    return (f"CASE WHEN {expr} LIKE %s THEN 0 ELSE 2 END, ", params)
 
 
 def build_ofertas_filters(
@@ -447,29 +458,36 @@ def build_ofertas_filters(
         params.extend([_email_re, _email_re])
 
     if q:
-        # Búsqueda SIN TILDES y POR RAÍZ sobre TÍTULO + INSTITUCIÓN. Cada palabra
-        # se pliega (quita tildes) y se recorta a su raíz; TODAS deben aparecer en
-        # el título o la institución. Con esto:
+        # Búsqueda SIN TILDES y POR RAÍZ sobre CARGO + INSTITUCIÓN + ÁREA +
+        # REQUISITOS + DESCRIPCIÓN. Cada palabra se pliega (quita tildes) y se
+        # recorta a su raíz; TODAS deben aparecer en el campo combinado. Con esto:
         #   - "administracion" rinde IGUAL que "administración" (tilde-insensible);
         #   - se abre la morfología: ingeniero/ingeniera/ingeniería, administrador/
-        #     administración;
-        #   - queda PRECISO: NO se busca en la descripción (incluirla devolvía
-        #     cientos de avisos que solo mencionan el término como requisito, y
-        #     rompía la simetría con/sin tilde porque la descripción matcheaba
-        #     literal y acentuado).
-        # El orden por relevancia (build_cargo_relevance) sube primero los avisos
-        # cuyo cargo contiene la frase exacta.
-        norm_titulo_inst = _norm_sql(
-            "COALESCE(o.cargo, '') || ' ' || COALESCE(i.nombre, o.institucion_nombre, '') || ' ' || COALESCE(i.sigla, i.nombre_corto, '')"
+        #     administradora/administración;
+        #   - encuentra avisos que PIDEN un título aunque el cargo no lo nombre:
+        #     "Administrador Público" suele estar en los requisitos/descripción, no
+        #     en el título → antes esos avisos no aparecían. La precisión se
+        #     mantiene porque se exige que TODAS las raíces estén presentes (AND),
+        #     no una sola; y el orden por relevancia (build_cargo_relevance) sube
+        #     primero los avisos cuyo CARGO contiene la frase/las raíces.
+        # Todo el campo pasa por _norm_sql, así que la simetría con/sin tilde se
+        # conserva también en requisitos/descripción.
+        norm_busqueda = _norm_sql(
+            "COALESCE(o.cargo, '') || ' ' || "
+            "COALESCE(i.nombre, o.institucion_nombre, '') || ' ' || "
+            "COALESCE(i.sigla, i.nombre_corto, '') || ' ' || "
+            "COALESCE(o.area_profesional, '') || ' ' || "
+            "COALESCE(o.requisitos, o.requisitos_texto, '') || ' ' || "
+            "COALESCE(o.descripcion, '')"
         )
         roots = _query_roots(q)
         if roots:
-            clauses = " AND ".join(f"{norm_titulo_inst} LIKE %s" for _ in roots)
+            clauses = " AND ".join(f"{norm_busqueda} LIKE %s" for _ in roots)
             where.append("(" + clauses + ")")
             params.extend(f"%{r}%" for r in roots)
         else:
             # Query muy corto o solo stopwords: substring plegado simple.
-            where.append(f"{norm_titulo_inst} LIKE %s")
+            where.append(f"{norm_busqueda} LIKE %s")
             params.append(_norm_like(q))
 
     if region:
