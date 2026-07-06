@@ -89,6 +89,18 @@ def test_listado_vacio_devuelve_lista_vacia():
     assert U.parsear_ufro(_LISTADO_ACADEMICO, _FUENTE) == []
 
 
+def test_listado_prefiere_enlace_real_sobre_ancla():
+    # Fila con una ancla "#" (no navega) y el VER real: se toma el real.
+    html = """<html><body><table>
+      <tr><th>Código</th><th>Descripción</th><th>Link</th><th>Tipo</th><th>Estado</th></tr>
+      <tr><td>C-1</td><td>Analista</td>
+          <td><a href="#">detalle</a> <a href="ver_concurso.php?id=7">VER</a></td>
+          <td>Administrativo</td><td>ABIERTO</td></tr>
+    </table></body></html>"""
+    items = U.parsear_ufro(html, _FUENTE)
+    assert items[0]["url"].endswith("ver_concurso.php?id=7")
+
+
 def test_listado_respaldo_por_enlaces():
     # Sin tabla, se toman los enlaces a fichas de concurso.
     html = ('<html><body><ul>'
