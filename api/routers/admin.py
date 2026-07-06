@@ -1413,6 +1413,15 @@ class _ProcesoLanzado:
 _PROCESOS: dict[int, _ProcesoLanzado] = {}  # pid → info (sólo este worker)
 
 
+def _bajar_prioridad() -> None:
+    """Se ejecuta en el hijo (post-fork, pre-exec): baja la prioridad de CPU del
+    scraper para que una corrida pesada no deje sin responder al API."""
+    try:
+        os.nice(19)
+    except Exception:
+        pass
+
+
 def _lanzar_proceso(cmd: list[str], tipo: str) -> _ProcesoLanzado:
     """Lanza un proceso en background con su stdout/stderr a un log propio.
 
@@ -1423,12 +1432,19 @@ def _lanzar_proceso(cmd: list[str], tipo: str) -> _ProcesoLanzado:
     ahora = datetime.now(tz=timezone.utc)
     log_path = _ADMIN_RUNS_LOG_DIR / f"{tipo}_{ahora.strftime('%Y%m%d_%H%M%S')}.log"
     log_f = open(log_path, "a", encoding="utf-8")
+    # start_new_session: el scraper corre en su PROPIA sesión, así no muere si el
+    #   worker de uvicorn se reinicia (ni arrastra al API si el scraper cae).
+    # preexec_fn (POSIX): baja su prioridad (nice 19) para no ahogar al API —
+    #   una corrida completa (run_all --mode production) es pesada y competía por
+    #   CPU con el backend, dejándolo sin responder.
     proc = subprocess.Popen(
         cmd,
         stdout=log_f,
         stderr=subprocess.STDOUT,
         cwd=str(_PROJECT_ROOT),
         text=True,
+        start_new_session=True,
+        preexec_fn=_bajar_prioridad if os.name == "posix" else None,
     )
     # Header con metadata para que otros workers puedan reconstruir estado.
     cmd_vista = " ".join(cmd[1:])  # sin el path de python
