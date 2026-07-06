@@ -331,8 +331,11 @@ def _procesar_cpt_items(fuente: dict, items: list, base: str, session,
     ofertas = []
     omitidas = 0
     for it in items:
-        titulo_raw = unescape(BeautifulSoup(
-            it.get("title", {}).get("rendered", ""), "html.parser").get_text())
+        titulo_rendered = it.get("title", {}).get("rendered", "") or ""
+        # Sólo pasa por BeautifulSoup si trae markup; si es texto/filename plano,
+        # se usa tal cual (evita MarkupResemblesLocatorWarning y trabajo inútil).
+        titulo_raw = (unescape(BeautifulSoup(titulo_rendered, "html.parser").get_text())
+                      if "<" in titulo_rendered else unescape(titulo_rendered))
         estado, cargo = _estado_y_cargo(titulo_raw)
         cerrado = estado is not None and any(
             e in estado for e in _ESTADOS_CERRADOS)

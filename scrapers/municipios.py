@@ -686,14 +686,27 @@ def extraer_headings(html, fuente):
     return items
 
 
+# Botones de "compartir en redes" cuyo href lleva la URL de la oferta en un
+# parámetro (facebook sharer, twitter/x intent, whatsapp, linkedin, mail…). El
+# detalle_re matcheaba esa URL embebida y el scraper terminaba pidiendo el share
+# (HTTP 400) en vez de la ficha. Se descartan por host/patrón.
+_URL_COMPARTIR_RE = re.compile(
+    r"(facebook\.com/sharer|/sharer\.php|twitter\.com/(?:share|intent)|x\.com/intent|"
+    r"/intent/tweet|wa\.me/|api\.whatsapp\.com|whatsapp\.com/send|linkedin\.com/share|"
+    r"t\.me/share|mailto:|pinterest\.com/pin|telegram\.me)", re.I)
+
+
 def extraer_enlaces_detalle(html, fuente, session, delay):
     soup = BeautifulSoup(html, "html.parser")
     patron = re.compile(fuente["detalle_re"], re.I)
     urls = []
     vistos = set()
     for a in soup.find_all("a", href=True):
-        if patron.search(a["href"]):
-            url = urljoin(fuente["url"], a["href"])
+        href = a["href"]
+        if _URL_COMPARTIR_RE.search(href):
+            continue  # botón de compartir, no la ficha
+        if patron.search(href):
+            url = urljoin(fuente["url"], href)
             if url not in vistos and url.rstrip("/") != fuente["url"].rstrip("/"):
                 vistos.add(url)
                 urls.append((url, limpiar_texto(a.get_text(" ", strip=True))))

@@ -106,9 +106,28 @@ def truncar_texto(valor, max_len: int) -> str | None:
     return texto[:max_len]
 
 
+def _sin_caracteres_nul(valor):
+    """Quita el byte NUL (0x00) y otros controles C0 (salvo \\t\\n\\r) de un str.
+
+    PostgreSQL rechaza cadenas con NUL ('A string literal cannot contain NUL
+    characters'); el texto extraído de PDFs/DOCX a veces los trae y hacía fallar
+    el INSERT completo (perdiendo la oferta). Se limpia toda cadena antes de
+    persistir.
+    """
+    if not isinstance(valor, str):
+        return valor
+    def _malo(c: str) -> bool:
+        o = ord(c)
+        return (o < 32 and c not in "\t\n\r") or o == 127
+    if not any(_malo(c) for c in valor):
+        return valor
+    return "".join(c for c in valor if not _malo(c))
+
+
 def normalizar_datos_oferta(datos: dict) -> dict:
-    """Ajusta largos de campos para evitar errores de VARCHAR."""
-    normalizados = dict(datos)
+    """Ajusta largos de campos y sanea caracteres NUL/control para evitar errores
+    de VARCHAR y de literales inválidos en PostgreSQL."""
+    normalizados = {k: _sin_caracteres_nul(v) for k, v in datos.items()}
     limites = {
         "id_externo": 200,
         "cargo": 500,
