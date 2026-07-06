@@ -57,6 +57,13 @@
   Cache-Control: public, max-age=0, must-revalidate
 /rich-text.js
   Cache-Control: public, max-age=0, must-revalidate
+# boot.js decide el tema antes del paint; theme-toggle.js el switch. Sin regla
+# explícita, el glob /*.js no siempre matchea en Pages y quedaba cacheado el
+# viejo → el cambio de tema por defecto no se veía.
+/boot.js
+  Cache-Control: public, max-age=0, must-revalidate
+/theme-toggle.js
+  Cache-Control: public, max-age=0, must-revalidate
 
 /logo/*
   Cache-Control: public, max-age=604800

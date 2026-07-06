@@ -341,7 +341,14 @@ def parsear_ufro(html: str, fuente: dict) -> list[dict]:
             if not desc:
                 continue
             estado = cel(i_estado)
-            link = fila.find("a", href=True)
+            # Enlace a la ficha (columna Link "VER"): preferimos un href real,
+            # ignorando anclas "#"/javascript que no llevan a ninguna página.
+            link = None
+            for a in fila.find_all("a", href=True):
+                href = (a["href"] or "").strip()
+                if href and not href.startswith(("#", "javascript:")):
+                    link = a
+                    break
             items.append({
                 "cargo": desc, "codigo": cel(i_cod), "tipo": cel(i_tipo),
                 "estado": estado,

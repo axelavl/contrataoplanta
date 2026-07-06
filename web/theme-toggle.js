@@ -30,14 +30,9 @@
     syncButtons();
   }
 
-  try {
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
-      if (!localStorage.getItem('theme')) {
-        html.setAttribute('data-theme', e.matches ? 'dark' : 'light');
-        syncButtons();
-      }
-    });
-  } catch (e) {}
+  // El default del sitio es CLARO y NO sigue la preferencia del sistema: si el
+  // usuario no eligió un tema, se queda en claro aunque el SO cambie a oscuro.
+  // (Antes se auto-seguía el SO; se quitó para que el claro sea el default real.)
 
   document.addEventListener('shell:ready', init);
   if (document.readyState === 'loading') {
