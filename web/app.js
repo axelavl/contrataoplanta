@@ -1426,22 +1426,6 @@ function sectorIconHtml(nombreInstitucion) {
   return `<div class="sector-icon-fallback sector-icon-fallback--${sec}" data-sector="${sec}" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${paths}</svg></div>`;
 }
 
-// Logos locales para dominios cuyo favicon público no sirve un emblema usable
-// (los servicios de favicon devuelven un ícono genérico o no responden). Se
-// sirven como SVG desde /logos/. El PNG oficial, si se agrega, tiene prioridad
-// (es sources[0] de la cadena de fallback en shared-shell.js).
-const LOGOS_LOCALES = {
-  'carabineros.cl': '/logos/carabineros.cl.svg',
-  'armada.cl': '/logos/armada.cl.svg',
-  'ejercito.cl': '/logos/ejercito.cl.svg',
-  'fach.mil.cl': '/logos/fach.mil.cl.svg',
-  'gendarmeria.gob.cl': '/logos/gendarmeria.gob.cl.svg',
-  // PDI resuelve a pdichile.cl (catálogo maestro) o investigaciones.cl
-  // (catálogo curado por nombre) según los datos de la oferta → ambos al mismo.
-  'pdichile.cl': '/logos/pdichile.cl.svg',
-  'investigaciones.cl': '/logos/pdichile.cl.svg',
-};
-
 function getInstIcon(oferta) {
   const resolved = resolverDominioInstitucional(oferta);
   const institucionNombre = oferta?.institucion || 'institución';
@@ -1455,13 +1439,12 @@ function getInstIcon(oferta) {
     };
   }
   const dom = escAttr(resolved.domain);
-  // Fuente primaria = logo local pre-cacheado en /logos/ (CDN, instantáneo).
-  // Debe coincidir con sources[0] de shared-shell.js → si el local falla (404),
-  // advance() pasa a DuckDuckGo → Google s2 → apple-touch-icon → etc.
-  // Override: dominios cuyo favicon público es pobre/inaccesible y para los que
-  // tenemos un logo local propio (SVG). Si mañana se agrega el PNG oficial
-  // (/logos/<dominio>.png), gana porque es el sources[0] de la cadena.
-  const primary = LOGOS_LOCALES[resolved.domain] || `/logos/${dom}.png`;
+  // Fuente primaria = logo REAL en /logos/<dominio>.png (si se sube uno oficial).
+  // Debe coincidir con sources[0] de shared-shell.js → si no existe (404),
+  // advance() pasa a DuckDuckGo → Google s2 → apple-touch-icon → ícono de sector.
+  // No usamos logos dibujados a mano: sólo logos reales (subidos o el favicon
+  // oficial de la institución); si no hay, se muestra el ícono del sector.
+  const primary = `/logos/${dom}.png`;
   // Repositorio propio: si ya resolvimos un logo bueno para este dominio en una
   // visita anterior (cacheado en localStorage por shared-shell.js), lo usamos
   // como source inicial → se pinta al primer frame, sin parpadeo. data-attempt
