@@ -386,6 +386,39 @@ assertEq(semantic.condiciones.length, 0,
   'condiciones vacío para input que sólo tiene funciones + requisitos');
 
 // ─────────────────────────────────────────────────────────────
+// Formación: el token débil 'na' NO debe descartar títulos válidos
+// (regresión: "una/profesioNAl/ocupacioNAl" contienen "na" como substring)
+// ─────────────────────────────────────────────────────────────
+console.log('\n## _esFormacionReconocida / _isWeakSummaryValue');
+const _titulo = 'Título profesional de Terapeuta Ocupacional, otorgado por una ' +
+  'Universidad reconocida por el Estado de Chile (excluyente)';
+assertTrue(window._esFormacionReconocida(_titulo),
+  'Título profesional (con "na" embebido) se reconoce como formación');
+assertFalse(window._isWeakSummaryValue(_titulo),
+  '"una/profesional/ocupacional" no se marca débil por el substring "na"');
+assertTrue(window._isWeakSummaryValue('n/a'), '"n/a" exacto sí es débil');
+assertTrue(window._isWeakSummaryValue('-'), '"-" exacto sí es débil');
+assertTrue(window._isWeakSummaryValue('Consultar bases'), '"consultar bases" es débil');
+assertFalse(window._esFormacionReconocida('n/a'), 'placeholder "n/a" no es formación');
+
+// ─────────────────────────────────────────────────────────────
+// Bases: se muestran con url válida aunque el flag esté sin comprobar (null);
+// sólo se ocultan si el backend las marcó rotas (false)
+// ─────────────────────────────────────────────────────────────
+console.log('\n## basesMostrable');
+const _pdf = 'https://media.municipalidadmaipu.cl/media/documentos/2026/7/17831220424644.pdf';
+assertTrue(window.basesMostrable({ url_bases: _pdf, url_oferta: 'https://x/#a', url_bases_valida: null }),
+  'bases sin comprobar (null) + URL válida → se muestran');
+assertTrue(window.basesMostrable({ url_bases: _pdf, url_oferta: 'https://x/#a', url_bases_valida: true }),
+  'bases comprobadas (true) → se muestran');
+assertFalse(window.basesMostrable({ url_bases: _pdf, url_oferta: 'https://x/#a', url_bases_valida: false }),
+  'bases confirmadas rotas (false) → se ocultan');
+assertFalse(window.basesMostrable({ url_bases: 'javascript:alert(1)', url_oferta: 'https://x', url_bases_valida: null }),
+  'bases con URL no http(s) → se ocultan');
+assertFalse(window.basesMostrable({ url_bases: _pdf, url_oferta: _pdf, url_bases_valida: null }),
+  'bases iguales a url_oferta → no se duplican');
+
+// ─────────────────────────────────────────────────────────────
 // Output final
 // ─────────────────────────────────────────────────────────────
 
