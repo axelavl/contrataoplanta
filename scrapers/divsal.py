@@ -358,6 +358,8 @@ def construir_oferta(titulo: str, url: str, campos: dict[str, Any],
         # El correo de postulación ya se extrae; lo poblamos en el campo dedicado
         # (la ficha lo muestra como "Correo de postulación") en vez de sólo texto.
         "email_postulacion": campos.get("correo"),
+        # Las horas (jornada) también van a su columna, no sólo a la descripción.
+        "jornada": campos.get("horas"),
     }
 
 

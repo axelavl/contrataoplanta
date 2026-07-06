@@ -127,3 +127,22 @@ def test_fecha_cierre_pasada_no_se_fija():
     enriquecer_oferta(o, texto_html="Se recibió hasta el 10 de marzo de 2020.",
                       descargar_pdfs=False)
     assert o.get("fecha_cierre") is None
+
+
+def test_jornada_y_modalidad_pueblan_columnas():
+    # La ficha muestra jornada/modalidad como campos; enrich debe poblar las
+    # columnas, no sólo el texto de la descripción.
+    o = {"cargo": "Analista", "descripcion": "Cargo", "tipo_cargo": ""}
+    enriquecer_oferta(
+        o,
+        texto_html="Contrato a honorarios, jornada completa, modalidad presencial.",
+        descargar_pdfs=False,
+    )
+    assert o.get("jornada") == "completa"
+    assert o.get("modalidad") == "presencial"
+
+
+def test_jornada_no_pisa_la_existente():
+    o = {"cargo": "Analista", "jornada": "44 horas", "tipo_cargo": ""}
+    enriquecer_oferta(o, texto_html="jornada completa", descargar_pdfs=False)
+    assert o["jornada"] == "44 horas"
