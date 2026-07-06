@@ -26,11 +26,13 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 logger = logging.getLogger("api.scheduler")
 
@@ -39,6 +41,32 @@ _LOG_DIR = _PROJECT_ROOT / "logs" / "admin_runs"
 
 #: Cada cuánto revisa el loop si toca correr (segundos).
 _TICK_SEG = 60
+
+#: Ventana de silencio (hora de Chile) en la que NO se lanzan corridas: no es
+#: provechoso gastar recursos de madrugada. Por defecto 00:00–08:00. Se puede
+#: ajustar por entorno (SCHEDULER_QUIET_START / SCHEDULER_QUIET_END, en horas
+#: 0–23). Si inicio == fin, no hay ventana (corre siempre). La ventana puede
+#: envolver la medianoche (p.ej. 22→6). Durante la ventana, la corrida pendiente
+#: simplemente espera y se dispara UNA vez al terminar (no se acumulan).
+_TZ_CHILE = ZoneInfo("America/Santiago")
+
+
+def _quiet_bounds() -> tuple[int, int]:
+    def _h(env: str, default: int) -> int:
+        try:
+            return int(os.getenv(env, str(default))) % 24
+        except (TypeError, ValueError):
+            return default
+    return _h("SCHEDULER_QUIET_START", 0), _h("SCHEDULER_QUIET_END", 8)
+
+
+def _en_silencio(ahora: datetime | None = None) -> bool:
+    """True si la hora de Chile cae dentro de la ventana de silencio."""
+    start, end = _quiet_bounds()
+    if start == end:
+        return False
+    h = (ahora or datetime.now(_TZ_CHILE)).hour
+    return (start <= h < end) if start < end else (h >= start or h < end)
 
 #: Modos que se traducen a flags REALES de `scrapers/run_all.py`:
 #:  - "completa": corrida completa (`--mode production`).
@@ -51,16 +79,26 @@ _UNSET: Any = object()
 
 
 def get_estado() -> dict[str, Any] | None:
-    """Lee la fila singleton de `scheduler_state`. None si no existe la tabla."""
+    """Lee la fila singleton de `scheduler_state`. None si no existe la tabla.
+
+    Añade la ventana de silencio vigente (no persiste en la tabla; viene de
+    entorno) para que el panel la muestre.
+    """
     try:
         from api.services.db import execute_fetch_one
-        return execute_fetch_one(
+        estado = execute_fetch_one(
             """SELECT id, activo, intervalo_horas, modo, limite_fuentes,
                       proxima_ejecucion, ultima_ejecucion,
                       actualizado_en, actualizado_por
                FROM scheduler_state WHERE id = 1""",
             [],
         )
+        if estado is not None:
+            start, end = _quiet_bounds()
+            estado["silencio_desde"] = start
+            estado["silencio_hasta"] = end
+            estado["silencio_activo"] = start != end
+        return estado
     except Exception as exc:  # tabla ausente / DB caída
         logger.warning("[scheduler] estado no disponible: %s", exc)
         return None
@@ -143,6 +181,12 @@ def set_estado(
 def _claim_due_run() -> dict[str, Any] | None:
     """Reclama atómicamente una corrida pendiente. Devuelve {modo,limite_fuentes}
     si este worker ganó el claim, o None."""
+    # Ventana de silencio (madrugada): no se reclama nada. La corrida pendiente
+    # queda con proxima_ejecucion en el pasado y se dispara UNA vez al salir de
+    # la ventana (no se acumulan corridas). El pre-chequeo no rompe la atomicidad
+    # multi-worker: el UPDATE sigue siendo el único claim atómico.
+    if _en_silencio():
+        return None
     try:
         from api.services.db import get_cursor
         with get_cursor() as (conn, cur):

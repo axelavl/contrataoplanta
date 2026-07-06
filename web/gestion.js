@@ -975,6 +975,14 @@ async function loadScheduler() {
     document.getElementById('sched-intervalo').value = e.intervalo_horas || 24;
     document.getElementById('sched-modo').value = e.modo || 'completa';
     document.getElementById('sched-limite').value = e.limite_fuentes != null ? e.limite_fuentes : '';
+    const _sil = document.getElementById('sched-silencio-note');
+    if (_sil) {
+      const dd = String(e.silencio_desde ?? 0).padStart(2, '0');
+      const hh = String(e.silencio_hasta ?? 8).padStart(2, '0');
+      _sil.textContent = e.silencio_activo
+        ? `⏸ No corre entre las ${dd}:00 y las ${hh}:00 (madrugada, hora de Chile). Si toca en ese rango, se dispara al terminar.`
+        : '';
+    }
     const estadoTxt = e.activo
       ? `<span style="color:var(--green)">● Activa</span> — próxima corrida: <strong>${e.proxima_ejecucion?fmtDt(e.proxima_ejecucion):'—'}</strong>`
       : '<span class="text-muted">○ Desactivada</span>';

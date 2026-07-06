@@ -3,8 +3,10 @@ Description=Ejecutar scrapers de empleo público dos veces al día
 Requires=contrataoplanta-scrapers.service
 
 [Timer]
-# 7am y 7pm hora Chile (UTC-4 en invierno / UTC-3 en verano)
-OnCalendar=*-*-* 11:00:00
+# 8am y 7pm hora Chile (UTC-4 en invierno / UTC-3 en verano). La corrida de la
+# mañana se movió de 11:00 UTC (~7am, dentro de la ventana de silencio 0–8h del
+# programador in-app) a 12:00 UTC (~8am) para no gastar recursos de madrugada.
+OnCalendar=*-*-* 12:00:00
 OnCalendar=*-*-* 23:00:00
 # Si el servidor estaba apagado, ejecutar al volver a arrancar
 Persistent=true
