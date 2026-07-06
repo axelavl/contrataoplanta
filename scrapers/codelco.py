@@ -134,14 +134,25 @@ _RE_CIERRE_STRICT = re.compile(
     r"(?:lunes|martes|mi[ée]rcoles|jueves|viernes|s[áa]bado|domingo)?\s*,?\s*"
     r"(\d{1,2})\s+de\s+(\w+)\s+de(?:l)?\s+(\d{4})", re.I)
 _RE_VACANTES_DET = re.compile(r"N[úu]mero de vacantes\s*:?\s*(\d{1,3})", re.I)
-_RE_REQUISITOS = re.compile(r"Requisitos de Postulaci[oó]n\s*:?\s*(.{30,2600})", re.I | re.S)
+# Los avisos usan indistintamente "Requisitos de Postulación" o "Requisitos del
+# Cargo"; lo mismo para "Funciones Principales" / "Funciones del Cargo".
+_RE_REQUISITOS = re.compile(
+    r"Requisitos\s+(?:de Postulaci[oó]n|del Cargo)\s*:?\s*(.{30,2600})", re.I | re.S)
+_RE_DESEABLES = re.compile(
+    r"Aspectos Deseables\s*:?\s*(.*?)\s*(?:Condiciones Ofrecidas|Declaro en este acto|"
+    r"Para asegurarnos|\*?Recuerda|NOTA\s*:|En Codelco estamos)", re.I | re.S)
 _RE_DIVISION = re.compile(
     r"\b(Divisi[oó]n [A-ZÁÉÍÓÚ][\wáéíóúñ ]{2,30}?|Vicepresidencia[\wáéíóúñ ]{0,40}?|Casa Matriz)\b(?=[,.;]|\s[a-z¿])")
 _RE_LUGAR = re.compile(r"Lugar de trabajo\s*:?\s*(.{2,60}?)\s*(?:\.|Jornada|N[úu]mero|Cierre|Hora)", re.I)
 _RE_JORNADA = re.compile(r"Jornada laboral\s*:?\s*(.{2,60}?)\s*(?:\.|N[úu]mero|Cierre|Hora|Lugar)", re.I)
 _RE_CONTRATO = re.compile(r"\bContrato\s*:?\s*(Indefinido|Plazo\s+Fijo|A\s+plazo\s+fijo|Reemplazo|Honorarios?|Faena)", re.I)
-_RE_PROPOSITO = re.compile(r"Prop[óo]sito del Cargo\s*:?\s*(.*?)\s*(?:¡Porque|Funciones\s+Principales|Requisitos de Postulaci|Condiciones Ofrecidas)", re.I | re.S)
-_RE_FUNCIONES = re.compile(r"Funciones\s+Principales\s*:?\s*(.*?)\s*(?:Requisitos de Postulaci|Aspectos Deseables|Condiciones Ofrecidas)", re.I | re.S)
+_RE_CARGO_CONTRACTUAL = re.compile(r"Cargo contractual\s*:?\s*(.{3,60}?)\s*(?:\.|Lugar|Jornada|N[úu]mero|Cierre|Hora)", re.I)
+_RE_PROPOSITO = re.compile(
+    r"Prop[óo]sito del Cargo\s*:?\s*(.*?)\s*(?:¡Porque|Funciones\s+(?:Principales|del Cargo)|"
+    r"Requisitos\s+(?:de Postulaci[oó]n|del Cargo)|Condiciones Ofrecidas)", re.I | re.S)
+_RE_FUNCIONES = re.compile(
+    r"Funciones\s+(?:Principales|del Cargo)\s*:?\s*(.*?)\s*(?:Requisitos\s+(?:de Postulaci[oó]n|del Cargo)|"
+    r"Aspectos Deseables|Condiciones Ofrecidas)", re.I | re.S)
 
 # Formación requerida: sólo patrones de alta confianza. No se inventan títulos.
 _RE_FORMACION_LINEAS = [
@@ -375,12 +386,22 @@ def parsear_detalle(html: str) -> dict[str, Any]:
     if m := _RE_FUNCIONES.search(texto):
         d["funciones"] = limpiar_texto(m.group(1))[:1200]
 
+    if m := _RE_CARGO_CONTRACTUAL.search(texto):
+        cargo_contractual = limpiar_texto(m.group(1)).strip(" .:-")
+        if cargo_contractual and len(cargo_contractual) <= 60:
+            d["cargo_contractual"] = cargo_contractual
+
     if m := _RE_REQUISITOS.search(texto):
         requisitos = _limpiar_bloque_requisitos(m.group(1))
         formacion = _formacion_requerida(requisitos)
         d["requisitos"] = requisitos
         if formacion:
             d["formacion"] = formacion
+
+    if m := _RE_DESEABLES.search(texto):
+        deseables = limpiar_texto(m.group(1)).strip(" .:-")
+        if deseables and len(deseables) > 10:
+            d["deseables"] = deseables[:1200]
     return d
 
 
@@ -401,6 +422,9 @@ def construir_oferta(item: dict[str, Any], det: dict[str, Any]) -> dict:
     cargo = item["titulo"]
     formacion = det.get("formacion")
 
+    # La descripción se reserva para la narrativa (Propósito → Objetivo y
+    # Funciones); jornada/vacantes/contrato/lugar viajan en sus columnas
+    # estructuradas para no ensuciar la clasificación semántica del frontend.
     desc_partes = []
     if det.get("proposito"):
         desc_partes.append(f"Propósito del cargo: {det['proposito']}")
@@ -410,25 +434,14 @@ def construir_oferta(item: dict[str, Any], det: dict[str, Any]) -> dict:
         aviso = det["aviso"]
         corte = re.search(r"(?:Diversidad e Inclusi[oó]n|En Codelco estamos llamados)", aviso, re.I)
         desc_partes.append(aviso[: corte.start()] if corte else aviso[:1200])
-    if formacion:
-        desc_partes.append(f"Formación requerida: {formacion}")
-    if det.get("division"):
-        desc_partes.append(f"Unidad: {det['division']}")
-    if det.get("lugar"):
-        desc_partes.append(f"Lugar de trabajo: {det['lugar']}")
-    if det.get("jornada"):
-        desc_partes.append(f"Jornada: {det['jornada']}")
-    if det.get("contrato"):
-        desc_partes.append(f"Contrato: {det['contrato']}")
-    if det.get("vacantes"):
-        desc_partes.append(f"Vacantes: {det['vacantes']}")
-    if item.get("id_proceso"):
-        desc_partes.append(f"ID de proceso: {item['id_proceso']}")
-    descripcion = limpiar_texto(" | ".join(p for p in desc_partes if p))
+    descripcion = limpiar_texto("\n\n".join(p for p in desc_partes if p))
 
     requisitos = det.get("requisitos")
     if formacion and requisitos and "Formación requerida" not in requisitos:
         requisitos = f"Formación requerida: {formacion}. {requisitos}"
+    if det.get("deseables"):
+        deseables = f"Aspectos deseables: {det['deseables']}"
+        requisitos = f"{requisitos}\n{deseables}" if requisitos else deseables
 
     area = _area_desde_formacion(cargo, formacion) or normalizar_area(cargo)
     id_estable = item.get("id_sf") or item.get("id_proceso") or item["url"]
@@ -454,6 +467,8 @@ def construir_oferta(item: dict[str, Any], det: dict[str, Any]) -> dict:
         "fecha_cierre": det.get("fecha_cierre"),
         "requisitos_texto": requisitos,
         "url_bases": None,
+        "jornada": det.get("jornada"),
+        "numero_vacantes": det.get("vacantes"),
     }
 
 
