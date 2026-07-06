@@ -181,6 +181,15 @@ FUENTES: list[dict[str, Any]] = [
      "region": "Valparaíso", "ciudad": "Viña del Mar", "modo": "pdf_links",
      "url": "https://www.munivina.cl/ofertas-laborales/",
      "pdf_host": "munivina.cl", "pdf_con_texto": True, "cargo_desde_archivo": True},
+    # Segunda página de la misma muni (concursos de planta/contrata; la anterior
+    # es "ofertas laborales"). Mismo CMS y host → mismo modo pdf_links. El cierre
+    # por ausencia se agrupa por institución (345), así que ambas no se cierran
+    # ofertas entre sí. institucion_nombre se deja canónico (sin sufijo) para el
+    # display; la clave distingue la fuente en logs.
+    {"clave": "vina_cp", "id": 345, "nombre": "Municipalidad de Viña del Mar",
+     "region": "Valparaíso", "ciudad": "Viña del Mar", "modo": "pdf_links",
+     "url": "https://www.munivina.cl/concursos-publicos/",
+     "pdf_host": "munivina.cl", "pdf_con_texto": True, "cargo_desde_archivo": True},
     {"clave": "puentealto", "id": 419, "nombre": "Municipalidad de Puente Alto",
      "region": RM, "ciudad": "Puente Alto", "modo": "secciones",
      "url": "https://www.mpuentealto.cl/trabaje-con-nosotros/"},
