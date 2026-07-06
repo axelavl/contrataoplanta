@@ -1950,7 +1950,7 @@ const RUN_KINDS_FALLBACK = [
   'custom_ffaa',
 ];
 
-let _RUN_CAT = null;   // [{id, nombre, kind, status}]  del catálogo enriquecido
+let _RUN_CAT = null;   // [{id, nombre, kind, status, sector}] del catálogo enriquecido
 
 // Sin status del backend, se asume corrible (no filtrar de más).
 function _runCorrible(i) {
@@ -1966,7 +1966,7 @@ async function _cargarCatalogoRun() {
       const cat = await api('/scraper/catalog');
       _RUN_CAT = (cat || []).filter(i => i && i.id && i.nombre).map(i => ({
         id: i.id, nombre: String(i.nombre).trim(),
-        kind: i.kind || '', status: i.status || '',
+        kind: i.kind || '', status: i.status || '', sector: i.sector || '',
       }));
     } catch (e) { _RUN_CAT = []; }
   }
@@ -1978,7 +1978,9 @@ function _poblarTiposRun() {
   const sel = document.getElementById('run-tipo');
   if (!sel) return;
   const cuenta = {};
+  let munis = 0;
   for (const i of (_RUN_CAT || [])) {
+    if (/municipal/i.test(i.sector)) munis++;
     if (i.kind && i.kind !== 'skip' && _runCorrible(i)) {
       cuenta[i.kind] = (cuenta[i.kind] || 0) + 1;
     }
@@ -1986,25 +1988,38 @@ function _poblarTiposRun() {
   let kinds = Object.keys(cuenta).sort((a, b) => cuenta[b] - cuenta[a]);
   if (!kinds.length) kinds = RUN_KINDS_FALLBACK.slice();   // respaldo
   sel.length = 1;   // conservar "Todos" (índice 0), regenerar el resto
+  // Municipios: scraper agrupado propio (municipios.py). No es un ScraperKind
+  // (sus fuentes clasifican como wordpress/generic), así que va como opción
+  // dedicada — el backend lo traduce a mode="municipios".
+  sel.add(new Option(munis ? `🏛️ Municipios (agrupado) — ${munis} munis` : '🏛️ Municipios (agrupado)', 'municipios'));
   for (const k of kinds) {
     const label = RUN_KIND_LABELS[k] || k;
     sel.add(new Option(cuenta[k] ? `${label} (${cuenta[k]})` : label, k));
   }
 }
 
-// Rellena el datalist de instituciones según el tipo elegido. Si el catálogo no
-// trae `kind`, no filtra por tipo (muestra todas). Guarda nombre→id.
+// Instituciones visibles para el tipo elegido. Municipios filtra por sector
+// (las munis clasifican como wordpress/generic, no hay kind "municipios").
+function _instsDelTipo(tipo) {
+  const hayKinds = (_RUN_CAT || []).some(i => i.kind);
+  return (_RUN_CAT || [])
+    .filter(_runCorrible)
+    .filter(i => {
+      if (tipo === 'all') return true;
+      if (tipo === 'municipios') return /municipal/i.test(i.sector);
+      return !hayKinds || i.kind === tipo;
+    })
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+}
+
+// Rellena datalist + mapa nombre→id según el tipo elegido.
 let _RUN_INST_MAP = {};
 function _poblarInstsRun() {
   const tipo = document.getElementById('run-tipo').value;
   const dl = document.getElementById('run-inst-lista');
   const hint = document.getElementById('run-inst-hint');
-  const hayKinds = (_RUN_CAT || []).some(i => i.kind);
   _RUN_INST_MAP = {};
-  const insts = (_RUN_CAT || [])
-    .filter(_runCorrible)
-    .filter(i => tipo === 'all' || !hayKinds || i.kind === tipo)
-    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+  const insts = _instsDelTipo(tipo);
   const opts = [];
   for (const i of insts) {
     _RUN_INST_MAP[i.nombre.toLowerCase()] = i.id;
@@ -2014,6 +2029,7 @@ function _poblarInstsRun() {
   // Al cambiar de tipo, limpiar la institución elegida (era de otro tipo).
   const inp = document.getElementById('run-inst');
   if (inp && _resolverInstRun(inp.value) == null) inp.value = '';
+  _renderSugerenciasRun('');   // cerrar sugerencias abiertas
   if (hint) hint.textContent = tipo === 'all'
     ? 'Corrida completa: la institución se ignora.'
     : (insts.length ? `${insts.length} instituciones` : 'Escribe la institución o deja vacío para todas');
@@ -2023,6 +2039,44 @@ function _resolverInstRun(nombre) {
   const k = (nombre || '').trim().toLowerCase();
   return Object.prototype.hasOwnProperty.call(_RUN_INST_MAP, k) ? _RUN_INST_MAP[k] : null;
 }
+
+// ── Autocompletado propio (el <datalist> es poco fiable en Chrome móvil) ─────
+function _foldRun(s) {
+  return String(s || '').toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+function _renderSugerenciasRun(q) {
+  const box = document.getElementById('run-inst-sug');
+  if (!box) return;
+  const query = _foldRun(q).trim();
+  if (query.length < 2) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  const tipo = document.getElementById('run-tipo').value;
+  const matches = _instsDelTipo(tipo)
+    .filter(i => _foldRun(i.nombre).includes(query))
+    .slice(0, 12);
+  if (!matches.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  box.innerHTML = matches.map(i =>
+    `<button type="button" class="run-inst-opcion" data-nombre="${escAttr(i.nombre)}">${esc(i.nombre)}</button>`
+  ).join('');
+  box.style.display = 'block';
+}
+
+document.getElementById('run-inst').addEventListener('input', function () {
+  _renderSugerenciasRun(this.value);
+});
+document.getElementById('run-inst-sug').addEventListener('click', function (e) {
+  const btn = e.target.closest('.run-inst-opcion');
+  if (!btn) return;
+  document.getElementById('run-inst').value = btn.dataset.nombre;
+  _renderSugerenciasRun('');
+});
+// Cerrar las sugerencias al tocar fuera del combo.
+document.addEventListener('click', function (e) {
+  if (!e.target.closest('#run-inst') && !e.target.closest('#run-inst-sug')) {
+    _renderSugerenciasRun('');
+  }
+});
 
 document.getElementById('run-tipo').addEventListener('change', _poblarInstsRun);
 
@@ -2044,7 +2098,8 @@ async function runScraper() {
   }
 
   // tipo=all → corrida completa; con institución → esa institución; sin ella →
-  // todas las del tipo (kind, o el modo dedicado de EmpleosPublicos).
+  // todas las del tipo (kind, el batch de municipios, o el modo dedicado de
+  // EmpleosPublicos).
   let mode;
   const payload = { dry_run: dryRun };
   if (tipo === 'all') {
@@ -2054,6 +2109,8 @@ async function runScraper() {
     payload.institucion_id = instId;
   } else if (tipo === 'empleos_publicos') {
     mode = 'empleos_publicos';
+  } else if (tipo === 'municipios') {
+    mode = 'municipios';
   } else {
     mode = 'kind';
     payload.kind = tipo;

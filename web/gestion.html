@@ -271,6 +271,15 @@
     main { padding: 14px; }
     .stats-grid { grid-template-columns: repeat(2, 1fr); }
   }
+
+  /* Autocompletado del selector de scraper (Herramientas) */
+  .run-inst-opcion {
+    display: block; width: 100%; text-align: left; padding: 9px 12px;
+    background: transparent; border: 0; border-bottom: 1px solid var(--border);
+    color: var(--text, inherit); font-size: 13px; cursor: pointer;
+  }
+  .run-inst-opcion:last-child { border-bottom: 0; }
+  .run-inst-opcion:hover, .run-inst-opcion:focus { background: var(--bg); }
 </style>
 </head>
 <body>
@@ -736,10 +745,17 @@
             <option value="all">🚀 Todos los tipos (corrida completa)</option>
             <!-- El resto de tipos se completa dinámicamente desde el catálogo -->
           </select>
-          <input id="run-inst" list="run-inst-lista" autocomplete="off"
-                 placeholder="Todas las de este tipo — o escribe para elegir una"
-                 style="min-width:300px;flex:1">
-          <datalist id="run-inst-lista"></datalist>
+          <span style="position:relative;min-width:300px;flex:1;display:inline-block">
+            <input id="run-inst" list="run-inst-lista" autocomplete="off"
+                   placeholder="Todas las de este tipo — o escribe para buscar una"
+                   style="width:100%">
+            <datalist id="run-inst-lista"></datalist>
+            <!-- Autocompletado propio: el <datalist> no despliega sugerencias de
+                 forma fiable en Chrome móvil; este dropdown sí. -->
+            <div id="run-inst-sug" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:40;
+                 background:var(--card,var(--bg));border:1px solid var(--border);border-radius:var(--radius);
+                 max-height:260px;overflow:auto;box-shadow:0 6px 18px rgba(0,0,0,.35)"></div>
+          </span>
           <input id="run-limite" type="number" min="1" max="2000" style="width:160px" placeholder="Máx. instituciones" title="Opcional: limita cuántas instituciones se procesan (--limit)">
           <label style="display:flex;align-items:center;gap:6px;color:var(--muted);cursor:pointer">
             <input id="run-dry" type="checkbox"> Simular (no guarda nada)
@@ -1249,6 +1265,6 @@
 
 <div id="toast"></div>
 
-<script src="/gestion.js?v=20260711" defer></script>
+<script src="/gestion.js?v=20260712" defer></script>
 </body>
 </html>
