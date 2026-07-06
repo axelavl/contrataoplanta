@@ -56,6 +56,7 @@ import csv
 import io
 import json
 import logging
+import os
 import random
 import re
 import sys
@@ -189,7 +190,10 @@ FUENTES: list[dict[str, Any]] = [
     {"clave": "vina_cp", "id": 345, "nombre": "Municipalidad de Viña del Mar",
      "region": "Valparaíso", "ciudad": "Viña del Mar", "modo": "concursos_da",
      "url": "https://www.munivina.cl/concursos-publicos/",
-     "pdf_host": "munivina.cl"},
+     # bases_enriquecer: los PDF de bases son escaneos → bases_pdf (OCR) saca
+     # cargo/funciones/requisitos y el CRONOGRAMA (la página acumula concursos
+     # de años anteriores; sin el cronograma entraban vencidos como vigentes).
+     "pdf_host": "munivina.cl", "bases_enriquecer": True},
     # La Cisterna (388): el sitio es una SPA (mejormunicipio.com) → no scrapeable
     # con requests. El concurso de planta publica todas las vacantes en un PDF de
     # bases; se fija su URL (bases_pdf) y se descarga directo, separando una oferta
@@ -198,7 +202,9 @@ FUENTES: list[dict[str, Any]] = [
      "region": RM, "ciudad": "La Cisterna", "modo": "bases_estamento_grado",
      "url": "https://cisterna.cl/news/municipalidad-de-la-cisterna-abre-concurso-publico-para-proveer-cargos-vacantes-en-la-planta-municipal",
      "bases_pdf": "https://uploads.mejormunicipio.com/websites/news/attachments/"
-                  "e504a94e-5d11-4abc-8f54-26c86b3293a4/bases_llamado_a_concurso___adm_aux_jef_profdocx.pdf"},
+                  "e504a94e-5d11-4abc-8f54-26c86b3293a4/bases_llamado_a_concurso___adm_aux_jef_profdocx.pdf",
+     # El mismo PDF trae el cronograma del concurso → vigencia real por bases.
+     "bases_enriquecer": True},
     {"clave": "puentealto", "id": 419, "nombre": "Municipalidad de Puente Alto",
      "region": RM, "ciudad": "Puente Alto", "modo": "secciones",
      "url": "https://www.mpuentealto.cl/trabaje-con-nosotros/"},
@@ -833,54 +839,81 @@ def _titulo_cargo(texto: str) -> str:
         wl = w.lower()
         if i > 0 and wl in _CONECTORES_TITULO:
             out.append(wl)
-        elif len(w) <= 4 and w.isupper():   # siglas: SECPLA, DIDECO, PDI…
+        elif len(w) <= 3 and w.isupper():   # siglas cortas: TI, PDI, JPL…
+            # (≤3: con 4 letras hay palabras normales — ASEO, PLAN — que en
+            # fuentes TODO-MAYÚSCULAS se confundirían con siglas)
             out.append(w)
         else:
             out.append(wl.capitalize())
     return " ".join(out)
 
 
-# Viña del Mar publica los concursos como bloques de texto planos:
-# "BASES CONCURSO PÚBLICO PARA PROVEER 1 CARGO PLANTA PROFESIONAL GRADO 11
-#  DEPARTAMENTO SERVICIOS DEL AMBIENTE D.A 8001", y cada bloque enlaza un PDF de
-# bases nombrado por el número D.A (8001.26.pdf). El PDF suele ser un escaneo
-# (sin texto), así que el cargo/estamento/grado/vacantes salen del HTML y el PDF
-# queda como url_bases.
+# Viña del Mar publica los concursos como bloques de texto planos, en DOS
+# formatos (la página acumula concursos de varios años):
+#   2026: "BASES CONCURSO PÚBLICO PARA PROVEER 1 CARGO PLANTA PROFESIONAL
+#          GRADO 11 DEPARTAMENTO SERVICIOS DEL AMBIENTE D.A 8001"
+#   2024: "BASES CONCURSO PÚBLICO PARA PROVEER 1 CARGO PLANTA PROFESIONALES
+#          GRADO 11° E.M., PARA MAESTRANZA MUNICIPAL, CARGO A DESEMPEÑAR:
+#          PROFESIONAL MAESTRANZA, SEGÚN D.A. 7738." (también "SEGÚN DA 11187")
+# Cada bloque enlaza el PDF de bases nombrado por el número D.A (8001.26.pdf o
+# 7738.pdf). El PDF suele ser un escaneo → los datos base salen del HTML y las
+# bases se enriquecen con bases_pdf (OCR + cronograma + vigencia).
 _RE_CONCURSO_DA = re.compile(
     r"BASES\s+CONCURSO\s+P[UÚ]BLICO\s+PARA\s+PROVEER\s+(\d+)\s+CARGOS?\s+"
-    r"PLANTA\s+([A-ZÁÉÍÓÚÑ]+)\s+GRADO\s+(\d+)\s+(.{3,90}?)\s+D\.?\s*A\.?\s*(\d{3,5})",
+    r"PLANTA\s+([A-ZÁÉÍÓÚÑ]+)\s+GRADO\s+(\d+)[°º]?"
+    r"(?:\s+E\.?M\.?)?,?\s+(.{3,120}?)[,.]?\s+"
+    r"(?:SEG[UÚ]N\s+)?D\.?\s*A\.?\s*(\d{3,6})",
     re.I)
 _RE_UNIDAD_INICIAL = re.compile(
     r"^(departamento|direcci[oó]n|unidad|oficina|secci[oó]n|juzgado)\b", re.I)
+_RE_CARGO_DESEMPENAR = re.compile(
+    r"CARGO\s+A\s+DESEMPE[ÑN]AR\s*:?\s*(.{3,90})$", re.I)
+_RE_PARA_UNIDAD = re.compile(r"^PARA\s+(.{3,80})$", re.I)
+
+
+def _cargo_desde_bloque_da(titulo: str, estamento: str) -> str:
+    """Nombre del cargo desde el trozo entre GRADO y D.A, en ambos formatos."""
+    t = limpiar_texto(titulo).strip(" ,.")
+    # Formato 2024: "PARA <UNIDAD>, CARGO A DESEMPEÑAR: <CARGO>" → el cargo real.
+    if m := _RE_CARGO_DESEMPENAR.search(t):
+        return _titulo_cargo(m.group(1).strip(" ,."))
+    if m := _RE_PARA_UNIDAD.match(t):
+        return f"{estamento} {_titulo_cargo(m.group(1).strip(' ,.'))}"
+    # Formato 2026: unidad o título directo.
+    titulo_c = _titulo_cargo(t)
+    if _RE_UNIDAD_INICIAL.match(t) or not titulo_c.lower().startswith(estamento.lower()):
+        return f"{estamento} {titulo_c}"
+    return titulo_c
 
 
 def extraer_concursos_da(html, fuente):
     """Concursos de planta listados como bloques 'BASES … D.A NNNN' + PDF por
     número D.A (Viña del Mar /concursos-publicos/). Una oferta por cargo."""
     soup = BeautifulSoup(html, "html.parser")
-    # Mapa número D.A → URL del PDF de bases (NNNN.YY.pdf, host propio).
+    # Mapa número D.A → URL del PDF de bases. Formatos vistos: 8001.26.pdf
+    # (NNNN.año) y 7738.pdf (NNNN pelado). La asociación es por número exacto;
+    # si el D.A no tiene PDF con ese nombre NO se inventa → queda para revisión.
     da_pdf: dict[str, str] = {}
     for a in soup.find_all("a", href=True):
-        m = re.search(r"/(\d{3,5})\.\d+\.pdf", a["href"], re.I)
+        m = re.search(r"/(\d{3,6})(?:\.\d{1,4})?\.pdf(?:$|[?#])", a["href"], re.I)
         if m:
             da_pdf.setdefault(m.group(1), urljoin(fuente["url"], a["href"]))
     cont = soup.select_one("main, .entry-content, article") or soup.body or soup
     texto = limpiar_texto(cont.get_text(" ", strip=True))
     items, vistos = [], set()
+    sin_pdf = 0
     for m in _RE_CONCURSO_DA.finditer(texto):
         vac, estamento, grado, titulo, da = m.groups()
         if da in vistos:
             continue
         vistos.add(da)
         est = estamento.title()
-        titulo_c = _titulo_cargo(titulo)
-        # Si el título es una unidad ("Departamento …") anteponer el estamento;
-        # si ya empieza por el estamento (p.ej. "Profesional Contabilidad"), no.
-        if _RE_UNIDAD_INICIAL.match(titulo) or not titulo_c.lower().startswith(est.lower()):
-            cargo = f"{est} {titulo_c}"
-        else:
-            cargo = titulo_c
+        cargo = _cargo_desde_bloque_da(titulo, est)
         pdf = da_pdf.get(da)
+        if not pdf:
+            sin_pdf += 1
+            logger.info("  D.A %s sin PDF de bases asociado (%s) → revisar manualmente",
+                        da, cargo[:50])
         bloque = (f"Planta {est} · Grado {grado} · "
                   f"{vac} vacante(s) · Concurso D.A {da}.")
         items.append({
@@ -891,6 +924,8 @@ def extraer_concursos_da(html, fuente):
             "numero_vacantes": int(vac) if vac.isdigit() else None,
             "tipo": "Planta (Concurso Público Municipal)",
         })
+    logger.info("  concursos_da: %d bloques (%d con PDF de bases, %d sin asociar)",
+                len(items), len(items) - sin_pdf, sin_pdf)
     return items
 
 
@@ -1193,11 +1228,54 @@ def _procesar_fuente(fuente, session, delay, incluir_cerrados):
     return _filtrar_items(items, fuente, session, delay, incluir_cerrados)
 
 
+# Tope de PDFs OCR-eados por fuente y corrida: el OCR cuesta segundos por
+# página; sin tope, una página con 40 concursos escaneados haría corridas
+# eternas. Los que exceden el tope quedan sin enriquecer (se loguea) y se
+# recuperan en la siguiente corrida. Ajustable por entorno.
+_BASES_OCR_MAX = int(os.getenv("BASES_OCR_MAX", "40"))
+
+
+def _enriquecer_con_bases(o, fuente, session, cache, contadores):
+    """Descarga el PDF de bases de la oferta y la enriquece (bases_pdf):
+    campos del decreto + CRONOGRAMA → la fecha de cierre REAL. Devuelve el
+    resumen del enriquecimiento o None si no aplica/no se pudo."""
+    ub = (o.get("url_bases") or "").split("#")[0]
+    if not ub.lower().endswith(".pdf"):
+        return None
+    try:
+        from scrapers import bases_pdf
+    except Exception:
+        return None
+    if ub in cache:
+        texto, metodo = cache[ub]
+    else:
+        rp = _get(session, ub)
+        if rp is None:
+            logger.info("  bases_pdf: no se pudo descargar %s", ub[:80])
+            return None
+        allow_ocr = contadores["ocr"] < _BASES_OCR_MAX
+        texto, metodo = bases_pdf.leer_pdf(rp.content, allow_ocr=allow_ocr)
+        if metodo == "sin_texto" and not allow_ocr:
+            logger.info("  bases_pdf: tope de OCR alcanzado (%d); %s queda para la próxima corrida",
+                        _BASES_OCR_MAX, ub.rsplit("/", 1)[-1])
+        if metodo == "ocr":
+            contadores["ocr"] += 1
+        cache[ub] = (texto, metodo)
+    res = bases_pdf.enriquecer_desde_texto(o, texto, metodo)
+    logger.info("  bases_pdf %s → metodo=%s estado=%s confianza=%s campos=%s%s",
+                ub.rsplit("/", 1)[-1], res["metodo"], res["estado"],
+                res["confianza"], ",".join(res["campos"]) or "-",
+                f" | {res['motivo']}" if res["estado"] != "vigente" else "")
+    return res
+
+
 def _filtrar_items(items, fuente, session, delay, incluir_cerrados):
     """Post-procesamiento común: dedup, filtro de basura/vencidas, enriquecido."""
     hoy = date.today()
     ofertas, omitidas = [], 0
     vistos = set()
+    bases_cache: dict[str, tuple[str, str]] = {}
+    contadores = {"ocr": 0}
     _BASURA = re.compile(r"(javascript|no est[áa] disponible|^proceso de selecci[óo]n$|"
                          r"^concurso p[úu]blico$|^llamado a concurso|cookies?|"
                          r"men[úu]|navegaci|^municipalidad )", re.I)
@@ -1208,6 +1286,16 @@ def _filtrar_items(items, fuente, session, delay, incluir_cerrados):
         if _BASURA.search(o["cargo"]) or len(o["cargo"]) > 95:
             continue
         vistos.add(o["id_externo"])
+        # Enriquecer desde el PDF de bases ANTES del filtro de vigencia: el
+        # cronograma del PDF es la verdad (la tarjeta no trae plazo, y "Nueva"
+        # es la fecha de scrapeo — así los concursos de años anteriores que
+        # siguen publicados en la página dejan de entrar como vigentes).
+        if fuente.get("bases_enriquecer"):
+            res = _enriquecer_con_bases(o, fuente, session, bases_cache, contadores)
+            if res and res["estado"] == "vencido" and not incluir_cerrados:
+                logger.info("  ✗ %s omitida: %s", o["cargo"][:50], res["motivo"])
+                omitidas += 1
+                continue
         if o["fecha_cierre"] and o["fecha_cierre"] < hoy and not incluir_cerrados:
             omitidas += 1
             continue

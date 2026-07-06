@@ -71,6 +71,93 @@ def test_dos_fuentes_vina_comparten_id_para_cierre_agrupado():
     assert "urls_por_inst" in src
 
 
+# ── Formato ANTIGUO de Viña (2024): "CARGO A DESEMPEÑAR: X, SEGÚN D.A. NNNN" ──
+# La página acumula concursos de varios años; el formato viejo producía títulos
+# basura ("…, Según") y el PDF (7738.pdf, sin sufijo de año) no se asociaba.
+_HTML_2024 = """
+<html><body><main>
+  <p>BASES CONCURSO PÚBLICO PARA PROVEER 1 CARGO PLANTA PROFESIONALES GRADO 11°
+     E.M., PARA MAESTRANZA MUNICIPAL, CARGO A DESEMPEÑAR: PROFESIONAL
+     MAESTRANZA, SEGÚN D.A. 7738.
+     <a href="/wp-content/uploads/2024/06/7738.pdf">Descargar Aquí</a></p>
+  <p>BASES CONCURSO PÚBLICO PARA PROVEER 4 CARGOS PLANTA AUXILIAR GRADO 15,
+     CARGO A DESEMPEÑAR: AUXILIARES ASEO RODOVIARIO, SEGÚN DA 11187.
+     <a href="/wp-content/uploads/2025/01/11187.pdf">Descargar Aquí</a></p>
+  <p>BASES CONCURSO PÚBLICO PARA PROVEER 2 CARGOS PLANTA TÉCNICO GRADO 15,
+     CARGO A DESEMPEÑAR: TÉCNICO SIN PDF, SEGÚN DA 99999.</p>
+</main></body></html>
+"""
+
+
+def test_formato_2024_cargo_limpio_y_pdf_asociado():
+    items = M.extraer_concursos_da(_HTML_2024, _VINA_CP)
+    por = {it["cargo"]: it for it in items}
+    # El cargo real sale de "CARGO A DESEMPEÑAR", sin la cola ", Según".
+    assert "Profesional Maestranza" in por
+    assert por["Profesional Maestranza"]["url_bases"].endswith("/7738.pdf")
+    assert por["Profesional Maestranza"]["numero_vacantes"] == 1
+    assert "Auxiliares Aseo Rodoviario" in por
+    assert por["Auxiliares Aseo Rodoviario"]["url_bases"].endswith("/11187.pdf")
+    assert not any("según" in c.lower() for c in por)
+
+
+def test_bloque_sin_pdf_no_inventa_asociacion():
+    items = M.extraer_concursos_da(_HTML_2024, _VINA_CP)
+    sin = next(it for it in items if it["url_bases"] is None)
+    assert sin["url_bases"] is None          # sin bases → revisar manualmente
+    assert sin["url"].endswith("#da-99999")  # url única igual (dedup estable)
+
+
+# ── Vigencia desde el PDF de bases (bases_enriquecer) ────────────────────────
+_DECRETO_2024 = """
+VIÑA DEL MAR, 04 JUN. 2024
+N° 7738 / VISTOS: ...
+1. CARGO A CONCURSAR:
+PLANTA GRADO VACANTES CARGO A DESEMPEÑAR
+Profesionales 11° 1 Profesional Maestranza
+8. CRONOGRAMA CONCURSO
+Cierre de recepción de postulaciones 17 de Junio de 2024
+Resolución del concurso 30 de Julio de 2024
+"""
+
+
+class _SesionPDF:
+    def get(self, url, **kw):
+        class R:
+            status_code = 200
+            content = b"%PDF-fake"
+            text = ""
+        return R()
+
+
+def test_filtrar_items_omite_vencidas_por_cronograma(monkeypatch):
+    # El PDF dice cierre 2024-06-17 → aunque la tarjeta no traiga plazo, la
+    # oferta NO debe publicarse (era el caso "Nueva · hace menos de 1 día").
+    import scrapers.bases_pdf as B
+    monkeypatch.setattr(M.time, "sleep", lambda *a, **k: None)
+    monkeypatch.setattr(B, "leer_pdf", lambda contenido, **kw: (_DECRETO_2024, "ocr"))
+    items = M.extraer_concursos_da(_HTML_2024, _VINA_CP)
+    maestranza = [it for it in items if it["cargo"] == "Profesional Maestranza"]
+    ofertas = M._filtrar_items(maestranza, _VINA_CP, _SesionPDF(), 0, False)
+    assert ofertas == []                     # vencida por cronograma del PDF
+
+
+def test_filtrar_items_enriquece_vigentes(monkeypatch):
+    import scrapers.bases_pdf as B
+    decreto_vigente = _DECRETO_2024.replace("17 de Junio de 2024", "17 de Junio de 2099") \
+                                   .replace("30 de Julio de 2024", "30 de Julio de 2099")
+    monkeypatch.setattr(M.time, "sleep", lambda *a, **k: None)
+    monkeypatch.setattr(B, "leer_pdf", lambda contenido, **kw: (decreto_vigente, "ocr"))
+    items = M.extraer_concursos_da(_HTML_2024, _VINA_CP)
+    maestranza = [it for it in items if it["cargo"] == "Profesional Maestranza"]
+    ofertas = M._filtrar_items(maestranza, _VINA_CP, _SesionPDF(), 0, False)
+    assert len(ofertas) == 1
+    o = ofertas[0]
+    from datetime import date as _d
+    assert o["fecha_cierre"] == _d(2099, 6, 17)          # cronograma del PDF
+    assert "Grado 11" in o["descripcion"]
+
+
 def test_titulo_cargo_respeta_conectores_y_siglas():
     assert M._titulo_cargo("DEPARTAMENTO SERVICIOS DEL AMBIENTE") == "Departamento Servicios del Ambiente"
     # Siglas cortas (≤4) se conservan en mayúsculas; palabras largas se capitalizan.
