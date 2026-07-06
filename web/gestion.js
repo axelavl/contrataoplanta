@@ -239,7 +239,7 @@ document.querySelectorAll('.sidebar button[data-tab]').forEach(btn => {
     else if (tab === 'destacadas') loadDestacadas();
     else if (tab === 'alertas')  { loadAlertasTab(); }
     else if (tab === 'config')   loadConfig();
-    else if (tab === 'acciones') loadProcesos();
+    else if (tab === 'acciones') { loadProcesos(); _cargarCatalogoRun(); }
     else if (tab === 'programacion') loadScheduler();
     else if (tab === 'usuarios') loadUsuarios();
     else if (tab === 'cursos')   loadCursos();
@@ -1763,6 +1763,7 @@ function irA(accion) {
   if (tab==='revision') loadRevision();
   else if (tab==='scrapers') loadScrapers();
   else if (tab==='alertas') loadAlertasTab();
+  else if (tab==='acciones') { loadProcesos(); _cargarCatalogoRun(); }
   else if (tab==='ofertas') {
     loadOfertas(1);
     if (accion==='nueva-oferta') setTimeout(openCrearOferta, 300);
@@ -1917,24 +1918,122 @@ async function desactivarFuente(id, nombre) {
 document.getElementById('fuente-modal').addEventListener('click', e => { if(e.target===e.currentTarget) closeFuenteModal(); });
 
 // ── ACCIONES ──────────────────────────────────────────────────
-document.getElementById('run-mode').addEventListener('change', function() {
-  const v = this.value;
-  document.getElementById('run-kind').style.display    = v==='kind'       ? '' : 'none';
-  document.getElementById('run-inst-id').style.display = v==='institucion'? '' : 'none';
-});
+// Etiquetas legibles por ScraperKind (el resto se muestra tal cual si aparece
+// un kind nuevo en el catálogo).
+const RUN_KIND_LABELS = {
+  empleos_publicos: 'EmpleosPublicos (portal central)',
+  wordpress: 'WordPress',
+  generic: 'Genérico',
+  custom_trabajando: 'Trabajando.com',
+  custom_hiringroom: 'HiringRoom',
+  custom_buk: 'Buk',
+  custom_playwright: 'Playwright (sitio con JS)',
+  custom_policia: 'Policía / PDI',
+  custom_ffaa: 'FF.AA. y Orden',
+};
+// Estados que SÍ se pueden correr (los demás — skip/broken/disabled — no).
+const RUN_STATUS_CORRIBLE = new Set(['active', 'experimental', 'manual_review']);
+
+let _RUN_CAT = null;   // [{id, nombre, kind, status}]  del catálogo enriquecido
+
+// Carga el catálogo una vez, completa el <select> de tipos con los kinds que
+// existen realmente y prepara el listado de instituciones por tipo.
+async function _cargarCatalogoRun() {
+  if (_RUN_CAT) { _poblarInstsRun(); return; }
+  try {
+    const cat = await api('/scraper/catalog');
+    _RUN_CAT = (cat || []).filter(i => i && i.id && i.nombre).map(i => ({
+      id: i.id, nombre: String(i.nombre).trim(),
+      kind: i.kind || '', status: i.status || '',
+    }));
+  } catch (e) { _RUN_CAT = []; return; }
+
+  // Tipos presentes en el catálogo (corribles), ordenados por cantidad desc.
+  const sel = document.getElementById('run-tipo');
+  const cuenta = {};
+  for (const i of _RUN_CAT) {
+    if (i.kind && i.kind !== 'skip' && RUN_STATUS_CORRIBLE.has(i.status)) {
+      cuenta[i.kind] = (cuenta[i.kind] || 0) + 1;
+    }
+  }
+  const kinds = Object.keys(cuenta).sort((a, b) => cuenta[b] - cuenta[a]);
+  // Conservar la opción "Todos" (índice 0) y regenerar el resto.
+  sel.length = 1;
+  for (const k of kinds) {
+    const label = RUN_KIND_LABELS[k] || k;
+    sel.add(new Option(`${label} (${cuenta[k]})`, k));
+  }
+  _poblarInstsRun();
+}
+
+// Rellena el datalist de instituciones según el tipo elegido (o todas si el
+// tipo es "all"/EmpleosPublicos). Guarda el mapa nombre→id para resolver.
+let _RUN_INST_MAP = {};
+function _poblarInstsRun() {
+  if (!_RUN_CAT) return;
+  const tipo = document.getElementById('run-tipo').value;
+  const dl = document.getElementById('run-inst-lista');
+  const hint = document.getElementById('run-inst-hint');
+  _RUN_INST_MAP = {};
+  const insts = _RUN_CAT
+    .filter(i => RUN_STATUS_CORRIBLE.has(i.status))
+    .filter(i => tipo === 'all' || i.kind === tipo)
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+  const opts = [];
+  for (const i of insts) {
+    _RUN_INST_MAP[i.nombre.toLowerCase()] = i.id;
+    opts.push(`<option value="${escAttr(i.nombre)}"></option>`);
+  }
+  if (dl) dl.innerHTML = opts.join('');
+  // Al cambiar de tipo, limpiar la institución elegida (era de otro tipo).
+  const inp = document.getElementById('run-inst');
+  if (inp && _resolverInstRun(inp.value) == null) inp.value = '';
+  if (hint) hint.textContent = tipo === 'all'
+    ? 'Corrida completa: la institución se ignora.'
+    : `${insts.length} instituciones de este tipo`;
+}
+
+function _resolverInstRun(nombre) {
+  const k = (nombre || '').trim().toLowerCase();
+  return Object.prototype.hasOwnProperty.call(_RUN_INST_MAP, k) ? _RUN_INST_MAP[k] : null;
+}
+
+document.getElementById('run-tipo').addEventListener('change', _poblarInstsRun);
 
 async function runScraper() {
-  const mode    = document.getElementById('run-mode').value;
-  const kind    = document.getElementById('run-kind').value;
-  const instId  = document.getElementById('run-inst-id').value;
+  const tipo    = document.getElementById('run-tipo').value;
+  const instTxt = document.getElementById('run-inst').value.trim();
   const _lim    = parseInt(document.getElementById('run-limite').value);
   const dryRun  = document.getElementById('run-dry').checked;
   const res     = document.getElementById('run-result');
 
-  const payload = { mode, dry_run: dryRun };
+  // Institución elegida (si el texto no resuelve a un id del catálogo, avisar).
+  let instId = null;
+  if (tipo !== 'all' && instTxt) {
+    instId = _resolverInstRun(instTxt);
+    if (instId == null) {
+      toast('Institución no encontrada en el listado de este tipo', 'error');
+      return;
+    }
+  }
+
+  // tipo=all → corrida completa; con institución → esa institución; sin ella →
+  // todas las del tipo (kind, o el modo dedicado de EmpleosPublicos).
+  let mode;
+  const payload = { dry_run: dryRun };
+  if (tipo === 'all') {
+    mode = 'all';
+  } else if (instId != null) {
+    mode = 'institucion';
+    payload.institucion_id = instId;
+  } else if (tipo === 'empleos_publicos') {
+    mode = 'empleos_publicos';
+  } else {
+    mode = 'kind';
+    payload.kind = tipo;
+  }
+  payload.mode = mode;
   if (Number.isFinite(_lim) && _lim > 0) payload.limite_fuentes = _lim;
-  if (mode==='kind')        payload.kind = kind;
-  if (mode==='institucion') payload.institucion_id = parseInt(instId);
   if (mode==='all' && !dryRun) {
     if (!confirm('¿Lanzar corrida completa de todos los scrapers activos? Puede tardar varios minutos.')) return;
   }

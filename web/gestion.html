@@ -726,28 +726,26 @@
 
       <!-- Ejecutar scraper -->
       <div class="table-wrap" style="padding:20px;margin-bottom:20px">
-        <h3 style="font-size:14px;font-weight:600;margin-bottom:14px">🤖 Recolectar ofertas ahora</h3>
-        <div class="filters" style="margin-bottom:14px">
-          <select id="run-mode">
-            <option value="empleos_publicos">EmpleosPublicos (portal central)</option>
-            <option value="all">🚀 Corrida completa (todos)</option>
-            <option value="kind">Por tipo (kind)</option>
-            <option value="institucion">Por institución ID</option>
+        <h3 style="font-size:14px;font-weight:600;margin-bottom:6px">🤖 Recolectar ofertas ahora</h3>
+        <p class="text-small text-muted" style="margin-bottom:14px">
+          1) Elige el <strong>tipo de scraper</strong>. 2) Deja la institución vacía para correr
+          <strong>todas</strong> las de ese tipo, o elige una del listado.
+        </p>
+        <div class="filters" style="margin-bottom:14px;flex-wrap:wrap;gap:10px">
+          <select id="run-tipo" title="Tipo de scraper a ejecutar">
+            <option value="all">🚀 Todos los tipos (corrida completa)</option>
+            <!-- El resto de tipos se completa dinámicamente desde el catálogo -->
           </select>
-          <select id="run-kind" style="display:none">
-            <option value="wordpress">WordPress</option>
-            <option value="generic">Generic</option>
-            <option value="custom_trabajando">Trabajando.com</option>
-            <option value="custom_hiringroom">HiringRoom</option>
-            <option value="custom_buk">Buk</option>
-            <option value="custom_playwright">Playwright</option>
-          </select>
-          <input id="run-inst-id" type="number" placeholder="ID institución" style="display:none;width:160px">
-          <input id="run-limite" type="number" min="1" max="2000" style="width:170px" placeholder="Máx. instituciones" title="Opcional: limita cuántas instituciones se procesan (--limit)">
+          <input id="run-inst" list="run-inst-lista" autocomplete="off"
+                 placeholder="Todas las de este tipo — o escribe para elegir una"
+                 style="min-width:300px;flex:1">
+          <datalist id="run-inst-lista"></datalist>
+          <input id="run-limite" type="number" min="1" max="2000" style="width:160px" placeholder="Máx. instituciones" title="Opcional: limita cuántas instituciones se procesan (--limit)">
           <label style="display:flex;align-items:center;gap:6px;color:var(--muted);cursor:pointer">
             <input id="run-dry" type="checkbox"> Simular (no guarda nada)
           </label>
           <button class="btn btn-primary" data-action="run-scraper">▶ Ejecutar</button>
+          <span id="run-inst-hint" class="text-small text-muted"></span>
         </div>
         <div id="run-result" style="display:none;padding:12px;background:var(--bg);border-radius:var(--radius);border:1px solid var(--border);font-size:13px;color:var(--muted)"></div>
       </div>
@@ -1250,6 +1248,6 @@
 
 <div id="toast"></div>
 
-<script src="/gestion.js?v=20260707" defer></script>
+<script src="/gestion.js?v=20260708" defer></script>
 </body>
 </html>
