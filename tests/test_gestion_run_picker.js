@@ -131,6 +131,49 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
   await w.runScraper();
   assert(lastRunBody && lastRunBody.mode === 'empleos_publicos', 'empleos_publicos sin inst → mode=empleos_publicos');
 
+  // ── Robustez: catálogo SIN kind/status (backend sin source_status) ──
+  console.log('\n## Catálogo sin kind/status → respaldo de tipos');
+  {
+    const w2 = buildSandbox();
+    const doc2 = w2.document;
+    // Sobrescribir el catálogo por uno sin kind/status.
+    w2.fetch = (url, opts) => {
+      const u = String(url);
+      if (u.includes('/scraper/catalog')) return Promise.resolve({ ok: true, status: 200,
+        json: () => Promise.resolve([{ id: 1, nombre: 'Inst A' }, { id: 2, nombre: 'Inst B' }]) });
+      if (u.includes('/scraper/run')) { lastRunBody = JSON.parse((opts && opts.body) || '{}');
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({ pid: 1, cmd: [] }) }); }
+      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({}) });
+    };
+    w2._RUN_CAT = undefined; // forzar recarga no aplica (var interna); usamos función directa
+    await w2._cargarCatalogoRun();
+    await sleep(0);
+    const vals = Array.from(doc2.getElementById('run-tipo').options).map(o => o.value);
+    assert(vals.length > 1, 'sin kind del backend → igual se muestran tipos (respaldo)');
+    assert(vals.includes('wordpress') && vals.includes('custom_ffaa'), 'respaldo incluye todos los tipos');
+    // Sin kinds, el listado de instituciones muestra todas para cualquier tipo.
+    doc2.getElementById('run-tipo').value = 'wordpress';
+    doc2.getElementById('run-tipo').dispatchEvent(new w2.Event('change'));
+    await sleep(0);
+    const insts2 = Array.from(doc2.getElementById('run-inst-lista').options).map(o => o.value);
+    assert(insts2.includes('Inst A') && insts2.includes('Inst B'), 'sin kinds → lista todas las instituciones');
+  }
+
+  // ── Robustez: la API del catálogo falla → igual hay tipos para correr ──
+  console.log('\n## API de catálogo falla → respaldo de tipos');
+  {
+    const w3 = buildSandbox();
+    const doc3 = w3.document;
+    w3.fetch = (url) => {
+      if (String(url).includes('/scraper/catalog')) return Promise.reject(new Error('boom'));
+      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({}) });
+    };
+    await w3._cargarCatalogoRun();
+    await sleep(0);
+    const vals = Array.from(doc3.getElementById('run-tipo').options).map(o => o.value);
+    assert(vals.length > 1, 'API caída → tipos igual disponibles (respaldo)');
+  }
+
   console.log(`\n${passed} passed, ${failed} failed`);
   process.exit(failed > 0 ? 1 : 0);
 })();

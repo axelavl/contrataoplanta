@@ -1933,51 +1933,69 @@ const RUN_KIND_LABELS = {
 };
 // Estados que SÍ se pueden correr (los demás — skip/broken/disabled — no).
 const RUN_STATUS_CORRIBLE = new Set(['active', 'experimental', 'manual_review']);
+// Lista fija de tipos: se usa como respaldo si el backend no entrega `kind`
+// (p.ej. source_status no disponible → /scraper/catalog sin clasificar). Así el
+// selector SIEMPRE muestra los tipos aunque el catálogo venga sin clasificar.
+const RUN_KINDS_FALLBACK = [
+  'empleos_publicos', 'wordpress', 'generic', 'custom_trabajando',
+  'custom_hiringroom', 'custom_buk', 'custom_playwright', 'custom_policia',
+  'custom_ffaa',
+];
 
 let _RUN_CAT = null;   // [{id, nombre, kind, status}]  del catálogo enriquecido
 
-// Carga el catálogo una vez, completa el <select> de tipos con los kinds que
-// existen realmente y prepara el listado de instituciones por tipo.
-async function _cargarCatalogoRun() {
-  if (_RUN_CAT) { _poblarInstsRun(); return; }
-  try {
-    const cat = await api('/scraper/catalog');
-    _RUN_CAT = (cat || []).filter(i => i && i.id && i.nombre).map(i => ({
-      id: i.id, nombre: String(i.nombre).trim(),
-      kind: i.kind || '', status: i.status || '',
-    }));
-  } catch (e) { _RUN_CAT = []; return; }
+// Sin status del backend, se asume corrible (no filtrar de más).
+function _runCorrible(i) {
+  return !i.status || RUN_STATUS_CORRIBLE.has(i.status);
+}
 
-  // Tipos presentes en el catálogo (corribles), ordenados por cantidad desc.
-  const sel = document.getElementById('run-tipo');
-  const cuenta = {};
-  for (const i of _RUN_CAT) {
-    if (i.kind && i.kind !== 'skip' && RUN_STATUS_CORRIBLE.has(i.status)) {
-      cuenta[i.kind] = (cuenta[i.kind] || 0) + 1;
-    }
+// Carga el catálogo una vez, completa el <select> de tipos y el listado de
+// instituciones. Robusto: si la API falla o el catálogo viene sin `kind`,
+// igual muestra los tipos (respaldo) y todas las instituciones.
+async function _cargarCatalogoRun() {
+  if (_RUN_CAT === null) {
+    try {
+      const cat = await api('/scraper/catalog');
+      _RUN_CAT = (cat || []).filter(i => i && i.id && i.nombre).map(i => ({
+        id: i.id, nombre: String(i.nombre).trim(),
+        kind: i.kind || '', status: i.status || '',
+      }));
+    } catch (e) { _RUN_CAT = []; }
   }
-  const kinds = Object.keys(cuenta).sort((a, b) => cuenta[b] - cuenta[a]);
-  // Conservar la opción "Todos" (índice 0) y regenerar el resto.
-  sel.length = 1;
-  for (const k of kinds) {
-    const label = RUN_KIND_LABELS[k] || k;
-    sel.add(new Option(`${label} (${cuenta[k]})`, k));
-  }
+  _poblarTiposRun();
   _poblarInstsRun();
 }
 
-// Rellena el datalist de instituciones según el tipo elegido (o todas si el
-// tipo es "all"/EmpleosPublicos). Guarda el mapa nombre→id para resolver.
+function _poblarTiposRun() {
+  const sel = document.getElementById('run-tipo');
+  if (!sel) return;
+  const cuenta = {};
+  for (const i of (_RUN_CAT || [])) {
+    if (i.kind && i.kind !== 'skip' && _runCorrible(i)) {
+      cuenta[i.kind] = (cuenta[i.kind] || 0) + 1;
+    }
+  }
+  let kinds = Object.keys(cuenta).sort((a, b) => cuenta[b] - cuenta[a]);
+  if (!kinds.length) kinds = RUN_KINDS_FALLBACK.slice();   // respaldo
+  sel.length = 1;   // conservar "Todos" (índice 0), regenerar el resto
+  for (const k of kinds) {
+    const label = RUN_KIND_LABELS[k] || k;
+    sel.add(new Option(cuenta[k] ? `${label} (${cuenta[k]})` : label, k));
+  }
+}
+
+// Rellena el datalist de instituciones según el tipo elegido. Si el catálogo no
+// trae `kind`, no filtra por tipo (muestra todas). Guarda nombre→id.
 let _RUN_INST_MAP = {};
 function _poblarInstsRun() {
-  if (!_RUN_CAT) return;
   const tipo = document.getElementById('run-tipo').value;
   const dl = document.getElementById('run-inst-lista');
   const hint = document.getElementById('run-inst-hint');
+  const hayKinds = (_RUN_CAT || []).some(i => i.kind);
   _RUN_INST_MAP = {};
-  const insts = _RUN_CAT
-    .filter(i => RUN_STATUS_CORRIBLE.has(i.status))
-    .filter(i => tipo === 'all' || i.kind === tipo)
+  const insts = (_RUN_CAT || [])
+    .filter(_runCorrible)
+    .filter(i => tipo === 'all' || !hayKinds || i.kind === tipo)
     .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
   const opts = [];
   for (const i of insts) {
@@ -1990,7 +2008,7 @@ function _poblarInstsRun() {
   if (inp && _resolverInstRun(inp.value) == null) inp.value = '';
   if (hint) hint.textContent = tipo === 'all'
     ? 'Corrida completa: la institución se ignora.'
-    : `${insts.length} instituciones de este tipo`;
+    : (insts.length ? `${insts.length} instituciones` : 'Escribe la institución o deja vacío para todas');
 }
 
 function _resolverInstRun(nombre) {
