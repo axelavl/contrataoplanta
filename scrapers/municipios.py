@@ -383,19 +383,20 @@ _RANGO_DIAS = (r"(?:del?\s+)?\d{1,2}\s+al\s+(\d{1,2})\s+de\s+([a-záéíóúñ]+
 _RE_RANGO_CTX = re.compile(
     r"(?:recepci[oó]n|postulaci[oó]n|antecedentes|plazo|curr[ií]culum|\bcv\b|"
     r"vence|cierre)[^\n]{0,70}?" + _RANGO_DIAS, re.I)
-_RE_RANGO_BARE = re.compile(_RANGO_DIAS, re.I)
 
 
 def _cierre_rango(texto: str, hoy: date | None = None) -> date | None:
-    """'... 02 al 07 de julio [de 2026]' -> fecha del último día del rango.
+    """'Recepción de antecedentes: 02 al 07 de julio [de 2026]' -> último día.
 
-    Si el aviso no trae año (frecuente en municipios), se asume el año en curso;
-    si esa fecha ya quedó muy atrás (>60 días), se entiende que apunta al año
-    siguiente (aviso de diciembre para un cierre de enero).
+    Exige contexto de plazo/recepción/postulación (_RE_RANGO_CTX): un rango
+    suelto "02 al 07 de julio" sin ese contexto suele ser un horario u otra cosa,
+    y tomarlo como cierre inventaría un plazo (peor: futuro → saltaría revisión).
+    Si el aviso no trae año, se asume el en curso; si quedó >60 días atrás, el
+    año siguiente (aviso de diciembre para un cierre de enero).
     """
     hoy = hoy or date.today()
     t = limpiar_texto(texto)
-    m = _RE_RANGO_CTX.search(t) or _RE_RANGO_BARE.search(t)
+    m = _RE_RANGO_CTX.search(t)
     if not m:
         return None
     mes = MESES.get(m.group(2).lower())
@@ -764,6 +765,11 @@ def construir_oferta(item, fuente):
     desc_partes = []
     if item.get("bloque"):
         desc_partes.append(item["bloque"][:1200])
+    elif item.get("texto_pdf"):
+        # Modo pdf_links: el detalle vive en el PDF de bases. Antes su texto se
+        # extraía y se descartaba (construir sólo leía "bloque"); ahora lo usamos
+        # como descripción para que el enriquecimiento vea requisitos/renta/cierre.
+        desc_partes.append(item["texto_pdf"][:1200])
     if item.get("renta_texto"):
         desc_partes.append(item["renta_texto"])
     if item["url"].lower().endswith(".pdf"):

@@ -621,10 +621,18 @@ def recolectar_universidad(univ: dict[str, Any], session: requests.Session,
             try:
                 from scrapers.enrich import enriquecer_oferta, encontrar_pdf_urls
                 pdf_urls = encontrar_pdf_urls(texto_detalle, url_base) if texto_detalle else []
+                # También el PDF cuando el ítem del listado ES un PDF (no se abrió
+                # detalle) y el PDF de bases detectado en el listado: antes se
+                # quedaban como link sin minar → requisitos/renta/cierre perdidos.
+                for extra_pdf in (it.get("url"), it.get("url_bases"),
+                                  oferta.get("url_bases")):
+                    if (extra_pdf and str(extra_pdf).lower().endswith(".pdf")
+                            and extra_pdf not in pdf_urls):
+                        pdf_urls.append(extra_pdf)
                 enriquecer_oferta(
                     oferta,
-                    texto_html=det.get("descripcion"),
-                    pdf_urls=pdf_urls,
+                    texto_html=det.get("descripcion") or oferta.get("descripcion"),
+                    pdf_urls=pdf_urls or None,
                     session=session,
                 )
             except Exception:

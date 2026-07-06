@@ -609,7 +609,13 @@ def recolectar(max_results: int | None, delay: float, con_detalle: bool,
                 if det.get("bases_url") and not det.get("requisitos_texto"):
                     rb = _get(session, urljoin(BASE, det["bases_url"]))
                     if rb is not None:
-                        pdf_datos = _datos_desde_pdf(_pdf_a_texto(rb.content))
+                        pdf_texto = _pdf_a_texto(rb.content)
+                        # Guardar el texto del PDF para que enrich (abajo) mine
+                        # correo/fecha de cierre/funciones de las bases. Antes se
+                        # leía det["texto_pdf"], clave que nunca se seteaba → el
+                        # texto de las bases jamás llegaba a enrich.
+                        det["texto_pdf"] = pdf_texto
+                        pdf_datos = _datos_desde_pdf(pdf_texto)
                         for k, v in pdf_datos.items():
                             det.setdefault(k, v)
                         if pdf_datos:

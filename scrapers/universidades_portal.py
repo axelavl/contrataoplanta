@@ -467,6 +467,20 @@ def _construir_ufro(it: dict, fuente: dict, detalle: dict | None = None) -> dict
 
 
 # ── Procesamiento por fuente ─────────────────────────────────────────────────
+def _enriquecer(oferta: dict, texto: str | None, session) -> None:
+    """Completa lo que el parseo del portal no trae, minando el texto del detalle
+    y el PDF de perfil/bases (url_bases): requisitos, funciones, correo, salario y
+    fecha de cierre. Sólo rellena campos vacíos. Reduce la revisión manual."""
+    try:
+        from scrapers.enrich import enriquecer_oferta
+        pdf = oferta.get("url_bases")
+        pdf_urls = [pdf] if (pdf and str(pdf).lower().endswith(".pdf")) else None
+        enriquecer_oferta(oferta, texto_html=texto or None,
+                          pdf_urls=pdf_urls, session=session)
+    except Exception:
+        pass
+
+
 def _procesar_unap(fuente: dict, session, incluir_cerrados: bool) -> list[dict]:
     r = _get(session, fuente["url"])
     if r is None:
@@ -479,7 +493,10 @@ def _procesar_unap(fuente: dict, session, incluir_cerrados: bool) -> list[dict]:
         if o["id_externo"] in vistos or not o["cargo"]:
             continue
         vistos.add(o["id_externo"])
-        if o["fecha_cierre"] and o["fecha_cierre"] < hoy and not incluir_cerrados:
+        # Mina el PDF de perfil (url_bases) para requisitos/renta/funciones.
+        _enriquecer(o, o.get("descripcion"), session)
+        cierre = o.get("fecha_cierre")
+        if cierre and cierre < hoy and not incluir_cerrados:
             omitidas += 1
             continue
         ofertas.append(o)
@@ -523,6 +540,10 @@ def _procesar_ufro(fuente: dict, session, incluir_cerrados: bool) -> list[dict]:
                     _UFRO_ESTADO_CERRADO.search(o["_estado"]):
                 omitidas += 1
                 continue
+            # Enriquecer con el texto de la ficha (correo, funciones, salario…).
+            _texto_ficha = " ".join(filter(None, [o.get("descripcion"),
+                                                  o.get("requisitos_texto")]))
+            _enriquecer(o, _texto_ficha or None, session)
             if o["fecha_cierre"] and o["fecha_cierre"] < hoy and not incluir_cerrados:
                 omitidas += 1
                 continue

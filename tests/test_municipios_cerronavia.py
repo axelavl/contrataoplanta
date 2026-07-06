@@ -21,6 +21,12 @@ def test_cierre_rango_con_anio():
     assert M._cierre_rango("Postulaciones del 02 al 07 de julio de 2026") == date(2026, 7, 7)
 
 
+def test_cierre_rango_bare_sin_contexto_no_inventa_fecha():
+    # Un rango suelto sin contexto de plazo (p.ej. un horario) NO debe tomarse
+    # como cierre: inventar un plazo (peor: futuro) saltaría la revisión.
+    assert M._cierre_rango("Atención de lunes 02 al 07 de julio") is None
+
+
 def test_cierre_rango_envuelve_al_proximo_anio():
     # Aviso de diciembre para un cierre de enero → año siguiente.
     assert M._cierre_rango("recepción 02 al 05 de enero",
@@ -100,8 +106,10 @@ def test_detalle_cargo_limpio():
 
 def test_detalle_fecha_cierre_por_rango():
     it = _extraer()[0]
-    assert it["fecha_cierre"] == date(M._cierre_rango(
-        "02 al 07 de julio", hoy=date.today()).year, 7, 7)
+    esperado = M._cierre_rango("Recepción de antecedentes: 02 al 07 de julio",
+                               hoy=date.today())
+    assert it["fecha_cierre"] == esperado
+    assert esperado.month == 7 and esperado.day == 7
 
 
 def test_detalle_correos_postulacion():
