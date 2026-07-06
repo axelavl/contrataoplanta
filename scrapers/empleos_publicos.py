@@ -877,10 +877,15 @@ class EmpleosPublicosScraper(BaseScraper):
         # Correo de contacto de la ficha nueva (#lblCorreoPostulaZonaAzul:
         # "Mail de contacto: x@y"). Habilita el filtro "Postular por correo"
         # sin depender del extractor downstream sobre la descripción.
-        correo = self._correo_ficha(soup)
+        correo, correo_es_postulacion = self._correo_ficha(soup)
         if correo:
-            resultado["email_postulacion"] = resultado.get("email_postulacion") or correo
-            resultado["email_consultas"] = resultado.get("email_consultas") or correo
+            # El correo de la ficha es de CONTACTO salvo que el rótulo diga que es
+            # para postular. Así no se etiqueta "Postular por correo" un mail que
+            # el aviso publica como de consultas/contacto.
+            if correo_es_postulacion:
+                resultado["email_postulacion"] = resultado.get("email_postulacion") or correo
+            else:
+                resultado["email_consultas"] = resultado.get("email_consultas") or correo
 
         # "Cómo postular": detecta pasos en el texto de la ficha o deja la
         # instrucción genérica del portal. Se anexa en líneas propias para que
@@ -1380,20 +1385,31 @@ class EmpleosPublicosScraper(BaseScraper):
         texto = "\n\n".join(dict.fromkeys(partes))
         return texto or None
 
-    def _correo_ficha(self, soup: BeautifulSoup) -> str | None:
-        """Correo de contacto de la ficha nueva (``#lblCorreoPostulaZonaAzul``:
-        'Mail de contacto: correo@dominio')."""
+    def _correo_ficha(self, soup: BeautifulSoup) -> tuple[str | None, bool]:
+        """Correo de la ficha (``#lblCorreoPostulaZonaAzul``: 'Mail de contacto:
+        correo@dominio') y si es de POSTULACIÓN.
+
+        En empleospublicos.cl se postula EN LÍNEA (botón "Postular"), así que el
+        correo publicado es casi siempre de CONTACTO/consultas, no el canal de
+        postulación. Sólo lo tratamos como de postulación si el rótulo lo dice
+        explícitamente ("postular"/"enviar/remitir postulación") y NO menciona
+        contacto/consultas. Devuelve (correo, es_postulacion)."""
         for sel in ("#lblCorreoPostulaZonaAzul", "[id*='Correo']", "[id*='correo']"):
             el = soup.select_one(sel)
             if not el:
                 continue
+            texto = el.get_text(" ", strip=True)
             m = re.search(
-                r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}",
-                el.get_text(" ", strip=True),
+                r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", texto,
             )
             if m:
-                return truncate(m.group(0), 200)
-        return None
+                low = texto.lower()
+                es_postulacion = bool(
+                    re.search(r"(?:enviar|remitir|para)\s+(?:la\s+)?postulaci",
+                              low)
+                ) and not re.search(r"contacto|consulta|dudas", low)
+                return truncate(m.group(0), 200), es_postulacion
+        return None, False
 
     def _componer_como_postular(
         self, soup: BeautifulSoup, correo: str | None = None,
