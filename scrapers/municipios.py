@@ -820,8 +820,17 @@ def extraer_headings(html, fuente):
         bloque = limpiar_texto(cont.get_text(" ", strip=True))[:1500] if cont else t
         cargo = re.sub(r"^(concurso p[úu]blico para proveer cargo de|"
                        r"cargo de)\s+", "", t, flags=re.I)
+        # Mismo estándar de extracción que enlaces_detalle: el plazo de recepción
+        # (rango) prima sobre "hasta el …" (que puede ser vigencia de contrato),
+        # y se recogen correo de postulación y renta publicada en el bloque.
+        cierre = _cierre_rango(bloque) or _cierre_envio(bloque)
+        renta_texto, renta_min, renta_max = _renta_html(bloque)
         items.append({"cargo": limpiar_texto(cargo)[:500], "bloque": bloque,
-                      "fecha_cierre": _cierre_envio(bloque), "tipo": _tipo(bloque),
+                      "fecha_cierre": cierre, "tipo": _tipo(bloque),
+                      "email_postulacion": _emails_postulacion(bloque),
+                      "renta_texto": renta_texto,
+                      "renta_bruta_min": renta_min,
+                      "renta_bruta_max": renta_max,
                       "url": fuente["url"] + "#" + re.sub(
                           r"[^a-z0-9]+", "-", cargo.lower())[:50]})
     return items
