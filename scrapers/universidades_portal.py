@@ -142,8 +142,13 @@ FUENTES: list[dict[str, Any]] = [
      "sigla": "UFRO", "region": "La Araucanía", "ciudad": "Temuco",
      "modo": "ufro_tabla",
      "url": "https://extranet.ufro.cl/concursos/ver_tipo_administrativo.php",
-     "nota_vistas": "Vistas Académicos/Post-Doctoral se cargan por JS (menús "
-                    "'#'); requieren navegador para verificar estructura"},
+     # Se recorren AMBOS menús (Administrativos y Académicos). Cada fila enlaza
+     # a la ficha del concurso, de donde se extraen Cargo, Descripción,
+     # Vacantes, Fecha Término, Estado y Requisitos.
+     "urls": [
+         "https://extranet.ufro.cl/concursos/ver_tipo_administrativo.php",
+         "https://extranet.ufro.cl/concursos/ver_tipo_academico.php",
+     ]},
 ]
 
 
@@ -298,8 +303,11 @@ def _construir_unap(it: dict, fuente: dict) -> dict:
     }
 
 
-# ── Modo UFRO (tabla) ────────────────────────────────────────────────────────
+# ── Modo UFRO (tabla + ficha de detalle) ─────────────────────────────────────
 def parsear_ufro(html: str, fuente: dict) -> list[dict]:
+    """Lista de concursos con su enlace a la ficha. Soporta la vista de tabla
+    (Código, Descripción, Link, Tipo, Estado) y, como respaldo, una lista de
+    enlaces a fichas (`ver_concurso*.php`, `ficha*.php`, `?id=`)."""
     soup = BeautifulSoup(html, "html.parser")
     texto = limpiar_texto(soup.get_text(" ", strip=True))
     if re.search(r"no hay ofertas? laborales? disponibles?", texto, re.I):
@@ -340,28 +348,98 @@ def parsear_ufro(html: str, fuente: dict) -> list[dict]:
                 "url": urljoin(fuente["url"], link["href"]) if link else None,
             })
         break
+
+    # Respaldo: sin tabla reconocible, tomar los enlaces a fichas de concurso.
+    if not items:
+        vistos: set[str] = set()
+        for a in soup.find_all("a", href=True):
+            href = a["href"]
+            if not re.search(r"(ver_?concurso|ficha|detalle|postul|concurso)"
+                             r"[^/]*\.php|[?&]id=\d+", href, re.I):
+                continue
+            url = urljoin(fuente["url"], href)
+            if url in vistos or url.rstrip("/") == fuente["url"].rstrip("/"):
+                continue
+            vistos.add(url)
+            items.append({
+                "cargo": limpiar_texto(a.get_text(" ", strip=True)) or None,
+                "codigo": None, "tipo": None, "estado": None, "url": url,
+            })
     return items
 
 
-def _construir_ufro(it: dict, fuente: dict) -> dict:
+# Etiquetas de la ficha de detalle UFRO (ver captura). Se extrae el valor entre
+# una etiqueta y la siguiente. "Requisitos Específicos" va ANTES que "Requisitos"
+# en el lookahead para que el corte de "Requisitos" se detenga en ella.
+_UFRO_SIG_CAMPO = (
+    r"(?=\s*(?:Cargo|Descripci[oó]n|Vacantes|Fecha\s*T[eé]rmino|Estado|"
+    r"Requisitos\s*Espec[ií]ficos|Requisitos|Preguntas|Responder)\s*:|$)"
+)
+
+
+def _campo_ufro(texto: str, etiqueta: str) -> str | None:
+    m = re.search(etiqueta + r"\s*:\s*(.+?)" + _UFRO_SIG_CAMPO, texto,
+                  re.I | re.S)
+    return limpiar_texto(m.group(1)) if m else None
+
+
+def parsear_ufro_detalle(html: str) -> dict:
+    """Extrae los campos de la ficha del concurso: Cargo, Descripción,
+    Vacantes, Fecha Término, Estado, Requisitos y Requisitos Específicos."""
+    soup = BeautifulSoup(html, "html.parser")
+    texto = limpiar_texto(soup.get_text(" ", strip=True))
+    d: dict[str, Any] = {}
+    if v := _campo_ufro(texto, r"Cargo"):
+        d["cargo"] = v
+    if v := _campo_ufro(texto, r"Descripci[oó]n"):
+        d["descripcion"] = v
+    if v := _campo_ufro(texto, r"Vacantes"):
+        if mv := re.search(r"\d+", v):
+            d["vacantes"] = int(mv.group(0))
+    if v := _campo_ufro(texto, r"Fecha\s*T[eé]rmino"):
+        if f := _fecha_dmy(v):
+            d["fecha_cierre"] = f
+    if v := _campo_ufro(texto, r"Estado"):
+        d["estado"] = v
+    partes_req = []
+    if v := _campo_ufro(texto, r"Requisitos"):
+        partes_req.append(v)
+    if v := _campo_ufro(texto, r"Requisitos\s*Espec[ií]ficos"):
+        partes_req.append("Requisitos específicos: " + v)
+    if partes_req:
+        d["requisitos"] = limpiar_texto(" | ".join(partes_req))[:2000]
+    return d
+
+
+def _construir_ufro(it: dict, fuente: dict, detalle: dict | None = None) -> dict:
+    detalle = detalle or {}
     fuente_id = int(fuente["id"])
     nombre = fuente["nombre"]
-    cargo = limpiar_texto(it["cargo"])[:500]
+    # El cargo de la ficha suele ser el bueno; si no, el del listado.
+    cargo = limpiar_texto(detalle.get("cargo") or it.get("cargo") or "")[:500]
     codigo = it.get("codigo")
+    estado = detalle.get("estado") or it.get("estado")
+
     desc_partes = []
+    if detalle.get("descripcion"):
+        desc_partes.append(detalle["descripcion"])
     if codigo:
         desc_partes.append(f"Código: {codigo}")
     if it.get("tipo"):
         desc_partes.append(f"Tipo: {it['tipo']}")
-    if it.get("estado"):
-        desc_partes.append(f"Estado: {it['estado']}")
+    if detalle.get("vacantes"):
+        desc_partes.append(f"Vacantes: {detalle['vacantes']}")
+    if estado:
+        desc_partes.append(f"Estado: {estado}")
+    descripcion = limpiar_texto(" | ".join(desc_partes)) or None
+
     return {
         "id_externo": generar_id_estable(fuente_id, nombre, cargo,
-                                         codigo or cargo),
+                                         codigo or it.get("url") or cargo),
         "fuente_id": fuente_id,
         "url_original": it.get("url") or fuente["url"],
         "cargo": cargo,
-        "descripcion": limpiar_texto(" | ".join(desc_partes)) or None,
+        "descripcion": descripcion[:2000] if descripcion else None,
         "institucion_nombre": nombre,
         "sector": SECTOR,
         "area_profesional": normalizar_area(cargo),
@@ -373,33 +451,24 @@ def _construir_ufro(it: dict, fuente: dict) -> dict:
         "renta_bruta_max": None,
         "renta_texto": None,
         "fecha_publicacion": date.today(),
-        "fecha_cierre": None,
-        "requisitos_texto": None,
+        "fecha_cierre": detalle.get("fecha_cierre"),
+        "requisitos_texto": detalle.get("requisitos"),
+        "numero_vacantes": detalle.get("vacantes"),
         "url_bases": None,
+        "_estado": estado,
     }
 
 
 # ── Procesamiento por fuente ─────────────────────────────────────────────────
-def _procesar(fuente: dict, session, incluir_cerrados: bool) -> list[dict]:
-    logger.info("─── %s [%s] ───", fuente["nombre"], fuente["modo"])
+def _procesar_unap(fuente: dict, session, incluir_cerrados: bool) -> list[dict]:
     r = _get(session, fuente["url"])
     if r is None:
         logger.warning("  Sin acceso a %s", fuente["url"])
         return []
-
-    if fuente["modo"] == "unap_sispartime":
-        crudos = parsear_unap(r.text, fuente)
-        construir = _construir_unap
-    else:
-        crudos = parsear_ufro(r.text, fuente)
-        construir = _construir_ufro
-        if not crudos:
-            logger.info("  Sin ofertas publicadas hoy")
-
     hoy = date.today()
     ofertas, omitidas, vistos = [], 0, set()
-    for it in crudos:
-        o = construir(it, fuente)
+    for it in parsear_unap(r.text, fuente):
+        o = _construir_unap(it, fuente)
         if o["id_externo"] in vistos or not o["cargo"]:
             continue
         vistos.add(o["id_externo"])
@@ -410,6 +479,58 @@ def _procesar(fuente: dict, session, incluir_cerrados: bool) -> list[dict]:
     logger.info("  → %d vigentes (%d omitidas por plazo vencido)",
                 len(ofertas), omitidas)
     return ofertas
+
+
+_UFRO_ESTADO_CERRADO = re.compile(r"cerrad|finaliz|vencid|no\s+vigente", re.I)
+
+
+def _procesar_ufro(fuente: dict, session, incluir_cerrados: bool) -> list[dict]:
+    """Recorre cada vista (administrativo/académico), entra a la ficha de cada
+    concurso y arma la oferta con Cargo, Descripción, Fecha Término, Vacantes,
+    Estado y Requisitos. Sin ficha (fila sin enlace) se usa lo del listado."""
+    hoy = date.today()
+    ofertas, omitidas, vistos = [], 0, set()
+    urls = fuente.get("urls") or [fuente["url"]]
+    for url_listado in urls:
+        r = _get(session, url_listado)
+        if r is None:
+            logger.warning("  Sin acceso a %s", url_listado)
+            continue
+        crudos = parsear_ufro(r.text, {**fuente, "url": url_listado})
+        if not crudos:
+            logger.info("  Sin concursos en %s", url_listado.rsplit("/", 1)[-1])
+            continue
+        for it in crudos:
+            detalle: dict = {}
+            if it.get("url"):
+                time.sleep(0.6)
+                rd = _get(session, it["url"])
+                if rd is not None:
+                    detalle = parsear_ufro_detalle(rd.text)
+            o = _construir_ufro(it, fuente, detalle)
+            if not o["cargo"] or o["id_externo"] in vistos:
+                continue
+            vistos.add(o["id_externo"])
+            # Estado cerrado/finalizado → no publicar (salvo --incluir-cerrados).
+            if not incluir_cerrados and o.get("_estado") and \
+                    _UFRO_ESTADO_CERRADO.search(o["_estado"]):
+                omitidas += 1
+                continue
+            if o["fecha_cierre"] and o["fecha_cierre"] < hoy and not incluir_cerrados:
+                omitidas += 1
+                continue
+            o.pop("_estado", None)
+            ofertas.append(o)
+    logger.info("  → %d vigentes (%d omitidas por estado/plazo)",
+                len(ofertas), omitidas)
+    return ofertas
+
+
+def _procesar(fuente: dict, session, incluir_cerrados: bool) -> list[dict]:
+    logger.info("─── %s [%s] ───", fuente["nombre"], fuente["modo"])
+    if fuente["modo"] == "unap_sispartime":
+        return _procesar_unap(fuente, session, incluir_cerrados)
+    return _procesar_ufro(fuente, session, incluir_cerrados)
 
 
 # ── Persistencia / export ────────────────────────────────────────────────────
