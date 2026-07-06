@@ -277,6 +277,25 @@ def _parsear_fecha(texto: str) -> date | None:
     return None
 
 
+_CIERRE_LABEL_RE = re.compile(
+    r"(cierre|t[eé]rmino|plazo|vence|postulaci[oó]n|recepci[oó]n|hasta)\b", re.I)
+
+
+def _fecha_cierre_ctx(texto: str) -> date | None:
+    """Fecha de cierre SÓLO si aparece junto a una etiqueta de plazo/cierre.
+
+    `_parsear_fecha` devuelve la PRIMERA fecha del texto, que en un listado suele
+    ser la de PUBLICACIÓN, no la de cierre. Tomarla como cierre hacía que una
+    oferta vigente se descartara por "vencida". Aquí exigimos contexto; si no lo
+    hay, devolvemos None y dejamos que el detalle/enrich derive el cierre real.
+    """
+    t = texto or ""
+    for m in _CIERRE_LABEL_RE.finditer(t):
+        if f := _parsear_fecha(t[m.start(): m.start() + 80]):
+            return f
+    return None
+
+
 def _extraer_ofertas_tabla(soup: BeautifulSoup, base_url: str) -> list[dict[str, Any]]:
     """Extrae ofertas desde tablas HTML con enlaces."""
     ofertas: list[dict[str, Any]] = []
@@ -341,7 +360,9 @@ def _extraer_ofertas_links(soup: BeautifulSoup, base_url: str) -> list[dict[str,
         vistos.add(url)
         parent = a.find_parent(["tr", "li", "div", "article", "section"])
         contexto = limpiar_texto(parent.get_text(" ", strip=True)) if parent else texto
-        fecha_cierre = _parsear_fecha(contexto)
+        # Sólo fecha de cierre si viene etiquetada; una fecha suelta del contexto
+        # suele ser la de publicación y descartaría la oferta como "vencida".
+        fecha_cierre = _fecha_cierre_ctx(contexto)
         ofertas.append({
             "cargo": texto[:500],
             "url": url,
@@ -381,7 +402,9 @@ def _extraer_ofertas_wp_api(s: requests.Session, base_url: str) -> list[dict[str
             except ValueError:
                 pass
         contenido_html = str(post.get("content", {}).get("rendered", ""))
-        fecha_cierre = _parsear_fecha(contenido_html)
+        # Cierre sólo si está etiquetado; la primera fecha del post suele ser de
+        # publicación. Si no hay etiqueta, enrich lo deriva del texto/PDF.
+        fecha_cierre = _fecha_cierre_ctx(contenido_html)
         # Buscar PDFs en el contenido
         url_bases = None
         for m in re.finditer(r'href="([^"]*\.pdf[^"]*)"', contenido_html, re.I):
@@ -635,8 +658,8 @@ def recolectar_universidad(univ: dict[str, Any], session: requests.Session,
                     pdf_urls=pdf_urls or None,
                     session=session,
                 )
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("  enrich falló en %s: %s", oferta.get("url_original"), exc)
 
             todas_ofertas.append(oferta)
 

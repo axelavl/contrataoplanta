@@ -233,7 +233,7 @@ def parsear_unap(html: str, fuente: dict) -> list[dict]:
     bloques = [b for b in re.split(r"(?=Cargo\s*:)", texto)
                if b.strip().startswith("Cargo")]
     items = []
-    for idx, b in enumerate(bloques):
+    for b in bloques:
         campos = {}
         for c in _CAMPOS_UNAP:
             if m := re.search(re.escape(c) + r"\s*:\s*(.+?)" + _SIG_CAMPO, b):
@@ -249,9 +249,32 @@ def parsear_unap(html: str, fuente: dict) -> list[dict]:
             "jornada": campos.get("Jornada"),
             "fecha_inicio": _fecha_dmy(campos.get("Fecha Inicio", "")),
             "fecha_fin": _fecha_dmy(campos.get("Fecha Fin", "")),
-            "perfil": perfiles[idx] if idx < len(perfiles) else None,
+            "perfil": None,
         })
+    _asignar_perfiles_unap(items, perfiles)
     return items
+
+
+def _asignar_perfiles_unap(items: list[dict], perfiles: list[str]) -> None:
+    """Asocia cada PDF 'Perfil' a su cargo. Primero por CÓDIGO en el href (robusto);
+    el fallback POSICIONAL sólo se usa si hay exactamente un perfil por cargo (1:1),
+    porque bloques saltados desalineaban el índice y adjuntaban el PDF equivocado."""
+    usados: set[int] = set()
+    for it in items:
+        cod = (it.get("codigo") or "").strip().lower()
+        cod_num = re.sub(r"\D", "", cod)
+        for j, p in enumerate(perfiles):
+            if j in usados:
+                continue
+            pl = p.lower()
+            if (cod and cod in pl) or (len(cod_num) >= 4 and cod_num in pl):
+                it["perfil"] = p
+                usados.add(j)
+                break
+    # Fallback posicional SÓLO si nadie matcheó por código y las cantidades calzan.
+    if not usados and len(perfiles) == len(items):
+        for i, it in enumerate(items):
+            it["perfil"] = perfiles[i]
 
 
 def _construir_unap(it: dict, fuente: dict) -> dict:
