@@ -142,7 +142,10 @@ FUENTES: list[dict[str, Any]] = [
      "sigla": "UOH", "region": "O'Higgins", "ciudad": "Rancagua",
      "modo": "listado_html",
      "url": "https://www.uoh.cl/trabaja-con-nosotros/",
-     "detalle_re": r"/concurso/[^/\"']+/?$", "host": "uoh.cl"},
+     "detalle_re": r"/concurso/[^/\"']+/?$", "host": "uoh.cl",
+     # Los concursos son un CPT de WordPress (posts /concurso/…). Se intenta la
+     # API REST (auto-descubierta) antes del listado HTML para no perder avisos.
+     "base": "https://www.uoh.cl"},
 ]
 
 
@@ -264,27 +267,67 @@ def _tipo(texto: str) -> str:
     return "Concurso Universitario"
 
 
+_PDF_BASES_RE = re.compile(
+    r"(base|perfil|concurso|convocatoria|descriptor|tdr|antecedente|llamado|"
+    r"cargo|t[eé]rmino)", re.I)
+_PDF_EXCLUIR_RE = re.compile(
+    r"(cuenta|memoria|reglamento|manual|calendario|acta|nomina|n[oó]mina|"
+    r"resultado|balance|transparencia|formulario|declaracion|organigrama)", re.I)
+
+
 def _pdf_bases(html_content: str, base: str) -> str | None:
+    """PDF de bases del concurso: prefiere nombres que lo delaten (bases/perfil/
+    concurso/…) y descarta documentos institucionales (cuenta pública, etc.)."""
+    candidatos: list[str] = []
     for m in re.finditer(r'href=["\']([^"\']+\.pdf[^"\']*)["\']', html_content or "",
                          re.I):
-        return urljoin(base, m.group(1))
-    return None
+        url = urljoin(base, m.group(1))
+        low = url.lower()
+        if _PDF_EXCLUIR_RE.search(low):
+            continue
+        if _PDF_BASES_RE.search(low):
+            return url
+        candidatos.append(url)
+    return candidatos[0] if candidatos else None
 
 
 # ── Modo CPT REST ────────────────────────────────────────────────────────────
-def recolectar_cpt(fuente: dict, session, incluir_cerrados: bool) -> list[dict]:
-    base = fuente["base"].rstrip("/")
-    url = (f"{base}/wp-json/wp/v2/{fuente['cpt']}?per_page=50"
+def _cpt_raw_items(base: str, rest_base: str, session) -> list | None:
+    """Trae los items de un CPT vía API REST de WP (o None si no disponible)."""
+    url = (f"{base.rstrip('/')}/wp-json/wp/v2/{rest_base}?per_page=50"
            f"&_fields=id,link,title,date,content")
     r = _get(session, url)
     if r is None:
-        return []
+        return None
     try:
         items = r.json()
     except ValueError:
-        return []
-    logger.info("  CPT %s: %d items", fuente["cpt"], len(items))
+        return None
+    return items if isinstance(items, list) else None
 
+
+def _descubrir_cpt(base: str, session) -> str | None:
+    """Descubre el rest_base del CPT de concursos consultando /wp/v2/types, para
+    no adivinar el nombre. Devuelve None si no hay REST o no hay un CPT afín."""
+    r = _get(session, f"{base.rstrip('/')}/wp-json/wp/v2/types")
+    if r is None:
+        return None
+    try:
+        types = r.json()
+    except ValueError:
+        return None
+    if not isinstance(types, dict):
+        return None
+    for key, t in types.items():
+        rb = str((t or {}).get("rest_base") or key or "").strip()
+        slug = str((t or {}).get("slug") or key or "").lower()
+        if rb and ("concurso" in slug or "concurso" in rb.lower()):
+            return rb
+    return None
+
+
+def _procesar_cpt_items(fuente: dict, items: list, base: str, session,
+                        incluir_cerrados: bool) -> list[dict]:
     ofertas = []
     omitidas = 0
     for it in items:
@@ -309,16 +352,41 @@ def recolectar_cpt(fuente: dict, session, incluir_cerrados: bool) -> list[dict]:
                 fecha_pub = datetime.fromisoformat(it["date"]).date()
             except ValueError:
                 pass
-        ofertas.append(_construir(fuente, cargo or titulo_raw, it.get("link"),
-                                  texto, cierre, fecha_pub,
-                                  _pdf_bases(content_html, base), estado))
+        o = _construir(fuente, cargo or titulo_raw, it.get("link"),
+                       texto, cierre, fecha_pub,
+                       _pdf_bases(content_html, base), estado)
+        _enriquecer(o, texto, session)
+        ofertas.append(o)
     logger.info("  → %d vigentes (%d omitidas)", len(ofertas), omitidas)
     return ofertas
+
+
+def recolectar_cpt(fuente: dict, session, incluir_cerrados: bool) -> list[dict]:
+    base = fuente["base"].rstrip("/")
+    items = _cpt_raw_items(base, fuente["cpt"], session)
+    if items is None:
+        return []
+    logger.info("  CPT %s: %d items", fuente["cpt"], len(items))
+    return _procesar_cpt_items(fuente, items, base, session, incluir_cerrados)
 
 
 # ── Modo listado HTML ────────────────────────────────────────────────────────
 def recolectar_listado(fuente: dict, session, con_detalle: bool,
                        incluir_cerrados: bool) -> list[dict]:
+    # Preferimos la API REST de WordPress si el sitio expone el CPT de concursos:
+    # trae TODOS los avisos con su contenido (el listado HTML puede omitir
+    # algunos por paginación/maquetado). Descubrimos el rest_base vía /types
+    # para no adivinarlo; si no hay REST, caemos al parseo del listado HTML.
+    base = (fuente.get("base") or "").rstrip("/")
+    if base:
+        rest_base = _descubrir_cpt(base, session)
+        if rest_base:
+            items = _cpt_raw_items(base, rest_base, session)
+            if items:
+                logger.info("  CPT REST '%s' (auto): %d items", rest_base, len(items))
+                return _procesar_cpt_items(fuente, items, base, session,
+                                           incluir_cerrados)
+
     r = _get(session, fuente["url"])
     if r is None:
         return []
@@ -361,11 +429,16 @@ def recolectar_listado(fuente: dict, session, con_detalle: bool,
                     texto = limpiar_texto(main.get_text(" ", strip=True))
                     cierre = cierre or _cierre(texto)
                     pdf = _pdf_bases(str(main), fuente.get("host", href))
-        if not incluir_cerrados and cierre and cierre < hoy:
+        o = _construir(fuente, cargo or titulo, href, texto,
+                       cierre, fecha_pub, pdf, None)
+        # Enriquecer con el detalle + PDF de bases (requisitos, funciones,
+        # correo, salario, fecha de cierre). Puede rellenar fecha_cierre.
+        _enriquecer(o, texto, session)
+        cierre_final = o.get("fecha_cierre")
+        if not incluir_cerrados and cierre_final and cierre_final < hoy:
             omitidas += 1
             continue
-        ofertas.append(_construir(fuente, cargo or titulo, href, texto,
-                                  cierre, fecha_pub, pdf, None))
+        ofertas.append(o)
     logger.info("  → %d vigentes (%d omitidas por cierre vencido)",
                 len(ofertas), omitidas)
     return ofertas
@@ -414,6 +487,21 @@ def _construir(fuente, cargo, url, texto, cierre, fecha_pub, pdf, estado) -> dic
         "requisitos_texto": requisitos,
         "url_bases": pdf,
     }
+
+
+def _enriquecer(oferta: dict, texto: str | None, session) -> None:
+    """Pasa el detalle (texto del post + PDF de bases) por el pipeline compartido
+    para completar lo que el parseo básico no trae: requisitos, funciones,
+    correo de postulación, salario y fecha de cierre. Sólo rellena campos vacíos.
+    """
+    try:
+        from scrapers.enrich import enriquecer_oferta
+        pdf = oferta.get("url_bases")
+        pdf_urls = [pdf] if (pdf and str(pdf).lower().endswith(".pdf")) else None
+        enriquecer_oferta(oferta, texto_html=texto or None,
+                          pdf_urls=pdf_urls, session=session)
+    except Exception:
+        pass
 
 
 # ── Persistencia / export ────────────────────────────────────────────────────
