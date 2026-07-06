@@ -142,12 +142,12 @@ FUENTES: list[dict[str, Any]] = [
      "sigla": "UFRO", "region": "La Araucanía", "ciudad": "Temuco",
      "modo": "ufro_tabla",
      "url": "https://extranet.ufro.cl/concursos/ver_tipo_administrativo.php",
-     # Se recorren AMBOS menús (Administrativos y Académicos). Cada fila enlaza
-     # a la ficha del concurso, de donde se extraen Cargo, Descripción,
-     # Vacantes, Fecha Término, Estado y Requisitos.
+     # Cada fila del listado enlaza a la ficha del concurso, de donde se extraen
+     # Cargo, Descripción, Vacantes, Fecha Término, Estado y Requisitos.
+     # NOTA: `ver_tipo_academico.php` responde 404 (URL tentativa incorrecta); se
+     # deja sólo la vista administrativa hasta confirmar la URL real de académicos.
      "urls": [
          "https://extranet.ufro.cl/concursos/ver_tipo_administrativo.php",
-         "https://extranet.ufro.cl/concursos/ver_tipo_academico.php",
      ]},
 ]
 
