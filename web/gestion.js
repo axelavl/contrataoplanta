@@ -2107,7 +2107,17 @@ async function loadProcesos() {
       _procPollTimer = setTimeout(loadProcesos, 4000);
     }
   } catch(e) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="6" style="color:var(--red)">Error: ${esc(e.message)}</td></tr>`;
+    // Durante una recolección pesada el API puede quedar momentáneamente sin
+    // responder (o reiniciándose). No borramos la tabla ni mostramos un error
+    // rojo alarmante: nota suave y REINTENTO — al recuperarse, se repuebla.
+    const hayFilas = tbody.querySelector('tr:not(.empty-row)');
+    if (!hayFilas) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="6" class="text-muted">'
+        + 'El servidor está ocupado con la recolección o reiniciándose; reintentando…</td></tr>';
+    }
+    if (_tabAccionesActivo()) {
+      _procPollTimer = setTimeout(loadProcesos, 8000);   // reintento espaciado
+    }
   }
 }
 

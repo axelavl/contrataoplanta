@@ -209,6 +209,14 @@ def _claim_due_run() -> dict[str, Any] | None:
         return None
 
 
+def _bajar_prioridad() -> None:
+    """Hijo (post-fork, pre-exec): baja la prioridad de CPU del scraper."""
+    try:
+        os.nice(19)
+    except Exception:
+        pass
+
+
 def _lanzar_run_all(modo: str, limite_fuentes: int | None) -> int | None:
     """Lanza `run_all.py` en background usando solo flags que el script soporta.
 
@@ -230,9 +238,13 @@ def _lanzar_run_all(modo: str, limite_fuentes: int | None) -> int | None:
         cmd += ["--limit", str(int(limite_fuentes))]
     try:
         with open(log_path, "a", encoding="utf-8") as log_f:
+            # Detach (sesión propia) + baja prioridad: la corrida no muere si el
+            # worker se reinicia y no ahoga al API compitiendo por CPU.
             proc = subprocess.Popen(
                 cmd, stdout=log_f, stderr=subprocess.STDOUT,
                 cwd=str(_PROJECT_ROOT), text=True,
+                start_new_session=True,
+                preexec_fn=_bajar_prioridad if os.name == "posix" else None,
             )
             log_f.write(
                 f"### ADMIN-RUN pid={proc.pid} tipo=scheduler-{modo} "
