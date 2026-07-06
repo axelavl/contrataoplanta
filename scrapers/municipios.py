@@ -26,8 +26,13 @@ MODOS:
               · Cerro Navia /concurso-publicos-y-ofertas-laborales/
               · Santa Bárbara /municipalidad/concursos-publicos/
 
+  tabla_empleos  Cargos vigentes en una TABLA (una fila por cargo), con las
+              bases enlazadas ("AQUÍ" → PDF) y el correo de postulación en
+              OBSERVACIONES. Se descarta la tabla de seleccionados por cabecera.
+              · Maipú /empleos-municipales/  (CARGO/OFICINA/RECEPCIÓN/BASES/OBS.)
+
   bloqueada / spa  No accesibles con requests puro:
-              · Maipú (SPA Vue, sin API pública detectable) → requiere navegador
+              · Maipú /concursos-publicos (SPA Vue, sin API detectable) → navegador
               · San Ignacio, Melipilla, San Bernardo (503 WAF) → IP chilena
               · Recoleta (403 WAF) → IP chilena
               · Talagante (Wix, contenido por JS) → requiere navegador
@@ -244,9 +249,10 @@ FUENTES: list[dict[str, Any]] = [
      "url": "https://www.municipalidadmaipu.cl/concursos-publicos",
      "nota": "SPA Vue sin API pública detectable; requiere navegador (Playwright)"},
     {"clave": "maipu_em", "id": 398, "nombre": "Municipalidad de Maipú (empleos)",
-     "region": RM, "ciudad": "Maipú", "modo": "spa",
+     "region": RM, "ciudad": "Maipú", "modo": "tabla_empleos",
      "url": "https://www.municipalidadmaipu.cl/empleos-municipales",
-     "nota": "SPA Vue sin API pública detectable; requiere navegador (Playwright)"},
+     "nota": "Tabla server-side de cargos vigentes (CARGO/OFICINA/RECEPCIÓN/BASES/OBSERVACIONES). "
+             "La tabla de seleccionados se descarta por cabecera. Correo de postulación en OBSERVACIONES"},
     {"clave": "talagante", "id": 427, "nombre": "Municipalidad de Talagante",
      "region": RM, "ciudad": "Talagante", "modo": "spa",
      "url": "https://www.munitalagante.cl/ofertas-laborales",
@@ -655,6 +661,97 @@ def extraer_secciones(html, fuente):
     return items
 
 
+def _norm_cabecera(texto: str) -> str:
+    t = limpiar_texto(texto).lower()
+    for a, b in (("á", "a"), ("é", "e"), ("í", "i"), ("ó", "o"), ("ú", "u")):
+        t = t.replace(a, b)
+    return t
+
+
+def extraer_tabla_empleos(html, fuente):
+    """Ofertas publicadas en una TABLA — una fila por cargo.
+
+    Municipalidad de Maipú (/empleos-municipales) lista los cargos vigentes en
+    una tabla: CARGO · OFICINA/DEPTO. · RECEPCIÓN DOCUMENTOS · BASES DE
+    POSTULACIÓN ("AQUÍ" → PDF/enlace de bases) · OBSERVACIONES (correo y asunto
+    de postulación). La otra tabla de la página, "CARGOS / SELECCIONADOS(AS)"
+    (procesos ya resueltos), se descarta por cabecera: no trae recepción/bases.
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    items = []
+    for table in soup.find_all("table"):
+        filas = table.find_all("tr")
+        if len(filas) < 2:
+            continue
+        cab = [_norm_cabecera(c.get_text(" ", strip=True))
+               for c in filas[0].find_all(("td", "th"))]
+        # Solo la tabla de ofertas vigentes trae recepción de documentos + bases.
+        if not (any("recepcion" in h for h in cab) and any("bases" in h for h in cab)):
+            continue
+
+        def _idx(*claves):
+            for i, h in enumerate(cab):
+                if any(k in h for k in claves):
+                    return i
+            return None
+
+        i_cargo = _idx("cargo")
+        i_cargo = 0 if i_cargo is None else i_cargo
+        i_ofic = _idx("oficina", "depto", "departamento", "unidad")
+        i_recep = _idx("recepcion", "plazo", "cierre")
+        i_bases = _idx("bases", "postulacion")
+        i_obs = _idx("observacion")
+
+        for tr in filas[1:]:
+            celdas = tr.find_all(("td", "th"))
+            if len(celdas) < 3:
+                continue
+
+            def _celda(i):
+                return celdas[i] if (i is not None and i < len(celdas)) else None
+
+            c_cargo = _celda(i_cargo)
+            # get_text SIN separador: el cargo viene partido en <strong> adyacentes
+            # ("<strong>A</strong><strong>DMI</strong>…"); unir sin espacios lo
+            # reconstruye ("ADMINISTRATIVO") y limpiar_texto colapsa el resto.
+            cargo = (_limpiar_cargo(limpiar_texto(c_cargo.get_text("", strip=True)))
+                     if c_cargo else "")
+            if not cargo or len(cargo) < 3:
+                continue
+
+            oficina = (limpiar_texto(_celda(i_ofic).get_text(" ", strip=True))
+                       if _celda(i_ofic) else "")
+            fecha = (_fecha_dmy(_celda(i_recep).get_text(" ", strip=True))
+                     if _celda(i_recep) else None)
+
+            bases_href = None
+            c_bases = _celda(i_bases)
+            if c_bases and (a := c_bases.find("a", href=True)):
+                href = a["href"].strip()
+                if href and not href.lower().startswith(("javascript:", "#")):
+                    bases_href = urljoin(fuente["url"], href)
+
+            obs = (limpiar_texto(_celda(i_obs).get_text(" ", strip=True))
+                   if _celda(i_obs) else "")
+            email = _emails_postulacion(obs)
+
+            # url_original único por cargo (todas las filas comparten página):
+            # ancla con slug del cargo → hash de dedup distinto por oferta.
+            slug = re.sub(r"[^a-z0-9]+", "-", cargo.lower()).strip("-")[:60] or "cargo"
+            bloque = " | ".join(p for p in (
+                f"Oficina/Depto.: {oficina}" if oficina else "", obs) if p)
+
+            items.append({
+                "cargo": cargo[:500],
+                "url": f'{fuente["url"]}#{slug}',
+                "url_bases": bases_href,
+                "fecha_cierre": fecha,
+                "bloque": bloque or None,
+                "email_postulacion": email,
+            })
+    return items
+
+
 def extraer_headings(html, fuente):
     """E-Central: cargos publicados como headings; agrupar por encabezado."""
     soup = BeautifulSoup(html, "html.parser")
@@ -826,6 +923,8 @@ def _procesar_fuente(fuente, session, delay, incluir_cerrados):
 
     if fuente["modo"] == "pdf_links":
         items = extraer_pdf_links(r.text, fuente, session, delay)
+    elif fuente["modo"] == "tabla_empleos":
+        items = extraer_tabla_empleos(r.text, fuente)
     elif fuente["modo"] == "secciones":
         items = extraer_secciones(r.text, fuente)
     elif fuente["modo"] == "headings":

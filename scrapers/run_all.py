@@ -1266,7 +1266,7 @@ async def main(argv: list[str] | None = None) -> int:
         # modos de extracción por sitio (pdf_links, secciones, enlaces_detalle,
         # headings, lista_o_vacio). Corre si alguna de sus fuentes funcionales
         # está en el catálogo activo. Excluidas del genérico vía _IDS_NUEVO_ESTANDAR.
-        _IDS_MUNICIPIOS = {345, 363, 382, 384, 385, 401, 407, 409, 416, 419,
+        _IDS_MUNICIPIOS = {345, 363, 382, 384, 385, 398, 401, 407, 409, 416, 419,
                            456, 527, 537, 580, 647, 670, 676}
         hay_municipios = any(s.get("id") in _IDS_MUNICIPIOS for s in catalog_sources)
         if hay_municipios:
