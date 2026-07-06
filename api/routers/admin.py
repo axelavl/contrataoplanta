@@ -1578,7 +1578,13 @@ def admin_scraper_catalog(
         if not catalog_path.exists():
             return []
         with open(catalog_path, encoding="utf-8") as f:
-            instituciones = _json.load(f)
+            payload = _json.load(f)
+        # El JSON del catálogo tiene top-level dict {"metadata":…, "instituciones":[…]}.
+        # Iterar el dict entrega STRINGS (las keys) y reventaba con
+        # "'str' object has no attribute 'get'" → 500 → el panel quedaba sin
+        # listado de instituciones. Se normaliza (mismo patrón defensivo que
+        # municipios._load_all_instituciones).
+        instituciones = payload.get("instituciones", []) if isinstance(payload, dict) else payload
         if not _SOURCE_STATUS_AVAILABLE:
             return [
                 {"id": i.get("id"), "nombre": i.get("nombre"), "sector": i.get("sector"), "url_empleo": i.get("url_empleo")}

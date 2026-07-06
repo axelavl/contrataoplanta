@@ -255,7 +255,7 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
   }
 
   // ── Robustez: la API del catálogo falla → igual hay tipos para correr ──
-  console.log('\n## API de catálogo falla → respaldo de tipos');
+  console.log('\n## API de catálogo falla → respaldo + reintento al reabrir');
   {
     const w3 = buildSandbox();
     const doc3 = w3.document;
@@ -267,6 +267,21 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
     await sleep(0);
     const vals = Array.from(doc3.getElementById('run-tipo').options).map(o => o.value);
     assert(vals.length > 1, 'API caída → tipos igual disponibles (respaldo)');
+    // Regresión: el fallo NO debe quedar cacheado — al reabrir la pestaña (nueva
+    // llamada) con la API ya sana, el listado de instituciones se puebla.
+    w3.fetch = (url) => {
+      if (String(url).includes('/scraper/catalog')) return Promise.resolve({
+        ok: true, status: 200, json: () => Promise.resolve(CATALOGO) });
+      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({}) });
+    };
+    await w3._cargarCatalogoRun();
+    await sleep(0);
+    doc3.getElementById('run-tipo').value = 'municipios';
+    doc3.getElementById('run-tipo').dispatchEvent(new w3.Event('change'));
+    await sleep(0);
+    const insts3 = Array.from(doc3.getElementById('run-inst-lista').options).map(o => o.value);
+    assert(insts3.includes('Municipalidad de Viña del Mar'),
+      'tras recuperarse la API, el reintento puebla las instituciones');
   }
 
   console.log(`\n${passed} passed, ${failed} failed`);

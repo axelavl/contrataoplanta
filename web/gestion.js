@@ -1961,14 +1961,19 @@ function _runCorrible(i) {
 // instituciones. Robusto: si la API falla o el catálogo viene sin `kind`,
 // igual muestra los tipos (respaldo) y todas las instituciones.
 async function _cargarCatalogoRun() {
-  if (_RUN_CAT === null) {
+  if (_RUN_CAT === null || !_RUN_CAT.length) {
     try {
       const cat = await api('/scraper/catalog');
       _RUN_CAT = (cat || []).filter(i => i && i.id && i.nombre).map(i => ({
         id: i.id, nombre: String(i.nombre).trim(),
         kind: i.kind || '', status: i.status || '', sector: i.sector || '',
       }));
-    } catch (e) { _RUN_CAT = []; }
+    } catch (e) {
+      // NO cachear el fallo: con null se reintenta la próxima vez que se abra
+      // la pestaña (antes quedaba [] para siempre → sin listado ni sugerencias
+      // hasta recargar la página completa).
+      _RUN_CAT = null;
+    }
   }
   _poblarTiposRun();
   _poblarInstsRun();
