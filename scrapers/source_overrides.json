@@ -133,8 +133,8 @@
       "id": 280,
       "status": "active",
       "kind": "custom_playwright",
-      "reason": "TVN — empleos.tvn.cl requiere JS",
-      "notes": "https://empleos.tvn.cl"
+      "reason": "TVN — publica en Laborum (SPA). Scraper dedicado scrapers/laborum.py (registro PERFILES id 280). Portal propio empleos.tvn.cl pendiente (requiere JS)",
+      "notes": "https://www.laborum.cl/perfiles/empresa_television-nacional-de-chile_13340328.html"
     },
     {
       "id": 281,

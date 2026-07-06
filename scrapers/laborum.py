@@ -61,6 +61,7 @@ try:
         limpiar_texto,
         marcar_ofertas_cerradas,
         normalizar_area,
+        normalizar_region,
         registrar_log,
         upsert_oferta,
     )
@@ -88,6 +89,9 @@ except ImportError:
 
     def normalizar_area(cargo: str) -> str | None:  # type: ignore[misc]
         return None
+
+    def normalizar_region(r: str) -> str | None:  # type: ignore[misc]
+        return (r or "").strip() or None
 
     def marcar_ofertas_cerradas(*a: Any, **k: Any) -> int:  # type: ignore[misc]
         return 0
@@ -133,6 +137,16 @@ PERFILES: dict[int, dict[str, Any]] = {
         # Empresa del estado: régimen laboral por defecto
         "tipo_cargo_default": "Código del Trabajo",
     },
+    280: {
+        "nombre": "TVN — Televisión Nacional de Chile",
+        "sector": "Empresa del Estado",
+        # Casa central en Providencia; los avisos regionales (centros de red)
+        # traen su propia región en la tarjeta y sobrescriben este fallback.
+        "region": "Metropolitana de Santiago",
+        "perfil_url": BASE + "/perfiles/empresa_television-nacional-de-chile_13340328.html",
+        # Empresa del estado: se rige por el Código del Trabajo.
+        "tipo_cargo_default": "Código del Trabajo",
+    },
 }
 
 PAGE_TIMEOUT = 60_000
@@ -142,7 +156,31 @@ DELAY_DEFAULT = 2.0
 _RE_ID_AVISO = re.compile(r"-(\d+)\.html$")
 _RE_RENTA = re.compile(
     r"(?:RENTA|SUELDO)\s+BRUT[OA]?\s*:?\s*\$?\s*([\d][\d.\s]{3,12})", re.I)
-_RE_REGION = re.compile(r"Regi[oó]n\s+[\wÁÉÍÓÚÑáéíóúñ\.]+", re.I)
+# Región en la tarjeta: "Región Metropolitana de Santiago", "Región del Biobío",
+# "Región de Valparaíso"… Capturamos hasta 4 tokens tras "Región" y lo pasamos
+# por normalizar_region; solo se acepta si resuelve a una región canónica.
+_RE_REGION = re.compile(
+    r"Regi[oó]n\s+((?:de\s+la\s+|de\s+los\s+|del\s+|de\s+)?"
+    r"[\wÁÉÍÓÚÑáéíóúñ'’]+(?:\s+[\wÁÉÍÓÚÑáéíóúñ'’]+){0,3})", re.I)
+
+# Nombres canónicos de región del sistema (gate para no aceptar basura).
+_REGIONES_VALIDAS = {
+    "Arica y Parinacota", "Tarapacá", "Antofagasta", "Atacama", "Coquimbo",
+    "Valparaíso", "Metropolitana de Santiago", "O'Higgins", "Maule", "Ñuble",
+    "Biobío", "La Araucanía", "Los Ríos", "Los Lagos", "Aysén", "Magallanes",
+}
+
+
+def _region_desde_tarjeta(texto: str) -> str | None:
+    """Región de la tarjeta si aparece y resuelve a una región canónica.
+
+    Defensivo: si el texto no trae "Región <X>" reconocible, devuelve None y
+    el llamador cae al fallback de la empresa (nunca inventa una región)."""
+    for m in _RE_REGION.finditer(texto or ""):
+        norm = normalizar_region(m.group(1))
+        if norm in _REGIONES_VALIDAS:
+            return norm
+    return None
 
 # JS que corre en el navegador: una tarjeta por aviso, campos limpios.
 _EXTRACT_JS = r"""
@@ -280,6 +318,7 @@ def parsear_tarjeta(card: dict[str, str], empresa: dict[str, Any],
         "requisitos_texto": requisitos[:2000] if requisitos else None,
         "renta_bruta": _parsear_renta(texto),
         "modalidad": modalidad,
+        "region": _region_desde_tarjeta(texto),
     }
 
 
@@ -303,7 +342,8 @@ def construir_oferta(item: dict[str, Any], institucion_id: int,
         "area_profesional": normalizar_area(cargo),
         "tipo_cargo": empresa.get("tipo_cargo_default"),
         "nivel": None,
-        "region": empresa.get("region"),
+        # Región específica de la tarjeta si la trae; si no, la de la empresa.
+        "region": item.get("region") or empresa.get("region"),
         "ciudad": None,
         "renta_bruta_min": renta,
         "renta_bruta_max": renta,

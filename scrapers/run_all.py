@@ -146,7 +146,7 @@ _PERFILES_NUEVO_ESTANDAR: frozenset[str] = frozenset({"carabineros_pdf_first", "
 # (166 ENAER, 285 EPI, 290 Talcahuano, 291 Pto Montt, 292 Chacabuco,
 #  293 Austral, 708 FOJI, 709 PRODEMU) por puertos_empresas.py.
 _IDS_NUEVO_ESTANDAR: frozenset[int] = frozenset({
-    145, 158, 706, 165, 707, 279, 275,
+    145, 158, 706, 165, 707, 279, 280, 275,
     146, 166, 285, 290, 291, 292, 293, 708, 709,
     132,  # Fundación Integra (aira_integra.py + trabajando.py _EXTRA)
     135, 138,  # Senado (senado.py) y Poder Judicial (poder_judicial.py)
