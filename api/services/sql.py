@@ -599,11 +599,16 @@ def build_ofertas_filters(
         # "Sin experiencia": ofertas que no exigen experiencia previa. No hay un
         # campo estructurado confiable (experiencia_anos casi nunca se captura),
         # así que es best-effort por texto sobre cargo + descripción + requisitos.
-        # Matchea frases que indican que la experiencia NO es obligatoria.
-        # Accent/case-insensitive vía _norm_sql (sin depender de unaccent).
-        texto_oferta = _norm_sql(
-            "COALESCE(o.cargo, '') || ' ' || COALESCE(o.descripcion, '') || ' ' "
-            "|| COALESCE(o.requisitos, o.requisitos_texto, '')"
+        #
+        # Rendimiento: antes se generaban 12 cláusulas `LIKE %s`, cada una
+        # recomputando lower(translate(cargo||descripcion||requisitos)) por fila.
+        # En un scan completo eso normalizaba el texto 12 veces por fila y el
+        # filtro hacía timeout. Se colapsa a UNA sola regex case-insensitive
+        # (`~*`), evaluada una vez por fila; además se omite el translate porque
+        # todas las frases son ASCII (no dependen de tildes).
+        texto_oferta = (
+            "(COALESCE(o.cargo, '') || ' ' || COALESCE(o.descripcion, '') || ' ' "
+            "|| COALESCE(o.requisitos, o.requisitos_texto, ''))"
         )
         frases = [
             "sin experiencia",
@@ -619,10 +624,11 @@ def build_ofertas_filters(
             "experiencia deseable",
             "experiencia no necesaria",
         ]
-        clauses = [f"{texto_oferta} LIKE %s" for _ in frases]
-        params.extend(_norm_like(f) for f in frases)
+        # Las frases son constantes controladas (solo letras y espacios), así que
+        # se unen crudas en la alternancia; no hay metacaracteres que escapar.
+        patron = "(" + "|".join(frases) + ")"
         # Si algún scraper sí pobló los años de experiencia y son 0, también cuenta.
-        clauses.append("o.experiencia_anos = 0")
-        where.append("(" + " OR ".join(clauses) + ")")
+        where.append(f"({texto_oferta} ~* %s OR o.experiencia_anos = 0)")
+        params.append(patron)
 
     return (" WHERE " + " AND ".join(where)) if where else "", params

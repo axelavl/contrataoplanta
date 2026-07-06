@@ -137,6 +137,24 @@ def test_ningun_filtro_deja_porcentaje_suelto_en_el_sql():
         tipo="Contrata,Planta",
         excluir_empleos_publicos=True,
         solo_con_correo=True,
+        sin_experiencia=True,
     )
     assert where.count("%s") == len(params)
     assert _sin_porcentaje_suelto(where)
+
+
+# ── Sin experiencia: una sola regex, no 12 LIKE que recomputan translate() ────
+# Regresión del timeout: 12 cláusulas LIKE, cada una recomputando
+# lower(translate(cargo||descripcion||requisitos)) por fila, hacían scan lento.
+def test_sin_experiencia_usa_una_sola_regex():
+    where, params = build_ofertas_filters(sin_experiencia=True)
+    # Un único placeholder para todo el bloque (regex ~*), no doce.
+    assert where.count("%s") == 1
+    assert len(params) == 1
+    # Case-insensitive por regex, sin translate() carísimo por fila.
+    assert "~*" in where
+    assert "translate(" not in where
+    # El patrón cubre las frases clave y respeta el fallback de años.
+    assert "sin experiencia" in params[0]
+    assert "experiencia deseable" in params[0]
+    assert "o.experiencia_anos = 0" in where
