@@ -99,3 +99,9 @@ def test_ids_municipios_a_nivel_de_modulo():
     import pathlib
     src = pathlib.Path(R.__file__).read_text(encoding="utf-8")
     assert src.count("345, 363, 382") <= 2   # constante + _IDS_NUEVO_ESTANDAR
+
+
+def test_ids_grupos_universidades_y_puertos_a_nivel_de_modulo():
+    # El panel usa estos sets (modes universidades/puertos_empresas del admin).
+    assert {243, 244, 246, 251, 258, 259} <= set(R.IDS_UNIVERSIDADES)
+    assert {166, 285, 290, 291, 292, 293, 708, 709} == set(R.IDS_PUERTOS_EMPRESAS)

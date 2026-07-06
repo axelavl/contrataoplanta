@@ -1660,16 +1660,22 @@ async def admin_scraper_run(
         if not inst_id:
             raise HTTPException(400, "institucion_id es requerido para mode=institucion")
         cmd += ["--id", str(int(inst_id)), "--skip-empleos-publicos"]
-    elif mode == "municipios":
-        # Scraper agrupado municipios.py: no es un ScraperKind (sus fuentes
-        # clasifican como wordpress/generic), así que se dispara acotando el
-        # catálogo a sus IDs — el gate de run_all detecta cualquiera y corre el
-        # batch completo de municipios.
+    elif mode in ("municipios", "universidades", "puertos_empresas"):
+        # Scrapers AGRUPADOS (municipios.py, universidades*.py,
+        # puertos_empresas.py): no son un ScraperKind (sus fuentes clasifican
+        # como wordpress/generic/skip), así que se disparan acotando el catálogo
+        # a sus IDs — los gates de run_all detectan cualquiera de esos ids y
+        # corren el batch completo correspondiente.
         try:
-            from scrapers.run_all import IDS_MUNICIPIOS
-            ids_csv = ",".join(str(i) for i in sorted(IDS_MUNICIPIOS))
+            from scrapers import run_all as _run_all_mod
+            ids_grupo = {
+                "municipios": _run_all_mod.IDS_MUNICIPIOS,
+                "universidades": _run_all_mod.IDS_UNIVERSIDADES,
+                "puertos_empresas": _run_all_mod.IDS_PUERTOS_EMPRESAS,
+            }[mode]
+            ids_csv = ",".join(str(i) for i in sorted(ids_grupo))
         except Exception as exc:
-            raise HTTPException(500, f"No se pudo cargar IDS_MUNICIPIOS: {exc}") from exc
+            raise HTTPException(500, f"No se pudo cargar los IDs del grupo {mode}: {exc}") from exc
         cmd += ["--ids", ids_csv, "--skip-empleos-publicos"]
     elif mode == "kind":
         kind = str(payload.get("kind", "wordpress"))

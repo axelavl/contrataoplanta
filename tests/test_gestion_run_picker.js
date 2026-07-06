@@ -15,13 +15,17 @@ const fs = require('fs');
 const path = require('path');
 const WEB = path.join(__dirname, '..', 'web');
 
-// Catálogo simulado que devuelve /scraper/catalog.
+// Catálogo simulado que devuelve /scraper/catalog. Refleja la realidad:
+// CODELCO clasifica kind="skip" (scraper dedicado, el genérico no lo toca).
 const CATALOGO = [
   { id: 345, nombre: 'Municipalidad de Viña del Mar', kind: 'wordpress', status: 'active', sector: 'Municipal' },
   { id: 382, nombre: 'Municipalidad de Cerro Navia',  kind: 'wordpress', status: 'active', sector: 'Municipal' },
   { id: 280, nombre: 'TVN',                           kind: 'custom_trabajando', status: 'active', sector: 'Empresa del Estado' },
   { id: 999, nombre: 'Institución Rota',              kind: 'skip', status: 'broken', sector: 'Municipal' },
-  { id: 275, nombre: 'CODELCO',                       kind: 'custom_playwright', status: 'active', sector: 'Empresa del Estado' },
+  { id: 275, nombre: 'CODELCO',                       kind: 'skip', status: 'active', sector: 'Empresa del Estado' },
+  { id: 145, nombre: 'Banco Central',                 kind: 'custom_playwright', status: 'active', sector: 'Banco Central' },
+  { id: 243, nombre: 'Universidad de Santiago de Chile', kind: 'generic', status: 'active', sector: 'Universidad/Educación' },
+  { id: 291, nombre: 'Empresa Portuaria Puerto Montt', kind: 'generic', status: 'active', sector: 'Empresa del Estado' },
 ];
 
 let lastRunBody = null;   // captura el body del POST /scraper/run
@@ -154,6 +158,52 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
   await w.runScraper();
   assert(lastRunBody && lastRunBody.mode === 'institucion' && lastRunBody.institucion_id === 345,
     'con una muni elegida → mode=institucion (345)');
+
+  console.log('\n## Universidades y Puertos/Empresas (agrupados)');
+  assert(Array.from(tipoSel.options).some(o => o.value === 'universidades'),
+    'el tipo "universidades" aparece en el selector');
+  assert(Array.from(tipoSel.options).some(o => o.value === 'puertos_empresas'),
+    'el tipo "puertos_empresas" aparece en el selector');
+  tipoSel.value = 'universidades';
+  tipoSel.dispatchEvent(new w.Event('change'));
+  await sleep(0);
+  let instsUni = Array.from(doc.getElementById('run-inst-lista').options).map(o => o.value);
+  assert(instsUni.includes('Universidad de Santiago de Chile'), 'universidades lista la USACH');
+  assert(!instsUni.includes('Municipalidad de Viña del Mar'), 'universidades NO lista munis');
+  lastRunBody = null;
+  doc.getElementById('run-inst').value = '';
+  await w.runScraper();
+  assert(lastRunBody && lastRunBody.mode === 'universidades',
+    'sin institución → mode=universidades');
+  tipoSel.value = 'puertos_empresas';
+  tipoSel.dispatchEvent(new w.Event('change'));
+  await sleep(0);
+  lastRunBody = null;
+  await w.runScraper();
+  assert(lastRunBody && lastRunBody.mode === 'puertos_empresas',
+    'sin institución → mode=puertos_empresas');
+
+  console.log('\n## Scrapers dedicados (kind=skip, p.ej. CODELCO)');
+  assert(Array.from(tipoSel.options).some(o => o.value === 'dedicado'),
+    'el pseudo-tipo "dedicado" aparece en el selector');
+  tipoSel.value = 'dedicado';
+  tipoSel.dispatchEvent(new w.Event('change'));
+  await sleep(0);
+  const instsDed = Array.from(doc.getElementById('run-inst-lista').options).map(o => o.value);
+  assert(instsDed.includes('CODELCO'), 'dedicado lista CODELCO (kind=skip activo)');
+  assert(!instsDed.includes('Institución Rota'), 'dedicado excluye los no corribles');
+  lastRunBody = null;
+  doc.getElementById('run-inst').value = '';
+  await w.runScraper();
+  assert(lastRunBody === null, 'dedicado sin institución NO dispara (exige elegirla)');
+  lastRunBody = null;
+  doc.getElementById('run-inst').value = 'CODELCO';
+  await w.runScraper();
+  assert(lastRunBody && lastRunBody.mode === 'institucion' && lastRunBody.institucion_id === 275,
+    'CODELCO elegido → mode=institucion (275)');
+  tipoSel.value = 'municipios';
+  tipoSel.dispatchEvent(new w.Event('change'));
+  await sleep(0);
 
   console.log('\n## Autocompletado propio (buscar por nombre)');
   const inp = doc.getElementById('run-inst');
