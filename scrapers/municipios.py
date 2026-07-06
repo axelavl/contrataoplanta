@@ -187,9 +187,9 @@ FUENTES: list[dict[str, Any]] = [
     # ofertas entre sí. institucion_nombre se deja canónico (sin sufijo) para el
     # display; la clave distingue la fuente en logs.
     {"clave": "vina_cp", "id": 345, "nombre": "Municipalidad de Viña del Mar",
-     "region": "Valparaíso", "ciudad": "Viña del Mar", "modo": "pdf_links",
+     "region": "Valparaíso", "ciudad": "Viña del Mar", "modo": "concursos_da",
      "url": "https://www.munivina.cl/concursos-publicos/",
-     "pdf_host": "munivina.cl", "pdf_con_texto": True, "cargo_desde_archivo": True},
+     "pdf_host": "munivina.cl"},
     # La Cisterna (388): PHP estático (requiere_js=No) → requests sirve. La página
     # de concursos suele enlazar las bases como PDF; se usa pdf_links (bases PDF en
     # el host propio). Nota: pendiente de verificar la estructura con el HTML real.
@@ -812,6 +812,79 @@ def extraer_tabla_empleos(html, fuente):
     return items
 
 
+# Conectores que no se capitalizan en el título del cargo.
+_CONECTORES_TITULO = {"de", "del", "la", "el", "los", "las", "y", "e", "en", "a"}
+
+
+def _titulo_cargo(texto: str) -> str:
+    """Title-case respetando conectores (…"del"…"de"…) y siglas cortas."""
+    palabras = limpiar_texto(texto).split()
+    out = []
+    for i, w in enumerate(palabras):
+        wl = w.lower()
+        if i > 0 and wl in _CONECTORES_TITULO:
+            out.append(wl)
+        elif len(w) <= 4 and w.isupper():   # siglas: SECPLA, DIDECO, PDI…
+            out.append(w)
+        else:
+            out.append(wl.capitalize())
+    return " ".join(out)
+
+
+# Viña del Mar publica los concursos como bloques de texto planos:
+# "BASES CONCURSO PÚBLICO PARA PROVEER 1 CARGO PLANTA PROFESIONAL GRADO 11
+#  DEPARTAMENTO SERVICIOS DEL AMBIENTE D.A 8001", y cada bloque enlaza un PDF de
+# bases nombrado por el número D.A (8001.26.pdf). El PDF suele ser un escaneo
+# (sin texto), así que el cargo/estamento/grado/vacantes salen del HTML y el PDF
+# queda como url_bases.
+_RE_CONCURSO_DA = re.compile(
+    r"BASES\s+CONCURSO\s+P[UÚ]BLICO\s+PARA\s+PROVEER\s+(\d+)\s+CARGOS?\s+"
+    r"PLANTA\s+([A-ZÁÉÍÓÚÑ]+)\s+GRADO\s+(\d+)\s+(.{3,90}?)\s+D\.?\s*A\.?\s*(\d{3,5})",
+    re.I)
+_RE_UNIDAD_INICIAL = re.compile(
+    r"^(departamento|direcci[oó]n|unidad|oficina|secci[oó]n|juzgado)\b", re.I)
+
+
+def extraer_concursos_da(html, fuente):
+    """Concursos de planta listados como bloques 'BASES … D.A NNNN' + PDF por
+    número D.A (Viña del Mar /concursos-publicos/). Una oferta por cargo."""
+    soup = BeautifulSoup(html, "html.parser")
+    # Mapa número D.A → URL del PDF de bases (NNNN.YY.pdf, host propio).
+    da_pdf: dict[str, str] = {}
+    for a in soup.find_all("a", href=True):
+        m = re.search(r"/(\d{3,5})\.\d+\.pdf", a["href"], re.I)
+        if m:
+            da_pdf.setdefault(m.group(1), urljoin(fuente["url"], a["href"]))
+    cont = soup.select_one("main, .entry-content, article") or soup.body or soup
+    texto = limpiar_texto(cont.get_text(" ", strip=True))
+    items, vistos = [], set()
+    for m in _RE_CONCURSO_DA.finditer(texto):
+        vac, estamento, grado, titulo, da = m.groups()
+        if da in vistos:
+            continue
+        vistos.add(da)
+        est = estamento.title()
+        titulo_c = _titulo_cargo(titulo)
+        # Si el título es una unidad ("Departamento …") anteponer el estamento;
+        # si ya empieza por el estamento (p.ej. "Profesional Contabilidad"), no.
+        if _RE_UNIDAD_INICIAL.match(titulo) or not titulo_c.lower().startswith(est.lower()):
+            cargo = f"{est} {titulo_c}"
+        else:
+            cargo = titulo_c
+        pdf = da_pdf.get(da)
+        bloque = (f"Planta {est} · Grado {grado} · "
+                  f"{vac} vacante(s) · Concurso D.A {da}.")
+        items.append({
+            "cargo": limpiar_texto(cargo)[:500],
+            "url": pdf or (fuente["url"] + "#da-" + da),
+            "url_bases": pdf,
+            "bloque": bloque,
+            "numero_vacantes": int(vac) if vac.isdigit() else None,
+            "tipo": "Planta (Concurso Público Municipal)",
+        })
+    return items
+
+
 def extraer_headings(html, fuente):
     """E-Central: cargos publicados como headings; agrupar por encabezado."""
     soup = BeautifulSoup(html, "html.parser")
@@ -982,6 +1055,7 @@ def construir_oferta(item, fuente):
         "renta_bruta_min": item.get("renta_bruta_min"),
         "renta_bruta_max": item.get("renta_bruta_max"),
         "renta_texto": item.get("renta_texto"),
+        "numero_vacantes": item.get("numero_vacantes"),
         "fecha_publicacion": date.today(),
         "fecha_cierre": item.get("fecha_cierre"),
         "requisitos_texto": item.get("requisitos"),
@@ -1005,6 +1079,8 @@ def _procesar_fuente(fuente, session, delay, incluir_cerrados):
         items = extraer_pdf_links(r.text, fuente, session, delay)
     elif fuente["modo"] == "tabla_empleos":
         items = extraer_tabla_empleos(r.text, fuente)
+    elif fuente["modo"] == "concursos_da":
+        items = extraer_concursos_da(r.text, fuente)
     elif fuente["modo"] == "secciones":
         items = extraer_secciones(r.text, fuente)
     elif fuente["modo"] == "headings":

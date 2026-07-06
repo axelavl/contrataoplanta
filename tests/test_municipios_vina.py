@@ -1,9 +1,10 @@
 """Municipalidad de Viña del Mar: segunda fuente /concursos-publicos/.
 
-Viña ya se scrapeaba en /ofertas-laborales/ (modo pdf_links). Se agrega
-/concursos-publicos/ (misma muni, mismo CMS/host) en el mismo modo: la página
-lista los concursos como enlaces a PDF de bases. Ambas fuentes comparten
-institucion_id 345 → el cierre por ausencia se agrupa (no se cierran entre sí).
+La página publica los concursos de planta como bloques de texto planos
+("BASES CONCURSO PÚBLICO PARA PROVEER N CARGO(S) PLANTA <ESTAMENTO> GRADO <G>
+<TÍTULO> D.A NNNN") y cada bloque enlaza el PDF de bases nombrado por el número
+D.A (NNNN.YY.pdf). Modo concursos_da: una oferta por cargo. Ambas fuentes de
+Viña comparten institucion_id 345 → cierre por ausencia agrupado.
 """
 from __future__ import annotations
 
@@ -11,69 +12,67 @@ import scrapers.municipios as M
 
 _VINA_CP = next(f for f in M.FUENTES if f["clave"] == "vina_cp")
 
+_HTML = """
+<html><body><main>
+  <h1>CONCURSOS PÚBLICOS</h1>
+  <p>LLAMADO A CONCURSO PÚBLICO D.A. 8001 AL 8003 DEL 2 JULIO 2026</p>
+  <p>Anexos <a href="/wp-content/uploads/2026/07/ANEXOS.pdf">Descargar Aquí</a></p>
 
-class _RespVacia:
-    status_code = 404
-    content = b""
-    text = ""
+  <p>BASES CONCURSO PÚBLICO PARA PROVEER 1 CARGO PLANTA PROFESIONAL GRADO 11
+     DEPARTAMENTO SERVICIOS DEL AMBIENTE D.A 8001
+     <a href="/wp-content/uploads/2026/07/8001.26.pdf">Descargar Aquí</a></p>
+
+  <p>BASES CONCURSO PÚBLICO PARA PROVEER 3 CARGOS PLANTA PROFESIONAL GRADO 11
+     ABOGADOS D.A 8003
+     <a href="/wp-content/uploads/2026/07/8003.26.pdf">Descargar Aquí</a></p>
+
+  <p>BASES CONCURSO PÚBLICO PARA PROVEER 1 CARGO PLANTA TÉCNICO GRADO 15
+     TÉCNICO ABASTECIMIENTO D.A 8011
+     <a href="/wp-content/uploads/2026/07/8011.26.pdf">Descargar Aquí</a></p>
+
+  <a href="/wp-content/uploads/2026/04/CP_GESTION2025.pdf">Cuenta Pública</a>
+</main></body></html>
+"""
 
 
-class _SessionSinPdf:
-    """No baja PDFs (para probar la extracción de enlaces sin red)."""
-    def get(self, *a, **k):
-        return _RespVacia()
-
-
-def test_fuente_concursos_registrada():
+def test_fuente_concursos_usa_modo_concursos_da():
     assert _VINA_CP["url"] == "https://www.munivina.cl/concursos-publicos/"
     assert _VINA_CP["id"] == 345
-    assert _VINA_CP["modo"] == "pdf_links"
-    assert _VINA_CP["pdf_host"] == "munivina.cl"
-    # Mismo nombre canónico que la fuente principal (display sin sufijo).
+    assert _VINA_CP["modo"] == "concursos_da"
     assert _VINA_CP["nombre"] == "Municipalidad de Viña del Mar"
+
+
+def test_una_oferta_por_cargo_con_su_pdf():
+    items = M.extraer_concursos_da(_HTML, _VINA_CP)
+    porcargo = {it["cargo"]: it for it in items}
+    assert len(items) == 3          # 3 bloques BASES … D.A (anexos/cuenta pública fuera)
+    # El PDF de bases es el nombrado por el número D.A.
+    assert porcargo["Profesional Departamento Servicios del Ambiente"]["url_bases"].endswith("/8001.26.pdf")
+    assert porcargo["Profesional Abogados"]["numero_vacantes"] == 3
+    assert porcargo["Técnico Abastecimiento"]["url_bases"].endswith("/8011.26.pdf")
+    # No confunde ANEXOS ni la Cuenta Pública con un cargo.
+    assert not any("anexo" in c.lower() or "cuenta" in c.lower() for c in porcargo)
+
+
+def test_construir_oferta_concursos_da():
+    items = M.extraer_concursos_da(_HTML, _VINA_CP)
+    o = M.construir_oferta(items[0], _VINA_CP)
+    assert o["region"] == "Valparaíso"
+    assert o["ciudad"] == "Viña del Mar"
+    assert o["numero_vacantes"] == 1
+    assert o["url_bases"].endswith(".pdf")
+    assert "Grado 11" in o["descripcion"]
 
 
 def test_dos_fuentes_vina_comparten_id_para_cierre_agrupado():
     vinas = [f for f in M.FUENTES if f["id"] == 345]
     assert {f["clave"] for f in vinas} >= {"vina", "vina_cp"}
-    # El cierre agrupado por institución vive en municipios.py.
     src = __import__("pathlib").Path(M.__file__).read_text(encoding="utf-8")
     assert "urls_por_inst" in src
 
 
-_HTML_CONCURSOS = """
-<html><body><main>
-  <h1>Concursos Públicos</h1>
-  <ul>
-    <li><a href="/wp-content/uploads/2026/07/Bases-Concurso-Profesional-Informatica.pdf">Bases</a></li>
-    <li><a href="/wp-content/uploads/2026/07/Perfil-Tecnico-en-Enfermeria.pdf">Descargar</a></li>
-    <li><a href="/wp-content/uploads/2026/01/Cuenta-Publica-2025.pdf">Cuenta Pública 2025</a></li>
-    <li><a href="https://otrositio.cl/algo.pdf">PDF de otro host</a></li>
-  </ul>
-</main></body></html>
-"""
-
-
-def test_extrae_concursos_como_pdf_de_bases_y_filtra_institucionales():
-    items = M.extraer_pdf_links(_HTML_CONCURSOS, _VINA_CP, _SessionSinPdf(), 0)
-    urls = {it["url"] for it in items}
-    # Los dos PDF de bases/perfil se recogen (host propio, señal de oferta).
-    assert any("Profesional-Informatica" in u for u in urls)
-    assert any("Tecnico-en-Enfermeria" in u for u in urls)
-    # La cuenta pública (documento institucional) se descarta.
-    assert not any("Cuenta-Publica" in u for u in urls)
-    # PDF de otro host se ignora (pdf_host = munivina.cl).
-    assert not any("otrositio.cl" in u for u in urls)
-    # El cargo sale del nombre de archivo (cargo_desde_archivo).
-    cargos = {it["cargo"] for it in items}
-    assert any("Informatica" in c or "Informática" in c for c in cargos)
-
-
-def test_construir_oferta_vina_concursos():
-    items = M.extraer_pdf_links(_HTML_CONCURSOS, _VINA_CP, _SessionSinPdf(), 0)
-    o = M.construir_oferta(items[0], _VINA_CP)
-    assert o["institucion_nombre"] == "Municipalidad de Viña del Mar"
-    assert o["region"] == "Valparaíso"
-    assert o["ciudad"] == "Viña del Mar"
-    # url_bases apunta al PDF (el .pdf es tanto url_original como bases).
-    assert o["url_original"].endswith(".pdf")
+def test_titulo_cargo_respeta_conectores_y_siglas():
+    assert M._titulo_cargo("DEPARTAMENTO SERVICIOS DEL AMBIENTE") == "Departamento Servicios del Ambiente"
+    # Siglas cortas (≤4) se conservan en mayúsculas; palabras largas se capitalizan.
+    assert M._titulo_cargo("TECNICO EN TI") == "Tecnico en TI"
+    assert M._titulo_cargo("PROFESIONAL SECPLA") == "Profesional Secpla"
