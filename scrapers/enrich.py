@@ -257,6 +257,12 @@ def _extraer_contrato(texto: str, oferta: dict) -> None:
             "reemplazo": "Reemplazo",
         }
         oferta["tipo_cargo"] = MAPA.get(contrato, contrato.title())
+    # Poblar las COLUMNAS dedicadas (la ficha muestra jornada/modalidad como
+    # campos, no sólo dentro del texto). Sólo si están vacías.
+    if jornada and not oferta.get("jornada"):
+        oferta["jornada"] = str(jornada)[:100]
+    if modalidad and not oferta.get("modalidad"):
+        oferta["modalidad"] = str(modalidad)[:50]
     if jornada or modalidad:
         desc = oferta.get("descripcion") or ""
         extras: list[str] = []
