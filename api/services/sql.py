@@ -424,12 +424,16 @@ def build_ofertas_filters(
 
     if excluir_empleos_publicos:
         # Excluye las ofertas del portal intermediario empleospublicos.cl
-        # (Servicio Civil). Se identifican por la URL de la oferta / original;
-        # el dominio es una constante, no entra input del usuario.
+        # (Servicio Civil). Se identifican por la URL de la oferta / original.
+        # El patrón LIKE va como PARÁMETRO, nunca embebido en el SQL: psycopg2
+        # usa "%" como marcador de placeholders, así que un "%" literal en la
+        # cadena (p.ej. '%empleospublicos.cl%') rompe execute() con un error de
+        # formato → 500. En parámetro, el "%" queda a salvo (igual que region).
         where.append(
-            "(COALESCE(o.url_oferta, '') NOT ILIKE '%empleospublicos.cl%' "
-            "AND COALESCE(o.url_original, '') NOT ILIKE '%empleospublicos.cl%')"
+            "(COALESCE(o.url_oferta, '') NOT ILIKE %s "
+            "AND COALESCE(o.url_original, '') NOT ILIKE %s)"
         )
+        params.extend(["%empleospublicos.cl%", "%empleospublicos.cl%"])
 
     if solo_activas:
         where.append(ACTIVE_OFFER_SQL)
