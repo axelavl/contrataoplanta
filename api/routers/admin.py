@@ -1660,6 +1660,17 @@ async def admin_scraper_run(
         if not inst_id:
             raise HTTPException(400, "institucion_id es requerido para mode=institucion")
         cmd += ["--id", str(int(inst_id)), "--skip-empleos-publicos"]
+    elif mode == "municipios":
+        # Scraper agrupado municipios.py: no es un ScraperKind (sus fuentes
+        # clasifican como wordpress/generic), así que se dispara acotando el
+        # catálogo a sus IDs — el gate de run_all detecta cualquiera y corre el
+        # batch completo de municipios.
+        try:
+            from scrapers.run_all import IDS_MUNICIPIOS
+            ids_csv = ",".join(str(i) for i in sorted(IDS_MUNICIPIOS))
+        except Exception as exc:
+            raise HTTPException(500, f"No se pudo cargar IDS_MUNICIPIOS: {exc}") from exc
+        cmd += ["--ids", ids_csv, "--skip-empleos-publicos"]
     elif mode == "kind":
         kind = str(payload.get("kind", "wordpress"))
         # `kind` se pasa como `--only-kind <kind>`. Sin validar, un valor como

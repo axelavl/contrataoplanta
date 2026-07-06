@@ -17,11 +17,11 @@ const WEB = path.join(__dirname, '..', 'web');
 
 // Catálogo simulado que devuelve /scraper/catalog.
 const CATALOGO = [
-  { id: 345, nombre: 'Municipalidad de Viña del Mar', kind: 'wordpress', status: 'active' },
-  { id: 382, nombre: 'Municipalidad de Cerro Navia',  kind: 'wordpress', status: 'active' },
-  { id: 280, nombre: 'TVN',                           kind: 'custom_trabajando', status: 'active' },
-  { id: 999, nombre: 'Institución Rota',              kind: 'skip', status: 'broken' },
-  { id: 275, nombre: 'CODELCO',                       kind: 'custom_playwright', status: 'active' },
+  { id: 345, nombre: 'Municipalidad de Viña del Mar', kind: 'wordpress', status: 'active', sector: 'Municipal' },
+  { id: 382, nombre: 'Municipalidad de Cerro Navia',  kind: 'wordpress', status: 'active', sector: 'Municipal' },
+  { id: 280, nombre: 'TVN',                           kind: 'custom_trabajando', status: 'active', sector: 'Empresa del Estado' },
+  { id: 999, nombre: 'Institución Rota',              kind: 'skip', status: 'broken', sector: 'Municipal' },
+  { id: 275, nombre: 'CODELCO',                       kind: 'custom_playwright', status: 'active', sector: 'Empresa del Estado' },
 ];
 
 let lastRunBody = null;   // captura el body del POST /scraper/run
@@ -130,6 +130,51 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
   doc.getElementById('run-inst').value = '';
   await w.runScraper();
   assert(lastRunBody && lastRunBody.mode === 'empleos_publicos', 'empleos_publicos sin inst → mode=empleos_publicos');
+
+  console.log('\n## Municipios (scraper agrupado)');
+  assert(Array.from(tipoSel.options).some(o => o.value === 'municipios'),
+    'el tipo "municipios" aparece en el selector');
+  tipoSel.value = 'municipios';
+  tipoSel.dispatchEvent(new w.Event('change'));
+  await sleep(0);
+  let instsMuni = Array.from(doc.getElementById('run-inst-lista').options).map(o => o.value);
+  assert(instsMuni.includes('Municipalidad de Viña del Mar')
+      && instsMuni.includes('Municipalidad de Cerro Navia'),
+    'municipios lista las munis por sector');
+  assert(!instsMuni.includes('TVN') && !instsMuni.includes('CODELCO'),
+    'municipios NO lista empresas del estado');
+  assert(!instsMuni.includes('Institución Rota'), 'municipios excluye no corribles');
+  lastRunBody = null;
+  doc.getElementById('run-inst').value = '';
+  await w.runScraper();
+  assert(lastRunBody && lastRunBody.mode === 'municipios',
+    'sin institución → mode=municipios (batch agrupado)', JSON.stringify(lastRunBody));
+  lastRunBody = null;
+  doc.getElementById('run-inst').value = 'Municipalidad de Viña del Mar';
+  await w.runScraper();
+  assert(lastRunBody && lastRunBody.mode === 'institucion' && lastRunBody.institucion_id === 345,
+    'con una muni elegida → mode=institucion (345)');
+
+  console.log('\n## Autocompletado propio (buscar por nombre)');
+  const inp = doc.getElementById('run-inst');
+  inp.value = 'cerro';
+  inp.dispatchEvent(new w.Event('input'));
+  await sleep(0);
+  const sug = doc.getElementById('run-inst-sug');
+  assert(sug.style.display === 'block', 'al escribir se despliegan sugerencias');
+  const opciones = Array.from(sug.querySelectorAll('.run-inst-opcion')).map(b => b.dataset.nombre);
+  assert(opciones.includes('Municipalidad de Cerro Navia'), '"cerro" sugiere Cerro Navia');
+  // Buscar sin tilde también matchea ("vina" → Viña).
+  inp.value = 'vina';
+  inp.dispatchEvent(new w.Event('input'));
+  await sleep(0);
+  const opciones2 = Array.from(sug.querySelectorAll('.run-inst-opcion')).map(b => b.dataset.nombre);
+  assert(opciones2.includes('Municipalidad de Viña del Mar'), '"vina" (sin tilde) sugiere Viña del Mar');
+  // Click en una sugerencia rellena el input y cierra el dropdown.
+  sug.querySelector('.run-inst-opcion[data-nombre="Municipalidad de Viña del Mar"]').click();
+  await sleep(0);
+  assert(inp.value === 'Municipalidad de Viña del Mar', 'el click rellena la institución');
+  assert(sug.style.display === 'none', 'el dropdown se cierra tras elegir');
 
   // ── Robustez: catálogo SIN kind/status (backend sin source_status) ──
   console.log('\n## Catálogo sin kind/status → respaldo de tipos');

@@ -88,3 +88,14 @@ def test_construir_oferta_estamento_grado():
     assert o["region"] == "Metropolitana de Santiago"
     assert o["numero_vacantes"] == 5
     assert o["url_bases"].endswith(".pdf")
+
+
+def test_ids_municipios_a_nivel_de_modulo():
+    # El panel (mode="municipios" en admin) arma el --ids desde este set; debe
+    # existir a nivel de módulo e incluir las fuentes funcionales del batch.
+    assert hasattr(R, "IDS_MUNICIPIOS")
+    assert {345, 382, 388, 398} <= set(R.IDS_MUNICIPIOS)
+    # El gate del batch usa el mismo set (sin lista duplicada dentro de main).
+    import pathlib
+    src = pathlib.Path(R.__file__).read_text(encoding="utf-8")
+    assert src.count("345, 363, 382") <= 2   # constante + _IDS_NUEVO_ESTANDAR
