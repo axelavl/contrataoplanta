@@ -190,6 +190,13 @@ FUENTES: list[dict[str, Any]] = [
      "region": "Valparaíso", "ciudad": "Viña del Mar", "modo": "pdf_links",
      "url": "https://www.munivina.cl/concursos-publicos/",
      "pdf_host": "munivina.cl", "pdf_con_texto": True, "cargo_desde_archivo": True},
+    # La Cisterna (388): PHP estático (requiere_js=No) → requests sirve. La página
+    # de concursos suele enlazar las bases como PDF; se usa pdf_links (bases PDF en
+    # el host propio). Nota: pendiente de verificar la estructura con el HTML real.
+    {"clave": "lacisterna", "id": 388, "nombre": "Municipalidad de La Cisterna",
+     "region": RM, "ciudad": "La Cisterna", "modo": "pdf_links",
+     "url": "http://www.cisterna.cl/022-concurso-publico.php",
+     "pdf_host": "cisterna.cl", "pdf_con_texto": True, "cargo_desde_archivo": True},
     {"clave": "puentealto", "id": 419, "nombre": "Municipalidad de Puente Alto",
      "region": RM, "ciudad": "Puente Alto", "modo": "secciones",
      "url": "https://www.mpuentealto.cl/trabaje-con-nosotros/"},
