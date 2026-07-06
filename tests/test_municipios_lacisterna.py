@@ -113,9 +113,17 @@ def test_procesar_fuente_no_pide_la_pagina_bloqueada(monkeypatch):
     siquiera necesita. _procesar_fuente debe ir directo al extractor."""
     monkeypatch.setattr(M.time, "sleep", lambda *a, **k: None)
 
-    class _SesionQueNoDebeUsarse:
+    class _SesionSoloPDF:
+        """Prohíbe la página bloqueada (cisterna.cl); permite bajar el PDF de
+        bases (uploads.mejormunicipio.com), que el enriquecimiento SÍ usa."""
         def get(self, url, **kw):
-            raise AssertionError(f"no debía pedirse la página: {url}")
+            if "cisterna.cl" in url:
+                raise AssertionError(f"no debía pedirse la página: {url}")
+            class R:
+                status_code = 200
+                content = b"%PDF-fake"
+                text = ""
+            return R()
 
     item = {
         "cargo": "Profesional Grado 9",
@@ -127,6 +135,6 @@ def test_procesar_fuente_no_pide_la_pagina_bloqueada(monkeypatch):
     }
     monkeypatch.setattr(M, "extraer_bases_estamento_grado",
                         lambda html, fuente, session, delay: [item])
-    ofertas = M._procesar_fuente(_FUENTE, _SesionQueNoDebeUsarse(), 0, False)
+    ofertas = M._procesar_fuente(_FUENTE, _SesionSoloPDF(), 0, False)
     assert len(ofertas) == 1
     assert ofertas[0]["cargo"] == "Profesional Grado 9"
