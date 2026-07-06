@@ -355,6 +355,9 @@ def construir_oferta(titulo: str, url: str, campos: dict[str, Any],
         "fecha_cierre": campos.get("fecha_cierre"),
         "requisitos_texto": campos.get("requisitos"),
         "url_bases": None,
+        # El correo de postulación ya se extrae; lo poblamos en el campo dedicado
+        # (la ficha lo muestra como "Correo de postulación") en vez de sólo texto.
+        "email_postulacion": campos.get("correo"),
     }
 
 
@@ -424,7 +427,23 @@ def _post_a_oferta(post: dict) -> dict:
             oferta["url_bases"] = pdfs[0]
     except Exception:
         pass
+    # El texto COMPLETO del post (no la descripción sintetizada) para que enrich
+    # extraiga requisitos/renta/funciones/cierre. Clave privada, se consume y se
+    # quita en _enriquecer_divsal antes de persistir.
+    oferta["_contenido"] = contenido
     return oferta
+
+
+def _enriquecer_divsal(oferta: dict, session) -> None:
+    try:
+        from scrapers.enrich import enriquecer_oferta
+        texto = oferta.pop("_contenido", None) or oferta.get("descripcion")
+        pdf = oferta.get("url_bases")
+        pdf_urls = [pdf] if (pdf and str(pdf).lower().endswith(".pdf")) else None
+        enriquecer_oferta(oferta, texto_html=texto,
+                          pdf_urls=pdf_urls, session=session)
+    except Exception:
+        pass
 
 
 # ── Fallback: parseo del HTML de /ofertas-laborales/ ────────────────────────
@@ -473,11 +492,8 @@ def recolectar(max_results: int | None, delay: float,
             o = _post_a_oferta(p)
             if o["url_original"] not in vistos:
                 vistos.add(o["url_original"])
-                try:
-                    from scrapers.enrich import enriquecer_oferta
-                    enriquecer_oferta(o, texto_html=o.get("descripcion"))
-                except Exception:
-                    pass
+                # Enriquecer con el contenido completo del post + PDF de bases.
+                _enriquecer_divsal(o, session)
                 ofertas.append(o)
         if incluir_cerrados:
             tope = None if max_results is None else max(0, max_results - len(ofertas))
@@ -487,6 +503,7 @@ def recolectar(max_results: int | None, delay: float,
                 o = _post_a_oferta(p)
                 if o["url_original"] not in vistos:
                     vistos.add(o["url_original"])
+                    o.pop("_contenido", None)   # cerrada: no enriquecer, limpiar clave
                     ofertas.append(o)
         return ofertas[:max_results] if max_results else ofertas
 

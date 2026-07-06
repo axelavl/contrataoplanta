@@ -617,6 +617,7 @@ def recolectar(max_results: int | None, delay: float, con_detalle: bool,
             for v in seleccion:
                 det: dict[str, Any] = {}
                 pdf_datos: dict[str, Any] = {}
+                texto_bases: str | None = None
                 if con_detalle:
                     time.sleep(delay)
                     hd = _fetch(page, v["url"])
@@ -625,8 +626,8 @@ def recolectar(max_results: int | None, delay: float, con_detalle: bool,
                         if con_pdf and det.get("url_bases"):
                             binario = _descargar_pdf(ctx, det["url_bases"])
                             if binario:
-                                texto = _texto_pdf(binario)
-                                pdf_datos = parsear_pdf_bases(texto)
+                                texto_bases = _texto_pdf(binario)
+                                pdf_datos = parsear_pdf_bases(texto_bases)
                                 if pdf_datos:
                                     logger.info(
                                         "  PDF bases concurso %s: %s",
@@ -635,7 +636,10 @@ def recolectar(max_results: int | None, delay: float, con_detalle: bool,
                 oferta = construir_oferta(v, det, pdf_datos)
                 try:
                     from scrapers.enrich import enriquecer_oferta
-                    enriquecer_oferta(oferta, texto_html=oferta.get("descripcion"))
+                    # texto_detalle = texto del PDF de bases → enrich mina correo /
+                    # fecha de cierre / funciones que el parseo propio no cubrió.
+                    enriquecer_oferta(oferta, texto_html=oferta.get("descripcion"),
+                                      texto_detalle=texto_bases)
                 except Exception:
                     pass
                 ofertas.append(oferta)

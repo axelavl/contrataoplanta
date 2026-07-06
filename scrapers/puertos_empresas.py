@@ -532,14 +532,21 @@ def _procesar_fuente(fuente: dict, session: requests.Session, delay: float,
     omitidas = 0
     for it in items:
         o = construir_oferta(it, fuente)
-        if (o["fecha_cierre"] and o["fecha_cierre"] < hoy and not incluir_cerrados):
-            omitidas += 1
-            continue
         try:
             from scrapers.enrich import enriquecer_oferta
-            enriquecer_oferta(o, texto_html=o.get("descripcion"))
+            # Minar el PDF de bases (url_bases) además del texto: requisitos,
+            # renta, funciones, correo y fecha de cierre. Antes se llamaba sin
+            # pdf_urls ni session, así que el PDF nunca se descargaba aquí.
+            pdf = o.get("url_bases")
+            pdf_urls = [pdf] if (pdf and str(pdf).lower().endswith(".pdf")) else None
+            enriquecer_oferta(o, texto_html=o.get("descripcion"),
+                              pdf_urls=pdf_urls, session=session)
         except Exception:
             pass
+        if (o.get("fecha_cierre") and o["fecha_cierre"] < hoy
+                and not incluir_cerrados):
+            omitidas += 1
+            continue
         ofertas.append(o)
     logger.info("  → %d ofertas vigentes (%d omitidas por plazo vencido)",
                 len(ofertas), omitidas)

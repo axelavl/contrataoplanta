@@ -460,6 +460,20 @@ def _construir(it: dict, fuente: dict) -> dict:
     }
 
 
+def _enriquecer(oferta: dict, texto: str | None, session) -> None:
+    """Completa campos vacíos minando el PDF de bases (url_bases) y el texto del
+    detalle: requisitos, renta, funciones, correo y fecha de cierre. Reduce la
+    revisión manual de estas ofertas universitarias que sólo traían el link."""
+    try:
+        from scrapers.enrich import enriquecer_oferta
+        pdf = oferta.get("url_bases")
+        pdf_urls = [pdf] if (pdf and str(pdf).lower().endswith(".pdf")) else None
+        enriquecer_oferta(oferta, texto_html=texto or None,
+                          pdf_urls=pdf_urls, session=session)
+    except Exception:
+        pass
+
+
 def _procesar(fuente: dict, session, con_detalle: bool, incluir_cerrados: bool,
               incluir_resultados: bool) -> list[dict]:
     logger.info("─── %s [%s] ───", fuente["nombre"], fuente["modo"])
@@ -486,7 +500,12 @@ def _procesar(fuente: dict, session, con_detalle: bool, incluir_cerrados: bool,
         if o["id_externo"] in vistos or not o["cargo"]:
             continue
         vistos.add(o["id_externo"])
-        if o["fecha_cierre"] and o["fecha_cierre"] < hoy and not incluir_cerrados:
+        # Minar el PDF de bases (url_bases) y el texto del detalle: requisitos,
+        # renta, funciones, correo y fecha de cierre. Clave en pdf_nombre, donde
+        # el cargo sale del nombre del archivo y todo lo demás vive en el PDF.
+        _enriquecer(o, it.get("texto") or o.get("descripcion"), session)
+        cierre = o.get("fecha_cierre")
+        if cierre and cierre < hoy and not incluir_cerrados:
             omitidas += 1
             continue
         ofertas.append(o)

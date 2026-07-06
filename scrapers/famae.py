@@ -267,6 +267,9 @@ def construir_oferta(item: dict[str, Any], det: dict[str, Any]) -> dict:
         "fecha_cierre": det.get("fecha_cierre"),
         "requisitos_texto": det.get("requisitos_texto"),
         "url_bases": None,
+        # FAMAE postula por correo: poblamos el campo dedicado (la ficha lo
+        # muestra como "Correo de postulación") en vez de dejarlo NULL.
+        "email_postulacion": EMAIL_POSTULACION,
     }
 
 

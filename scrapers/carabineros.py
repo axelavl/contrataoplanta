@@ -740,7 +740,9 @@ def recolectar(max_results: int | None, con_detalle: bool, delay: float,
                 time.sleep(delay)
                 rp = _get(session, perfil_url)
                 if rp is not None:
-                    _fusionar_pdf(det, _datos_desde_pdf(_pdf_a_texto(rp.content)),
+                    perfil_texto = _pdf_a_texto(rp.content)
+                    det["texto_pdf"] = perfil_texto   # para enrich (email/cierre)
+                    _fusionar_pdf(det, _datos_desde_pdf(perfil_texto),
                                   c["id"], "Perfil")
 
             # PDF "Descriptor"/Bases del Concurso: escaneado (sin texto). Solo se
@@ -749,14 +751,18 @@ def recolectar(max_results: int | None, con_detalle: bool, delay: float,
                 time.sleep(delay)
                 rb = _get(session, bases_url)
                 if rb is not None:
-                    _fusionar_pdf(
-                        det,
-                        _datos_desde_pdf(_pdf_a_texto(rb.content, allow_ocr=True)),
-                        c["id"], "Bases(OCR)")
+                    bases_texto = _pdf_a_texto(rb.content, allow_ocr=True)
+                    det["texto_pdf"] = ((det.get("texto_pdf") or "") + "\n"
+                                        + (bases_texto or "")).strip()
+                    _fusionar_pdf(det, _datos_desde_pdf(bases_texto),
+                                  c["id"], "Bases(OCR)")
         oferta = construir_oferta(c, det)
         try:
             from scrapers.enrich import enriquecer_oferta
-            enriquecer_oferta(oferta, texto_html=oferta.get("descripcion"))
+            # Se pasa el texto del PDF (perfil/bases) como texto_detalle para que
+            # enrich mine correo/fecha de cierre/funciones que el HTML no traía.
+            enriquecer_oferta(oferta, texto_html=oferta.get("descripcion"),
+                              texto_detalle=det.get("texto_pdf"))
         except Exception:
             pass
         ofertas.append(oferta)
