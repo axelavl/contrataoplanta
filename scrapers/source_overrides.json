@@ -132,9 +132,9 @@
     {
       "id": 280,
       "status": "active",
-      "kind": "custom_playwright",
-      "reason": "TVN — empleos.tvn.cl requiere JS",
-      "notes": "https://empleos.tvn.cl"
+      "kind": "custom_trabajando",
+      "reason": "TVN — 2 fuentes: (1) empleos.tvn.cl es un wrapper iframe de su bolsa Trabajando → scrapers/trabajando.py (_EXTRA_SOURCES id 280, sigue el iframe); (2) perfil Laborum → scrapers/laborum.py (PERFILES id 280). Dominios distintos, no se cierran mutuamente",
+      "notes": "https://empleos.tvn.cl/ (iframe Trabajando) + https://www.laborum.cl/perfiles/empresa_television-nacional-de-chile_13340328.html"
     },
     {
       "id": 281,

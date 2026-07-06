@@ -1446,25 +1446,39 @@ class EmpleosPublicosScraper(BaseScraper):
         return "Cómo postular:\n" + "\n".join(f"- {p}" for p in pasos)
 
     def _componer_descripcion(self, soup: BeautifulSoup) -> str | None:
+        # La ficha estándar de concurso agrupa Objetivo/Funciones dentro de
+        # #lblFunciones; los "avisos de trabajo" (convpostularavisoTrabajo.aspx)
+        # los publican como encabezados h3 sueltos bajo "Descripción del Cargo".
         funciones = self._extraer_mapa_encabezados(soup.select_one("#lblFunciones"))
+        objetivo = funciones.get("objetivo del cargo") or self._texto_bajo_encabezado(
+            soup, "objetivo del cargo")
+        funcs = funciones.get("funciones del cargo") or self._texto_bajo_encabezado(
+            soup, "funciones del cargo")
         bloques = [
-            ("Objetivo del cargo", funciones.get("objetivo del cargo")),
-            ("Funciones del cargo", funciones.get("funciones del cargo")),
+            ("Objetivo del cargo", objetivo),
+            ("Funciones del cargo", funcs),
         ]
         return self._unir_bloques(bloques)
 
     def _componer_requisitos(self, soup: BeautifulSoup) -> str | None:
+        # La ficha estándar de concurso usa #lbl*; los "avisos de trabajo"
+        # (convpostularavisoTrabajo.aspx, municipales) usan #article* con la misma
+        # información. Se aceptan ambos para no perder Formación/Experiencia/etc.
         # Competencias: solo los nombres, sin las definiciones completas
-        competencias = self._extraer_nombres_competencias(soup.select_one("#lblCompetencias"))
+        competencias = self._extraer_nombres_competencias(
+            soup.select_one("#lblCompetencias, #articleCompetencias"))
         bloques = [
             ("Formacion educacional", self._truncar_seccion(
-                self._texto_seccion_sin_heading(soup.select_one("#lblFormacion")), 600
+                self._texto_seccion_sin_heading(
+                    soup.select_one("#lblFormacion, #articleFormacion")), 600
             )),
             ("Especializacion y capacitacion", self._truncar_seccion(
-                self._texto_seccion_sin_heading(soup.select_one("#lblEspecializaciones")), 400
+                self._texto_seccion_sin_heading(
+                    soup.select_one("#lblEspecializaciones, #articleEspecializaciones")), 400
             )),
             ("Experiencia", self._truncar_seccion(
-                self._texto_seccion_sin_heading(soup.select_one("#lblExperiencias")), 500
+                self._texto_seccion_sin_heading(
+                    soup.select_one("#lblExperiencias, #articleExperiencias")), 500
             )),
             ("Competencias requeridas", competencias),
             # Excluidos intencionalmente:

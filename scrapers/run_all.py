@@ -146,7 +146,7 @@ _PERFILES_NUEVO_ESTANDAR: frozenset[str] = frozenset({"carabineros_pdf_first", "
 # (166 ENAER, 285 EPI, 290 Talcahuano, 291 Pto Montt, 292 Chacabuco,
 #  293 Austral, 708 FOJI, 709 PRODEMU) por puertos_empresas.py.
 _IDS_NUEVO_ESTANDAR: frozenset[int] = frozenset({
-    145, 158, 706, 165, 707, 279, 275,
+    145, 158, 706, 165, 707, 279, 280, 275,
     146, 166, 285, 290, 291, 292, 293, 708, 709,
     132,  # Fundación Integra (aira_integra.py + trabajando.py _EXTRA)
     135, 138,  # Senado (senado.py) y Poder Judicial (poder_judicial.py)
@@ -1266,7 +1266,7 @@ async def main(argv: list[str] | None = None) -> int:
         # modos de extracción por sitio (pdf_links, secciones, enlaces_detalle,
         # headings, lista_o_vacio). Corre si alguna de sus fuentes funcionales
         # está en el catálogo activo. Excluidas del genérico vía _IDS_NUEVO_ESTANDAR.
-        _IDS_MUNICIPIOS = {345, 363, 382, 384, 385, 401, 407, 409, 416, 419,
+        _IDS_MUNICIPIOS = {345, 363, 382, 384, 385, 398, 401, 407, 409, 416, 419,
                            456, 527, 537, 580, 647, 670, 676}
         hay_municipios = any(s.get("id") in _IDS_MUNICIPIOS for s in catalog_sources)
         if hay_municipios:

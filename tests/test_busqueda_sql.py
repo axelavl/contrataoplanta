@@ -107,3 +107,54 @@ def test_cargo_relevance_balancea_params():
     assert rel.count("%s") == len(params)
     # 1 (frase) + 2 (raíces) = 3 parámetros.
     assert len(params) == 3
+
+
+# ── Excluir empleospublicos: el "%" del LIKE va en parámetro, no en el SQL ────
+# Regresión del HTTP 500 al aplicar "Sin empleospublicos": el patrón LIKE estaba
+# embebido en la cadena ('%empleospublicos.cl%'). psycopg2 usa "%" como marcador
+# de placeholders, así que ese "%" literal rompía execute() con
+# "not enough arguments for format string".
+def _sin_porcentaje_suelto(sql: str) -> bool:
+    """True si TODO '%' en el SQL forma parte de un placeholder '%s'."""
+    import re
+    return not re.search(r"%(?!s)", sql)
+
+
+def test_excluir_empleos_publicos_parametriza_el_like():
+    where, params = build_ofertas_filters(excluir_empleos_publicos=True)
+    assert "empleospublicos" not in where          # el dominio NO va embebido
+    assert "%empleospublicos.cl%" in params        # va como parámetro
+    assert where.count("%s") == len(params)         # balanceado
+    assert _sin_porcentaje_suelto(where)            # sin "%" suelto que rompa psycopg2
+
+
+def test_ningun_filtro_deja_porcentaje_suelto_en_el_sql():
+    # Combinación amplia de filtros: ningún '%' literal debe quedar en el SQL.
+    where, params = build_ofertas_filters(
+        q="administrador",
+        region="Metropolitana",
+        sector="Salud",
+        tipo="Contrata,Planta",
+        excluir_empleos_publicos=True,
+        solo_con_correo=True,
+        sin_experiencia=True,
+    )
+    assert where.count("%s") == len(params)
+    assert _sin_porcentaje_suelto(where)
+
+
+# ── Sin experiencia: una sola regex, no 12 LIKE que recomputan translate() ────
+# Regresión del timeout: 12 cláusulas LIKE, cada una recomputando
+# lower(translate(cargo||descripcion||requisitos)) por fila, hacían scan lento.
+def test_sin_experiencia_usa_una_sola_regex():
+    where, params = build_ofertas_filters(sin_experiencia=True)
+    # Un único placeholder para todo el bloque (regex ~*), no doce.
+    assert where.count("%s") == 1
+    assert len(params) == 1
+    # Case-insensitive por regex, sin translate() carísimo por fila.
+    assert "~*" in where
+    assert "translate(" not in where
+    # El patrón cubre las frases clave y respeta el fallback de años.
+    assert "sin experiencia" in params[0]
+    assert "experiencia deseable" in params[0]
+    assert "o.experiencia_anos = 0" in where

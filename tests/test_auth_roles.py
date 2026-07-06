@@ -107,9 +107,11 @@ def test_usuario_maestro_ops_no_consulta_db(monkeypatch):
     assert req.state.admin_rol == "admin"
 
 
-def test_token_legacy_sin_rol_es_admin():
-    # Tokens antiguos no traían 'rol'; deben asumirse admin para no romper
-    # sesiones vivas tras el deploy.
+def test_token_sin_rol_degrada_a_lector():
+    # Fail-safe de seguridad: un token sin claim `rol` (o con uno inválido) NO
+    # debe asumirse admin — eso sería una escalada silenciosa. Se degrada al
+    # rol de menor privilegio (`lector`). Los tokens legítimos actuales siempre
+    # incluyen `rol`, así que este default solo cubre el caso anómalo.
     import jwt
     from datetime import datetime, timezone, timedelta
     ahora = datetime.now(tz=timezone.utc)
@@ -122,4 +124,4 @@ def test_token_legacy_sin_rol_es_admin():
     tok = jwt.encode(payload, deps.ADMIN_JWT_SECRET, algorithm=deps.ADMIN_JWT_ALG)
     req = _request_con_token(tok)
     assert deps.verify_admin_jwt(req) == "ops"
-    assert req.state.admin_rol == "admin"
+    assert req.state.admin_rol == "lector"

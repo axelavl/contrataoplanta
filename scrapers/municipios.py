@@ -26,8 +26,13 @@ MODOS:
               · Cerro Navia /concurso-publicos-y-ofertas-laborales/
               · Santa Bárbara /municipalidad/concursos-publicos/
 
+  tabla_empleos  Cargos vigentes en una TABLA (una fila por cargo), con las
+              bases enlazadas ("AQUÍ" → PDF) y el correo de postulación en
+              OBSERVACIONES. Se descarta la tabla de seleccionados por cabecera.
+              · Maipú /empleos-municipales/  (CARGO/OFICINA/RECEPCIÓN/BASES/OBS.)
+
   bloqueada / spa  No accesibles con requests puro:
-              · Maipú (SPA Vue, sin API pública detectable) → requiere navegador
+              · Maipú /concursos-publicos (SPA Vue, sin API detectable) → navegador
               · San Ignacio, Melipilla, San Bernardo (503 WAF) → IP chilena
               · Recoleta (403 WAF) → IP chilena
               · Talagante (Wix, contenido por JS) → requiere navegador
@@ -244,9 +249,10 @@ FUENTES: list[dict[str, Any]] = [
      "url": "https://www.municipalidadmaipu.cl/concursos-publicos",
      "nota": "SPA Vue sin API pública detectable; requiere navegador (Playwright)"},
     {"clave": "maipu_em", "id": 398, "nombre": "Municipalidad de Maipú (empleos)",
-     "region": RM, "ciudad": "Maipú", "modo": "spa",
+     "region": RM, "ciudad": "Maipú", "modo": "tabla_empleos",
      "url": "https://www.municipalidadmaipu.cl/empleos-municipales",
-     "nota": "SPA Vue sin API pública detectable; requiere navegador (Playwright)"},
+     "nota": "Tabla server-side de cargos vigentes (CARGO/OFICINA/RECEPCIÓN/BASES/OBSERVACIONES). "
+             "La tabla de seleccionados se descarta por cabecera. Correo de postulación en OBSERVACIONES"},
     {"clave": "talagante", "id": 427, "nombre": "Municipalidad de Talagante",
      "region": RM, "ciudad": "Talagante", "modo": "spa",
      "url": "https://www.munitalagante.cl/ofertas-laborales",
@@ -358,19 +364,32 @@ def _fecha_dmy(texto: str) -> date | None:
     return None
 
 
+# Cues de PERIODO DE CONTRATO: un "hasta el 31 de diciembre" precedido por
+# esto es la vigencia del contrato, NO el plazo de postulación.
+_CONTRATO_CTX = re.compile(
+    r"(periodo\s+de\s+contrataci|renovaci|renovable|vigencia|"
+    r"duraci[oó]n\s+del\s+contrato|contrato\s+(?:hasta|por|a)|meses?\s+iniciales)",
+    re.I)
+
+
 def _cierre_envio(texto: str) -> date | None:
     """Fecha límite: 'hasta el ...' tras envío/recepción de antecedentes."""
     t = limpiar_texto(texto)
     corte = re.search(r"\bConsultas?\s*:", t, re.I)
     ambito = t[: corte.start()] if corte else t
     fecha = r"(\d{1,2}\s+de\s+\w+\s+de(?:l)?\s+\d{4}|\d{1,2}[/-]\d{1,2}[/-]\d{4})"
-    for patron in (
+    for i, patron in enumerate((
         rf"(?:enviad[oa]s?|enviarse|recepci[oó]n|recibid[oa]s?|postulaci[oó]n|"
         rf"plazo|vence|cierre)\b.{{0,90}}?\bhasta\s+(?:el\s+)?"
         rf"(?:las?\s+[\d:.]+\s*(?:horas?|hrs\.?)?\s*(?:del?\s+(?:d[ií]a\s+)?)?)?{fecha}",
         rf"hasta\s+el\s+(?:d[ií]a\s+)?{fecha}",
-    ):
+    )):
         if m := re.search(patron, ambito, re.I):
+            # El 2º patrón ("hasta el X" suelto) NO debe tomar la vigencia del
+            # contrato como plazo de postulación (Cerro Navia: "3 meses iniciales
+            # … hasta el 31 de diciembre de 2026").
+            if i == 1 and _CONTRATO_CTX.search(ambito[max(0, m.start() - 60):m.start()]):
+                continue
             return _fecha_es(m.group(1)) or _fecha_dmy(m.group(1))
     return None
 
@@ -383,6 +402,28 @@ _RANGO_DIAS = (r"(?:del?\s+)?\d{1,2}\s+al\s+(\d{1,2})\s+de\s+([a-záéíóúñ]+
 _RE_RANGO_CTX = re.compile(
     r"(?:recepci[oó]n|postulaci[oó]n|antecedentes|plazo|curr[ií]culum|\bcv\b|"
     r"vence|cierre)[^\n]{0,70}?" + _RANGO_DIAS, re.I)
+
+
+# Renta publicada en el HTML del aviso (no en el PDF de bases). Cerro Navia:
+# "Remuneración bruta: $1.000.000.-". Se valida el monto con parse_renta.
+_RE_RENTA_LINEA = re.compile(
+    r"(?:remuneraci[oó]n|renta|sueldo|honorarios?)\s*"
+    r"(?:bruta?|l[ií]quida?|mensual|aproximada?)?\s*:?\s*\$?\s*[\d][\d.\s]{3,12}", re.I)
+
+
+def _renta_html(texto: str) -> tuple[str | None, int | None, int | None]:
+    """Renta desde el HTML del aviso → (renta_texto, min, max). Solo la devuelve
+    si parse_renta valida un monto (evita arrastrar texto sin cifra útil)."""
+    for m in _RE_RENTA_LINEA.finditer(texto or ""):
+        linea = limpiar_texto(m.group(0))
+        try:
+            from scrapers.base import parse_renta
+            minimo, maximo, _ = parse_renta(linea)
+        except Exception:
+            minimo, maximo = None, None
+        if minimo:
+            return linea, minimo, maximo
+    return None, None, None
 
 
 def _cierre_rango(texto: str, hoy: date | None = None) -> date | None:
@@ -425,17 +466,26 @@ _EMAIL_GENERICO = re.compile(r"^(webmaster|no-?reply|noresponder|mailer-daemon|"
                              r"postmaster|info|soporte\.?web)@", re.I)
 
 
+# Señal de postulación/envío en el texto que PRECEDE al correo. Se evalúa por
+# cada correo (no se ancla en la primera aparición de una palabra clave): en
+# avisos largos el correo real aparece al final, lejos del primer "antecedentes".
+_EMAIL_CTX = re.compile(
+    r"(enviar|remitir|enviad[oa]s?|correo|e-?mail|\bmail\b|postul|"
+    r"antecedente|dirigir|recepci[oó]n|adjuntar|hacer llegar)", re.I)
+
+
 def _emails_postulacion(texto: str) -> str | None:
     t = texto or ""
-    zona = re.search(
-        r"(?:enviar|remitir|enviad[oa]s?|correos?|e-?mail|mail|antecedentes|"
-        r"postular|dirigir|recepci[oó]n)\b.{0,180}", t, re.I)
-    ambito = zona.group(0) if zona else t
     vistos: set[str] = set()
     out: list[str] = []
-    for m in _RE_EMAIL.finditer(ambito):
+    for m in _RE_EMAIL.finditer(t):
         e = m.group(0).rstrip(".").lower()
         if e in vistos or not (5 < len(e) <= 90) or _EMAIL_GENERICO.match(e):
+            continue
+        # Contexto de postulación en los ~150 chars previos al correo. Cubre
+        # "Enviar antecedentes al correo X y Y": para el 2º correo el cue "correo"
+        # sigue estando dentro de la ventana previa.
+        if not _EMAIL_CTX.search(t[max(0, m.start() - 150):m.start()]):
             continue
         vistos.add(e)
         out.append(e)
@@ -655,6 +705,97 @@ def extraer_secciones(html, fuente):
     return items
 
 
+def _norm_cabecera(texto: str) -> str:
+    t = limpiar_texto(texto).lower()
+    for a, b in (("á", "a"), ("é", "e"), ("í", "i"), ("ó", "o"), ("ú", "u")):
+        t = t.replace(a, b)
+    return t
+
+
+def extraer_tabla_empleos(html, fuente):
+    """Ofertas publicadas en una TABLA — una fila por cargo.
+
+    Municipalidad de Maipú (/empleos-municipales) lista los cargos vigentes en
+    una tabla: CARGO · OFICINA/DEPTO. · RECEPCIÓN DOCUMENTOS · BASES DE
+    POSTULACIÓN ("AQUÍ" → PDF/enlace de bases) · OBSERVACIONES (correo y asunto
+    de postulación). La otra tabla de la página, "CARGOS / SELECCIONADOS(AS)"
+    (procesos ya resueltos), se descarta por cabecera: no trae recepción/bases.
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    items = []
+    for table in soup.find_all("table"):
+        filas = table.find_all("tr")
+        if len(filas) < 2:
+            continue
+        cab = [_norm_cabecera(c.get_text(" ", strip=True))
+               for c in filas[0].find_all(("td", "th"))]
+        # Solo la tabla de ofertas vigentes trae recepción de documentos + bases.
+        if not (any("recepcion" in h for h in cab) and any("bases" in h for h in cab)):
+            continue
+
+        def _idx(*claves):
+            for i, h in enumerate(cab):
+                if any(k in h for k in claves):
+                    return i
+            return None
+
+        i_cargo = _idx("cargo")
+        i_cargo = 0 if i_cargo is None else i_cargo
+        i_ofic = _idx("oficina", "depto", "departamento", "unidad")
+        i_recep = _idx("recepcion", "plazo", "cierre")
+        i_bases = _idx("bases", "postulacion")
+        i_obs = _idx("observacion")
+
+        for tr in filas[1:]:
+            celdas = tr.find_all(("td", "th"))
+            if len(celdas) < 3:
+                continue
+
+            def _celda(i):
+                return celdas[i] if (i is not None and i < len(celdas)) else None
+
+            c_cargo = _celda(i_cargo)
+            # get_text SIN separador: el cargo viene partido en <strong> adyacentes
+            # ("<strong>A</strong><strong>DMI</strong>…"); unir sin espacios lo
+            # reconstruye ("ADMINISTRATIVO") y limpiar_texto colapsa el resto.
+            cargo = (_limpiar_cargo(limpiar_texto(c_cargo.get_text("", strip=True)))
+                     if c_cargo else "")
+            if not cargo or len(cargo) < 3:
+                continue
+
+            oficina = (limpiar_texto(_celda(i_ofic).get_text(" ", strip=True))
+                       if _celda(i_ofic) else "")
+            fecha = (_fecha_dmy(_celda(i_recep).get_text(" ", strip=True))
+                     if _celda(i_recep) else None)
+
+            bases_href = None
+            c_bases = _celda(i_bases)
+            if c_bases and (a := c_bases.find("a", href=True)):
+                href = a["href"].strip()
+                if href and not href.lower().startswith(("javascript:", "#")):
+                    bases_href = urljoin(fuente["url"], href)
+
+            obs = (limpiar_texto(_celda(i_obs).get_text(" ", strip=True))
+                   if _celda(i_obs) else "")
+            email = _emails_postulacion(obs)
+
+            # url_original único por cargo (todas las filas comparten página):
+            # ancla con slug del cargo → hash de dedup distinto por oferta.
+            slug = re.sub(r"[^a-z0-9]+", "-", cargo.lower()).strip("-")[:60] or "cargo"
+            bloque = " | ".join(p for p in (
+                f"Oficina/Depto.: {oficina}" if oficina else "", obs) if p)
+
+            items.append({
+                "cargo": cargo[:500],
+                "url": f'{fuente["url"]}#{slug}',
+                "url_bases": bases_href,
+                "fecha_cierre": fecha,
+                "bloque": bloque or None,
+                "email_postulacion": email,
+            })
+    return items
+
+
 def extraer_headings(html, fuente):
     """E-Central: cargos publicados como headings; agrupar por encabezado."""
     soup = BeautifulSoup(html, "html.parser")
@@ -679,8 +820,17 @@ def extraer_headings(html, fuente):
         bloque = limpiar_texto(cont.get_text(" ", strip=True))[:1500] if cont else t
         cargo = re.sub(r"^(concurso p[úu]blico para proveer cargo de|"
                        r"cargo de)\s+", "", t, flags=re.I)
+        # Mismo estándar de extracción que enlaces_detalle: el plazo de recepción
+        # (rango) prima sobre "hasta el …" (que puede ser vigencia de contrato),
+        # y se recogen correo de postulación y renta publicada en el bloque.
+        cierre = _cierre_rango(bloque) or _cierre_envio(bloque)
+        renta_texto, renta_min, renta_max = _renta_html(bloque)
         items.append({"cargo": limpiar_texto(cargo)[:500], "bloque": bloque,
-                      "fecha_cierre": _cierre_envio(bloque), "tipo": _tipo(bloque),
+                      "fecha_cierre": cierre, "tipo": _tipo(bloque),
+                      "email_postulacion": _emails_postulacion(bloque),
+                      "renta_texto": renta_texto,
+                      "renta_bruta_min": renta_min,
+                      "renta_bruta_max": renta_max,
                       "url": fuente["url"] + "#" + re.sub(
                           r"[^a-z0-9]+", "-", cargo.lower())[:50]})
     return items
@@ -743,15 +893,24 @@ def extraer_enlaces_detalle(html, fuente, session, delay):
         # Descripción: usa el HTML si es sustancioso; si es pobre, el extracto PDF.
         if len(texto_full) < 200 and pdf.get("texto_pdf"):
             bloque = pdf["texto_pdf"][:1800]
-        # Cierre: "hasta el …", luego rango "02 al 07 de julio", luego el del PDF.
-        cierre = (_cierre_envio(texto_full) or _cierre_rango(texto_full)
+        # Cierre: el rango de RECEPCIÓN de antecedentes ("02 al 07 de julio") es
+        # el plazo real y tiene prioridad sobre un "hasta el …" suelto, que puede
+        # ser la vigencia del contrato (Cerro Navia: "hasta el 31 de diciembre").
+        cierre = (_cierre_rango(texto_full) or _cierre_envio(texto_full)
                   or pdf.get("fecha_cierre"))
         correo = _emails_postulacion(texto_full) or pdf.get("email_postulacion")
+        # Renta: la de las bases PDF si existe; si no, la publicada en el HTML.
+        renta_texto = pdf.get("renta_texto")
+        renta_min = renta_max = None
+        if not renta_texto:
+            renta_texto, renta_min, renta_max = _renta_html(texto_full)
         items.append({"cargo": cargo[:500], "url": url,
                       "bloque": bloque, "fecha_cierre": cierre,
                       "tipo": pdf.get("tipo") or _tipo(texto_full),
                       "requisitos": pdf.get("requisitos"),
-                      "renta_texto": pdf.get("renta_texto"),
+                      "renta_texto": renta_texto,
+                      "renta_bruta_min": renta_min,
+                      "renta_bruta_max": renta_max,
                       "email_postulacion": correo,
                       "url_bases": url_bases})
     return items
@@ -802,8 +961,10 @@ def construir_oferta(item, fuente):
         "nivel": _nivel(cargo),
         "region": normalizar_region(fuente["region"]) or fuente["region"],
         "ciudad": fuente.get("ciudad"),
-        "renta_bruta_min": None,  # la renta está en las bases PDF
-        "renta_bruta_max": None,
+        # La renta municipal suele vivir en las bases PDF; cuando el aviso la
+        # publica en el HTML (Cerro Navia) el extractor la pasa como número.
+        "renta_bruta_min": item.get("renta_bruta_min"),
+        "renta_bruta_max": item.get("renta_bruta_max"),
         "renta_texto": item.get("renta_texto"),
         "fecha_publicacion": date.today(),
         "fecha_cierre": item.get("fecha_cierre"),
@@ -826,6 +987,8 @@ def _procesar_fuente(fuente, session, delay, incluir_cerrados):
 
     if fuente["modo"] == "pdf_links":
         items = extraer_pdf_links(r.text, fuente, session, delay)
+    elif fuente["modo"] == "tabla_empleos":
+        items = extraer_tabla_empleos(r.text, fuente)
     elif fuente["modo"] == "secciones":
         items = extraer_secciones(r.text, fuente)
     elif fuente["modo"] == "headings":

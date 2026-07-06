@@ -188,6 +188,20 @@ _EXTRA_SOURCES: list[dict[str, Any]] = [
         "plataforma": "trabajando",
         "id_dominio": 3836,
     },
+    {
+        # TVN — empleos.tvn.cl es un WRAPPER que embebe su bolsa Trabajando en un
+        # <iframe>. _resolver_base_efectiva sigue el iframe hasta el portal real y
+        # detecta su idDominio en runtime (no se fija porque no es observable sin
+        # red). TVN también publica en Laborum (laborum.py id 280); dominio
+        # distinto ⇒ marcar_ofertas_cerradas (acotado por dominio) no las cruza.
+        "id": 280,
+        "nombre": "TVN — Televisión Nacional de Chile",
+        "sigla": "TVN",
+        "sector": "Empresa del Estado",
+        "region": "Metropolitana de Santiago",
+        "url_empleo": "https://empleos.tvn.cl/",
+        "plataforma": "trabajando",
+    },
 ]
 
 
@@ -282,6 +296,40 @@ def _decodificar_devalue(data: list, i: int, profundidad: int = 0) -> Any:
     if isinstance(v, dict):
         return {k: _decodificar_devalue(data, ix, profundidad + 1) for k, ix in v.items()}
     return v
+
+
+_RE_IFRAME_SRC = re.compile(r'<iframe[^>]+\bsrc=["\']([^"\']+)["\']', re.I)
+
+
+def _resolver_base_efectiva(session: requests.Session, base: str) -> str:
+    """Resuelve el portal real cuando el dominio propio es un *wrapper* que
+    embebe la bolsa Trabajando en un ``<iframe>``.
+
+    Caso TVN: ``empleos.tvn.cl/`` sirve un shell con un ``<iframe>`` que carga
+    el portal Trabajando real; la raíz no trae ``__NUXT_DATA__`` y la
+    autodetección de idDominio falla contra el wrapper. Se sigue el iframe
+    (hasta 3 saltos) hasta la página que sí trae los datos Nuxt y se devuelve
+    su ORIGIN, que es el base efectivo para detección de idDominio y llamadas
+    ``/api``. Si no hay wrapper (portal servido directo), devuelve ``base`` sin
+    cambios. Cualquier callejón sin salida cae a ``base``."""
+    url = base.rstrip("/") + "/"
+    for _ in range(3):
+        try:
+            r = _api_get(session, url)
+        except requests.RequestException:
+            return base
+        if "__NUXT_DATA__" in r.text:
+            p = urlparse(r.url)
+            return f"{p.scheme}://{p.netloc}" if p.netloc else base
+        m = _RE_IFRAME_SRC.search(r.text)
+        if not m:
+            return base
+        siguiente = urljoin(r.url, m.group(1))
+        p = urlparse(siguiente)
+        if p.scheme not in ("http", "https") or not p.netloc:
+            return base
+        url = siguiente
+    return base
 
 
 def _detectar_id_dominio(session: requests.Session, base: str) -> int | None:
@@ -542,6 +590,16 @@ def _recolectar_via_api(
     base = _base_url(fuente)
     session = requests.Session()
     session.headers.update(_api_headers(base))
+
+    # Dominio propio: puede ser un wrapper con <iframe> (p.ej. empleos.tvn.cl
+    # embebe su portal Trabajando). Seguimos el iframe al portal real; los
+    # subdominios *.trabajando.cl sirven el Nuxt directo y no lo necesitan.
+    if "trabajando.cl" not in base.lower() and not fuente.get("id_dominio"):
+        base_real = _resolver_base_efectiva(session, base)
+        if base_real != base:
+            logger.info("  Wrapper iframe → portal real %s", base_real)
+            base = base_real
+            session.headers.update(_api_headers(base))
 
     id_dominio = fuente.get("id_dominio") or _detectar_id_dominio(session, base)
     if not id_dominio:

@@ -850,18 +850,22 @@ const esUrlValida = (typeof isValidHttpUrl === 'function')
       }
     };
 
-// ── Botón "Bases oficiales": sólo se muestra si el backend COMPROBÓ el enlace ──
-// Regla (issue #242): si `url_bases_valida` no es exactamente true (es decir,
-// está sin comprobar=null o comprobada inválida=false), se OCULTA el botón en
-// lugar de mostrar uno deshabilitado/confuso.
-function basesComprobadas(oferta) {
-  return oferta.url_bases
+// ── Botón "Bases oficiales": se muestra si hay un enlace de bases utilizable ──
+// Regla: url_bases presente, distinta de url_oferta y NO marcada como rota por
+// el backend (false). Si aún no se comprobó (null) — validate_offer_urls no
+// corre tras cada scrape — se acepta con validación de formato en cliente, en
+// vez de ocultar un enlace legítimo hasta que pase el job. Coherente con el
+// botón Postular, que ya usa url_bases bajo esta misma laxitud. Sólo se oculta
+// si el backend confirmó que el enlace está roto (false).
+function basesMostrable(oferta) {
+  return !!oferta.url_bases
     && oferta.url_bases !== oferta.url_oferta
-    && oferta.url_bases_valida === true;
+    && oferta.url_bases_valida !== false
+    && (oferta.url_bases_valida === true || esUrlValida(oferta.url_bases));
 }
 
 function renderBtnBases(oferta) {
-  if (!basesComprobadas(oferta)) return '';
+  if (!basesMostrable(oferta)) return '';
   return `<button class="btn-ver" type="button" data-action="abrir-visor-bases" data-stop-propagation="true" data-oferta-id="${Number(oferta.id) || 0}">Bases oficiales</button>`;
 }
 
@@ -2421,13 +2425,20 @@ function _isWeakSummaryValue(value) {
   if (value == null) return true;
   const normalized = String(value).trim().toLowerCase();
   if (!normalized) return true;
-  const weakTokens = [
-    '—', '-', 'n/a', 'na', 'sin información', 'no informada', 'no informado',
-    'no especificada', 'no especificado', 'consultar bases', 'ver bases',
-    'por definir', 'no disponible', 'no aplica'
+  // Tokens cortos/ambiguos: sólo son "débiles" si el valor ES exactamente eso.
+  // Como substring matchearían dentro de palabras normales y descartarían datos
+  // válidos — p.ej. 'na' vive en "uNA", "profesioNAl", "ocupacioNAl"; '-' en
+  // cualquier guión — dejando fuera "Título profesional de … (excluyente)".
+  const exactWeak = [
+    '—', '-', 'n/a', 'na', 'no aplica', 'no disponible', 'no informada',
+    'no informado', 'no especificada', 'no especificado'
   ];
-  if (weakTokens.includes(normalized)) return true;
-  return weakTokens.some((token) => normalized.includes(token));
+  if (exactWeak.includes(normalized)) return true;
+  // Frases inequívocas: delatan un valor vacío aunque vengan embebidas.
+  const phraseWeak = [
+    'sin información', 'consultar bases', 'ver bases', 'por definir'
+  ];
+  return phraseWeak.some((token) => normalized.includes(token));
 }
 
 // Filtra valores de formación/título que el sistema no reconoce como dato
@@ -2734,7 +2745,7 @@ function normalizarOferta(o) {
     diasRestantes: dias,
     portal,
     portalUrl:    ofertaPostulable(o) ? o.url_oferta : null,
-    basesUrl:     basesComprobadas(o) ? o.url_bases : null,
+    basesUrl:     basesMostrable(o) ? o.url_bases : null,
     objetivo:     (sem && sem.objetivo) || null,
     funciones:    (sem && sem.funciones) || [],
     requisitos: {
@@ -2842,7 +2853,7 @@ async function abrirModal(ofertaId) {
 }
 
 // Abre la ficha nueva (integracion/ficha-oferta.js) con datos reales.
-// Reusa gating (ofertaPostulable/basesComprobadas), analytics
+// Reusa gating (ofertaPostulable/basesMostrable), analytics
 // (registrarClicPostular), visor de bases y favoritos existentes.
 // Alterna una oferta en el comparador desde la ficha. Devuelve el nuevo
 // estado (true=en comparador). Avisa si se alcanzó el máximo.
@@ -2873,12 +2884,12 @@ async function abrirFichaOferta(ofertaId) {
     region: estado.region || null,
     guardada: favs.some((f) => f.id === o.id),
     onPostular: () => {
-      const url = ofertaPostulable(o) ? o.url_oferta : (basesComprobadas(o) ? o.url_bases : null);
+      const url = ofertaPostulable(o) ? o.url_oferta : (basesMostrable(o) ? o.url_bases : null);
       if (!url) return;
       registrarClicPostular(o);
       window.open(url, '_blank', 'noopener,noreferrer');
     },
-    onBases: () => { if (basesComprobadas(o)) abrirVisorBases(o); },
+    onBases: () => { if (basesMostrable(o)) abrirVisorBases(o); },
     onGuardar: () => toggleFavorito(o),
     comparando: window.Comparador ? Comparador.has(o.id) : false,
     onComparar: () => _toggleCompararFicha(o.id),
@@ -3208,7 +3219,7 @@ async function _abrirModalLegacy(ofertaId) {
     // Botón Bases oficiales: sólo si el backend comprobó el enlace (issue #242).
     // Sin comprobar (null) o inválido (false) → se oculta, no se muestra disabled.
     const btnBases = document.getElementById('modal-btn-bases');
-    if (basesComprobadas(o)) {
+    if (basesMostrable(o)) {
       btnBases.style.display = 'inline-flex';
       btnBases.textContent = UI.CTA_BASES || 'Ver bases oficiales';
       btnBases.onclick = () => abrirVisorBases(o);
