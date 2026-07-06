@@ -142,13 +142,10 @@ FUENTES: list[dict[str, Any]] = [
      "sigla": "UFRO", "region": "La Araucanía", "ciudad": "Temuco",
      "modo": "ufro_tabla",
      "url": "https://extranet.ufro.cl/concursos/ver_tipo_administrativo.php",
-     # Cada fila del listado enlaza a la ficha del concurso, de donde se extraen
-     # Cargo, Descripción, Vacantes, Fecha Término, Estado y Requisitos.
-     # NOTA: `ver_tipo_academico.php` responde 404 (URL tentativa incorrecta); se
-     # deja sólo la vista administrativa hasta confirmar la URL real de académicos.
-     "urls": [
-         "https://extranet.ufro.cl/concursos/ver_tipo_administrativo.php",
-     ]},
+     "base": "https://extranet.ufro.cl/concursos/"},
+     # Portal por POST: la vista carga con POST cod_concar=1/2/3 (Administrativos/
+     # Académicos/Post-Doctoral); cada concurso abre sus cargos (Vacantes, Fecha
+     # Término) y cada cargo su ficha (Descripción, Requisitos) también por POST.
 ]
 
 
@@ -175,6 +172,23 @@ def _get(session: requests.Session, url: str) -> requests.Response | None:
         except requests.RequestException as exc:
             if intento == MAX_RETRIES:
                 logger.info("  Fallo %s: %s", url[:70], type(exc).__name__)
+                return None
+            time.sleep(2 ** intento)
+    return None
+
+
+def _post(session: requests.Session, url: str, data: dict) -> requests.Response | None:
+    """POST con reintentos (el portal UFRO carga cada vista/ficha por POST)."""
+    for intento in range(1, MAX_RETRIES + 1):
+        try:
+            r = session.post(url, data=data, timeout=HTTP_TIMEOUT, allow_redirects=True)
+            if r.status_code >= 400:
+                logger.info("  HTTP %s (POST) en %s", r.status_code, url[:75])
+                return None
+            return r
+        except requests.RequestException as exc:
+            if intento == MAX_RETRIES:
+                logger.info("  Fallo POST %s: %s", url[:70], type(exc).__name__)
                 return None
             time.sleep(2 ** intento)
     return None
@@ -326,76 +340,91 @@ def _construir_unap(it: dict, fuente: dict) -> dict:
     }
 
 
-# ── Modo UFRO (tabla + ficha de detalle) ─────────────────────────────────────
-def parsear_ufro(html: str, fuente: dict) -> list[dict]:
-    """Lista de concursos con su enlace a la ficha. Soporta la vista de tabla
-    (Código, Descripción, Link, Tipo, Estado) y, como respaldo, una lista de
-    enlaces a fichas (`ver_concurso*.php`, `ficha*.php`, `?id=`)."""
-    soup = BeautifulSoup(html, "html.parser")
-    texto = limpiar_texto(soup.get_text(" ", strip=True))
-    if re.search(r"no hay ofertas? laborales? disponibles?", texto, re.I):
+# ── Modo UFRO (portal por POST) ──────────────────────────────────────────────
+# El "VER" de cada fila es javascript:ver_consulta('806','CON0806', …). De ahí
+# salen los identificadores que hay que POSTear para abrir el nivel siguiente.
+_RE_VER_CONSULTA = re.compile(r"ver_consulta\(([^)]*)\)", re.I)
+
+
+def _args_ver_consulta(href: str | None) -> list[str]:
+    m = _RE_VER_CONSULTA.search(href or "")
+    if not m:
         return []
-    items = []
-    for tabla in soup.find_all("table"):
-        encabezados = [limpiar_texto(c.get_text()).lower()
-                       for c in (tabla.find("tr").find_all(["th", "td"])
-                                 if tabla.find("tr") else [])]
-        if not any("descrip" in e or "cargo" in e for e in encabezados):
+    return [a.strip().strip("'\"") for a in m.group(1).split(",") if a.strip()]
+
+
+def _tabla_ufro(html: Any) -> tuple[list[str], list[tuple[list[str], list[str]]]]:
+    """(encabezados_lower, filas) de la primera <table> del portal. Cada fila es
+    (celdas_texto, args_de_ver_consulta). Acepta bytes (autodetecta charset)."""
+    soup = BeautifulSoup(html, "html.parser")
+    tabla = soup.find("table")
+    if not tabla or not tabla.find("tr"):
+        return [], []
+    heads = [limpiar_texto(c.get_text()).lower()
+             for c in tabla.find("tr").find_all(["th", "td"])]
+    filas = []
+    for fila in tabla.find_all("tr")[1:]:
+        celdas = fila.find_all("td")
+        if not celdas:
             continue
+        txt = [limpiar_texto(c.get_text(" ", strip=True)) for c in celdas]
+        a = fila.find("a", href=True)
+        filas.append((txt, _args_ver_consulta(a["href"]) if a else []))
+    return heads, filas
 
-        def idx(*claves):
-            for i, e in enumerate(encabezados):
-                if any(k in e for k in claves):
-                    return i
-            return None
 
-        i_cod, i_desc = idx("código", "codigo"), idx("descrip", "cargo")
-        i_tipo, i_estado = idx("tipo"), idx("estado")
-        for fila in tabla.find_all("tr")[1:]:
-            celdas = fila.find_all("td")
-            if len(celdas) < 2:
-                continue
-            txt = [limpiar_texto(c.get_text(" ", strip=True)) for c in celdas]
+def _idx_col(heads: list[str], *claves: str) -> int | None:
+    for i, e in enumerate(heads):
+        if any(k in e for k in claves):
+            return i
+    return None
 
-            def cel(i):
-                return txt[i] if i is not None and i < len(txt) else None
 
-            desc = cel(i_desc)
-            if not desc:
-                continue
-            estado = cel(i_estado)
-            # Enlace a la ficha (columna Link "VER"): preferimos un href real,
-            # ignorando anclas "#"/javascript que no llevan a ninguna página.
-            link = None
-            for a in fila.find_all("a", href=True):
-                href = (a["href"] or "").strip()
-                if href and not href.startswith(("#", "javascript:")):
-                    link = a
-                    break
-            items.append({
-                "cargo": desc, "codigo": cel(i_cod), "tipo": cel(i_tipo),
-                "estado": estado,
-                "url": urljoin(fuente["url"], link["href"]) if link else None,
-            })
-        break
+def parsear_ufro_concursos(html: Any) -> list[dict]:
+    """Nivel 1 (ver_tipo_administrativo.php): concursos con código, descripción,
+    tipo, estado y (cod_concur, id_concur) para abrir sus cargos."""
+    heads, filas = _tabla_ufro(html)
+    i_cod, i_desc = _idx_col(heads, "codig", "código"), _idx_col(heads, "descrip", "cargo")
+    i_tipo, i_estado = _idx_col(heads, "tipo"), _idx_col(heads, "estado")
+    out = []
+    for txt, args in filas:
+        def cel(i):
+            return txt[i] if i is not None and i < len(txt) else None
+        desc = cel(i_desc)
+        if not desc or len(args) < 2:
+            continue
+        out.append({"codigo": cel(i_cod), "descripcion": desc, "tipo": cel(i_tipo),
+                    "estado": cel(i_estado), "cod_concur": args[0], "id_concur": args[1]})
+    return out
 
-    # Respaldo: sin tabla reconocible, tomar los enlaces a fichas de concurso.
-    if not items:
-        vistos: set[str] = set()
-        for a in soup.find_all("a", href=True):
-            href = a["href"]
-            if not re.search(r"(ver_?concurso|ficha|detalle|postul|concurso)"
-                             r"[^/]*\.php|[?&]id=\d+", href, re.I):
-                continue
-            url = urljoin(fuente["url"], href)
-            if url in vistos or url.rstrip("/") == fuente["url"].rstrip("/"):
-                continue
-            vistos.add(url)
-            items.append({
-                "cargo": limpiar_texto(a.get_text(" ", strip=True)) or None,
-                "codigo": None, "tipo": None, "estado": None, "url": url,
-            })
-    return items
+
+def parsear_ufro_cargos(html: Any) -> list[dict]:
+    """Nivel 2 (ver_cargos_concurso.php): cargos con nombre, vacantes, fecha de
+    inicio y término, y los 4 ids para abrir la ficha de postulación."""
+    heads, filas = _tabla_ufro(html)
+    i_cod, i_nom = _idx_col(heads, "codig", "código"), _idx_col(heads, "nombre", "cargo")
+    i_vac = _idx_col(heads, "vacante")
+    i_ini, i_ter = _idx_col(heads, "inicio"), _idx_col(heads, "término", "termino", "cierre")
+    out = []
+    for txt, args in filas:
+        def cel(i):
+            return txt[i] if i is not None and i < len(txt) else None
+        nombre = cel(i_nom)
+        if not nombre:
+            continue
+        vac = None
+        if (vt := cel(i_vac)) and (mv := re.search(r"\d+", vt)):
+            vac = int(mv.group(0))
+        out.append({
+            "codigo": cel(i_cod), "nombre": nombre, "vacantes": vac,
+            "fecha_inicio": _fecha_dmy(cel(i_ini) or ""),
+            "fecha_termino": _fecha_dmy(cel(i_ter) or ""),
+            "cod_concar": args[0] if len(args) > 0 else None,
+            "cod_concur": args[1] if len(args) > 1 else None,
+            "id_concar": args[2] if len(args) > 2 else None,
+            "id_concur": args[3] if len(args) > 3 else None,
+        })
+    return out
 
 
 # Etiquetas de la ficha de detalle UFRO (ver captura). Se extrae el valor entre
@@ -441,49 +470,58 @@ def parsear_ufro_detalle(html: str) -> dict:
     return d
 
 
-def _construir_ufro(it: dict, fuente: dict, detalle: dict | None = None) -> dict:
-    detalle = detalle or {}
+def _construir_ufro_cargo(fuente: dict, concurso: dict, cargo: dict,
+                          detalle: dict, tipo_concurso: str) -> dict:
+    """Arma la oferta desde el concurso (nivel 1) + cargo (nivel 2) + ficha
+    (nivel 3). El cierre y vacantes vienen del nivel 2; requisitos/descripción
+    del nivel 3."""
     fuente_id = int(fuente["id"])
     nombre = fuente["nombre"]
-    # El cargo de la ficha suele ser el bueno; si no, el del listado.
-    cargo = limpiar_texto(detalle.get("cargo") or it.get("cargo") or "")[:500]
-    codigo = it.get("codigo")
-    estado = detalle.get("estado") or it.get("estado")
+    cargo_txt = limpiar_texto(
+        cargo.get("nombre") or detalle.get("cargo") or concurso.get("descripcion") or "")[:500]
+    estado = concurso.get("estado") or detalle.get("estado")
+    cod_concur = concurso.get("id_concur") or concurso.get("codigo") or ""
+    cod_cargo = cargo.get("codigo") or cargo.get("id_concar") or ""
+    fecha_cierre = cargo.get("fecha_termino") or detalle.get("fecha_cierre")
+    vacantes = cargo.get("vacantes") or detalle.get("vacantes")
 
     desc_partes = []
     if detalle.get("descripcion"):
         desc_partes.append(detalle["descripcion"])
-    if codigo:
-        desc_partes.append(f"Código: {codigo}")
-    if it.get("tipo"):
-        desc_partes.append(f"Tipo: {it['tipo']}")
-    if detalle.get("vacantes"):
-        desc_partes.append(f"Vacantes: {detalle['vacantes']}")
+    if tipo_concurso:
+        desc_partes.append(f"Tipo de concurso: {tipo_concurso}")
+    if concurso.get("codigo"):
+        desc_partes.append(f"Código: {concurso['codigo']}")
+    if vacantes:
+        desc_partes.append(f"Vacantes: {vacantes}")
     if estado:
         desc_partes.append(f"Estado: {estado}")
     descripcion = limpiar_texto(" | ".join(desc_partes)) or None
 
+    # URL estable por cargo (el portal es POST; usamos un fragmento con los ids).
+    url = f"{fuente.get('url')}#{cod_concur}-{cod_cargo}"
+
     return {
-        "id_externo": generar_id_estable(fuente_id, nombre, cargo,
-                                         codigo or it.get("url") or cargo),
+        "id_externo": generar_id_estable(fuente_id, nombre, cargo_txt,
+                                         f"{cod_concur}-{cod_cargo}" or cargo_txt),
         "fuente_id": fuente_id,
-        "url_original": it.get("url") or fuente["url"],
-        "cargo": cargo,
+        "url_original": url,
+        "cargo": cargo_txt,
         "descripcion": descripcion[:2000] if descripcion else None,
         "institucion_nombre": nombre,
         "sector": SECTOR,
-        "area_profesional": normalizar_area(cargo),
-        "tipo_cargo": (it.get("tipo") or "Concurso Universitario"),
-        "nivel": _nivel(cargo),
+        "area_profesional": normalizar_area(cargo_txt),
+        "tipo_cargo": "Concurso Universitario",
+        "nivel": _nivel(cargo_txt),
         "region": normalizar_region(fuente["region"]) or fuente["region"],
         "ciudad": fuente.get("ciudad"),
         "renta_bruta_min": None,
         "renta_bruta_max": None,
         "renta_texto": None,
-        "fecha_publicacion": date.today(),
-        "fecha_cierre": detalle.get("fecha_cierre"),
+        "fecha_publicacion": cargo.get("fecha_inicio") or date.today(),
+        "fecha_cierre": fecha_cierre,
         "requisitos_texto": detalle.get("requisitos"),
-        "numero_vacantes": detalle.get("vacantes"),
+        "numero_vacantes": vacantes,
         "url_bases": None,
         "_estado": estado,
     }
@@ -531,47 +569,71 @@ def _procesar_unap(fuente: dict, session, incluir_cerrados: bool) -> list[dict]:
 _UFRO_ESTADO_CERRADO = re.compile(r"cerrad|finaliz|vencid|no\s+vigente", re.I)
 
 
+# Vistas del portal por POST: cod_concar 1=Administrativos, 2=Académicos,
+# 3=Post-Doctoral. El campo del form es Formulario1[cod_concar].
+_UFRO_TIPOS = (("1", "Administrativo"), ("2", "Académico"), ("3", "Post-Doctoral"))
+
+
 def _procesar_ufro(fuente: dict, session, incluir_cerrados: bool) -> list[dict]:
-    """Recorre cada vista (administrativo/académico), entra a la ficha de cada
-    concurso y arma la oferta con Cargo, Descripción, Fecha Término, Vacantes,
-    Estado y Requisitos. Sin ficha (fila sin enlace) se usa lo del listado."""
+    """Portal UFRO por POST: recorre las 3 vistas (Administrativos/Académicos/
+    Post-Doctoral); por cada concurso abre sus cargos (Vacantes, Fecha Término) y
+    por cada cargo su ficha (Descripción, Requisitos). Todo vía POST."""
     hoy = date.today()
+    base = fuente.get("base") or "https://extranet.ufro.cl/concursos/"
+    tipo_url = urljoin(base, "ver_tipo_administrativo.php")
+    cargos_url = urljoin(base, "ver_cargos_concurso.php")
+    ficha_url = urljoin(base, "ver_postulacion_cargo.php")
     ofertas, omitidas, vistos = [], 0, set()
-    urls = fuente.get("urls") or [fuente["url"]]
-    for url_listado in urls:
-        r = _get(session, url_listado)
-        if r is None:
-            logger.warning("  Sin acceso a %s", url_listado)
+
+    for cod_tipo, etiqueta in _UFRO_TIPOS:
+        r = _post(session, tipo_url, {"Formulario1[cod_concar]": cod_tipo})
+        concursos = parsear_ufro_concursos(r.content) if r is not None else []
+        if not concursos:
             continue
-        crudos = parsear_ufro(r.text, {**fuente, "url": url_listado})
-        if not crudos:
-            logger.info("  Sin concursos en %s", url_listado.rsplit("/", 1)[-1])
-            continue
-        for it in crudos:
-            detalle: dict = {}
-            if it.get("url"):
-                time.sleep(0.6)
-                rd = _get(session, it["url"])
-                if rd is not None:
-                    detalle = parsear_ufro_detalle(rd.text)
-            o = _construir_ufro(it, fuente, detalle)
-            if not o["cargo"] or o["id_externo"] in vistos:
-                continue
-            vistos.add(o["id_externo"])
-            # Estado cerrado/finalizado → no publicar (salvo --incluir-cerrados).
-            if not incluir_cerrados and o.get("_estado") and \
-                    _UFRO_ESTADO_CERRADO.search(o["_estado"]):
+        logger.info("  %s: %d concursos", etiqueta, len(concursos))
+        for c in concursos:
+            if not incluir_cerrados and c.get("estado") and \
+                    _UFRO_ESTADO_CERRADO.search(c["estado"]):
                 omitidas += 1
                 continue
-            # Enriquecer con el texto de la ficha (correo, funciones, salario…).
-            _texto_ficha = " ".join(filter(None, [o.get("descripcion"),
-                                                  o.get("requisitos_texto")]))
-            _enriquecer(o, _texto_ficha or None, session)
-            if o["fecha_cierre"] and o["fecha_cierre"] < hoy and not incluir_cerrados:
-                omitidas += 1
-                continue
-            o.pop("_estado", None)
-            ofertas.append(o)
+            time.sleep(0.5)
+            rc = _post(session, cargos_url, {
+                "Formulario[cod_concur]": c["cod_concur"],
+                "Formulario[id_concur]": c["id_concur"]})
+            cargos = parsear_ufro_cargos(rc.content) if rc is not None else []
+            # Sin desglose de cargos: la oferta es el concurso mismo.
+            if not cargos:
+                cargos = [{"nombre": c["descripcion"], "codigo": c.get("codigo"),
+                           "vacantes": None, "fecha_inicio": None, "fecha_termino": None,
+                           "cod_concar": None, "cod_concur": c["cod_concur"],
+                           "id_concar": None, "id_concur": c["id_concur"]}]
+            for cg in cargos:
+                detalle: dict = {}
+                if cg.get("cod_concar"):
+                    time.sleep(0.5)
+                    rd = _post(session, ficha_url, {
+                        "Formulario[cod_concar]": cg["cod_concar"],
+                        "Formulario[cod_concur]": cg["cod_concur"],
+                        "Formulario[id_concar]": cg["id_concar"],
+                        "Formulario[id_concur]": cg["id_concur"]})
+                    if rd is not None:
+                        detalle = parsear_ufro_detalle(rd.content)
+                o = _construir_ufro_cargo(fuente, c, cg, detalle, etiqueta)
+                if not o["cargo"] or o["id_externo"] in vistos:
+                    continue
+                vistos.add(o["id_externo"])
+                if not incluir_cerrados and o.get("_estado") and \
+                        _UFRO_ESTADO_CERRADO.search(o["_estado"]):
+                    omitidas += 1
+                    continue
+                _texto = " ".join(filter(None, [o.get("descripcion"),
+                                                o.get("requisitos_texto")]))
+                _enriquecer(o, _texto or None, session)
+                if o["fecha_cierre"] and o["fecha_cierre"] < hoy and not incluir_cerrados:
+                    omitidas += 1
+                    continue
+                o.pop("_estado", None)
+                ofertas.append(o)
     logger.info("  → %d vigentes (%d omitidas por estado/plazo)",
                 len(ofertas), omitidas)
     return ofertas
