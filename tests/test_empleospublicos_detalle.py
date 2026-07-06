@@ -165,3 +165,33 @@ def test_como_postular_sobrevive_descripcion_larga():
     assert len(desc) <= 2000
     assert "Cómo postular:" in desc
     assert "portal de Empleos Públicos" in desc
+
+
+# ── Correo: contacto vs postulación ──────────────────────────────────────────
+def test_correo_contacto_va_a_consultas_no_a_postulacion():
+    # empleospublicos postula EN LÍNEA; un "Mail de contacto" es de consultas,
+    # no debe etiquetarse como correo de postulación.
+    html = ('<span id="lblCorreoPostulaZonaAzul">Mail de contacto: '
+            'spd-postulaciones@minsegpublica.gob.cl</span>')
+    soup = BeautifulSoup(html, "html.parser")
+    correo, es_post = _scraper()._correo_ficha(soup)
+    assert correo == "spd-postulaciones@minsegpublica.gob.cl"
+    assert es_post is False
+
+
+def test_correo_para_postular_si_va_a_postulacion():
+    html = ('<span id="lblCorreo">Enviar postulación al correo '
+            'reclutamiento@muni.cl</span>')
+    soup = BeautifulSoup(html, "html.parser")
+    correo, es_post = _scraper()._correo_ficha(soup)
+    assert correo == "reclutamiento@muni.cl"
+    assert es_post is True
+
+
+def test_parsear_detalle_correo_contacto_no_marca_postulacion():
+    html = ('<span id="lblCorreoPostulaZonaAzul">Mail de contacto: '
+            'contacto@minsegpublica.gob.cl</span>')
+    soup = BeautifulSoup(html, "html.parser")
+    res = _scraper()._parsear_detalle(soup, {"cargo": "X", "url_oferta": "http://x"})
+    assert res.get("email_consultas") == "contacto@minsegpublica.gob.cl"
+    assert not res.get("email_postulacion")

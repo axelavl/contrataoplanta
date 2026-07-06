@@ -1373,6 +1373,13 @@
   // de categorías que NO son un objetivo. Si el texto bajo el header arranca
   // con uno de estos, es un volcado mal clasificado.
   var NON_OBJECTIVE_START_RE = /^(condicion|requisit|formaci[oó]n|competencia|conocimiento|habilidad|experiencia|especializ|especialidad|capacitaci[oó]n|licencia|certificaci[oó]n|documentaci[oó]n|documento|antecedente|renta|remuneraci[oó]n|honorario|jornada|horario|turno|vacante|beneficio|funcion|tarea|responsabilidad|nivel\s+(b[aá]sico|medio|avanzado))/i;
+  // Boilerplate legal idéntico en TODOS los avisos de empleospublicos.cl: el
+  // aviso a veces lo pone bajo "Licencias y certificaciones" y el clasificador lo
+  // tomaba como un requisito real. No es un requisito del cargo → se descarta de
+  // las secciones (queda, si acaso, en el texto completo). Cubre la ley 21.389 /
+  // Registro Nacional de Deudores de Pensiones de Alimentos.
+  var BOILERPLATE_RE = /registro\s+nacional\s+de\s+deudores\s+de\s+pensiones\s+de\s+alimentos|ley\s*n[°º]?\s*21\.?389|deudores\s+de\s+pensiones\s+de\s+alimentos/i;
+
   // Señal POSITIVA de objetivo real: arranca con lenguaje de propósito
   // ("El objetivo…", "Misión…") o con un verbo de propósito en infinitivo.
   // Se usa como gate del fallback por heading para no rescatar como objetivo
@@ -1584,6 +1591,12 @@
       var seg = allSegments[i];
       var s = seg && seg.text;
       if (!s) continue;
+      // 0. Boilerplate legal (ley 21.389 / Registro de Deudores): no es un
+      //    requisito del cargo → a residual, no a licencias/certificaciones.
+      if (BOILERPLATE_RE.test(s)) {
+        out.residual.push(s);
+        continue;
+      }
       var hint = _categoryFromHeading(seg.prevHeading);
 
       // 1. Funciones por verbo de acción

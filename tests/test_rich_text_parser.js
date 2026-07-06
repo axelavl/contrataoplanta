@@ -508,5 +508,19 @@ const sObjDump = rt.buildSemanticSections({
 });
 assert(sObjDump.objetivo, '', 'Volcado de requisitos bajo "Objetivo" se descarta');
 
+console.log('\n## Boilerplate legal (ley 21.389 / Registro de Deudores)');
+const sBoiler = rt.buildSemanticSections({
+  descripcion: '',
+  requisitos: 'Licencias y certificaciones:\n'
+    + 'En virtud de la ley N°21.389 (que crea el Registro Nacional de Deudores de '
+    + 'Pensiones de Alimentos) la institución consultará si posee obligación pendiente.\n'
+    + 'Experiencia:\nExperiencia laboral con niños, niñas y adolescentes.',
+});
+assert(sBoiler.requisitos.especialidades.some(x => /21\.389|deudores/i.test(x)), false,
+  'El boilerplate de la ley 21.389 NO cae en licencias/certificaciones');
+assert(sBoiler.residual.some(x => /deudores/i.test(x)), true,
+  'El boilerplate legal va a residual');
+assertInBlock(sBoiler, 'experiencia', 'niños', 'La experiencia real sí se clasifica');
+
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed > 0 ? 1 : 0);
