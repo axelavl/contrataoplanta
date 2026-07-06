@@ -1642,6 +1642,14 @@ async def admin_scraper_run(
     run_all = str(_PROJECT_ROOT / "scrapers" / "run_all.py")
 
     cmd = [python, run_all, "--mode", "production"]
+    # Las corridas del panel son MANUALES (un humano apretó "Ejecutar"): deben
+    # correr AHORA, saltándose el cooldown de retry-policy. Sin esto, una fuente
+    # evaluada hace poco queda "en cooldown" y run_all termina sin hacer nada
+    # ("No hay fuentes a evaluar en esta corrida"), que es exactamente lo que
+    # el usuario no espera de un botón. El scheduler y el timer de systemd no
+    # pasan el flag, así que las corridas automáticas siguen respetando el
+    # cooldown.
+    cmd.append("--force-evaluate")
     if dry_run:
         # run_all no tiene --dry-run; --evaluate-only hace discovery+evaluación
         # SIN extraer ni persistir ofertas → equivale a una simulación.
