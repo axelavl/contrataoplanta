@@ -132,3 +132,45 @@ def test_construir_oferta_propaga_correo_y_cierre():
         "alvaro.pino@cerronavia.cl, tomas.marticorena@cerronavia.cl"
     assert o["cargo"] == "Administradora de Servidores, Redes y Soporte TI"
     assert o["url_bases"].endswith("bases-concurso-administrador-ti.pdf")
+
+
+# ── Regresión: aviso real completo (contrato "hasta el 31 dic", correo lejano,
+#    renta en el HTML) ─────────────────────────────────────────────────────────
+def test_cierre_no_confunde_vigencia_de_contrato_con_plazo():
+    # "3 meses iniciales … hasta el 31 de diciembre" es la vigencia del contrato,
+    # NO el plazo de postulación. El cierre real es la recepción de antecedentes.
+    texto = ("Periodo de Contratación: 3 meses iniciales y luego, renovación "
+             "según evaluación, hasta el 31 de diciembre de 2026. Renovable. "
+             "Recepción de antecedentes: 02 al 07 de julio.")
+    # _cierre_envio no debe devolver el 31/12 (contexto de contrato).
+    assert M._cierre_envio(texto) is None
+    # La resolución global prefiere el rango de recepción → 07 de julio.
+    assert (M._cierre_rango(texto) or M._cierre_envio(texto)) == date(2026, 7, 7)
+
+
+def test_cierre_envio_sigue_tomando_plazo_real():
+    # Un "hasta el X" que SÍ es plazo de postulación se mantiene.
+    assert M._cierre_envio(
+        "Las postulaciones se reciben hasta el 15 de julio de 2026") == date(2026, 7, 15)
+
+
+def test_emails_postulacion_correo_lejano_del_primer_keyword():
+    # En avisos largos el correo aparece al final, lejos del primer
+    # "antecedentes"; igual debe capturarse por el contexto inmediato al correo.
+    texto = ("Recepción de antecedentes: 02 al 07 de julio. "
+             + "Relleno. " * 60 +
+             "Enviar antecedentes al correo alvaro.pino@cerronavia.cl y "
+             "tomas.marticorena@cerronavia.cl indicando el asunto.")
+    assert M._emails_postulacion(texto) == \
+        "alvaro.pino@cerronavia.cl, tomas.marticorena@cerronavia.cl"
+
+
+def test_renta_html_extrae_monto_bruto():
+    rt, rmin, rmax = M._renta_html(
+        "Remuneración bruta: $1.000.000.- Periodo de Contratación: 3 meses.")
+    assert rmin == 1_000_000
+    assert rt and "1.000.000" in rt
+
+
+def test_renta_html_sin_cifra_no_devuelve_nada():
+    assert M._renta_html("Remuneración a convenir según experiencia.") == (None, None, None)
