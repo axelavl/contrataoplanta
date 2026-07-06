@@ -811,6 +811,13 @@ def extraer_tabla_empleos(html, fuente):
                 "bloque": bloque or None,
                 "email_postulacion": email,
             })
+    if not items:
+        # Diagnóstico: distinguir "no hay concursos publicados" de "la tabla la
+        # inyecta JS" (el HTML estático viene sin tablas → requeriría navegador).
+        n_tablas = len(soup.find_all("table"))
+        logger.info("  tabla_empleos: 0 ofertas (tablas en el HTML: %d%s)",
+                    n_tablas,
+                    "" if n_tablas else " — posible render por JS, revisar con navegador")
     return items
 
 
@@ -1156,6 +1163,13 @@ def _procesar_fuente(fuente, session, delay, incluir_cerrados):
     if fuente["modo"] in ("bloqueada", "spa"):
         logger.warning("  OMITIDA: %s", fuente.get("nota", "no accesible"))
         return []
+    if fuente["modo"] == "bases_estamento_grado":
+        # Este modo NO usa el HTML de la página (SPA; además cisterna.cl responde
+        # 403 a IPs de datacenter): se va directo al PDF de bases fijado en la
+        # fuente. Pedir la página primero abortaba la corrida con "Sin acceso"
+        # aunque el PDF (uploads.mejormunicipio.com) sí fuera descargable.
+        items = extraer_bases_estamento_grado("", fuente, session, delay)
+        return _filtrar_items(items, fuente, session, delay, incluir_cerrados)
     r = _get(session, fuente["url"])
     if r is None:
         logger.warning("  Sin acceso a %s", fuente["url"])
@@ -1167,8 +1181,6 @@ def _procesar_fuente(fuente, session, delay, incluir_cerrados):
         items = extraer_tabla_empleos(r.text, fuente)
     elif fuente["modo"] == "concursos_da":
         items = extraer_concursos_da(r.text, fuente)
-    elif fuente["modo"] == "bases_estamento_grado":
-        items = extraer_bases_estamento_grado(r.text, fuente, session, delay)
     elif fuente["modo"] == "secciones":
         items = extraer_secciones(r.text, fuente)
     elif fuente["modo"] == "headings":
@@ -1178,6 +1190,11 @@ def _procesar_fuente(fuente, session, delay, incluir_cerrados):
     else:
         items = extraer_lista_o_vacio(r.text, fuente, session, delay)
 
+    return _filtrar_items(items, fuente, session, delay, incluir_cerrados)
+
+
+def _filtrar_items(items, fuente, session, delay, incluir_cerrados):
+    """Post-procesamiento común: dedup, filtro de basura/vencidas, enriquecido."""
     hoy = date.today()
     ofertas, omitidas = [], 0
     vistos = set()
