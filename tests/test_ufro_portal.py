@@ -1,8 +1,9 @@
-"""UFRO (extranet.ufro.cl/concursos): recorre administrativos y académicos,
-entra a la ficha de cada concurso y arma la oferta con Cargo, Descripción,
-Fecha Término (→ cierre), Vacantes, Estado y Requisitos.
+"""UFRO (extranet.ufro.cl/concursos): portal por POST.
 
-Estructura de la ficha reconstruida de una captura real (cargo JARDINERO).
+La vista carga con POST cod_concar=1/2/3 (Administrativos/Académicos/Post-Doctoral);
+cada concurso abre sus cargos (Vacantes, Fecha Término) y cada cargo su ficha
+(Descripción, Requisitos), todo por POST. Fixtures replican el HTML real (tablas
+Bootstrap con enlaces javascript:ver_consulta(...)).
 """
 from datetime import date
 
@@ -12,55 +13,62 @@ import scrapers.universidades_portal as U
 
 _FUENTE = next(f for f in U.FUENTES if f["clave"] == "ufro")
 
-# Listado administrativo: tabla con enlace a la ficha por fila.
-_LISTADO_ADMIN = """
-<html><body>
-<table>
-  <tr><th>Código</th><th>Descripción</th><th>Link</th><th>Tipo</th><th>Estado</th></tr>
-  <tr>
-    <td>A-123</td>
-    <td>JARDINERO - DIVISIÓN DE SERVICIOS</td>
-    <td><a href="ver_concurso.php?id=5">Ver</a></td>
-    <td>Administrativo</td>
-    <td>ABIERTO</td>
-  </tr>
-</table>
-</body></html>
-"""
+# Nivel 1: concursos (ver_tipo_administrativo.php)
+_L1 = (
+    "<table class='table'><thead><tr>"
+    "<th>Código</th><th>Descripción</th><th>Link</th><th>Tipo</th><th>Estado</th>"
+    "</tr></thead><tbody>"
+    "<tr><td>CON0806</td><td>JARDINERO -DIVISIÓN DE SERVICIOS</td>"
+    "<td><a href=\"javascript:ver_consulta('806','CON0806')\">VER</a></td>"
+    "<td>INTERNO Y EXTERNO</td><td>ABIERTO</td></tr>"
+    "</tbody></table>"
+).encode("utf-8")
 
-_LISTADO_ACADEMICO = "<html><body><p>No hay Ofertas Laborales Disponibles</p></body></html>"
+# Nivel 2: cargos del concurso (ver_cargos_concurso.php)
+_L2 = (
+    "<table class='table'><thead><tr>"
+    "<th>Código</th><th>Nombre</th><th>Link</th><th>Vacantes</th>"
+    "<th>Fecha Inicio</th><th>Fecha Término</th>"
+    "</tr></thead><tbody>"
+    "<tr><td>P321726030</td><td>JARDINERO -DIVISIÓN DE SERVICIOS</td>"
+    "<td><a href=\"javascript:ver_consulta('788','806','P321726030','CON0806')\">VER</a></td>"
+    "<td>1</td><td>03/07/2026</td><td>14/07/2026</td></tr>"
+    "</tbody></table>"
+).encode("utf-8")
 
-_DETALLE = """<html><body>
-<b>Cargo:</b> JARDINERO -DIVISIÓN DE SERVICIOS
-<b>Descripción:</b> Revise atentamente las bases publicadas en https://personas.ufro.cl/servicio/convocatorias/
-<b>Vacantes:</b> 1 <b>Fecha Término:</b> 14/07/2026
-<b>Estado:</b> ABIERTO
-<b>Requisitos:</b> CUMPLIR CON LO ESTABLECIDO EN LOS ARTICULOS 12 Y 13 DE LA LEY N18.834.
-<b>Requisitos Específicos:</b> ENSEÑANZA BÁSICA/MEDIA COMPLETA.
-<b>Preguntas:</b> Responder aquí.
-</body></html>"""
+# Nivel 3: ficha del cargo (ver_postulacion_cargo.php)
+_L3 = (
+    "<b>Cargo:</b> JARDINERO -DIVISIÓN DE SERVICIOS "
+    "<b>Descripción:</b> Revise las bases en https://personas.ufro.cl/servicio/convocatorias/ "
+    "<b>Vacantes:</b> 1 <b>Fecha Término:</b> 14/07/2026 "
+    "<b>Estado:</b> ABIERTO "
+    "<b>Requisitos:</b> CUMPLIR CON LO ESTABLECIDO EN LOS ARTICULOS 12 Y 13. "
+    "<b>Requisitos Específicos:</b> ENSEÑANZA BÁSICA/MEDIA COMPLETA."
+).encode("utf-8")
 
-_DETALLE_CERRADO = _DETALLE.replace("<b>Estado:</b> ABIERTO", "<b>Estado:</b> CERRADO")
+_EMPTY = b"<html><body>Sin datos</body></html>"
 
 
 class _Resp:
-    def __init__(self, text):
+    def __init__(self, content):
         self.status_code = 200
-        self.text = text
-        self.encoding = "utf-8"
+        self.content = content
+        self.text = content.decode("utf-8", "replace")
 
 
-def _make_session(detalle=_DETALLE):
-    class _Sess:
-        def get(self, url, **kw):
-            if url.endswith("ver_tipo_administrativo.php"):
-                return _Resp(_LISTADO_ADMIN)
-            if url.endswith("ver_tipo_academico.php"):
-                return _Resp(_LISTADO_ACADEMICO)
-            if "ver_concurso.php" in url:
-                return _Resp(detalle)
-            return _Resp("<html><body></body></html>")
-    return _Sess()
+class _Sess:
+    def post(self, url, data=None, **kw):
+        d = data or {}
+        if url.endswith("ver_tipo_administrativo.php"):
+            return _Resp(_L1 if d.get("Formulario1[cod_concar]") == "1" else _EMPTY)
+        if url.endswith("ver_cargos_concurso.php"):
+            return _Resp(_L2 if d.get("Formulario[cod_concur]") == "806" else _EMPTY)
+        if url.endswith("ver_postulacion_cargo.php"):
+            return _Resp(_L3)
+        return _Resp(_EMPTY)
+
+    def get(self, url, **kw):
+        return _Resp(_EMPTY)
 
 
 @pytest.fixture(autouse=True)
@@ -68,68 +76,58 @@ def _no_sleep(monkeypatch):
     monkeypatch.setattr(U.time, "sleep", lambda *_a, **_k: None)
 
 
-# ── Parseo de la ficha ───────────────────────────────────────────────────────
-def test_detalle_extrae_todos_los_campos():
-    d = U.parsear_ufro_detalle(_DETALLE)
-    assert d["cargo"] == "JARDINERO -DIVISIÓN DE SERVICIOS"
+# ── Parsers por nivel ────────────────────────────────────────────────────────
+def test_nivel1_concursos():
+    conc = U.parsear_ufro_concursos(_L1)
+    assert len(conc) == 1
+    assert conc[0]["codigo"] == "CON0806"
+    assert conc[0]["estado"] == "ABIERTO"
+    assert (conc[0]["cod_concur"], conc[0]["id_concur"]) == ("806", "CON0806")
+
+
+def test_nivel2_cargos():
+    cg = U.parsear_ufro_cargos(_L2)[0]
+    assert cg["nombre"].startswith("JARDINERO")
+    assert cg["vacantes"] == 1
+    assert cg["fecha_inicio"] == date(2026, 7, 3)
+    assert cg["fecha_termino"] == date(2026, 7, 14)
+    assert [cg["cod_concar"], cg["cod_concur"], cg["id_concar"], cg["id_concur"]] == \
+        ["788", "806", "P321726030", "CON0806"]
+
+
+def test_args_ver_consulta():
+    assert U._args_ver_consulta("javascript:ver_consulta('806','CON0806')") == ["806", "CON0806"]
+    assert U._args_ver_consulta("#") == []
+
+
+def test_detalle_ficha():
+    d = U.parsear_ufro_detalle(_L3)
     assert d["fecha_cierre"] == date(2026, 7, 14)
     assert d["vacantes"] == 1
-    assert d["estado"] == "ABIERTO"
-    assert "CUMPLIR CON LO ESTABLECIDO" in d["requisitos"]
     assert "ENSEÑANZA BÁSICA" in d["requisitos"]
 
 
-def test_listado_tabla_captura_enlace_a_ficha():
-    items = U.parsear_ufro(_LISTADO_ADMIN, _FUENTE)
-    assert len(items) == 1
-    assert items[0]["url"].endswith("ver_concurso.php?id=5")
-
-
-def test_listado_vacio_devuelve_lista_vacia():
-    assert U.parsear_ufro(_LISTADO_ACADEMICO, _FUENTE) == []
-
-
-def test_listado_prefiere_enlace_real_sobre_ancla():
-    # Fila con una ancla "#" (no navega) y el VER real: se toma el real.
-    html = """<html><body><table>
-      <tr><th>Código</th><th>Descripción</th><th>Link</th><th>Tipo</th><th>Estado</th></tr>
-      <tr><td>C-1</td><td>Analista</td>
-          <td><a href="#">detalle</a> <a href="ver_concurso.php?id=7">VER</a></td>
-          <td>Administrativo</td><td>ABIERTO</td></tr>
-    </table></body></html>"""
-    items = U.parsear_ufro(html, _FUENTE)
-    assert items[0]["url"].endswith("ver_concurso.php?id=7")
-
-
-def test_listado_respaldo_por_enlaces():
-    # Sin tabla, se toman los enlaces a fichas de concurso.
-    html = ('<html><body><ul>'
-            '<a href="ver_concurso.php?id=9">Analista de Sistemas</a>'
-            '</ul></body></html>')
-    items = U.parsear_ufro(html, _FUENTE)
-    assert len(items) == 1
-    assert items[0]["url"].endswith("ver_concurso.php?id=9")
-
-
-# ── Flujo completo ───────────────────────────────────────────────────────────
-def test_procesar_arma_oferta_completa():
-    ofertas = U._procesar_ufro(_FUENTE, _make_session(), incluir_cerrados=False)
+# ── Flujo completo por POST ──────────────────────────────────────────────────
+def test_procesar_flujo_post_completo():
+    ofertas = U._procesar_ufro(_FUENTE, _Sess(), incluir_cerrados=False)
     assert len(ofertas) == 1
     o = ofertas[0]
     assert o["cargo"] == "JARDINERO -DIVISIÓN DE SERVICIOS"
-    assert o["fecha_cierre"] == date(2026, 7, 14)          # de "Fecha Término"
+    assert o["fecha_cierre"] == date(2026, 7, 14)      # de Fecha Término (nivel 2)
+    assert o["numero_vacantes"] == 1
     assert o["requisitos_texto"] and "ENSEÑANZA" in o["requisitos_texto"]
-    assert "personas.ufro.cl" in o["descripcion"]
-    assert "_estado" not in o                               # se limpia antes de emitir
+    assert o["fecha_publicacion"] == date(2026, 7, 3)  # Fecha Inicio
+    assert "_estado" not in o
 
 
-def test_procesar_omite_estado_cerrado():
-    ofertas = U._procesar_ufro(_FUENTE, _make_session(_DETALLE_CERRADO),
-                               incluir_cerrados=False)
-    assert ofertas == []
+def test_procesar_omite_concurso_cerrado():
+    l1_cerrado = _L1.replace(b"ABIERTO", b"CERRADO")
 
+    class _S(_Sess):
+        def post(self, url, data=None, **kw):
+            if url.endswith("ver_tipo_administrativo.php"):
+                d = data or {}
+                return _Resp(l1_cerrado if d.get("Formulario1[cod_concar]") == "1" else _EMPTY)
+            return super().post(url, data=data, **kw)
 
-def test_procesar_incluir_cerrados_los_conserva():
-    ofertas = U._procesar_ufro(_FUENTE, _make_session(_DETALLE_CERRADO),
-                               incluir_cerrados=True)
-    assert len(ofertas) == 1
+    assert U._procesar_ufro(_FUENTE, _S(), incluir_cerrados=False) == []
