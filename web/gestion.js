@@ -1974,13 +1974,23 @@ async function _cargarCatalogoRun() {
   _poblarInstsRun();
 }
 
+// Scrapers AGRUPADOS propios (no son un ScraperKind): el backend los traduce a
+// mode=<value> con los IDs del grupo. "dedicado" es un pseudo-tipo: lista las
+// instituciones con scraper a medida (clasifican kind="skip" porque el genérico
+// no debe tocarlas: CODELCO, Senado, Poder Judicial, Fiscalía, Integra, TC…) —
+// se corren eligiendo la institución (mode=institucion dispara su batch).
+const RUN_GRUPOS = [
+  { value: 'municipios',       label: '🏛️ Municipios (agrupado)' },
+  { value: 'universidades',    label: '🎓 Universidades (agrupado)' },
+  { value: 'puertos_empresas', label: '⚓ Puertos y empresas del Estado (agrupado)' },
+  { value: 'dedicado',         label: '⭐ Scraper dedicado (elige la institución)' },
+];
+
 function _poblarTiposRun() {
   const sel = document.getElementById('run-tipo');
   if (!sel) return;
   const cuenta = {};
-  let munis = 0;
   for (const i of (_RUN_CAT || [])) {
-    if (/municipal/i.test(i.sector)) munis++;
     if (i.kind && i.kind !== 'skip' && _runCorrible(i)) {
       cuenta[i.kind] = (cuenta[i.kind] || 0) + 1;
     }
@@ -1988,18 +1998,21 @@ function _poblarTiposRun() {
   let kinds = Object.keys(cuenta).sort((a, b) => cuenta[b] - cuenta[a]);
   if (!kinds.length) kinds = RUN_KINDS_FALLBACK.slice();   // respaldo
   sel.length = 1;   // conservar "Todos" (índice 0), regenerar el resto
-  // Municipios: scraper agrupado propio (municipios.py). No es un ScraperKind
-  // (sus fuentes clasifican como wordpress/generic), así que va como opción
-  // dedicada — el backend lo traduce a mode="municipios".
-  sel.add(new Option(munis ? `🏛️ Municipios (agrupado) — ${munis} munis` : '🏛️ Municipios (agrupado)', 'municipios'));
+  for (const g of RUN_GRUPOS) {
+    const n = _instsDelTipo(g.value).length;
+    sel.add(new Option(n ? `${g.label} — ${n}` : g.label, g.value));
+  }
   for (const k of kinds) {
     const label = RUN_KIND_LABELS[k] || k;
     sel.add(new Option(cuenta[k] ? `${label} (${cuenta[k]})` : label, k));
   }
 }
 
-// Instituciones visibles para el tipo elegido. Municipios filtra por sector
-// (las munis clasifican como wordpress/generic, no hay kind "municipios").
+// Instituciones visibles para el tipo elegido. Los grupos filtran por sector
+// (sus fuentes clasifican como wordpress/generic, no hay kind del grupo);
+// "dedicado" lista las kind=skip corribles (tienen scraper a medida). El
+// filtro es una conveniencia para las sugerencias: elegir cualquier
+// institución corre esa institución (mode=institucion), que siempre es válido.
 function _instsDelTipo(tipo) {
   const hayKinds = (_RUN_CAT || []).some(i => i.kind);
   return (_RUN_CAT || [])
@@ -2007,6 +2020,9 @@ function _instsDelTipo(tipo) {
     .filter(i => {
       if (tipo === 'all') return true;
       if (tipo === 'municipios') return /municipal/i.test(i.sector);
+      if (tipo === 'universidades') return /universi/i.test(i.sector);
+      if (tipo === 'puertos_empresas') return /empresa|portuari/i.test(i.sector);
+      if (tipo === 'dedicado') return i.kind === 'skip';
       return !hayKinds || i.kind === tipo;
     })
     .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
@@ -2098,8 +2114,9 @@ async function runScraper() {
   }
 
   // tipo=all → corrida completa; con institución → esa institución; sin ella →
-  // todas las del tipo (kind, el batch de municipios, o el modo dedicado de
-  // EmpleosPublicos).
+  // todas las del tipo (kind, un batch agrupado, o el modo dedicado de
+  // EmpleosPublicos). "dedicado" exige elegir la institución (no hay batch
+  // "todos los dedicados").
   let mode;
   const payload = { dry_run: dryRun };
   if (tipo === 'all') {
@@ -2107,10 +2124,13 @@ async function runScraper() {
   } else if (instId != null) {
     mode = 'institucion';
     payload.institucion_id = instId;
+  } else if (tipo === 'dedicado') {
+    toast('Elige la institución del scraper dedicado (escribe para buscarla)', 'error');
+    return;
   } else if (tipo === 'empleos_publicos') {
     mode = 'empleos_publicos';
-  } else if (tipo === 'municipios') {
-    mode = 'municipios';
+  } else if (tipo === 'municipios' || tipo === 'universidades' || tipo === 'puertos_empresas') {
+    mode = tipo;
   } else {
     mode = 'kind';
     payload.kind = tipo;

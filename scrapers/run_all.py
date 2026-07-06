@@ -171,6 +171,19 @@ IDS_MUNICIPIOS: frozenset[int] = frozenset({
     456, 527, 537, 580, 647, 670, 676,
 })
 
+#: Universidades (unión de los 4 batches: universidades.py, _wp, _portal,
+#: _tabla). El panel usa la unión (mode="universidades"); los gates de cada
+#: sub-batch conservan su subconjunto propio más abajo.
+IDS_UNIVERSIDADES: frozenset[int] = frozenset({
+    243, 244, 245, 246, 248, 251, 252, 253, 255, 258, 259,
+})
+
+#: Puertos y empresas del Estado (puertos_empresas.py): ENAER, EPI, puertos
+#: de Talcahuano/Pto. Montt/Chacabuco/Austral, FOJI, PRODEMU.
+IDS_PUERTOS_EMPRESAS: frozenset[int] = frozenset({
+    166, 285, 290, 291, 292, 293, 708, 709,
+})
+
 
 @lru_cache(maxsize=1)
 def _playwright_runtime_available() -> tuple[bool, str | None]:
@@ -1262,8 +1275,7 @@ async def main(argv: list[str] | None = None) -> int:
                     _run_modulo_ejecutar_sync, "fiscalia (146)", fiscalia_scraper.ejecutar
                 )
             )
-        _IDS_PUERTOS_EMPRESAS = {166, 285, 290, 291, 292, 293, 708, 709}
-        hay_puertos = any(s.get("id") in _IDS_PUERTOS_EMPRESAS for s in catalog_sources)
+        hay_puertos = any(s.get("id") in IDS_PUERTOS_EMPRESAS for s in catalog_sources)
         if hay_puertos:
             reports.append(
                 await asyncio.to_thread(
