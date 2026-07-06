@@ -195,3 +195,58 @@ def test_parsear_detalle_correo_contacto_no_marca_postulacion():
     res = _scraper()._parsear_detalle(soup, {"cargo": "X", "url_oferta": "http://x"})
     assert res.get("email_consultas") == "contacto@minsegpublica.gob.cl"
     assert not res.get("email_postulacion")
+
+
+# ── "Aviso de trabajo" (convpostularavisoTrabajo.aspx) ───────────────────────
+# Los avisos municipales usan contenedores #article* y encabezados h3 sueltos
+# ("Objetivo del cargo", "Funciones del Cargo") en vez de la ficha de concurso
+# con #lbl*. El extractor debe leer ambas variantes para no perder secciones.
+_FICHA_AVISO = """
+<html><body>
+<h2>Descripción del Cargo</h2>
+<h3>Funciones del Cargo</h3>
+<ul><li>Realizar detección de casos en terreno.</li>
+<li>Recepcionar derivaciones de la red local.</li></ul>
+<h3>Objetivo del cargo</h3>
+<p>Detectar de manera oportuna a niños, niñas y adolescentes con factores
+de riesgo, y diagnosticar sus necesidades de intervención.</p>
+<h2>Perfil de la Función</h2>
+<div id="articleFormacion"><h3>Formación Educacional</h3>
+<p>Título profesional de Psicólogo(a) o Trabajador(a) Social.</p></div>
+<div id="articleEspecializaciones"><h3>Especialización y/o Capacitación</h3>
+<p>Conocimiento en intervención con población infanto-adolescente.</p></div>
+<div id="articleExperiencias"><h3>Experiencia sector público / sector privado</h3>
+<p>Experiencia laboral con niños, niñas y/o adolescentes.</p></div>
+<div id="articleCompetencias"><h3>Competencias</h3>
+<h4>Trabajo en equipo</h4><p>Definición larga…</p>
+<h4>Orientación al logro</h4><p>Otra definición…</p></div>
+</body></html>
+"""
+
+
+def test_aviso_descripcion_incluye_objetivo_y_funciones():
+    sc = _scraper()
+    soup = BeautifulSoup(_FICHA_AVISO, "html.parser")
+    desc = sc._componer_descripcion(soup)
+    assert desc is not None
+    assert "Objetivo del cargo:" in desc
+    assert "Detectar de manera oportuna" in desc
+    assert "Funciones del cargo:" in desc
+    assert "Realizar detección de casos" in desc
+
+
+def test_aviso_requisitos_lee_contenedores_article():
+    sc = _scraper()
+    soup = BeautifulSoup(_FICHA_AVISO, "html.parser")
+    req = sc._componer_requisitos(soup)
+    assert req is not None
+    # Formación / Experiencia / Especialización desde #article*
+    assert "Título profesional de Psicólogo" in req
+    assert "Experiencia laboral con niños" in req
+    assert "intervención con población infanto-adolescente" in req
+    # Competencias: solo nombres, sin definiciones
+    assert "Trabajo en equipo" in req
+    assert "Orientación al logro" in req
+    assert "Definición larga" not in req
+    # El encabezado de la sección no se cuela como texto duplicado
+    assert "Experiencia sector público / sector privado" not in req
