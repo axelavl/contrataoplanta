@@ -129,12 +129,23 @@ class SalaryAssessmentTests(unittest.TestCase):
 
 class VigenciaTests(unittest.TestCase):
     def test_cierre_pasado_descarta(self):
+        # today explícito: date.today() usa la zona del sistema (UTC en CI),
+        # que puede ir un día adelantada respecto de Chile y volver flaky el test.
         descartar, motivo, review = assess_vigencia(
-            None, date.today() - timedelta(days=1)
+            None, date(2030, 6, 14), today=date(2030, 6, 15)
         )
         self.assertTrue(descartar)
         self.assertEqual(motivo, "fecha_cierre_vencida")
         self.assertFalse(review)
+
+    def test_cierre_hoy_no_descarta(self):
+        # Una oferta que cierra HOY sigue vigente todo el día (equivale al
+        # estado closing_today del API).
+        descartar, motivo, review = assess_vigencia(
+            None, date(2030, 6, 15), today=date(2030, 6, 15)
+        )
+        self.assertFalse(descartar)
+        self.assertIsNone(motivo)
 
     def test_cierre_futuro_pasa(self):
         descartar, motivo, review = assess_vigencia(

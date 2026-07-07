@@ -549,12 +549,23 @@ class ResolveBestDatesTests(unittest.TestCase):
         self.assertEqual(result.date_confidence, "low")
 
     def test_explicit_now_is_used(self):
-        frozen_now = datetime(2030, 6, 15, tzinfo=timezone.utc)
+        # 12:00 UTC = 08:00 en Chile: mismo día calendario en ambas zonas.
+        frozen_now = datetime(2030, 6, 15, 12, tzinfo=timezone.utc)
         past = datetime(2030, 6, 14, tzinfo=timezone.utc)
         result = resolve_best_dates(
             [self._ev("application_end", past)], now=frozen_now
         )
         self.assertTrue(result.is_expired)
+
+    def test_cierre_hoy_no_esta_vencida(self):
+        # Cierra HOY (hora de Chile) → vigente todo el día, aunque el datetime
+        # del cierre (medianoche) sea anterior a `now`.
+        frozen_now = datetime(2030, 6, 15, 12, tzinfo=timezone.utc)
+        closes_today = datetime(2030, 6, 15, tzinfo=timezone.utc)
+        result = resolve_best_dates(
+            [self._ev("application_end", closes_today)], now=frozen_now
+        )
+        self.assertFalse(result.is_expired)
 
     def test_evidence_is_preserved_in_resolution(self):
         evidences = [

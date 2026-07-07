@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 from dateutil import parser
 
@@ -67,7 +68,12 @@ def resolve_best_dates(evidences: list[DateEvidence], now: datetime | None = Non
     expiration_reason = None
     confidence = "low"
     if end and end.value:
-        is_expired = end.value < now
+        # Comparación por FECHA en hora de Chile, no datetime contra datetime:
+        # end.value queda a medianoche del día de cierre, así que `< now`
+        # marcaba vencida una oferta durante todo su último día de postulación
+        # (y en UTC el desfase adelantaba el vencimiento otras ~4 horas).
+        hoy_cl = now.astimezone(ZoneInfo("America/Santiago")).date()
+        is_expired = end.value.date() < hoy_cl
         expiration_reason = "application_end_at_in_past" if is_expired else None
         confidence = "high"
 
