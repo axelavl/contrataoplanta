@@ -77,7 +77,11 @@ def test_url_original_es_la_noticia_no_el_pdf(monkeypatch):
     # "Ir al portal" debe llevar a la noticia del concurso (fuente["url"], con
     # ancla por grupo); el PDF de bases queda sólo en url_bases ("Ver bases").
     monkeypatch.setattr(M.time, "sleep", lambda *a, **k: None)
-    monkeypatch.setattr(M, "_pdf_texto", lambda contenido: _RESUMEN)
+    from scrapers import bases_pdf
+    monkeypatch.setattr(
+        bases_pdf, "leer_pdf",
+        lambda contenido, allow_ocr=True: (_RESUMEN, "ocr"),
+    )
     items = M.extraer_bases_estamento_grado("", _FUENTE, _SessPDF(b"%PDF-fake"), 0)
     assert len(items) == 11
     for it in items:
@@ -85,6 +89,31 @@ def test_url_original_es_la_noticia_no_el_pdf(monkeypatch):
         assert not it["url"].lower().split("#")[0].endswith(".pdf")
         assert it["url_bases"] == _FUENTE["bases_pdf"]
 
+
+def test_filtrar_omite_bases_sin_texto_para_no_publicar_vigencia_incierta(monkeypatch):
+    """Si se alcanza el tope de OCR, el PDF queda sin texto: no debe entrar
+    como vigente/manual porque no pudimos verificar su cronograma real."""
+    fuente = {**_FUENTE, "bases_enriquecer": True}
+    item = {
+        "cargo": "Administrativo Prueba",
+        "url": _FUENTE["url"] + "#admin-prueba",
+        "url_bases": _FUENTE["bases_pdf"],
+        "bloque": "Planta Administrativo · Grado 14 · 1 vacante(s).",
+        "numero_vacantes": 1,
+        "tipo": "Planta (Concurso Público Municipal)",
+    }
+    monkeypatch.setattr(
+        M, "_enriquecer_con_bases",
+        lambda o, fuente, session, cache, contadores: {
+            "metodo": "sin_texto",
+            "estado": "sin_fecha",
+            "motivo": "tope de OCR",
+            "confianza": "manual",
+            "campos": [],
+        },
+    )
+
+    assert M._filtrar_items([item], fuente, session=None, delay=0, incluir_cerrados=False) == []
 
 def test_construir_oferta_estamento_grado():
     grupos = M.parsear_bases_estamento_grado(_RESUMEN)
@@ -148,6 +177,13 @@ def test_procesar_fuente_no_pide_la_pagina_bloqueada(monkeypatch):
     }
     monkeypatch.setattr(M, "extraer_bases_estamento_grado",
                         lambda html, fuente, session, delay: [item])
+    monkeypatch.setattr(
+        M, "_enriquecer_con_bases",
+        lambda o, fuente, session, cache, contadores: {
+            "metodo": "texto", "estado": "vigente", "motivo": "ok",
+            "confianza": "alto", "campos": ["fecha_cierre"],
+        },
+    )
     ofertas = M._procesar_fuente(_FUENTE, _SesionSoloPDF(), 0, False)
     assert len(ofertas) == 1
     assert ofertas[0]["cargo"] == "Profesional Grado 9"
