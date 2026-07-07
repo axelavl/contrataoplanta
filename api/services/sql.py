@@ -114,7 +114,11 @@ def _crit_nuevas_horas(v: Any) -> tuple[str, list[Any]] | None:
     if n <= 0:
         return None
     return (
-        "(COALESCE(o.fecha_scraped, o.detectada_en, o.actualizada_en, o.creada_en) "
+        # Primera detección: detectada_en/creada_en se fijan al INSERT y no se
+        # tocan en re-scrapeos. fecha_scraped queda como fallback porque se
+        # refresca en cada pasada — usarla primero marcaba como "nueva"
+        # cualquier oferta vieja re-visitada por el scraper.
+        "(COALESCE(o.detectada_en, o.creada_en, o.fecha_scraped, o.actualizada_en) "
         ">= NOW() - make_interval(hours => %s))",
         [n],
     )
@@ -317,6 +321,7 @@ def ofertas_select_sql(*, truncate_text: bool = False) -> str:
         o.lugar_desempenio,
         COALESCE(o.destacada, FALSE) AS destacada,
         {OFFER_STATUS_SQL} AS estado,
+        COALESCE(o.detectada_en, o.creada_en, o.fecha_scraped) AS detectada_en,
         COALESCE(o.fecha_scraped, o.detectada_en, o.actualizada_en, o.creada_en) AS fecha_scraped,
         COALESCE(o.fecha_actualizado, o.actualizada_en, o.creada_en) AS fecha_actualizado,
         i.plataforma_empleo AS plataforma,
@@ -592,8 +597,11 @@ def build_ofertas_filters(
         )
 
     if nuevas:
-        # "Nuevas" = añadidas en las últimas 24 horas (issue #242).
-        where.append("COALESCE(o.fecha_scraped, o.detectada_en, o.actualizada_en, o.creada_en) >= NOW() - INTERVAL '24 hours'")
+        # "Nuevas" = DETECTADAS en las últimas 24 horas (issue #242).
+        # detectada_en/creada_en se fijan al INSERT y no se tocan en
+        # re-scrapeos; fecha_scraped se refresca en cada pasada, así que con
+        # ella primero cualquier oferta vieja re-visitada contaba como nueva.
+        where.append("COALESCE(o.detectada_en, o.creada_en, o.fecha_scraped, o.actualizada_en) >= NOW() - INTERVAL '24 hours'")
 
     if sin_experiencia:
         # "Sin experiencia": ofertas que no exigen experiencia previa. No hay un

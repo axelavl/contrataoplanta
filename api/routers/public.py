@@ -259,14 +259,18 @@ def get_ofertas(
     # Ofertas sin fecha_cierre van al final;
     # dentro de cada grupo se ordena normalmente.
     sin_fechas = "CASE WHEN fecha_cierre IS NULL THEN 1 ELSE 0 END ASC"
+    # "recientes" ordena por PRIMERA detección (detectada_en, alias en la CTE),
+    # no por fecha_scraped: el upsert de los scrapers refresca fecha_scraped en
+    # cada pasada, así que con ella el listado re-flotaba ofertas viejas
+    # re-visitadas y las recién detectadas no destacaban.
     order_sql = {
-        "recientes":  f"{sin_fechas}, fecha_scraped DESC NULLS LAST, id DESC",
+        "recientes":  f"{sin_fechas}, detectada_en DESC NULLS LAST, id DESC",
         "cierre":     f"{sin_fechas}, fecha_cierre ASC NULLS LAST, id DESC",
         "renta_desc": f"{sin_fechas}, renta_bruta_max DESC NULLS LAST, renta_bruta_min DESC NULLS LAST, id DESC",
         "renta":      f"{sin_fechas}, renta_bruta_max DESC NULLS LAST, renta_bruta_min DESC NULLS LAST, id DESC",
         "renta_asc":  f"{sin_fechas}, LEAST(COALESCE(renta_bruta_min, renta_bruta_max), COALESCE(renta_bruta_max, renta_bruta_min)) ASC NULLS LAST, id DESC",
         "az":         f"{sin_fechas}, cargo ASC NULLS LAST, id ASC",
-    }.get(orden, f"{sin_fechas}, fecha_scraped DESC NULLS LAST, id DESC")
+    }.get(orden, f"{sin_fechas}, detectada_en DESC NULLS LAST, id DESC")
 
     # Cuando hay búsqueda, anteponemos relevancia por cargo: los avisos cuyo
     # TÍTULO contiene la frase aparecen primero; los que solo la mencionan en la
@@ -459,7 +463,7 @@ def get_estadisticas() -> dict[str, Any]:
         SELECT
             COUNT(*) FILTER (WHERE {ACTIVE_OFFER_SQL.replace('o.', '')}) AS activas_hoy,
             COUNT(*) FILTER (
-                WHERE COALESCE(fecha_scraped, detectada_en, actualizada_en, creada_en) >= NOW() - INTERVAL '48 hours'
+                WHERE COALESCE(detectada_en, creada_en, fecha_scraped, actualizada_en) >= NOW() - INTERVAL '48 hours'
                   AND {ACTIVE_OFFER_SQL.replace('o.', '')}
             ) AS nuevas_48h,
             COUNT(*) FILTER (
@@ -486,10 +490,10 @@ def get_estadisticas() -> dict[str, Any]:
     historico_mensual = execute_fetch_all(
         """
         SELECT
-            TO_CHAR(DATE_TRUNC('month', COALESCE(fecha_scraped, detectada_en, actualizada_en, creada_en)), 'YYYY-MM') AS mes,
+            TO_CHAR(DATE_TRUNC('month', COALESCE(detectada_en, creada_en, fecha_scraped, actualizada_en)), 'YYYY-MM') AS mes,
             COUNT(*) AS total
         FROM ofertas
-        WHERE COALESCE(fecha_scraped, detectada_en, actualizada_en, creada_en) >= NOW() - INTERVAL '12 months'
+        WHERE COALESCE(detectada_en, creada_en, fecha_scraped, actualizada_en) >= NOW() - INTERVAL '12 months'
         GROUP BY 1
         ORDER BY mes ASC
         """
@@ -502,7 +506,7 @@ def get_estadisticas() -> dict[str, Any]:
             COALESCE(i.nombre, 'Sin institucion') AS nombre,
             COUNT(*) AS activas,
             COUNT(*) FILTER (
-                WHERE COALESCE(o.fecha_scraped, o.detectada_en, o.actualizada_en, o.creada_en) >= NOW() - INTERVAL '7 days'
+                WHERE COALESCE(o.detectada_en, o.creada_en, o.fecha_scraped, o.actualizada_en) >= NOW() - INTERVAL '7 days'
             ) AS nuevas_semana
         {ofertas_base_sql()}
         WHERE {ACTIVE_OFFER_SQL}

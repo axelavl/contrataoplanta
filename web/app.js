@@ -398,8 +398,8 @@ const POR_PAGINA_CONFIG = {
   // Mantener paginación clásica: en un agregador con filtros intensivos es más
   // predecible para comparar ofertas entre páginas y no romper el contexto.
   compacta: { opciones: [20, 30, 50, 100], porDefecto: 30 },
-  cards:    { opciones: [12, 20, 30], porDefecto: 20 },
-  grid:     { opciones: [9, 12, 18], porDefecto: 12 },
+  cards:    { opciones: [12, 20, 30, 50], porDefecto: 20 },
+  grid:     { opciones: [9, 12, 18, 48], porDefecto: 12 },
 };
 
 // Contador de visitas + auto-cambio silencioso a "cierre" en la 3ª visita
@@ -945,9 +945,11 @@ function diasDesdeHoy(iso) {
   } catch { return null; }
 }
 
-// ── Texto "hace X días" a partir de fecha_publicacion o fecha_scraped ─────
+// ── Texto "hace X días" a partir de fecha_publicacion o primera detección ──
+// detectada_en es la PRIMERA vez que el scraper vio la oferta; fecha_scraped
+// se refresca en cada re-scrapeo y hacía que ofertas viejas parecieran nuevas.
 function frescuraTexto(oferta) {
-  const iso = oferta?.fecha_publicacion || oferta?.fecha_scraped || null;
+  const iso = oferta?.fecha_publicacion || oferta?.detectada_en || oferta?.fecha_scraped || null;
   const d = diasDesdeHoy(iso);
   if (d === null || d > 30) return null;
   if (d <= 2) return `✨ Nueva · hace ${d === 0 ? 'menos de 1 día' : d === 1 ? '1 día' : `${d} días`}`;
