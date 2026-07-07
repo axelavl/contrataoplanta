@@ -30,6 +30,17 @@ nav {
 }
 .logo { font-family: 'Lora', Georgia, serif; color: var(--acento); text-decoration: none; font-size: 18px; font-weight:600; }
 .logo em { color: var(--acento); }
+/* Lockup del header compartido (partials/header.html): sello + wordmark.
+   Sin estas reglas el SVG del sello se renderiza a tamaño natural y se
+   desborda sobre el contenido. Copiado de shared-layout.css. */
+.logo { display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; }
+.logo-mark { width: 38px; height: 38px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; overflow: hidden; }
+.logo-mark svg { width: 100%; height: 100%; display: block; }
+.logo-wordmark { display: grid; line-height: 1.02; color: var(--acento); }
+.logo-name { font-size: 19.5px; letter-spacing: -0.25px; }
+.logo-tagline { font-family: 'Inter', system-ui, sans-serif; font-size: 10px; font-weight: 600; color: rgba(255,255,255,.68); letter-spacing: .42px; text-transform: uppercase; }
+.logo-domain-muted { font-style: italic; color: var(--acento); font-weight: 600; }
+.logo-footer { display: block; margin-bottom: 10px; }
 .nav-links { display: flex; gap: 8px; flex: 1; }
 .nav-links a {
   color: rgba(255,255,255,0.72);
@@ -121,6 +132,10 @@ footer {
   font-size: 13px;
 }
 .footer-inner { max-width: 1160px; margin: 0 auto; }
+/* Bloque "Búsquedas frecuentes" (SEO) del partial de footer. */
+.footer-seo { max-width: 1160px; margin: 24px auto 0; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.12); }
+.footer-seo-links { display: flex; flex-wrap: wrap; gap: 4px 18px; }
+.footer-seo-links .footer-link { margin-bottom: 4px; }
 @media (max-width: 860px) {
   .nav-links { display: none; }
   .lead { font-size: 16px; }
