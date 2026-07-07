@@ -153,7 +153,7 @@ _IDS_NUEVO_ESTANDAR: frozenset[int] = frozenset({
     # municipios.py (scraper agrupado, un modo por sitio): municipalidades y
     # corporaciones con extracción funcional. Las fuentes spa/bloqueada quedan
     # al genérico (no scrapean nada por ahora). Ver scrapers/municipios.py.
-    345, 363, 382, 384, 385, 387, 388, 401, 407, 409, 416, 419, 456, 527, 537, 580, 647, 670, 676,
+    345, 363, 382, 384, 385, 387, 388, 398, 401, 407, 409, 416, 419, 456, 527, 537, 580, 647, 670, 676,
     # universidades.py + universidades_wp.py + universidades_portal.py +
     # universidades_tabla.py (scrapers agrupados de universidades)
     # 254 (UTEM) → trabajando.py; 258/259 (UOH/UAysén) → universidades_wp.py
@@ -167,7 +167,7 @@ _IDS_NUEVO_ESTANDAR: frozenset[int] = frozenset({
 #: para que el panel (api/routers/admin.py, mode="municipios") pueda armar el
 #: `--ids` sin duplicar la lista. El gate del batch (más abajo) usa este set.
 IDS_MUNICIPIOS: frozenset[int] = frozenset({
-    345, 363, 382, 384, 385, 388, 398, 401, 407, 409, 416, 419,
+    345, 363, 382, 384, 385, 387, 388, 398, 401, 407, 409, 416, 419,
     456, 527, 537, 580, 647, 670, 676,
 })
 
@@ -176,6 +176,22 @@ IDS_MUNICIPIOS: frozenset[int] = frozenset({
 #: sub-batch conservan su subconjunto propio más abajo.
 IDS_UNIVERSIDADES: frozenset[int] = frozenset({
     243, 244, 245, 246, 248, 251, 252, 253, 255, 258, 259,
+})
+
+IDS_UNIVERSIDADES_BASE: frozenset[int] = frozenset({
+    245, 248, 253, 255,
+})
+
+IDS_UNIVERSIDADES_WP: frozenset[int] = frozenset({
+    258, 259,
+})
+
+IDS_UNIVERSIDADES_PORTAL: frozenset[int] = frozenset({
+    246, 251,
+})
+
+IDS_UNIVERSIDADES_TABLA: frozenset[int] = frozenset({
+    243, 244, 252,
 })
 
 #: Puertos y empresas del Estado (puertos_empresas.py): ENAER, EPI, puertos
@@ -1322,32 +1338,28 @@ async def main(argv: list[str] | None = None) -> int:
                     _run_modulo_ejecutar_sync, "adp (130)", adp_scraper.ejecutar
                 )
             )
-        _IDS_UNIVERSIDADES = {245, 248, 253, 255}  # 254→trabajando, 258/259→uni_wp, 246/251→uni_portal, 243/244/252→uni_tabla
-        hay_universidades = any(s.get("id") in _IDS_UNIVERSIDADES for s in catalog_sources)
+        hay_universidades = any(s.get("id") in IDS_UNIVERSIDADES_BASE for s in catalog_sources)
         if hay_universidades:
             reports.append(
                 await asyncio.to_thread(
                     _run_modulo_ejecutar_sync, "universidades", universidades_scraper.ejecutar
                 )
             )
-        _IDS_UNIVERSIDADES_WP = {258, 259}
-        hay_uni_wp = any(s.get("id") in _IDS_UNIVERSIDADES_WP for s in catalog_sources)
+        hay_uni_wp = any(s.get("id") in IDS_UNIVERSIDADES_WP for s in catalog_sources)
         if hay_uni_wp:
             reports.append(
                 await asyncio.to_thread(
                     _run_modulo_ejecutar_sync, "universidades_wp", universidades_wp_scraper.ejecutar
                 )
             )
-        _IDS_UNIVERSIDADES_PORTAL = {251, 246}
-        hay_uni_portal = any(s.get("id") in _IDS_UNIVERSIDADES_PORTAL for s in catalog_sources)
+        hay_uni_portal = any(s.get("id") in IDS_UNIVERSIDADES_PORTAL for s in catalog_sources)
         if hay_uni_portal:
             reports.append(
                 await asyncio.to_thread(
                     _run_modulo_ejecutar_sync, "universidades_portal", universidades_portal_scraper.ejecutar
                 )
             )
-        _IDS_UNIVERSIDADES_TABLA = {243, 244, 252}
-        hay_uni_tabla = any(s.get("id") in _IDS_UNIVERSIDADES_TABLA for s in catalog_sources)
+        hay_uni_tabla = any(s.get("id") in IDS_UNIVERSIDADES_TABLA for s in catalog_sources)
         if hay_uni_tabla:
             reports.append(
                 await asyncio.to_thread(
