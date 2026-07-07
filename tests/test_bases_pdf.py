@@ -246,22 +246,39 @@ def test_leer_pdf_escaneado_sin_ocr(monkeypatch):
 
 # ── Enriquecimiento del dict de oferta ───────────────────────────────────────
 def test_enriquecer_oferta_completa_y_reemplaza_cargo_basura():
+    texto = (
+        _DECRETO
+        + "\nRemuneración bruta mensual: $1.234.567.-"
+        + "\nJornada laboral de 44 horas semanales."
+    )
     oferta = {
-        "cargo": "Profesionales EM, Para Maestranza Municipal, Cargo a Desempeñar: Profesional Maestranza, Según",
+        "cargo": (
+            "Profesionales EM, Para Maestranza Municipal, "
+            "Cargo a Desempeñar: Profesional Maestranza, Según"
+        ),
         "descripcion": None, "requisitos_texto": None,
-        "fecha_cierre": None, "numero_vacantes": None,
+        "fecha_cierre": None, "renta_texto": None, "numero_vacantes": None,
     }
-    res = B.enriquecer_desde_texto(oferta, _DECRETO, "ocr", hoy=date(2026, 7, 6))
+    res = B.enriquecer_desde_texto(oferta, texto, "ocr", hoy=date(2026, 7, 6))
     assert res["estado"] == "vencido"
     assert res["confianza"] == "alto"
     assert oferta["cargo"] == "Profesional Maestranza"          # título limpio
     assert oferta["fecha_cierre"] == date(2024, 6, 17)          # el PDF manda
+    assert oferta["renta_texto"].startswith("Remuneración bruta mensual: $1.234.567")
+    assert oferta["jornada"] == "44 horas"
     assert "Objetivo del cargo:" in oferta["descripcion"]
     assert "Funciones:" in oferta["descripcion"]
     assert "Grado 11" in oferta["descripcion"]
     assert "Título requerido:" in oferta["requisitos_texto"]
+    assert "Requisitos específicos:" in oferta["requisitos_texto"]
+    assert "Requisitos generales:" in oferta["requisitos_texto"]
     assert "Competencias:" in oferta["requisitos_texto"]
-    assert "fecha_cierre" in res["campos"] and "funciones" in res["campos"]
+    assert "Conocimientos:" in oferta["requisitos_texto"]
+    assert {
+        "fecha_cierre", "renta", "jornada", "objetivo", "funciones",
+        "titulo_requerido", "requisitos_especificos", "conocimientos",
+        "competencias", "habilidades",
+    } <= set(res["campos"])
 
 
 def test_enriquecer_no_pisa_datos_presentes():
