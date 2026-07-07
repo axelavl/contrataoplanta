@@ -24,11 +24,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://contrataoplanta.cl/editorial.html</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://contrataoplanta.cl/estadisticas.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -65,11 +60,6 @@
   </url>
   <url>
     <loc>https://contrataoplanta.cl/guia-seguimiento-postulacion-publica.html</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://contrataoplanta.cl/instituciones.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
