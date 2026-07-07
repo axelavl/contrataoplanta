@@ -300,6 +300,10 @@ def _decodificar_devalue(data: list, i: int, profundidad: int = 0) -> Any:
 
 _RE_IFRAME_SRC = re.compile(r'<iframe[^>]+\bsrc=["\']([^"\']+)["\']', re.I)
 
+# URL del portal Trabajando incrustada en el HTML/JS de un wrapper (fallback
+# cuando el <iframe> se inyecta por JavaScript y no aparece en el HTML servido).
+_RE_URL_TRABAJANDO = re.compile(r"https?://[a-z0-9.\-]+\.trabajando\.cl", re.I)
+
 
 def _resolver_base_efectiva(session: requests.Session, base: str) -> str:
     """Resuelve el portal real cuando el dominio propio es un *wrapper* que
@@ -310,8 +314,11 @@ def _resolver_base_efectiva(session: requests.Session, base: str) -> str:
     autodetección de idDominio falla contra el wrapper. Se sigue el iframe
     (hasta 3 saltos) hasta la página que sí trae los datos Nuxt y se devuelve
     su ORIGIN, que es el base efectivo para detección de idDominio y llamadas
-    ``/api``. Si no hay wrapper (portal servido directo), devuelve ``base`` sin
-    cambios. Cualquier callejón sin salida cae a ``base``."""
+    ``/api``. Si el ``<iframe>`` no está en el HTML estático (wrapper que lo
+    inyecta por JS), se busca cualquier URL ``*.trabajando.cl`` en el
+    HTML/JS de la página y se salta a su origin. Si no hay wrapper (portal
+    servido directo), devuelve ``base`` sin cambios. Cualquier callejón sin
+    salida cae a ``base``."""
     url = base.rstrip("/") + "/"
     for _ in range(3):
         try:
@@ -322,9 +329,15 @@ def _resolver_base_efectiva(session: requests.Session, base: str) -> str:
             p = urlparse(r.url)
             return f"{p.scheme}://{p.netloc}" if p.netloc else base
         m = _RE_IFRAME_SRC.search(r.text)
-        if not m:
-            return base
-        siguiente = urljoin(r.url, m.group(1))
+        if m:
+            siguiente = urljoin(r.url, m.group(1))
+        else:
+            # Wrapper JS (sin <iframe> estático, típico si el shell se hidrata
+            # en cliente): el src del portal igual suele venir en el HTML/JS.
+            m2 = _RE_URL_TRABAJANDO.search(r.text)
+            if not m2:
+                return base
+            siguiente = m2.group(0) + "/"
         p = urlparse(siguiente)
         if p.scheme not in ("http", "https") or not p.netloc:
             return base

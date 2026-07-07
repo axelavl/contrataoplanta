@@ -1183,8 +1183,20 @@ async def main(argv: list[str] | None = None) -> int:
         # sus fuentes están en el catálogo de esta corrida (respeta --ids/--limit).
         # Carabineros = fuente 161; Trabajando = cualquier *.trabajando.cl.
         hay_carabineros = any(s.get("id") == 161 for s in catalog_sources)
+        # "trabajando.cl" en la URL cubre los subdominios *.trabajando.cl, pero
+        # NO las fuentes con dominio propio que envuelven su bolsa Trabajando
+        # (TVN 280 = empleos.tvn.cl, UTEM 254 = empleos.utem.cl). Esas viven en
+        # trabajando._EXTRA_SOURCES con plataforma="trabajando": sin este OR,
+        # una corrida acotada (--id 280 / --ids / --limit) las saltaba en
+        # silencio y TVN nunca se scrapeaba.
+        ids_trabajando_extra = {
+            s.get("id") for s in getattr(trabajando_scraper, "_EXTRA_SOURCES", [])
+            if s.get("plataforma") == "trabajando"
+        }
         hay_trabajando = any(
-            "trabajando.cl" in str(s.get("url_empleo") or "").lower() for s in catalog_sources
+            "trabajando.cl" in str(s.get("url_empleo") or "").lower()
+            or s.get("id") in ids_trabajando_extra
+            for s in catalog_sources
         )
         if hay_carabineros:
             reports.append(

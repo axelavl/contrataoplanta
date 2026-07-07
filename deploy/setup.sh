@@ -86,6 +86,13 @@ info "Instalando dependencias Python..."
 sudo -u "$APP_USER" "$APP_DIR/venv/bin/pip" install --quiet --upgrade pip
 sudo -u "$APP_USER" "$APP_DIR/venv/bin/pip" install --quiet -r "$APP_DIR/requirements.txt"
 
+# Navegador Playwright: obligatorio para laborum.py (TVN/EFE/Hosp. Militar),
+# bcentral.py y el fallback de trabajando.py. pip instala solo la librería;
+# sin este paso esas fuentes quedan en 0 ofertas sin error visible.
+info "Instalando navegador Chromium para Playwright..."
+"$APP_DIR/venv/bin/python" -m playwright install-deps chromium
+sudo -u "$APP_USER" "$APP_DIR/venv/bin/python" -m playwright install chromium
+
 # ── 6. VARIABLES DE ENTORNO ───────────────────────────────────────────────────
 info "Configurando variables de entorno..."
 if [[ ! -f "$APP_DIR/.env" ]]; then

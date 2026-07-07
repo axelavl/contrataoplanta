@@ -23,3 +23,21 @@
 # (ese se configura en el dashboard de Railway).
 [phases.setup]
 aptPkgs = ["tesseract-ocr", "tesseract-ocr-spa"]
+
+# ── Navegador Playwright (Chromium) ──────────────────────────────────────────
+# Varios scrapers son OBLIGATORIAMENTE de navegador: laborum.py (TVN 280,
+# EFE 279, Hospital Militar 707 — la grilla es SPA), bcentral.py (Incapsula)
+# y el fallback Playwright de trabajando.py (wrappers como empleos.tvn.cl).
+# `pip install playwright` instala solo la librería; sin este paso el binario
+# de Chromium NO existe en producción y esas fuentes quedan mudas (0 ofertas,
+# sin error visible). Se instala en el BUILD (no en runtime: el contenedor del
+# cron es efímero y lo re-descargaría en cada corrida).
+#
+# PLAYWRIGHT_BROWSERS_PATH fija una ruta estable dentro de la imagen para que
+# el binario descargado en build sea el mismo que resuelve el runtime (sin la
+# variable, cada etapa calcularía su propio ~/.cache).
+[variables]
+PLAYWRIGHT_BROWSERS_PATH = "/opt/ms-playwright"
+
+[phases.build]
+cmds = ["python -m playwright install --with-deps chromium"]

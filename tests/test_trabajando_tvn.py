@@ -86,3 +86,19 @@ def test_resolver_corta_por_profundidad():
     bucle = '<html><iframe src="/next"></iframe></html>'
     sess = _SessFake([("empleos.tvn.cl", ("https://empleos.tvn.cl/", bucle))])
     assert T._resolver_base_efectiva(sess, "https://empleos.tvn.cl") == "https://empleos.tvn.cl"
+
+
+def test_resolver_wrapper_js_sin_iframe_estatico():
+    # Wrapper que inyecta el iframe por JavaScript: el HTML servido no trae
+    # <iframe>, pero la URL del portal *.trabajando.cl sí aparece en el JS.
+    # Antes esto caía a base (sin Nuxt → sin idDominio → fallback HTML que
+    # tampoco ve nada) y TVN quedaba en 0 ofertas.
+    wrap_js = ('<html><body><div id="app"></div><script>'
+               'const config = {portal: "https://tvn.trabajando.cl"};'
+               'montarPortalEnIframe(config.portal);'
+               '</script></body></html>')
+    sess = _SessFake([
+        ("tvn.trabajando.cl", ("https://tvn.trabajando.cl/", _NUXT)),
+        ("empleos.tvn.cl", ("https://empleos.tvn.cl/", wrap_js)),
+    ])
+    assert T._resolver_base_efectiva(sess, "https://empleos.tvn.cl") == "https://tvn.trabajando.cl"
