@@ -137,6 +137,78 @@ def test_cronograma_completo():
     assert crono["asuncion_cargo"] == date(2024, 8, 1)
 
 
+# ── Acta de RESULTADOS (terna/selección) en vez de bases ────────────────────
+# Caso real: el PDF del D.A 7.737/2024 de Viña ya no es el llamado sino el
+# acta que informa la terna y la selección — el proceso está RESUELTO, pero
+# como el acta no trae cronograma caía en "sin_fecha" y se publicaba vigente.
+_ACTA_TERNA = """
+VIÑA DEL MAR, 04 JUN. 2024
+ESTA ALCALDIA DECRETO HOY LO QUE SIGUE:
+N° 7737 / VISTOS: ...
+INFORMA TERNA LLAMADO A CONCURSO PÚBLICO D.A N° 7.737/2024, PARA PROVEER
+EL CARGO PROFESIONAL GRADO 11° E.M. DIRECCIÓN DE CONTROL.
+NOMBRE PUNTAJE FINAL
+POSTULANTE UNO 85,3
+POSTULANTE DOS 81,0
+POSTULANTE TRES 78,4
+De la terna informada, la Sra. Alcaldesa ha seleccionado a POSTULANTE UNO
+para asumir el cargo concursado.
+"""
+
+
+def test_acta_de_resultados_se_detecta():
+    b = B.parsear_bases(_ACTA_TERNA)
+    assert b.get("es_resultado") is True
+
+
+def test_acta_de_resultados_es_vencido_aunque_no_haya_cronograma():
+    estado, motivo = B.calcular_vigencia(B.parsear_bases(_ACTA_TERNA), hoy=date(2026, 7, 6))
+    assert estado == "vencido"
+    assert motivo == ("El PDF corresponde a resultados del concurso "
+                      "(terna/selección): proceso ya resuelto")
+
+
+def test_bases_reales_no_se_confunden_con_resultados():
+    # El decreto de bases menciona "Resolución del concurso" en el cronograma
+    # y trae "Cierre de recepción de postulaciones": NO es un acta de resultados.
+    assert "es_resultado" not in _bases()
+
+
+# ── Decreto antiguo sin cierre detectable → vencido a los 90 días ────────────
+def test_decreto_viejo_sin_cierre_es_vencido():
+    b = {"decreto_fecha": date(2024, 6, 4)}
+    estado, motivo = B.calcular_vigencia(b, hoy=date(2026, 7, 6))
+    assert estado == "vencido"
+    assert motivo == ("Las bases datan del 2024-06-04 (>90 días) "
+                      "y no traen fecha de cierre detectable")
+
+
+def test_decreto_reciente_sin_cierre_sigue_sin_fecha():
+    b = {"decreto_fecha": date(2026, 6, 20)}
+    estado, motivo = B.calcular_vigencia(b, hoy=date(2026, 7, 6))
+    assert estado == "sin_fecha"
+    assert "revisar manualmente" in motivo
+
+
+# ── Jornada ──────────────────────────────────────────────────────────────────
+def test_jornada_desde_el_texto():
+    texto = ("BASES CONCURSO PÚBLICO. El cargo a proveer se desempeñará bajo una "
+             "jornada laboral de 44 horas semanales, en dependencias municipales, "
+             "conforme al Estatuto Administrativo para Funcionarios Municipales.")
+    assert B.parsear_bases(texto)["jornada"] == "44 horas"
+
+
+def test_enriquecer_copia_jornada_sin_pisar():
+    texto = _DECRETO + "\nJornada de trabajo: 44 horas semanales."
+    oferta = {"cargo": "Profesional Maestranza"}
+    res = B.enriquecer_desde_texto(oferta, texto, "texto", hoy=date(2026, 7, 6))
+    assert oferta["jornada"] == "44 horas"
+    assert "jornada" in res["campos"]
+    oferta2 = {"cargo": "Profesional Maestranza", "jornada": "33 horas"}
+    B.enriquecer_desde_texto(oferta2, texto, "texto", hoy=date(2026, 7, 6))
+    assert oferta2["jornada"] == "33 horas"      # el dato presente se respeta
+
+
 # ── Vigencia calculada desde el PDF (no desde la tarjeta) ────────────────────
 def test_vigencia_vencido_con_motivo():
     estado, motivo = B.calcular_vigencia(_bases(), hoy=date(2026, 7, 6))

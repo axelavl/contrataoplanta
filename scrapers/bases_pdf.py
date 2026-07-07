@@ -200,6 +200,16 @@ _ETAPAS = [
     ("asuncion_cargo", r"asunci[oó]n\s+(?:al|del)\s+cargo"),
 ]
 
+# Actas de RESULTADOS del concurso (terna/selección/desierto): el municipio
+# reutiliza el número D.A y a veces reemplaza el PDF de bases por el acta.
+# Un "resultado" implica proceso RESUELTO → vencido, aunque no haya cronograma.
+_RE_RESULTADOS = re.compile(
+    r"informa\s+terna|ha\s+seleccionado|puntaje\s+final|"
+    r"resultado[s]?\s+(?:del\s+)?concurso|declara(?:r|do)?\s+desierto", re.I)
+
+_RE_JORNADA_HRS = re.compile(
+    r"jornada\s+(?:laboral|de\s+trabajo)?\s*(?:de|:)?\s*(\d{1,2})\s*horas", re.I)
+
 _RE_DECRETO_NUM = re.compile(
     r"(?:decreto(?:\s+alcaldicio)?|resoluci[oó]n(?:\s+exenta)?|n[°º]\s*)\s*[:n°º]*\s*([\d.]{3,9})\b", re.I)
 
@@ -272,6 +282,13 @@ def parsear_bases(texto: str) -> dict[str, Any]:
 
     if m := re.search(r"(?:renta|remuneraci[oó]n|sueldo)\s+(?:bruta?|l[ií]quida)?[^\n]{0,60}?\$?\s*([\d.]{6,12})", texto, re.I):
         b["renta_texto"] = re.sub(r"\s+", " ", m.group(0))[:120]
+    if m := _RE_JORNADA_HRS.search(texto):
+        b["jornada"] = f"{m.group(1)} horas"
+    # Acta de resultados (terna/selección) sin cronograma de postulación: el
+    # proceso ya está resuelto — NO es una convocatoria.
+    if _RE_RESULTADOS.search(texto) and not re.search(
+            r"cierre\s+de\s+(?:recepci[oó]n|postulaci)", texto, re.I):
+        b["es_resultado"] = True
 
     secciones = _cortar_secciones(texto)
     if s := secciones.get("objetivo"):
@@ -315,8 +332,18 @@ def calcular_vigencia(bases: dict[str, Any], hoy: date | None = None) -> tuple[s
     """("vigente"|"vencido"|"sin_fecha", motivo). La verdad es el cronograma
     del PDF — nunca la etiqueta "Nueva" de la tarjeta (esa es fecha de scrapeo)."""
     hoy = hoy or date.today()
+    if bases.get("es_resultado"):
+        return "vencido", ("El PDF corresponde a resultados del concurso "
+                           "(terna/selección): proceso ya resuelto")
     cierre = bases.get("fecha_cierre")
     if cierre is None:
+        # Acto administrativo antiguo sin cierre detectable: en páginas que
+        # acumulan concursos de años anteriores, publicarlo como vigente es
+        # peor que omitirlo. >90 días desde el decreto → vencido.
+        df = bases.get("decreto_fecha")
+        if df and (hoy - df).days > 90:
+            return "vencido", (f"Las bases datan del {df.isoformat()} (>90 días) "
+                               "y no traen fecha de cierre detectable")
         return "sin_fecha", "Las bases no traen fecha de cierre detectable; revisar manualmente"
     if cierre < hoy:
         return "vencido", f"La fecha de cierre de postulación fue {cierre.isoformat()}"
@@ -371,6 +398,9 @@ def enriquecer_desde_texto(oferta: dict[str, Any], texto: str, metodo: str,
     if bases.get("renta_texto") and not oferta.get("renta_texto"):
         oferta["renta_texto"] = bases["renta_texto"]
         campos.append("renta")
+    if bases.get("jornada") and not oferta.get("jornada"):
+        oferta["jornada"] = bases["jornada"]
+        campos.append("jornada")
 
     # Cargo más específico: "Profesional Maestranza" le gana al título del
     # listado si el actual es genérico o arrastra basura del bloque.

@@ -73,6 +73,19 @@ def test_extractor_sin_pdf_texto_no_crashea(monkeypatch):
     assert items == []
 
 
+def test_url_original_es_la_noticia_no_el_pdf(monkeypatch):
+    # "Ir al portal" debe llevar a la noticia del concurso (fuente["url"], con
+    # ancla por grupo); el PDF de bases queda sólo en url_bases ("Ver bases").
+    monkeypatch.setattr(M.time, "sleep", lambda *a, **k: None)
+    monkeypatch.setattr(M, "_pdf_texto", lambda contenido: _RESUMEN)
+    items = M.extraer_bases_estamento_grado("", _FUENTE, _SessPDF(b"%PDF-fake"), 0)
+    assert len(items) == 11
+    for it in items:
+        assert it["url"].startswith(_FUENTE["url"] + "#")
+        assert not it["url"].lower().split("#")[0].endswith(".pdf")
+        assert it["url_bases"] == _FUENTE["bases_pdf"]
+
+
 def test_construir_oferta_estamento_grado():
     grupos = M.parsear_bases_estamento_grado(_RESUMEN)
     item = {
