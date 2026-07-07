@@ -246,22 +246,39 @@ def test_leer_pdf_escaneado_sin_ocr(monkeypatch):
 
 # ── Enriquecimiento del dict de oferta ───────────────────────────────────────
 def test_enriquecer_oferta_completa_y_reemplaza_cargo_basura():
+    texto = (
+        _DECRETO
+        + "\nRemuneración bruta mensual: $1.234.567.-"
+        + "\nJornada laboral de 44 horas semanales."
+    )
     oferta = {
-        "cargo": "Profesionales EM, Para Maestranza Municipal, Cargo a Desempeñar: Profesional Maestranza, Según",
+        "cargo": (
+            "Profesionales EM, Para Maestranza Municipal, "
+            "Cargo a Desempeñar: Profesional Maestranza, Según"
+        ),
         "descripcion": None, "requisitos_texto": None,
-        "fecha_cierre": None, "numero_vacantes": None,
+        "fecha_cierre": None, "renta_texto": None, "numero_vacantes": None,
     }
-    res = B.enriquecer_desde_texto(oferta, _DECRETO, "ocr", hoy=date(2026, 7, 6))
+    res = B.enriquecer_desde_texto(oferta, texto, "ocr", hoy=date(2026, 7, 6))
     assert res["estado"] == "vencido"
     assert res["confianza"] == "alto"
     assert oferta["cargo"] == "Profesional Maestranza"          # título limpio
     assert oferta["fecha_cierre"] == date(2024, 6, 17)          # el PDF manda
+    assert oferta["renta_texto"].startswith("Remuneración bruta mensual: $1.234.567")
+    assert oferta["jornada"] == "44 horas"
     assert "Objetivo del cargo:" in oferta["descripcion"]
     assert "Funciones:" in oferta["descripcion"]
     assert "Grado 11" in oferta["descripcion"]
     assert "Título requerido:" in oferta["requisitos_texto"]
+    assert "Requisitos específicos:" in oferta["requisitos_texto"]
+    assert "Requisitos generales:" in oferta["requisitos_texto"]
     assert "Competencias:" in oferta["requisitos_texto"]
-    assert "fecha_cierre" in res["campos"] and "funciones" in res["campos"]
+    assert "Conocimientos:" in oferta["requisitos_texto"]
+    assert {
+        "fecha_cierre", "renta", "jornada", "objetivo", "funciones",
+        "titulo_requerido", "requisitos_especificos", "conocimientos",
+        "competencias", "habilidades",
+    } <= set(res["campos"])
 
 
 def test_enriquecer_no_pisa_datos_presentes():
@@ -271,3 +288,34 @@ def test_enriquecer_no_pisa_datos_presentes():
     assert oferta["cargo"] == "Técnico Abastecimiento"   # título corto/limpio se respeta
     assert oferta["numero_vacantes"] == 3                # no se pisa
     assert len(oferta["descripcion"]) >= 1900            # la más completa gana
+
+
+def test_municipios_bases_estamento_grado_usa_lector_ocr(monkeypatch):
+    """La Cisterna debe pasar por bases_pdf.leer_pdf(), no por _pdf_texto()."""
+    import scrapers.municipios as M
+
+    class Resp:
+        content = b"%PDF-1.4 escaneado"
+
+    fuente = {
+        "bases_pdf": "https://example.test/bases.pdf",
+        "url": "https://example.test/noticia",
+    }
+    llamadas = {}
+
+    monkeypatch.setattr(M, "_get", lambda session, url: Resp())
+
+    def fake_leer_pdf(contenido, *, allow_ocr=True, max_paginas=12):
+        llamadas["allow_ocr"] = allow_ocr
+        return (
+            "5 cargos vacantes en Planta Profesionales Grado 9; "
+            "2 cargos vacantes en Planta Auxiliares Grado 14",
+            "ocr",
+        )
+
+    monkeypatch.setattr(B, "leer_pdf", fake_leer_pdf)
+    items = M.extraer_bases_estamento_grado("", fuente, session=None, delay=0)
+
+    assert llamadas == {"allow_ocr": True}
+    assert [i["cargo"] for i in items] == ["Profesional Grado 9", "Auxiliar Grado 14"]
+    assert all(i["url_bases"] == fuente["bases_pdf"] for i in items)
