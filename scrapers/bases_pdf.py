@@ -186,7 +186,7 @@ _SECCIONES = [
     ("destinacion", r"destinacion(?:es)?|destinaci[oó]n(?:es)?"),
     ("documentos", r"documentos\s+(?:requeridos|a\s+presentar|de\s+postulaci[oó]n)|antecedentes\s+de\s+postulaci[oó]n"),
     ("postulacion", r"(?:de\s+la\s+|modalidad\s+de\s+)?postulaci[oó]n(?:es)?"),
-    ("cronograma", r"cronograma"),
+    ("cronograma", r"cronograma(?:\s+(?:del\s+)?concurso)?"),
 ]
 
 #: Etapas del cronograma → clave normalizada. El cierre usa _ultima_fecha por
@@ -216,8 +216,13 @@ def _bullets(texto: str) -> list[str]:
     items: list[str] = []
     for trozo in re.split(r"(?:^|\n)\s*[-•·—]\s+", texto):
         t = re.sub(r"\s+", " ", trozo).strip(" .;-")
-        if 8 <= len(t) <= 400 and not re.match(r"^\d+(\.\d+)?\s*$", t):
-            items.append(t)
+        if not (8 <= len(t) <= 400) or re.match(r"^\d+(\.\d+)?\s*$", t):
+            continue
+        # Frases-intro de la sección ("Los requisitos asociados al presente
+        # concurso son los siguientes:") no son viñetas.
+        if t.endswith(":") or re.search(r"son\s+los\s+siguientes:?$", t, re.I):
+            continue
+        items.append(t)
     return items[:20]
 
 
@@ -234,14 +239,15 @@ def _cortar_secciones(texto: str) -> dict[str, str]:
             rf"(?:\([^)\n]{{0,60}}\))?\s*:?\s*(?:\n|:)", re.I)
         m = rx.search(plano)
         if m:
-            marcas.append((m.start(), clave))
+            # (inicio_para_ordenar, fin_del_encabezado, clave): el cuerpo parte
+            # DESPUÉS del encabezado — antes se colaba "2.1 Objetivo del cargo:"
+            # dentro del propio contenido de la sección.
+            marcas.append((m.start(), m.end(), clave))
     marcas.sort()
     out: dict[str, str] = {}
-    for i, (pos, clave) in enumerate(marcas):
-        fin = marcas[i + 1][0] if i + 1 < len(marcas) else min(len(plano), pos + 4000)
-        # saltar la línea del encabezado
-        cuerpo = plano[pos:fin].split("\n", 1)
-        out.setdefault(clave, (cuerpo[1] if len(cuerpo) > 1 else "").strip())
+    for i, (pos, fin_enc, clave) in enumerate(marcas):
+        fin = marcas[i + 1][0] if i + 1 < len(marcas) else min(len(plano), fin_enc + 4000)
+        out.setdefault(clave, plano[fin_enc:fin].strip())
     return out
 
 
@@ -382,16 +388,20 @@ def enriquecer_desde_texto(oferta: dict[str, Any], texto: str, metodo: str,
         f"{bases['vacantes']} vacante(s)" if bases.get("vacantes") else "",
         f"Decreto {bases['decreto_numero']}" if bases.get("decreto_numero") else "",
     ) if p)
+    if bases.get("destinacion"):
+        # Dentro de la línea "Condiciones:" el frontend la clasifica ahí; como
+        # línea propia caía dentro de Funciones (no conoce ese encabezado).
+        ficha = (ficha + " · " if ficha else "") + "Destinación: " + bases["destinacion"][:250]
     if ficha:
-        partes_desc.append(ficha + ".")
+        # Como "Condiciones:" el frontend la clasifica en su sección en vez de
+        # dejar "Planta X"/"Decreto N" sueltos en Información adicional.
+        partes_desc.append("Condiciones: " + ficha + ".")
     if bases.get("objetivo"):
         partes_desc.append("Objetivo del cargo: " + bases["objetivo"])
         campos.append("objetivo")
     if bases.get("funciones"):
         partes_desc.append("Funciones: " + " ".join(f"- {f}." for f in bases["funciones"]))
         campos.append("funciones")
-    if bases.get("destinacion"):
-        partes_desc.append("Destinación: " + bases["destinacion"])
     if partes_desc:
         nueva_desc = "\n".join(partes_desc)[:2000]
         if len(nueva_desc) > len(oferta.get("descripcion") or ""):
@@ -406,10 +416,18 @@ def enriquecer_desde_texto(oferta: dict[str, Any], texto: str, metodo: str,
                             ("Competencias", "competencias"),
                             ("Habilidades", "habilidades")):
         if bases.get(clave):
-            partes_req.append(f"{etiqueta}: " + " ".join(f"- {x}." for x in bases[clave]))
+            items = bases[clave]
+            if clave == "conocimientos":
+                # "Conocimientos Ley 18.695…" → "Conocimientos de la Ley…": la
+                # cascada del frontend clasifica "Conocimientos en|de …" como
+                # competencias; sin la preposición caía a residual.
+                items = [re.sub(r"^Conocimientos\s+(?=Ley\b)", "Conocimientos de la ", x)
+                         for x in items]
+            partes_req.append(f"{etiqueta}: " + " ".join(f"- {x}." for x in items))
             campos.append(clave)
     if bases.get("requisitos_generales"):
-        partes_req.append("Requisitos generales: " + bases["requisitos_generales"][:600])
+        gen = re.sub(r"^.{0,160}?siguientes\s*:\s*", "", bases["requisitos_generales"])
+        partes_req.append("Requisitos generales: " + gen[:600])
     if partes_req:
         nueva_req = "\n".join(partes_req)[:2000]
         if len(nueva_req) > len(oferta.get("requisitos_texto") or ""):
