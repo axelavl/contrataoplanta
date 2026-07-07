@@ -49,6 +49,56 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://contrataoplanta.cl/empleos-publicos-abogados.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://contrataoplanta.cl/empleos-publicos-administrativos.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://contrataoplanta.cl/empleos-publicos-contadores.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://contrataoplanta.cl/empleos-publicos-enfermeros.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://contrataoplanta.cl/empleos-publicos-informaticos.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://contrataoplanta.cl/empleos-publicos-ingenieros.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://contrataoplanta.cl/empleos-publicos-medicos.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://contrataoplanta.cl/empleos-publicos-profesores.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://contrataoplanta.cl/empleos-publicos-psicologos.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://contrataoplanta.cl/empleos-publicos-trabajadores-sociales.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://contrataoplanta.cl/estadisticas.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
