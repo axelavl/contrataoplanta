@@ -5,7 +5,14 @@ from types import SimpleNamespace
 from scrapers.evaluation.models import Decision, ExtractorKind
 from scrapers.evaluation.reason_codes import ReasonCode
 from scrapers.run_all import (
+    IDS_MUNICIPIOS,
+    IDS_UNIVERSIDADES,
+    IDS_UNIVERSIDADES_BASE,
+    IDS_UNIVERSIDADES_PORTAL,
+    IDS_UNIVERSIDADES_TABLA,
+    IDS_UNIVERSIDADES_WP,
     RuntimeSource,
+    _IDS_NUEVO_ESTANDAR,
     _bypass_evaluation,
     _build_scrapers,
     _enforce_playwright_capability,
@@ -135,3 +142,18 @@ def test_playwright_without_runtime_is_demoted_to_source_status_only(monkeypatch
     assert evaluation.signals_json["playwright_runtime_available"] is False
     assert "missing chromium" in evaluation.signals_json["playwright_runtime_error"]
     assert _build_scrapers(runtime_sources) == ([], False)
+
+
+def test_grouped_scraper_ids_are_excluded_from_generic_dispatch():
+    """Los batches agrupados no deben correr también por GenericSiteScraper."""
+    assert IDS_MUNICIPIOS <= _IDS_NUEVO_ESTANDAR
+    assert IDS_UNIVERSIDADES <= _IDS_NUEVO_ESTANDAR
+
+
+def test_universidades_union_matches_sub_batches():
+    assert IDS_UNIVERSIDADES == (
+        IDS_UNIVERSIDADES_BASE
+        | IDS_UNIVERSIDADES_WP
+        | IDS_UNIVERSIDADES_PORTAL
+        | IDS_UNIVERSIDADES_TABLA
+    )
