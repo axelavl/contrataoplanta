@@ -271,3 +271,34 @@ def test_enriquecer_no_pisa_datos_presentes():
     assert oferta["cargo"] == "Técnico Abastecimiento"   # título corto/limpio se respeta
     assert oferta["numero_vacantes"] == 3                # no se pisa
     assert len(oferta["descripcion"]) >= 1900            # la más completa gana
+
+
+def test_municipios_bases_estamento_grado_usa_lector_ocr(monkeypatch):
+    """La Cisterna debe pasar por bases_pdf.leer_pdf(), no por _pdf_texto()."""
+    import scrapers.municipios as M
+
+    class Resp:
+        content = b"%PDF-1.4 escaneado"
+
+    fuente = {
+        "bases_pdf": "https://example.test/bases.pdf",
+        "url": "https://example.test/noticia",
+    }
+    llamadas = {}
+
+    monkeypatch.setattr(M, "_get", lambda session, url: Resp())
+
+    def fake_leer_pdf(contenido, *, allow_ocr=True, max_paginas=12):
+        llamadas["allow_ocr"] = allow_ocr
+        return (
+            "5 cargos vacantes en Planta Profesionales Grado 9; "
+            "2 cargos vacantes en Planta Auxiliares Grado 14",
+            "ocr",
+        )
+
+    monkeypatch.setattr(B, "leer_pdf", fake_leer_pdf)
+    items = M.extraer_bases_estamento_grado("", fuente, session=None, delay=0)
+
+    assert llamadas == {"allow_ocr": True}
+    assert [i["cargo"] for i in items] == ["Profesional Grado 9", "Auxiliar Grado 14"]
+    assert all(i["url_bases"] == fuente["bases_pdf"] for i in items)

@@ -28,7 +28,9 @@
       "libasound2",
       "libpango-1.0-0",
       "libcairo2",
-      "libatspi2.0-0"
+      "libatspi2.0-0",
+      "tesseract-ocr",
+      "tesseract-ocr-spa"
     ]
   }
 }

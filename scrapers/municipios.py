@@ -985,7 +985,12 @@ def parsear_bases_estamento_grado(texto: str) -> list[dict[str, Any]]:
 
 def extraer_bases_estamento_grado(html, fuente, session, delay):
     """Descarga el PDF de bases fijado en la fuente (bases_pdf) y emite una
-    oferta por estamento+grado. El HTML de la página se ignora (SPA)."""
+    oferta por estamento+grado. El HTML de la página se ignora (SPA).
+
+    Estos PDFs pueden venir escaneados (sin capa de texto). Por eso se leen con
+    bases_pdf.leer_pdf(), que hace OCR cuando corresponde, en vez de _pdf_texto()
+    (solo capa de texto).
+    """
     pdf_url = fuente.get("bases_pdf")
     if not pdf_url:
         return []
@@ -994,10 +999,17 @@ def extraer_bases_estamento_grado(html, fuente, session, delay):
     if rp is None:
         logger.warning("  No se pudo bajar bases_pdf %s", pdf_url[:70])
         return []
-    texto = _pdf_texto(rp.content)
+    try:
+        from scrapers import bases_pdf
+        texto, metodo = bases_pdf.leer_pdf(rp.content, allow_ocr=True)
+    except Exception as exc:
+        logger.info("  bases_pdf: lector OCR no disponible (%s); usando capa de texto",
+                    type(exc).__name__)
+        texto, metodo = _pdf_texto(rp.content), "texto"
     if not texto:
-        logger.info("  PDF de bases sin texto extraíble: %s", pdf_url[:70])
+        logger.info("  PDF de bases sin texto extraíble/OCR: %s", pdf_url[:70])
         return []
+    logger.info("  bases_pdf %s → metodo=%s", pdf_url.rsplit("/", 1)[-1], metodo)
     grupos = parsear_bases_estamento_grado(texto)
     items = []
     for g in grupos:
@@ -1234,10 +1246,11 @@ def _procesar_fuente(fuente, session, delay, incluir_cerrados):
 
 
 # Tope de PDFs OCR-eados por fuente y corrida: el OCR cuesta segundos por
-# página; sin tope, una página con 40 concursos escaneados haría corridas
-# eternas. Los que exceden el tope quedan sin enriquecer (se loguea) y se
-# recuperan en la siguiente corrida. Ajustable por entorno.
-_BASES_OCR_MAX = int(os.getenv("BASES_OCR_MAX", "40"))
+# página; sin tope, una página con cientos de concursos escaneados haría corridas
+# eternas. El default cubre la página de Viña (≈77 PDFs) para evitar que el
+# resto quede en sin_texto; si aun así se alcanza el tope, esos PDFs se omiten
+# para no publicar vigencias sin verificar. Ajustable por entorno.
+_BASES_OCR_MAX = int(os.getenv("BASES_OCR_MAX", "120"))
 
 
 def _enriquecer_con_bases(o, fuente, session, cache, contadores):
@@ -1261,8 +1274,11 @@ def _enriquecer_con_bases(o, fuente, session, cache, contadores):
         allow_ocr = contadores["ocr"] < _BASES_OCR_MAX
         texto, metodo = bases_pdf.leer_pdf(rp.content, allow_ocr=allow_ocr)
         if metodo == "sin_texto" and not allow_ocr:
-            logger.info("  bases_pdf: tope de OCR alcanzado (%d); %s queda para la próxima corrida",
-                        _BASES_OCR_MAX, ub.rsplit("/", 1)[-1])
+            logger.info(
+                "  bases_pdf: tope de OCR alcanzado (%d); %s se omitirá "
+                "para evitar publicar una vigencia sin verificar",
+                _BASES_OCR_MAX, ub.rsplit("/", 1)[-1],
+            )
         if metodo == "ocr":
             contadores["ocr"] += 1
         cache[ub] = (texto, metodo)
@@ -1299,6 +1315,11 @@ def _filtrar_items(items, fuente, session, delay, incluir_cerrados):
             res = _enriquecer_con_bases(o, fuente, session, bases_cache, contadores)
             if res and res["estado"] == "vencido" and not incluir_cerrados:
                 logger.info("  ✗ %s omitida: %s", o["cargo"][:50], res["motivo"])
+                omitidas += 1
+                continue
+            if res and res["metodo"] == "sin_texto" and not incluir_cerrados:
+                logger.info("  ✗ %s omitida: PDF sin texto/OCR; vigencia no verificable",
+                            o["cargo"][:50])
                 omitidas += 1
                 continue
         if o["fecha_cierre"] and o["fecha_cierre"] < hoy and not incluir_cerrados:
