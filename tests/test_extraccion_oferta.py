@@ -176,6 +176,105 @@ def test_desde_contenido_html_vacio_error():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# Imágenes: detección + OCR (pytesseract/Pillow simulados)
+# ══════════════════════════════════════════════════════════════════════════════
+PNG_FAKE = b"\x89PNG\r\n\x1a\n fake-imagen"
+
+
+class _FakePIL:
+    @staticmethod
+    def open(_buf):
+        class _Img:
+            mode = "L"
+            size = (900, 700)
+            width, height = size
+            def convert(self, _m):
+                return self
+            def resize(self, _dim, _resample=None):
+                return self
+        return _Img()
+
+
+class _FakeTesseract:
+    @staticmethod
+    def image_to_string(_img, lang="spa"):
+        return TEXTO_OFERTA
+
+
+def test_es_imagen():
+    assert E.es_imagen(PNG_FAKE)
+    assert E.es_imagen(b"\xff\xd8\xff\xe0 jpeg")
+    assert E.es_imagen(b"RIFF1234WEBPdata")
+    assert E.es_imagen(b"", "image/png")
+    assert E.es_imagen(b"", "", "captura.JPG")
+    assert not E.es_imagen(b"%PDF-1.4", "application/pdf", "bases.pdf")
+    assert not E.es_imagen(b"<html>", "text/html", "pagina.html")
+
+
+def test_desde_contenido_imagen_ocr(monkeypatch):
+    monkeypatch.setattr(E, "Image", _FakePIL)
+    monkeypatch.setattr(E, "pytesseract", _FakeTesseract)
+    res = E.extraer_desde_contenido(PNG_FAKE, "image/png",
+                                    nombre_archivo="captura_aviso.png")
+    assert res["meta"]["tipo"] == "imagen"
+    assert res["meta"]["usado_ocr"] is True
+    assert any("OCR" in a for a in res["meta"]["advertencias"])
+    assert res["campos"]["cargo"] == "Profesional Apoyo Jurídico"
+    assert res["campos"]["fecha_cierre"] == "2026-08-25"
+
+
+def test_desde_archivos_varias_imagenes(monkeypatch):
+    partes = TEXTO_OFERTA.strip().split("\n\n")
+    mitad1, mitad2 = "\n\n".join(partes[:3]), "\n\n".join(partes[3:])
+    textos = iter([mitad1, mitad2])
+    monkeypatch.setattr(E, "Image", _FakePIL)
+
+    class _TesseractPorPagina:
+        @staticmethod
+        def image_to_string(_img, lang="spa"):
+            return next(textos)
+    monkeypatch.setattr(E, "pytesseract", _TesseractPorPagina)
+
+    res = E.extraer_desde_archivos([
+        (PNG_FAKE, "image/png", "pagina1.png"),
+        (PNG_FAKE, "image/png", "pagina2.png"),
+    ])
+    assert res["meta"]["tipo"] == "imagen"
+    assert "pagina1.png" in res["meta"]["nombre_archivo"]
+    # datos de ambas mitades presentes → se concatenó en orden
+    assert res["campos"]["cargo"] == "Profesional Apoyo Jurídico"
+    assert res["campos"]["email_postulacion"] == "postulaciones@independencia.cl"
+
+
+def test_desde_archivos_mezcla_rechazada(monkeypatch):
+    monkeypatch.setattr(E, "Image", _FakePIL)
+    monkeypatch.setattr(E, "pytesseract", _FakeTesseract)
+    with pytest.raises(E.ExtraccionError, match="todos im[áa]genes"):
+        E.extraer_desde_archivos([
+            (PNG_FAKE, "image/png", "pagina1.png"),
+            (b"%PDF-1.4", "application/pdf", "bases.pdf"),
+        ])
+
+
+def test_imagen_sin_ocr_instalado(monkeypatch):
+    monkeypatch.setattr(E, "pytesseract", None)
+    with pytest.raises(E.ExtraccionError, match="OCR de im[áa]genes no disponible"):
+        E.extraer_desde_contenido(PNG_FAKE, "image/png", nombre_archivo="foto.png")
+
+
+def test_imagen_ocr_sin_texto_util(monkeypatch):
+    monkeypatch.setattr(E, "Image", _FakePIL)
+
+    class _TesseractVacio:
+        @staticmethod
+        def image_to_string(_img, lang="spa"):
+            return "  \n "
+    monkeypatch.setattr(E, "pytesseract", _TesseractVacio)
+    with pytest.raises(E.ExtraccionError, match="no pudo leer texto"):
+        E.extraer_desde_contenido(PNG_FAKE, "image/png", nombre_archivo="foto.png")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # descargar_recurso: validaciones locales (sin red)
 # ══════════════════════════════════════════════════════════════════════════════
 def test_descargar_rechaza_esquema_invalido():

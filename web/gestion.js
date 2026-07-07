@@ -1452,20 +1452,24 @@ function aplicarCamposExtraidos(campos) {
 
 async function extraerOferta() {
   const url = document.getElementById('extract-url').value.trim();
-  const file = document.getElementById('extract-file').files[0] || null;
+  // Varios archivos permitidos: capturas del aviso en varias imágenes (el
+  // backend las lee con OCR en orden). Un PDF va solo.
+  const files = Array.from(document.getElementById('extract-file').files || []);
   const status = document.getElementById('extract-status');
   const btn = document.getElementById('extract-btn');
-  if (!url && !file) { toast('Ingresa una URL o sube un PDF', 'error'); return; }
+  if (!url && !files.length) { toast('Ingresa una URL o sube un PDF o imágenes', 'error'); return; }
   if (url && !/^https?:\/\//i.test(url)) { toast('La URL debe empezar con http(s)://', 'error'); return; }
 
   const fd = new FormData();
   if (url) fd.append('url', url);
-  if (file) fd.append('archivo', file, file.name);
+  for (const f of files) fd.append('archivo', f, f.name);
 
   btn.disabled = true;
   btn.textContent = 'Escaneando…';
-  status.textContent = file
-    ? 'Leyendo PDF… (si es un escaneo, el OCR puede tardar hasta 1 minuto)'
+  status.textContent = files.length
+    ? (files.length > 1
+        ? `Leyendo ${files.length} imágenes con OCR… (puede tardar ~1 min)`
+        : 'Leyendo archivo… (escaneos e imágenes pasan por OCR, puede tardar ~1 min)')
     : 'Descargando y escaneando el contenido…';
   try {
     // fetch directo: api() fuerza Content-Type JSON y esto es multipart.

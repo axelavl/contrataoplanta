@@ -1,10 +1,15 @@
-"""Extracción de datos de oferta laboral desde una URL (web o PDF) o un PDF
-subido, para pre-llenar el formulario "Nueva oferta" del panel de gestión.
+"""Extracción de datos de oferta laboral desde una URL (web, PDF o imagen),
+un PDF o imágenes subidas, para pre-llenar el formulario "Nueva oferta" del
+panel de gestión.
 
 No inventa heurísticas nuevas: reutiliza la inteligencia ya existente:
 
 - `scrapers.bases_pdf.leer_pdf`             → capa de texto + OCR (tesseract,
                                               español) para PDFs ESCANEADOS.
+- OCR de imágenes (Pillow + tesseract)      → mismo patrón que
+                                              `scrapers.carga_manual.extraer_de_imagenes`:
+                                              capturas de pantalla/fotos del
+                                              aviso, varias en orden.
 - `scrapers.bases_pdf.enriquecer_desde_texto` → decretos/bases de concursos
                                               (cargo, cronograma con cierre,
                                               funciones, requisitos, grado…).
@@ -30,6 +35,19 @@ from urllib.parse import urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup
+
+# OCR de imágenes perezoso (mismo patrón que scrapers/bases_pdf.py): Pillow y
+# pytesseract están en requirements; el binario tesseract(+spa) lo instala el
+# deploy. Si falta algo, la ruta de imágenes degrada con error legible.
+try:
+    from PIL import Image  # type: ignore
+except Exception:  # pragma: no cover
+    Image = None  # type: ignore[assignment]
+
+try:
+    import pytesseract  # type: ignore
+except Exception:  # pragma: no cover
+    pytesseract = None  # type: ignore[assignment]
 
 logger = logging.getLogger("api.extraccion_oferta")
 
@@ -126,6 +144,71 @@ def es_pdf(contenido: bytes, content_type: str = "", nombre: str = "") -> bool:
     return (contenido[:5] == b"%PDF-"
             or "application/pdf" in (content_type or "")
             or (nombre or "").lower().endswith(".pdf"))
+
+
+# Magic bytes de los formatos de imagen que Pillow abre sin dependencias extra.
+_IMG_MAGIC = (
+    b"\x89PNG",          # PNG
+    b"\xff\xd8\xff",     # JPEG
+    b"GIF8",             # GIF
+    b"BM",               # BMP
+    b"II*\x00",          # TIFF little-endian
+    b"MM\x00*",          # TIFF big-endian
+)
+_IMG_EXTENSIONES = (".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tif", ".tiff", ".webp")
+
+
+def es_imagen(contenido: bytes, content_type: str = "", nombre: str = "") -> bool:
+    if any(contenido.startswith(m) for m in _IMG_MAGIC):
+        return True
+    if contenido[:4] == b"RIFF" and contenido[8:12] == b"WEBP":
+        return True
+    if (content_type or "").startswith("image/"):
+        return True
+    return (nombre or "").lower().endswith(_IMG_EXTENSIONES)
+
+
+def texto_desde_imagenes(imagenes: list[bytes]) -> str:
+    """OCR (tesseract, español) de una o más imágenes, concatenadas en orden.
+
+    Mismo pre-proceso que `scrapers.carga_manual.extraer_de_imagenes`
+    (escala de grises). Lanza ExtraccionError si el OCR no está disponible
+    o no se pudo leer texto de ninguna imagen.
+    """
+    if Image is None or pytesseract is None:
+        raise ExtraccionError(
+            "OCR de imágenes no disponible en el servidor (falta Pillow o "
+            "tesseract). Sube un PDF o ingresa los datos a mano.")
+    import io as _io
+
+    fragmentos: list[str] = []
+    for idx, contenido in enumerate(imagenes, 1):
+        try:
+            img = Image.open(_io.BytesIO(contenido))
+            if img.mode != "L":
+                img = img.convert("L")
+            # Upscale 2x de capturas chicas: a Tesseract se le pierden signos
+            # con texto de pantalla pequeño.
+            if min(img.size) < 1400:
+                img = img.resize((img.width * 2, img.height * 2),
+                                 getattr(Image, "LANCZOS", 1))
+            # spa+eng: el traineddata español solo pierde el "@" (lee
+            # "correo@x.cl" como "correotOx.cl"); combinado con el inglés lo
+            # reconoce. Si eng no está instalado, se degrada a spa.
+            try:
+                fragmentos.append(pytesseract.image_to_string(img, lang="spa+eng"))
+            except Exception:
+                fragmentos.append(pytesseract.image_to_string(img, lang="spa"))
+        except ExtraccionError:
+            raise
+        except Exception as exc:
+            logger.warning("OCR falló en imagen %d: %s", idx, exc)
+    texto = "\n".join(f for f in fragmentos if f.strip())
+    if len(re.sub(r"\s", "", texto)) < 40:
+        raise ExtraccionError(
+            "El OCR no pudo leer texto útil de la(s) imagen(es). Prueba con "
+            "una captura más nítida o con el PDF original.")
+    return texto
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -405,11 +488,16 @@ def extraer_desde_contenido(
     nombre_archivo: str | None = None,
     permitir_ocr: bool = True,
 ) -> dict[str, Any]:
-    """Extrae campos desde bytes ya descargados/subidos (PDF u HTML)."""
+    """Extrae campos desde bytes ya descargados/subidos (PDF, imagen o HTML)."""
     from scrapers import bases_pdf
 
     meta: dict[str, Any] = {"url": url, "nombre_archivo": nombre_archivo}
-    if es_pdf(contenido, content_type, nombre_archivo or ""):
+    if es_imagen(contenido, content_type, nombre_archivo or ""):
+        texto = texto_desde_imagenes([contenido])
+        meta.update({"tipo": "imagen", "metodo": "ocr", "usado_ocr": True})
+        campos, advertencias = extraer_campos_oferta(texto, metodo="ocr", url=url)
+        advertencias.insert(0, "Imagen leída por OCR — revisa los campos con atención")
+    elif es_pdf(contenido, content_type, nombre_archivo or ""):
         texto, metodo = bases_pdf.leer_pdf(contenido, allow_ocr=permitir_ocr)
         if metodo == "sin_texto":
             raise ExtraccionError(
@@ -448,8 +536,50 @@ def extraer_desde_contenido(
     return {"campos": campos, "meta": meta, "texto": texto[:4000]}
 
 
+def extraer_desde_archivos(
+    archivos: list[tuple[bytes, str, str]],
+    *,
+    url: str | None = None,
+    permitir_ocr: bool = True,
+) -> dict[str, Any]:
+    """Extrae campos desde uno o más archivos subidos.
+
+    `archivos` = lista de (contenido, content_type, nombre). Un solo archivo
+    sigue la ruta normal (PDF/imagen/HTML). Varios archivos deben ser TODOS
+    imágenes (capturas del aviso en varias páginas): se les hace OCR y el
+    texto se concatena en el orden recibido, igual que
+    `carga_manual.extraer_de_imagenes`.
+    """
+    if not archivos:
+        raise ExtraccionError("Sin archivos para procesar")
+    if len(archivos) == 1:
+        contenido, ctype, nombre = archivos[0]
+        return extraer_desde_contenido(
+            contenido, ctype, url=url, nombre_archivo=nombre,
+            permitir_ocr=permitir_ocr)
+
+    no_imagen = [n for c, t, n in archivos if not es_imagen(c, t, n)]
+    if no_imagen:
+        raise ExtraccionError(
+            "Para subir varios archivos a la vez deben ser todos imágenes "
+            f"(capturas del aviso). No parecen imagen: {', '.join(no_imagen[:3])}")
+
+    texto = texto_desde_imagenes([c for c, _t, _n in archivos])
+    nombres = [n for _c, _t, n in archivos]
+    campos, advertencias = extraer_campos_oferta(texto, metodo="ocr", url=url)
+    advertencias.insert(
+        0, f"{len(archivos)} imágenes leídas por OCR (en orden) — revisa los "
+           "campos con atención")
+    meta: dict[str, Any] = {
+        "url": url, "nombre_archivo": ", ".join(nombres), "tipo": "imagen",
+        "metodo": "ocr", "usado_ocr": True, "caracteres": len(texto),
+        "advertencias": advertencias, "campos_detectados": sorted(campos.keys()),
+    }
+    return {"campos": campos, "meta": meta, "texto": texto[:4000]}
+
+
 def extraer_desde_url(url: str, *, permitir_ocr: bool = True) -> dict[str, Any]:
-    """Descarga la URL (página web o PDF) y extrae los campos de la oferta."""
+    """Descarga la URL (página web, PDF o imagen) y extrae los campos."""
     contenido, content_type, url_final = descargar_recurso(url)
     return extraer_desde_contenido(
         contenido, content_type, url=url_final, permitir_ocr=permitir_ocr)
