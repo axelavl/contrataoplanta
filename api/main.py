@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 
 try:
     import psycopg2
@@ -407,6 +407,11 @@ _SECURITY_HEADERS = {
 # y el navegador reportaría un opaco "Failed to fetch" en vez del error real.
 _ALLOW_ORIGIN_REGEX = re.compile(r"https://([a-z0-9-]+\.)?estadoemplea\.pages\.dev$")
 
+# Hosts donde el contenido SÍ debe indexarse. Derivado de SITE_URL para que un
+# cambio de dominio de marca no deje este set desactualizado.
+_HOST_MARCA = urlparse(SITE_URL).hostname or "contrataoplanta.cl"
+_HOSTS_MARCA = {_HOST_MARCA, f"www.{_HOST_MARCA}"}
+
 
 def _cors_headers_para(origin: str | None) -> dict[str, str]:
     """Headers CORS a echar de vuelta si el Origin está permitido."""
@@ -439,6 +444,19 @@ async def add_security_headers(request: Request, call_next):
         # setdefault para no sobrescribir si un endpoint ya los setea
         # (ej: un iframe embebible podría querer X-Frame-Options distinto).
         response.headers.setdefault(name, value)
+    # ── noindex fuera del dominio de marca ─────────────────────────────────
+    # El backend responde igual en su host técnico (Railway) que detrás del
+    # proxy de Pages, así que Google indexaba contrataoplanta-production.up.
+    # railway.app como un sitio duplicado (reparte señales SEO entre dos
+    # dominios y confunde a quien aterriza ahí). Las Pages Functions marcan
+    # sus requests con X-Canonical-Proxy (ver functions/_railway-proxy.js);
+    # todo lo demás que no llegue por el host de marca recibe noindex. A
+    # propósito NO se usa robots.txt con Disallow: Google necesita poder
+    # rastrear las URLs para VER el noindex y desindexar las ya conocidas.
+    if "x-canonical-proxy" not in request.headers:
+        host = (request.headers.get("host") or "").split(":")[0].lower()
+        if host not in _HOSTS_MARCA:
+            response.headers["X-Robots-Tag"] = "noindex, nofollow"
     # Datos vivos (ofertas, estadísticas) toleran un stale breve: max-age=60
     # sirve la respuesta cacheada durante 1 minuto; stale-while-revalidate=300
     # permite servir la copia vieja hasta 5 min más mientras revalida en

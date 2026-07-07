@@ -20,6 +20,11 @@ export async function proxyARailway(request) {
   // Quitamos `host` para que el runtime use el del destino (Railway).
   const headers = new Headers(request.headers);
   headers.delete('host');
+  // Marca "vengo del dominio de marca": el backend agrega X-Robots-Tag
+  // noindex a todo lo que no llegue por contrataoplanta.cl (para desindexar
+  // el host técnico de Railway), y esta cabecera lo exime — el contenido
+  // proxeado se sirve bajo el dominio canónico y SÍ debe indexarse.
+  headers.set('x-canonical-proxy', '1');
 
   const init = {
     method: request.method,
@@ -40,10 +45,14 @@ export async function proxyARailway(request) {
     });
   }
 
-  // Reemitimos status + headers + body tal cual.
+  // Reemitimos status + headers + body. Se quita X-Robots-Tag por si el
+  // backend igual lo agregó (defensa en profundidad): bajo el dominio de
+  // marca este contenido SÍ debe indexarse.
+  const outHeaders = new Headers(resp.headers);
+  outHeaders.delete('x-robots-tag');
   return new Response(resp.body, {
     status: resp.status,
     statusText: resp.statusText,
-    headers: resp.headers,
+    headers: outHeaders,
   });
 }
