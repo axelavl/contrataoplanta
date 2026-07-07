@@ -44,7 +44,7 @@ from typing import Any
 from urllib.parse import quote_plus, urlencode
 
 import psycopg2
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import JSONResponse, RedirectResponse, Response, StreamingResponse
 from pydantic import BaseModel
 
@@ -1132,6 +1132,64 @@ def admin_crear_oferta(
 
     _auditar(_user, "crear_oferta", "oferta", nuevo_id, {"cargo": cargo[:80], "institucion": institucion[:80]})
     return {"id": nuevo_id, "cargo": cargo}
+
+
+@router.post(f"/api/{ADMIN_PATH}/ofertas/extraer", tags=["admin"])
+def admin_extraer_oferta(
+    url: str | None = Form(None),
+    archivo: UploadFile | None = File(None),
+    ocr: bool = Form(True),
+    _user: str = Depends(_require_editor),
+) -> dict[str, Any]:
+    """Escanea una URL (página web o PDF) o un PDF subido y devuelve los
+    campos detectados de la oferta, listos para pre-llenar el formulario
+    "Nueva oferta". PDFs escaneados sin capa de texto pasan por OCR
+    (tesseract, español). NO crea la oferta: el editor revisa y confirma
+    con el `POST /ofertas` de siempre.
+
+    Body `multipart/form-data`: `url` (str) O `archivo` (PDF), más `ocr`
+    (bool, default true).
+    """
+    from api.services.extraccion_oferta import (
+        ExtraccionError,
+        MAX_BYTES,
+        extraer_desde_contenido,
+        extraer_desde_url,
+    )
+
+    url = (url or "").strip()
+    if not url and archivo is None:
+        raise HTTPException(400, "Envía una URL o un archivo PDF")
+
+    try:
+        if archivo is not None:
+            contenido = archivo.file.read(MAX_BYTES + 1)
+            if len(contenido) > MAX_BYTES:
+                raise ExtraccionError(
+                    f"El archivo supera el límite de {MAX_BYTES // (1024*1024)} MB")
+            resultado = extraer_desde_contenido(
+                contenido,
+                archivo.content_type or "",
+                url=url or None,
+                nombre_archivo=archivo.filename,
+                permitir_ocr=ocr,
+            )
+        else:
+            resultado = extraer_desde_url(url, permitir_ocr=ocr)
+    except ExtraccionError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    except Exception as exc:  # extractor nunca debe tumbar el panel con un 500 opaco
+        logger.exception("Error extrayendo oferta desde %s", url or (archivo and archivo.filename))
+        raise HTTPException(422, f"No se pudo procesar el recurso: {exc}") from exc
+
+    _auditar(_user, "extraer_oferta", "oferta", None, {
+        "url": url or None,
+        "archivo": archivo.filename if archivo else None,
+        "tipo": resultado["meta"].get("tipo"),
+        "usado_ocr": resultado["meta"].get("usado_ocr"),
+        "campos": resultado["meta"].get("campos_detectados"),
+    })
+    return resultado
 
 
 @router.post(f"/api/{ADMIN_PATH}/ofertas/bulk-marcar-revisadas", tags=["admin"])
