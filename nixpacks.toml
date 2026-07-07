@@ -1,4 +1,10 @@
-# nixpacks.toml — configuración de build para Railway (Nixpacks).
+# nixpacks.toml — configuración de build para Railway (builder Nixpacks).
+#
+# ⚠️ SOLO aplica si el servicio de Railway usa el builder Nixpacks. El servicio
+# actual usa RAILPACK (existe railpack.json, y ahí `deploy.aptPackages` es lo
+# que de verdad instala tesseract-ocr/tesseract-ocr-spa en el contenedor).
+# Este archivo se conserva por si el builder vuelve a Nixpacks; mantener ambos
+# en sincronía.
 #
 # Railway autodetecta el proyecto Python y ya instala las dependencias de
 # `requirements.txt` (entre ellas `pytesseract`). Lo único que pip NO puede

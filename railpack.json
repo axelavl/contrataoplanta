@@ -13,6 +13,8 @@
       "PLAYWRIGHT_BROWSERS_PATH": "/app/.ms-playwright"
     },
     "aptPackages": [
+      "tesseract-ocr",
+      "tesseract-ocr-spa",
       "libnss3",
       "libnspr4",
       "libatk1.0-0",

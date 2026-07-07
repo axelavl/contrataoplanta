@@ -145,11 +145,12 @@ class _SesionPDF:
         return R()
 
 
-def test_filtrar_items_omite_vencidas_por_cronograma(monkeypatch):
+def test_filtrar_items_omite_vencidas_por_cronograma(monkeypatch, tmp_path):
     # El PDF dice cierre 2024-06-17 → aunque la tarjeta no traiga plazo, la
     # oferta NO debe publicarse (era el caso "Nueva · hace menos de 1 día").
     import scrapers.bases_pdf as B
     monkeypatch.setattr(M.time, "sleep", lambda *a, **k: None)
+    monkeypatch.setattr(M, "_BASES_CACHE_PATH", tmp_path / "cache.json")
     monkeypatch.setattr(B, "leer_pdf", lambda contenido, **kw: (_DECRETO_2024, "ocr"))
     items = M.extraer_concursos_da(_HTML_2024, _VINA_CP)
     maestranza = [it for it in items if it["cargo"] == "Profesional Maestranza"]
@@ -157,11 +158,12 @@ def test_filtrar_items_omite_vencidas_por_cronograma(monkeypatch):
     assert ofertas == []                     # vencida por cronograma del PDF
 
 
-def test_filtrar_items_enriquece_vigentes(monkeypatch):
+def test_filtrar_items_enriquece_vigentes(monkeypatch, tmp_path):
     import scrapers.bases_pdf as B
     decreto_vigente = _DECRETO_2024.replace("17 de Junio de 2024", "17 de Junio de 2099") \
                                    .replace("30 de Julio de 2024", "30 de Julio de 2099")
     monkeypatch.setattr(M.time, "sleep", lambda *a, **k: None)
+    monkeypatch.setattr(M, "_BASES_CACHE_PATH", tmp_path / "cache.json")
     monkeypatch.setattr(B, "leer_pdf", lambda contenido, **kw: (decreto_vigente, "ocr"))
     items = M.extraer_concursos_da(_HTML_2024, _VINA_CP)
     maestranza = [it for it in items if it["cargo"] == "Profesional Maestranza"]
@@ -171,6 +173,49 @@ def test_filtrar_items_enriquece_vigentes(monkeypatch):
     from datetime import date as _d
     assert o["fecha_cierre"] == _d(2099, 6, 17)          # cronograma del PDF
     assert "Grado 11" in o["descripcion"]
+
+
+# ── Caché persistente del texto OCR (logs/bases_pdf_cache.json) ─────────────
+def test_cache_persistente_evita_reocr(monkeypatch, tmp_path):
+    # 1ª corrida: OCR una vez y guarda; 2ª corrida: ni descarga ni re-OCR-ea.
+    import scrapers.bases_pdf as B
+    monkeypatch.setattr(M.time, "sleep", lambda *a, **k: None)
+    monkeypatch.setattr(M, "_BASES_CACHE_PATH", tmp_path / "cache.json")
+    llamadas = {"leer": 0, "get": 0}
+
+    def _leer(contenido, **kw):
+        llamadas["leer"] += 1
+        return _DECRETO_2024, "ocr"
+    monkeypatch.setattr(B, "leer_pdf", _leer)
+
+    class _Sesion(_SesionPDF):
+        def get(self, url, **kw):
+            llamadas["get"] += 1
+            return super().get(url, **kw)
+
+    items = M.extraer_concursos_da(_HTML_2024, _VINA_CP)
+    maestranza = [it for it in items if it["cargo"] == "Profesional Maestranza"]
+    M._filtrar_items(maestranza, _VINA_CP, _Sesion(), 0, False)
+    assert llamadas == {"leer": 1, "get": 1}
+    M._filtrar_items(maestranza, _VINA_CP, _Sesion(), 0, False)
+    assert llamadas == {"leer": 1, "get": 1}     # 2ª corrida: todo desde caché
+
+
+def test_cache_persistente_no_guarda_sin_texto_y_expira(monkeypatch, tmp_path):
+    import json
+    from datetime import date, timedelta
+    ruta = tmp_path / "cache.json"
+    monkeypatch.setattr(M, "_BASES_CACHE_PATH", ruta)
+    # sin_texto NO se persiste: apenas se instale tesseract debe reintentarse.
+    M._bases_cache_guardar({"https://x/1.pdf": ("", "sin_texto"),
+                            "https://x/2.pdf": ("texto útil", "ocr")})
+    assert set(json.loads(ruta.read_text(encoding="utf-8"))) == {"https://x/2.pdf"}
+    assert M._bases_cache_cargar() == {"https://x/2.pdf": ("texto útil", "ocr")}
+    # Entrada vieja (> TTL) expira al cargar.
+    vieja = (date.today() - timedelta(days=M._BASES_CACHE_TTL_DIAS + 1)).isoformat()
+    ruta.write_text(json.dumps({"https://x/3.pdf": {
+        "texto": "t", "metodo": "ocr", "fecha": vieja}}), encoding="utf-8")
+    assert M._bases_cache_cargar() == {}
 
 
 def test_titulo_cargo_respeta_conectores_y_siglas():

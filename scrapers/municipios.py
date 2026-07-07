@@ -61,7 +61,7 @@ import random
 import re
 import sys
 import time
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 from urllib.parse import unquote, urljoin, urlparse
@@ -141,6 +141,15 @@ if not logger.handlers:
     logger.addHandler(sh)
     logger.addHandler(fh)
 logger.propagate = False
+
+# scraper.bases_pdf no tenía handler propio: sus avisos ("OCR deshabilitado",
+# "OCR falló") se PERDÍAN en producción y la corrida solo mostraba sin_texto.
+_blog = logging.getLogger("scraper.bases_pdf")
+_blog.setLevel(getattr(logging, config.LOG_LEVEL))
+if not _blog.handlers:
+    for _h in logger.handlers:
+        _blog.addHandler(_h)
+_blog.propagate = False
 
 HTTP_TIMEOUT = 25
 MAX_RETRIES = 3
@@ -994,20 +1003,30 @@ def extraer_bases_estamento_grado(html, fuente, session, delay):
     pdf_url = fuente.get("bases_pdf")
     if not pdf_url:
         return []
-    time.sleep(delay / 2)
-    rp = _get(session, pdf_url)
-    if rp is None:
-        logger.warning("  No se pudo bajar bases_pdf %s", pdf_url[:70])
-        return []
-    try:
-        from scrapers import bases_pdf
-        texto, metodo = bases_pdf.leer_pdf(rp.content, allow_ocr=True)
-    except Exception as exc:
-        logger.info("  bases_pdf: lector OCR no disponible (%s); usando capa de texto",
-                    type(exc).__name__)
-        texto, metodo = _pdf_texto(rp.content), "texto"
+    # El caché persistente evita re-descargar y re-OCR-ear el mismo decreto
+    # en cada corrida (los decretos publicados no cambian).
+    cache = _bases_cache_cargar()
+    if pdf_url in cache:
+        texto, metodo = cache[pdf_url]
+    else:
+        time.sleep(delay / 2)
+        rp = _get(session, pdf_url)
+        if rp is None:
+            logger.warning("  No se pudo bajar bases_pdf %s", pdf_url[:70])
+            return []
+        try:
+            from scrapers import bases_pdf as _bp
+            texto, metodo = _bp.leer_pdf(rp.content, allow_ocr=True)
+        except Exception as exc:
+            logger.info("  bases_pdf: lector OCR no disponible (%s); usando capa de texto",
+                        type(exc).__name__)
+            texto, metodo = _pdf_texto(rp.content), "texto"
+        if metodo != "sin_texto" and texto:
+            cache[pdf_url] = (texto, metodo)
+            _bases_cache_guardar(cache)
     if not texto:
-        logger.info("  PDF de bases sin texto extraíble/OCR: %s", pdf_url[:70])
+        logger.info("  PDF de bases sin texto extraíble (metodo=%s): %s",
+                    metodo, pdf_url[:70])
         return []
     logger.info("  bases_pdf %s → metodo=%s", pdf_url.rsplit("/", 1)[-1], metodo)
     grupos = parsear_bases_estamento_grado(texto)
@@ -1252,6 +1271,57 @@ def _procesar_fuente(fuente, session, delay, incluir_cerrados):
 # para no publicar vigencias sin verificar. Ajustable por entorno.
 _BASES_OCR_MAX = int(os.getenv("BASES_OCR_MAX", "120"))
 
+# Caché PERSISTENTE del texto de los PDFs de bases (logs/bases_pdf_cache.json).
+# Los decretos publicados son inmutables y el OCR cuesta decenas de segundos
+# por PDF; sin caché entre corridas, el tope _BASES_OCR_MAX hacía que CADA
+# corrida re-OCR-eara los mismos primeros 40 PDFs y el resto no se leyera
+# nunca. Solo se persisten lecturas útiles (texto/ocr): sin_texto se reintenta
+# en la corrida siguiente (p.ej. apenas tesseract quede instalado). El TTL
+# cubre el caso en que el municipio reemplaza el archivo bajo la misma URL.
+_BASES_CACHE_PATH = LOG_DIR / "bases_pdf_cache.json"
+_BASES_CACHE_TTL_DIAS = 30
+_BASES_CACHE_MAX_TEXTO = 60_000
+
+
+def _bases_cache_cargar() -> dict[str, tuple[str, str]]:
+    try:
+        raw = json.loads(_BASES_CACHE_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    limite = date.today() - timedelta(days=_BASES_CACHE_TTL_DIAS)
+    out: dict[str, tuple[str, str]] = {}
+    for url, e in raw.items():
+        try:
+            if (e.get("metodo") in ("texto", "ocr") and e.get("texto")
+                    and date.fromisoformat(e["fecha"]) >= limite):
+                out[url] = (e["texto"], e["metodo"])
+        except Exception:
+            continue
+    return out
+
+
+def _bases_cache_guardar(cache: dict[str, tuple[str, str]]) -> None:
+    # El TTL corre desde la PRIMERA lectura: se conserva la fecha previa.
+    try:
+        prev = json.loads(_BASES_CACHE_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        prev = {}
+    hoy = date.today().isoformat()
+    data = {}
+    for url, (texto, metodo) in cache.items():
+        if metodo not in ("texto", "ocr") or not texto:
+            continue
+        fecha = prev.get(url, {}).get("fecha", hoy) if isinstance(prev, dict) else hoy
+        data[url] = {"texto": texto[:_BASES_CACHE_MAX_TEXTO],
+                     "metodo": metodo, "fecha": fecha}
+    try:
+        tmp = _BASES_CACHE_PATH.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+        tmp.replace(_BASES_CACHE_PATH)
+    except Exception as exc:
+        logger.warning("  No se pudo guardar bases_pdf_cache.json: %s",
+                       type(exc).__name__)
+
 
 def _enriquecer_con_bases(o, fuente, session, cache, contadores):
     """Descarga el PDF de bases de la oferta y la enriquece (bases_pdf):
@@ -1295,7 +1365,10 @@ def _filtrar_items(items, fuente, session, delay, incluir_cerrados):
     hoy = date.today()
     ofertas, omitidas = [], 0
     vistos = set()
-    bases_cache: dict[str, tuple[str, str]] = {}
+    usa_bases = bool(fuente.get("bases_enriquecer"))
+    # Se prima desde disco: PDFs ya OCR-eados en corridas anteriores no se
+    # vuelven a descargar ni a OCR-ear (los decretos no cambian).
+    bases_cache: dict[str, tuple[str, str]] = _bases_cache_cargar() if usa_bases else {}
     contadores = {"ocr": 0}
     _BASURA = re.compile(r"(javascript|no est[áa] disponible|^proceso de selecci[óo]n$|"
                          r"^concurso p[úu]blico$|^llamado a concurso|cookies?|"
@@ -1340,6 +1413,8 @@ def _filtrar_items(items, fuente, session, delay, incluir_cerrados):
         except Exception:
             pass
         ofertas.append(o)
+    if usa_bases and bases_cache:
+        _bases_cache_guardar(bases_cache)
     logger.info("  → %d vigentes (%d omitidas por plazo vencido)",
                 len(ofertas), omitidas)
     return ofertas
@@ -1369,6 +1444,15 @@ def ejecutar(dry_run=False, verbose=False, max_results=None, solo=None,
     logger.info("=" * 60)
     logger.info("INICIO - Scraper municipios%s", " (standalone)" if STANDALONE else "")
     logger.info("=" * 60)
+    # Estado del OCR a la vista desde la primera línea: si tesseract falta en
+    # el sistema, ANTES se deducía recién tras 77 "metodo=sin_texto".
+    try:
+        from scrapers import bases_pdf as _bp
+        _ocr_ok, _ocr_det = _bp.ocr_disponible()
+        (logger.info if _ocr_ok else logger.warning)(
+            "OCR de bases PDF: %s", _ocr_det)
+    except ImportError:
+        logger.warning("OCR de bases PDF: módulo bases_pdf no importable")
     if STANDALONE and not dry_run:
         logger.warning("Sin módulos del proyecto (config/db): forzando --dry-run")
         dry_run = True
@@ -1381,6 +1465,10 @@ def ejecutar(dry_run=False, verbose=False, max_results=None, solo=None,
     # URLs vistas por institucion_id; el cierre por ausencia se hace una vez
     # por institución tras el loop (varias fuentes comparten institucion_id).
     urls_por_inst: dict[int, set[str]] = {}
+    # Nombre canónico por institución: las filas de municipios quedan con
+    # institucion_id/fuente_id NULL (ids del catálogo JSON, sin fila en las
+    # tablas) → marcar_ofertas_cerradas las identifica por nombre + dominio.
+    nombre_por_inst: dict[int, str] = {}
 
     for fuente in fuentes:
         db = SessionLocal() if (SessionLocal and not dry_run) else None
@@ -1414,6 +1502,7 @@ def ejecutar(dry_run=False, verbose=False, max_results=None, solo=None,
                 # vez por institucion al final (evita que dos fuentes de la
                 # misma muni -p.ej. Renca- se cierren ofertas entre si).
                 urls_por_inst.setdefault(int(fuente["id"]), set()).update(urls_activas)
+                nombre_por_inst.setdefault(int(fuente["id"]), fuente["nombre"])
         except Exception as exc:
             f_stats["errores"] += 1
             if db is not None:
@@ -1444,7 +1533,13 @@ def ejecutar(dry_run=False, verbose=False, max_results=None, solo=None,
                 if not urls:
                     continue
                 try:
-                    agg["cerradas"] += marcar_ofertas_cerradas(db_cierre, iid, sorted(urls))
+                    cerradas = marcar_ofertas_cerradas(
+                        db_cierre, iid, sorted(urls),
+                        institucion_nombre=nombre_por_inst.get(iid))
+                    if cerradas:
+                        logger.info("  Cierre por ausencia inst=%s (%s): %d ofertas",
+                                    iid, nombre_por_inst.get(iid, "?"), cerradas)
+                    agg["cerradas"] += cerradas
                 except Exception:
                     db_cierre.rollback()
                     logger.exception("  Error cerrando ausentes inst=%s", iid)
@@ -1456,8 +1551,9 @@ def ejecutar(dry_run=False, verbose=False, max_results=None, solo=None,
 
     dur = time.time() - inicio
     logger.info("RESUMEN municipios: fuentes=%d encontradas=%d nuevas=%d act=%d "
-                "err=%d (%.1fs)", len(fuentes), agg["encontradas"], agg["nuevas"],
-                agg["actualizadas"], agg["errores"], dur)
+                "cerradas=%d err=%d (%.1fs)", len(fuentes), agg["encontradas"],
+                agg["nuevas"], agg["actualizadas"], agg["cerradas"],
+                agg["errores"], dur)
     agg["duracion_seg"] = round(dur, 2)
     agg["status"] = "OK" if agg["errores"] == 0 else "PARCIAL"
     return agg

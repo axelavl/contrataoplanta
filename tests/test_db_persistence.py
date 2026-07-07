@@ -233,6 +233,30 @@ class MarcarOfertasCerradasTests(unittest.TestCase):
         self.assertEqual(session.rollbacks, 2)
         self.assertEqual(session.commits, 0)
 
+    def test_cierra_filas_sin_fk_por_nombre_y_dominio(self):
+        # Regresión "cerradas=0" en municipios: sus filas quedan con
+        # institucion_id/fuente_id NULL (ids del catálogo JSON sin fila en las
+        # tablas) y el WHERE institucion_id = :fid no les aplicaba nunca. El
+        # respaldo identifica por institucion_nombre acotado al dominio.
+        session = FakeSession(scripted_results=[{"rowcount": 4}])
+        closed = marcar_ofertas_cerradas(
+            session, 345, ["https://www.munivina.cl/concursos-publicos/#da-8001"],
+            institucion_nombre="Municipalidad de Viña del Mar")
+        self.assertEqual(closed, 4)
+        sql = session.calls[0].sql
+        params = session.calls[0].params
+        self.assertIn("institucion_nombre = :nombre", sql)
+        self.assertIn("institucion_id IS NULL", sql)
+        self.assertIn("fuente_id = :fid", sql)
+        self.assertEqual(params["nombre"], "Municipalidad de Viña del Mar")
+        self.assertEqual(params["dom"], "munivina.cl")
+
+    def test_sin_nombre_mantiene_comportamiento_previo(self):
+        session = FakeSession(scripted_results=[{"rowcount": 0}])
+        marcar_ofertas_cerradas(session, 5, ["https://a.cl/1"])
+        # nombre vacío → la rama por nombre no puede matchear filas.
+        self.assertEqual(session.calls[0].params["nombre"], "")
+
 
 class RegistrarLogTests(unittest.TestCase):
     def test_writes_log_and_updates_fuentes(self):
