@@ -124,9 +124,10 @@ def buscar_institucion(texto: str, catalogo: list[dict] | None = None) -> dict |
     for inst in catalogo:
         if texto_norm in inst["nombre"].lower() or inst["nombre"].lower() in texto_norm:
             return inst
-    # búsqueda por sigla
+    # búsqueda por sigla — `or ""`: el catálogo trae "sigla": null explícito,
+    # que .get(..., "") no cubre.
     for inst in catalogo:
-        if inst.get("sigla", "").lower() == texto_norm:
+        if (inst.get("sigla") or "").lower() == texto_norm:
             return inst
     return None
 
@@ -252,7 +253,9 @@ def _extraer_campos_perfil(texto: str) -> dict[str, Any]:
     #   RENTA BRUTA\n$2.000.000\nMODALIDAD ESTAMENTO\nHonorarios Profesional
     patrones_kv = {
         "cargo": r"(?:Nombre\s+del\s+cargo|Cargo)\s*[:\|]?\s+(.+)",
-        "dependencia": r"(?:Dependencia|Unidad/?Programa)\s*[:\|]?\s+(.+)",
+        # \b: sin él, "Dependencia" matchea dentro de "Municipalidad de
+        # Independencia" y captura basura como dependencia.
+        "dependencia": r"\b(?:Dependencia|Unidad/?Programa)\s*[:\|]?\s+(.+)",
         "modalidad": r"(?:Modalidad|Tipo\s+de\s+contrato|Calidad\s+jur[ií]dica)\s*[:\|]?\s+(.+)",
         "horario": r"(?:Horario|Jornada)\s*[:\|]?\s+(.+)",
         "vacantes": r"(?:N[°º]\s*(?:de\s+)?vacantes?|Vacantes?)\s*[:\|]?\s*(\d+)",

@@ -1271,6 +1271,11 @@ function openCrearOferta() {
   poblarSelectEdit('edit-estamento', EDIT_ESTAMENTOS, '');
   poblarSelectEdit('edit-renta-tipo', EDIT_RENTA_TIPOS, '');
   document.getElementById('edit-estado').value = 'activa';
+  // Importador URL/PDF: solo tiene sentido al crear (pre-llena el formulario).
+  document.getElementById('extract-box').style.display = '';
+  document.getElementById('extract-url').value = '';
+  document.getElementById('extract-file').value = '';
+  document.getElementById('extract-status').textContent = '';
   document.getElementById('edit-modal').classList.add('open');
 }
 
@@ -1278,6 +1283,14 @@ function openEdit(id, o) {
   _creandoOferta = false;
   _editingId = id;
   o = o || _itemCache[id] || {};
+  // Importador también al editar: escanea una URL/PDF y COMPLEMENTA la oferta
+  // (solo llena campos vacíos; lo ya guardado/escrito no se pisa). Se
+  // pre-carga la URL de las bases (más rica) o la de la oferta para escanear
+  // con un clic.
+  document.getElementById('extract-box').style.display = '';
+  document.getElementById('extract-url').value = o.url_bases || o.url_oferta || '';
+  document.getElementById('extract-file').value = '';
+  document.getElementById('extract-status').textContent = '';
   document.getElementById('edit-modal-title').childNodes[0].textContent = 'Editar oferta ';
   // La institución también es editable al editar: se puede reasignar desde
   // nuestro listado (catálogo). Prellenamos con la que ya tiene la oferta.
@@ -1373,6 +1386,127 @@ async function saveEdit() {
   } catch(e) { toast('Error: '+e.message,'error'); }
 }
 document.getElementById('edit-modal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
+
+// ── Importador: escanear URL o PDF y pre-llenar "Nueva oferta" ─────────────
+// Llama a POST /ofertas/extraer (multipart). El backend descarga la URL (web
+// o PDF) o lee el PDF subido — con OCR si es un escaneo — y devuelve los
+// campos detectados. Aquí solo se pre-llenan los inputs VACÍOS: lo que el
+// editor ya escribió no se pisa. Crear la oferta sigue siendo el botón de
+// siempre (revisión humana antes de persistir).
+const _EXTRACT_LABELS = {
+  cargo:'cargo', institucion_nombre:'institución', descripcion:'descripción',
+  requisitos:'requisitos', fecha_publicacion:'fecha publicación',
+  fecha_cierre:'fecha cierre', region:'región', ciudad:'ciudad',
+  lugar_desempenio:'lugar', tipo_contrato:'tipo contrato',
+  calidad_juridica:'calidad jurídica', jornada:'jornada', sector:'sector',
+  estamento:'estamento', numero_vacantes:'vacantes', renta_bruta_min:'renta',
+  renta_tipo:'tipo renta', grado_eus:'grado EUS',
+  email_postulacion:'correo postulación', email_consultas:'correo consultas',
+  url_oferta:'URL oferta', url_bases:'URL bases',
+};
+
+function aplicarCamposExtraidos(campos) {
+  const setInput = (id, v) => {
+    const el = document.getElementById(id);
+    if (el && !el.value.trim() && v != null && v !== '') { el.value = v; return true; }
+    return false;
+  };
+  const setSelect = (id, opciones, v) => {
+    const el = document.getElementById(id);
+    if (el && !el.value && v) { poblarSelectEdit(id, opciones, v); return true; }
+    return false;
+  };
+  const llenados = [];
+  const marca = (clave, ok) => { if (ok) llenados.push(_EXTRACT_LABELS[clave] || clave); };
+
+  marca('cargo',            setInput('edit-cargo', campos.cargo));
+  if (setInput('edit-institucion', campos.institucion_nombre)) {
+    marca('institucion_nombre', true);
+    if (campos.institucion_id) document.getElementById('edit-institucion-id').value = campos.institucion_id;
+  }
+  marca('descripcion',      setInput('edit-descripcion', campos.descripcion));
+  marca('requisitos',       setInput('edit-requisitos', campos.requisitos));
+  marca('fecha_publicacion',setInput('edit-fecha-publicacion', (campos.fecha_publicacion||'').slice(0,10)));
+  marca('fecha_cierre',     setInput('edit-fecha-cierre', (campos.fecha_cierre||'').slice(0,10)));
+  marca('region',           setSelect('edit-region', EDIT_REGIONES, campos.region));
+  marca('ciudad',           setInput('edit-ciudad', campos.ciudad));
+  marca('lugar_desempenio', setInput('edit-lugar-desempenio', campos.lugar_desempenio));
+  marca('tipo_contrato',    setSelect('edit-tipo-contrato', EDIT_TIPOS_CONTRATO, campos.tipo_contrato));
+  marca('calidad_juridica', setInput('edit-calidad-juridica', campos.calidad_juridica));
+  marca('jornada',          setInput('edit-jornada', campos.jornada));
+  marca('sector',           setSelect('edit-sector', EDIT_SECTORES, campos.sector));
+  marca('estamento',        setSelect('edit-estamento', EDIT_ESTAMENTOS, campos.estamento));
+  marca('numero_vacantes',  setInput('edit-vacantes', campos.numero_vacantes));
+  if (setInput('edit-renta-min', campos.renta_bruta_min)) {
+    marca('renta_bruta_min', true);
+    setInput('edit-renta-max', campos.renta_bruta_max ?? campos.renta_bruta_min);
+  }
+  marca('renta_tipo',       setSelect('edit-renta-tipo', EDIT_RENTA_TIPOS, campos.renta_tipo));
+  marca('grado_eus',        setInput('edit-grado-eus', campos.grado_eus));
+  marca('email_postulacion',setInput('edit-email-postulacion', campos.email_postulacion));
+  marca('email_consultas',  setInput('edit-email-consultas', campos.email_consultas));
+  marca('url_oferta',       setInput('edit-url-oferta', campos.url_oferta));
+  marca('url_bases',        setInput('edit-url-bases', campos.url_bases));
+  return llenados;
+}
+
+async function extraerOferta() {
+  const url = document.getElementById('extract-url').value.trim();
+  // Varios archivos permitidos: capturas del aviso en varias imágenes (el
+  // backend las lee con OCR en orden). Un PDF va solo.
+  const files = Array.from(document.getElementById('extract-file').files || []);
+  const status = document.getElementById('extract-status');
+  const btn = document.getElementById('extract-btn');
+  if (!url && !files.length) { toast('Ingresa una URL o sube un PDF o imágenes', 'error'); return; }
+  if (url && !/^https?:\/\//i.test(url)) { toast('La URL debe empezar con http(s)://', 'error'); return; }
+
+  const fd = new FormData();
+  if (url) fd.append('url', url);
+  for (const f of files) fd.append('archivo', f, f.name);
+
+  btn.disabled = true;
+  btn.textContent = 'Escaneando…';
+  status.textContent = files.length
+    ? (files.length > 1
+        ? `Leyendo ${files.length} imágenes con OCR… (puede tardar ~1 min)`
+        : 'Leyendo archivo… (escaneos e imágenes pasan por OCR, puede tardar ~1 min)')
+    : 'Descargando y escaneando el contenido…';
+  try {
+    // fetch directo: api() fuerza Content-Type JSON y esto es multipart.
+    const r = await fetch(`${API_BASE}/api/${ADMIN_PATH}/ofertas/extraer`, {
+      method: 'POST',
+      headers: { Authorization: _creds.header },
+      body: fd,
+    });
+    if (r.status === 401) { logout(); throw new Error('Sesión expirada'); }
+    if (!r.ok) {
+      const txt = await r.text().catch(() => '');
+      let msg = `HTTP ${r.status}`;
+      try { msg = JSON.parse(txt).detail || msg; } catch (_) { if (txt) msg = txt.slice(0, 250); }
+      throw new Error(msg);
+    }
+    const res = await r.json();
+    const llenados = aplicarCamposExtraidos(res.campos || {});
+    const meta = res.meta || {};
+    const partes = [];
+    if (llenados.length) {
+      partes.push(`✓ ${llenados.length} campo(s) pre-llenados: ${llenados.join(', ')}.`);
+    } else {
+      partes.push('No se detectaron campos nuevos (los ya escritos no se pisan).');
+    }
+    if (meta.usado_ocr) partes.push('El PDF era un escaneo: se usó OCR — revisa con atención.');
+    for (const adv of (meta.advertencias || [])) partes.push(adv + '.');
+    partes.push(`Revisa/completa y presiona «${_creandoOferta ? 'Crear' : 'Guardar'}».`);
+    status.textContent = partes.join(' ');
+    toast(llenados.length ? `Escaneo listo: ${llenados.length} campo(s) detectados ✓` : 'Escaneo listo, sin campos nuevos', llenados.length ? 'success' : 'error');
+  } catch (e) {
+    status.textContent = '✗ ' + e.message;
+    toast('Error al escanear: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Escanear';
+  }
+}
 
 // ── SCRAPERS ──────────────────────────────────────────────────
 async function loadScrapers() {
@@ -2553,6 +2687,7 @@ document.addEventListener('click', e => {
     case 'bulk-sel-limpiar':         _limpiarSeleccion(); break;
     case 'close-modal':        closeModal(); break;
     case 'save-edit':          saveEdit(); break;
+    case 'extract-oferta':     extraerOferta(); break;
     case 'close-fuente-modal': closeFuenteModal(); break;
     case 'save-fuente':        saveFuente(); break;
     // Acciones por fila (data-id / data-* del elemento)

@@ -46,6 +46,10 @@ pydantic[email]==2.9.2
 slowapi==0.1.9
 # PyJWT 2.13.0: fix de PYSEC-2026-175..179.
 PyJWT==2.13.0
+# Requerido por FastAPI para Form/File (POST /ofertas/extraer del panel:
+# escaneo de URL/PDF/imágenes para pre-llenar "Nueva oferta").
+# 0.0.31 cierra CVE-2026-24486/40347/42561/53538/53539/53540 (pip-audit).
+python-multipart==0.0.31
 
 # ── Configuración ───────────────────────────────────────────
 # python-dotenv 1.2.2: fix de CVE-2026-28684.
