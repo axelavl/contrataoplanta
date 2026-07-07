@@ -1470,7 +1470,7 @@ class EmpleosPublicosScraper(BaseScraper):
         bloques = [
             ("Formacion educacional", self._truncar_seccion(
                 self._texto_seccion_sin_heading(
-                    soup.select_one("#lblFormacion, #articleFormacion")), 600
+                    soup.select_one("#lblFormacion, #articleFormacion")), 800
             )),
             ("Especializacion y capacitacion", self._truncar_seccion(
                 self._texto_seccion_sin_heading(
@@ -1653,12 +1653,27 @@ class EmpleosPublicosScraper(BaseScraper):
         return clean_text(" ".join(partes))
 
     def _texto_seccion_sin_heading(self, node: Tag | None) -> str:
+        """Texto de una sección, descartando solo el heading principal.
+
+        Antes se usaba _extraer_mapa_encabezados, que trata <strong> como
+        heading y corta la lectura en cada uno: si los títulos profesionales
+        están formateados con <strong> (o hay sub-headings como
+        "Especialización y/o Capacitación" dentro de #lblFormacion), la lista
+        quedaba truncada. Ahora se extrae todo el texto del nodo y se
+        descarta solo el primer heading de sección (el título "Formación
+        Educacional", "Experiencia sector público", etc.).
+        """
         if not node:
             return ""
-        mapped = self._extraer_mapa_encabezados(node)
-        if mapped:
-            return clean_text(" ".join(value for value in mapped.values() if value))
-        return clean_text(node.get_text(" ", strip=True))
+        full = clean_text(node.get_text(" ", strip=True))
+        if not full:
+            return ""
+        first_heading = node.find(("h2", "h3", "h4"))
+        if first_heading:
+            heading_text = clean_text(first_heading.get_text(" ", strip=True))
+            if heading_text and full.startswith(heading_text):
+                full = clean_text(full[len(heading_text):])
+        return full
 
     def _extraer_rango_fechas(self, text: str | None) -> tuple[Any | None, Any | None]:
         content = clean_text(text)
