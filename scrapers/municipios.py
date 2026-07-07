@@ -918,7 +918,10 @@ def extraer_concursos_da(html, fuente):
                   f"{vac} vacante(s) · Concurso D.A {da}.")
         items.append({
             "cargo": limpiar_texto(cargo)[:500],
-            "url": pdf or (fuente["url"] + "#da-" + da),
+            # url_original = la PÁGINA de concursos (con ancla por D.A): es el
+            # sitio donde el postulante ve el llamado. El PDF va en url_bases
+            # ("Ver bases"); antes "Ir al portal" abría directamente el PDF.
+            "url": fuente["url"] + "#da-" + da,
             "url_bases": pdf,
             "bloque": bloque,
             "numero_vacantes": int(vac) if vac.isdigit() else None,
@@ -1004,7 +1007,9 @@ def extraer_bases_estamento_grado(html, fuente, session, delay):
         det += f" · {g['vacantes']} vacante(s)"
         items.append({
             "cargo": g["cargo"][:500],
-            "url": f"{pdf_url}#{g['slug']}",   # único por grupo
+            # url_original = la noticia del concurso (ancla por grupo); el PDF
+            # queda en url_bases ("Ver bases").
+            "url": f"{fuente['url']}#{g['slug']}",
             "url_bases": pdf_url,
             "bloque": f"{det}. Concurso público de ingreso a la planta municipal.",
             "numero_vacantes": g["vacantes"],

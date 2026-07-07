@@ -54,6 +54,21 @@ def test_una_oferta_por_cargo_con_su_pdf():
     assert not any("anexo" in c.lower() or "cuenta" in c.lower() for c in porcargo)
 
 
+def test_url_original_es_la_pagina_de_concursos_no_el_pdf():
+    # "Ir al portal de postulación" debe llevar al SITIO donde está el llamado
+    # (la página de concursos, con ancla por D.A); el PDF va sólo en url_bases
+    # ("Ver bases"). Antes url = PDF y el portal abría el decreto directamente.
+    items = M.extraer_concursos_da(_HTML, _VINA_CP)
+    for it in items:
+        assert it["url"].startswith(_VINA_CP["url"] + "#da-")
+        assert not it["url"].lower().split("#")[0].endswith(".pdf")
+        assert it["url_bases"].endswith(".pdf")
+    # construir_oferta preserva la separación página/PDF.
+    o = M.construir_oferta(items[0], _VINA_CP)
+    assert o["url_original"].startswith(_VINA_CP["url"] + "#da-")
+    assert o["url_bases"].endswith(".pdf")
+
+
 def test_construir_oferta_concursos_da():
     items = M.extraer_concursos_da(_HTML, _VINA_CP)
     o = M.construir_oferta(items[0], _VINA_CP)
