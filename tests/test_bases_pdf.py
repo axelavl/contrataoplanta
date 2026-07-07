@@ -244,6 +244,46 @@ def test_leer_pdf_escaneado_sin_ocr(monkeypatch):
     assert metodo == "sin_texto"
 
 
+# ── Diagnóstico del OCR: la falta del binario tesseract debe ser VISIBLE ─────
+# (en producción todos los PDFs salían "sin_texto" mudos porque pytesseract
+# lanzaba TesseractNotFoundError por página y se tragaba la excepción)
+class _PytesseractSinBinario:
+    @staticmethod
+    def get_tesseract_version():
+        raise OSError("tesseract is not installed or it's not in your PATH")
+
+
+def test_ocr_disponible_reporta_binario_faltante(monkeypatch):
+    monkeypatch.setattr(B, "pytesseract", _PytesseractSinBinario)
+    monkeypatch.setattr(B, "_TESSERACT_OK", None)
+    ok, detalle = B.ocr_disponible()
+    assert ok is False
+    assert "tesseract" in detalle and "aptPackages" in detalle
+
+
+def test_ocr_sin_binario_no_intenta_paginas(monkeypatch):
+    monkeypatch.setattr(B, "pytesseract", _PytesseractSinBinario)
+    monkeypatch.setattr(B, "_TESSERACT_OK", None)
+    assert B._ocr(b"%PDF-1.4 escaneo", 12) == ""
+
+
+def test_ocr_disponible_sin_pytesseract(monkeypatch):
+    monkeypatch.setattr(B, "pytesseract", None)
+    ok, detalle = B.ocr_disponible()
+    assert ok is False and "pytesseract" in detalle
+
+
+def test_railpack_instala_tesseract():
+    # Railway construye con RAILPACK (railpack.json existe): nixpacks.toml se
+    # ignora, así que el binario tesseract DEBE venir de deploy.aptPackages.
+    import json
+    import pathlib
+    cfg = json.loads((pathlib.Path(B.__file__).parents[1] / "railpack.json")
+                     .read_text(encoding="utf-8"))
+    apt = cfg["deploy"]["aptPackages"]
+    assert "tesseract-ocr" in apt and "tesseract-ocr-spa" in apt
+
+
 # ── Enriquecimiento del dict de oferta ───────────────────────────────────────
 def test_enriquecer_oferta_completa_y_reemplaza_cargo_basura():
     texto = (

@@ -354,7 +354,8 @@ def upsert_oferta(db: Session, datos: dict) -> tuple[bool, bool]:
         raise
 
 
-def marcar_ofertas_cerradas(db: Session, fuente_id: int, urls_activas: list[str]) -> int:
+def marcar_ofertas_cerradas(db: Session, fuente_id: int, urls_activas: list[str],
+                            institucion_nombre: str | None = None) -> int:
     """
     Marca como inactivas las ofertas de una fuente que ya no aparecen en el listado.
     Además registra la primera vez que el scraper dejó de verlas en
@@ -391,16 +392,31 @@ def marcar_ofertas_cerradas(db: Session, fuente_id: int, urls_activas: list[str]
         pass
 
     try:
+        # Identificación de las filas de la fuente, en orden de precisión:
+        #   1. institucion_id (scrapers que lo setean, p.ej. empleos_publicos);
+        #   2. fuente_id (ids del catálogo presentes en `fuentes`);
+        #   3. institucion_nombre + dominio: los scrapers de nuevo estándar
+        #      (municipios) pasan ids del catálogo JSON que NO existen en las
+        #      tablas instituciones/fuentes → sus filas quedan con ambos FK en
+        #      NULL y el cierre por ausencia nunca les aplicaba (cerradas=0 con
+        #      ofertas de años anteriores aún activas). El nombre solo se usa
+        #      acotado al dominio de la corrida para no tocar filas de la misma
+        #      institución llegadas por otro portal.
         result = db.execute(text("""
             UPDATE ofertas
             SET activa                 = FALSE,
                 actualizada_en         = NOW(),
                 fecha_cierre_detectada = COALESCE(fecha_cierre_detectada, NOW())
-            WHERE institucion_id = :fid
-              AND activa = TRUE
+            WHERE activa = TRUE
               AND url_hash != ALL(:hashes)
               AND (:dom = '' OR url_oferta ILIKE :domlike)
-        """), {"fid": fuente_id, "hashes": hashes_activos, "dom": _dom, "domlike": f"%{_dom}%"})
+              AND (institucion_id = :fid
+                   OR (fuente_id = :fid AND :dom != '')
+                   OR (:nombre != '' AND :dom != ''
+                       AND institucion_id IS NULL
+                       AND institucion_nombre = :nombre))
+        """), {"fid": fuente_id, "hashes": hashes_activos, "dom": _dom,
+               "domlike": f"%{_dom}%", "nombre": institucion_nombre or ""})
         db.commit()
         return result.rowcount
     except Exception:

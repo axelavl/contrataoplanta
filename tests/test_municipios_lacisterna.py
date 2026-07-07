@@ -66,22 +66,37 @@ class _SessPDF:
         return _RespPDF(self._c)
 
 
-def test_extractor_sin_pdf_texto_no_crashea(monkeypatch):
+def test_extractor_sin_pdf_texto_no_crashea(monkeypatch, tmp_path):
     # Un PDF sin texto extraíble (o no-PDF) → sin ofertas, sin excepción.
     monkeypatch.setattr(M.time, "sleep", lambda *a, **k: None)
+    monkeypatch.setattr(M, "_BASES_CACHE_PATH", tmp_path / "cache.json")
     items = M.extraer_bases_estamento_grado("", _FUENTE, _SessPDF(b"no-es-pdf"), 0)
     assert items == []
 
 
-def test_url_original_es_la_noticia_no_el_pdf(monkeypatch):
+def test_extractor_usa_leer_pdf_con_ocr(monkeypatch, tmp_path):
+    # El PDF de La Cisterna es un ESCANEO: _pdf_texto (solo capa de texto) daba
+    # "sin texto extraíble" en producción. El extractor debe pasar por
+    # bases_pdf.leer_pdf, que agrega el fallback OCR.
+    import scrapers.bases_pdf as B
+    monkeypatch.setattr(M.time, "sleep", lambda *a, **k: None)
+    monkeypatch.setattr(M, "_BASES_CACHE_PATH", tmp_path / "cache.json")
+    monkeypatch.setattr(B, "leer_pdf", lambda contenido, **kw: (_RESUMEN, "ocr"))
+    items = M.extraer_bases_estamento_grado("", _FUENTE, _SessPDF(b"%PDF-fake"), 0)
+    assert len(items) == 11
+    # La lectura OCR queda en el caché persistente (no se re-OCR-ea mañana).
+    import json
+    cacheado = json.loads((tmp_path / "cache.json").read_text(encoding="utf-8"))
+    assert cacheado[_FUENTE["bases_pdf"]]["metodo"] == "ocr"
+
+
+def test_url_original_es_la_noticia_no_el_pdf(monkeypatch, tmp_path):
     # "Ir al portal" debe llevar a la noticia del concurso (fuente["url"], con
     # ancla por grupo); el PDF de bases queda sólo en url_bases ("Ver bases").
+    import scrapers.bases_pdf as B
     monkeypatch.setattr(M.time, "sleep", lambda *a, **k: None)
-    from scrapers import bases_pdf
-    monkeypatch.setattr(
-        bases_pdf, "leer_pdf",
-        lambda contenido, allow_ocr=True: (_RESUMEN, "ocr"),
-    )
+    monkeypatch.setattr(M, "_BASES_CACHE_PATH", tmp_path / "cache.json")
+    monkeypatch.setattr(B, "leer_pdf", lambda contenido, **kw: (_RESUMEN, "ocr"))
     items = M.extraer_bases_estamento_grado("", _FUENTE, _SessPDF(b"%PDF-fake"), 0)
     assert len(items) == 11
     for it in items:

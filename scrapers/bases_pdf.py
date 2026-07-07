@@ -128,30 +128,77 @@ def _texto_capa(contenido: bytes, max_paginas: int) -> str:
     return ""
 
 
+_TESSERACT_OK: bool | None = None
+
+
+def _tesseract_listo() -> bool:
+    """¿Está el BINARIO tesseract en el sistema? pytesseract (pip) solo lo
+    envuelve; sin binario, image_to_string lanza TesseractNotFoundError en cada
+    página — y eso se tragaba mudo, dejando todo en "sin_texto" sin pista.
+    Se chequea una vez por proceso y se avisa FUERTE si falta."""
+    global _TESSERACT_OK
+    if _TESSERACT_OK is None:
+        try:
+            pytesseract.get_tesseract_version()
+            _TESSERACT_OK = True
+        except Exception as exc:
+            _TESSERACT_OK = False
+            logger.warning(
+                "OCR deshabilitado: el binario tesseract no está instalado en el "
+                "sistema (%s). En Railway (builder Railpack) se instala con "
+                "railpack.json → deploy.aptPackages o con la variable "
+                "RAILPACK_DEPLOY_APT_PACKAGES=tesseract-ocr,tesseract-ocr-spa; "
+                "nixpacks.toml solo aplica si el builder es Nixpacks.",
+                type(exc).__name__)
+    return _TESSERACT_OK
+
+
+def ocr_disponible() -> tuple[bool, str]:
+    """(operativo, detalle) — para loguear al inicio de cada corrida y que el
+    estado del OCR quede a la vista en vez de deducirse de 77 'sin_texto'."""
+    if pdfplumber is None:
+        return False, "pdfplumber no instalado (pip)"
+    if pytesseract is None:
+        return False, "pytesseract no instalado (pip)"
+    if not _tesseract_listo():
+        return False, "binario tesseract ausente en el sistema (aptPackages)"
+    return True, "tesseract operativo (spa)"
+
+
 def _ocr(contenido: bytes, max_paginas: int) -> str:
     """OCR de un PDF escaneado (pdfplumber render + tesseract spa).
 
     Se corta temprano si ya apareció el cronograma con una fecha de cierre,
     porque el OCR es lo caro (~segundos por página)."""
     if pdfplumber is None or pytesseract is None:
-        logger.info("  OCR no disponible (pytesseract/tesseract no instalado)")
+        logger.warning("  OCR no disponible (pytesseract/pdfplumber no instalado)")
+        return ""
+    if not _tesseract_listo():
         return ""
     paginas: list[str] = []
+    err_paginas, primer_error = 0, ""
     try:
         with pdfplumber.open(io.BytesIO(contenido)) as pdf:
             for p in pdf.pages[:max_paginas]:
                 try:
                     img = p.to_image(resolution=200).original
                     paginas.append(pytesseract.image_to_string(img, lang="spa"))
-                except Exception:
+                except Exception as exc:
+                    # No tragar el error: era exactamente lo que ocultaba el
+                    # tesseract faltante en producción.
+                    err_paginas += 1
+                    if not primer_error:
+                        primer_error = f"{type(exc).__name__}: {exc}"[:160]
                     paginas.append("")
                 acumulado = "\n".join(paginas)
                 if re.search(r"cronograma", acumulado, re.I) and \
                    re.search(r"cierre\s+de\s+recepci[oó]n[^\n]*\d{4}", acumulado, re.I):
                     break   # ya tenemos lo crítico: no OCR-ear anexos
     except Exception as exc:
-        logger.info("  OCR falló: %s", type(exc).__name__)
+        logger.warning("  OCR falló: %s: %s", type(exc).__name__, str(exc)[:120])
         return ""
+    if err_paginas:
+        logger.warning("  OCR: %d página(s) fallaron (%s)", err_paginas, primer_error)
     return "\n".join(paginas)
 
 
