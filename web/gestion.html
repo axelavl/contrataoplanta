@@ -1176,10 +1176,11 @@
 <div class="modal-overlay" id="edit-modal">
   <div class="modal">
     <h3 id="edit-modal-title">Editar oferta <span id="edit-id" style="color:var(--muted);font-weight:400"></span></h3>
-    <!-- Importador: escanea una URL (web o PDF) o un PDF subido y pre-llena el
-         formulario. Solo visible al CREAR una oferta (openCrearOferta). -->
+    <!-- Importador: escanea una URL (web o PDF) o un PDF subido y llena los
+         campos VACÍOS del formulario. Disponible al crear Y al editar (para
+         complementar una oferta existente); lo ya escrito nunca se pisa. -->
     <div id="extract-box" style="display:none;border:1px dashed var(--border,#94a3b8);border-radius:10px;padding:12px 14px;margin-bottom:16px">
-      <label style="font-weight:600;display:block;margin-bottom:6px">⚡ Importar datos desde URL o PDF <span style="color:var(--muted);font-weight:400">(opcional — pre-llena el formulario, tú revisas y creas)</span></label>
+      <label style="font-weight:600;display:block;margin-bottom:6px">⚡ Importar datos desde URL o PDF <span style="color:var(--muted);font-weight:400">(opcional — llena solo los campos vacíos; lo escrito no se pisa)</span></label>
       <div style="display:grid;grid-template-columns:1fr auto;gap:8px">
         <input id="extract-url" type="url" placeholder="https://… (página de la oferta o PDF de las bases)">
         <button class="btn btn-primary" id="extract-btn" data-action="extract-oferta" type="button">Escanear</button>

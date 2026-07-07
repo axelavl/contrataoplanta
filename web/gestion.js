@@ -1283,7 +1283,14 @@ function openEdit(id, o) {
   _creandoOferta = false;
   _editingId = id;
   o = o || _itemCache[id] || {};
-  document.getElementById('extract-box').style.display = 'none';
+  // Importador también al editar: escanea una URL/PDF y COMPLEMENTA la oferta
+  // (solo llena campos vacíos; lo ya guardado/escrito no se pisa). Se
+  // pre-carga la URL de las bases (más rica) o la de la oferta para escanear
+  // con un clic.
+  document.getElementById('extract-box').style.display = '';
+  document.getElementById('extract-url').value = o.url_bases || o.url_oferta || '';
+  document.getElementById('extract-file').value = '';
+  document.getElementById('extract-status').textContent = '';
   document.getElementById('edit-modal-title').childNodes[0].textContent = 'Editar oferta ';
   // La institución también es editable al editar: se puede reasignar desde
   // nuestro listado (catálogo). Prellenamos con la que ya tiene la oferta.
@@ -1485,7 +1492,7 @@ async function extraerOferta() {
     }
     if (meta.usado_ocr) partes.push('El PDF era un escaneo: se usó OCR — revisa con atención.');
     for (const adv of (meta.advertencias || [])) partes.push(adv + '.');
-    partes.push('Revisa/completa y presiona «Crear».');
+    partes.push(`Revisa/completa y presiona «${_creandoOferta ? 'Crear' : 'Guardar'}».`);
     status.textContent = partes.join(' ');
     toast(llenados.length ? `Escaneo listo: ${llenados.length} campo(s) detectados ✓` : 'Escaneo listo, sin campos nuevos', llenados.length ? 'success' : 'error');
   } catch (e) {
