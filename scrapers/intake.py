@@ -42,6 +42,7 @@ import unicodedata
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from classification.policy import (
     INTERNAL_ONLY_PATTERNS,
@@ -336,7 +337,12 @@ def _coerce_date(value: Any) -> date | None:
 
 
 def _today() -> date:
-    return datetime.now(timezone.utc).date()
+    # "Hoy" en hora de Chile, NO en UTC: los runners (GitHub Actions) corren en
+    # UTC, y desde las ~20:00 de Chile el día UTC ya es "mañana". Con UTC, la
+    # corrida vespertina descartaba como fecha_cierre_vencida toda oferta que
+    # aún cierra hoy en Chile — incluidas las nuevas del día, que quedaban
+    # fuera de la DB. Mismo criterio que OFFER_STATUS_SQL (api/services/sql.py).
+    return datetime.now(ZoneInfo("America/Santiago")).date()
 
 
 def fecha_desde_url(url: Any) -> date | None:

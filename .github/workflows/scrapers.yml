@@ -27,7 +27,12 @@ permissions:
 jobs:
   scrapers:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # El batch completo (setup + Playwright + ~24 módulos + revalidación) supera
+    # los 60 min cuando municipios/carabineros van lentos: la corrida del
+    # 2026-07-07 00:07 UTC fue CANCELADA a los 60' en plena ejecución, dejando
+    # sin correr universidades/adp y la revalidación de URLs. El tope real lo
+    # pone el `timeout-minutes` del paso run_all; este es solo el paraguas.
+    timeout-minutes: 100
     env:
       # IMPORTANTE: DATABASE_URL debe ser la URL PÚBLICA del Postgres de Railway
       # (host tipo *.proxy.rlwy.net o el "public networking" de Railway), con la
@@ -74,12 +79,18 @@ jobs:
           fi
 
       - name: Correr scrapers (run_all.py)
+        # Tope propio < timeout del job, para que si el batch se cuelga igual
+        # alcancen a correr la revalidación de URLs y la subida de logs.
+        timeout-minutes: 85
         run: python scrapers/run_all.py --mode production
 
       - name: Revalidar URLs de ofertas activas
         # run_all.py NO corre validate_offer_urls.py automáticamente (sí lo hace
         # el orquestador legacy). Lo lanzamos acá para que el frontend pueda
         # gatear los botones "Ver bases" / "Postular" con flags al día.
+        # `always()`: aunque el batch falle o se corte por timeout, lo ya
+        # insertado en la DB merece flags de URL al día.
+        if: always()
         run: python validate_offer_urls.py --workers 20 --max-edad-h 24
 
       - name: Subir logs como artefacto (si existen)
