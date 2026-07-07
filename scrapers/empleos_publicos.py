@@ -1446,14 +1446,26 @@ class EmpleosPublicosScraper(BaseScraper):
         return "Cómo postular:\n" + "\n".join(f"- {p}" for p in pasos)
 
     def _componer_descripcion(self, soup: BeautifulSoup) -> str | None:
-        # La ficha estándar de concurso agrupa Objetivo/Funciones dentro de
-        # #lblFunciones; los "avisos de trabajo" (convpostularavisoTrabajo.aspx)
-        # los publican como encabezados h3 sueltos bajo "Descripción del Cargo".
-        funciones = self._extraer_mapa_encabezados(soup.select_one("#lblFunciones"))
-        objetivo = funciones.get("objetivo del cargo") or self._texto_bajo_encabezado(
-            soup, "objetivo del cargo")
-        funcs = funciones.get("funciones del cargo") or self._texto_bajo_encabezado(
-            soup, "funciones del cargo")
+        container = soup.select_one("#lblFunciones, #articleFunciones")
+        objetivo: str | None = None
+        funcs: str | None = None
+        if container:
+            obj_heading = container.find(
+                ("h2", "h3", "h4"),
+                string=re.compile(r"objetivo\s+del\s+cargo", re.I),
+            )
+            func_heading = container.find(
+                ("h2", "h3", "h4"),
+                string=re.compile(r"funciones\s+del\s+cargo", re.I),
+            )
+            if obj_heading:
+                objetivo = self._extraer_texto_despues_de_heading(obj_heading)
+            if func_heading:
+                funcs = self._extraer_texto_despues_de_heading(func_heading)
+            if not objetivo and not funcs:
+                funcs = self._texto_seccion_sin_heading(container)
+        objetivo = objetivo or self._texto_bajo_encabezado(soup, "objetivo del cargo")
+        funcs = funcs or self._texto_bajo_encabezado(soup, "funciones del cargo")
         bloques = [
             ("Objetivo del cargo", objetivo),
             ("Funciones del cargo", funcs),
@@ -1721,11 +1733,17 @@ class EmpleosPublicosScraper(BaseScraper):
         content = clean_text(text)
         if not content:
             return None
-        match = re.search(r"\b(\d{1,2})\s*horas\b", content, re.IGNORECASE)
-        if match:
-            return f"{match.group(1)} horas"
-        if "jornada completa" in normalize_key(content):
+        norm = normalize_key(content)
+        if "jornada completa" in norm:
             return "jornada completa"
+        if "media jornada" in norm or "part time" in norm:
+            return "media jornada"
+        for m in re.finditer(r"\b(\d{1,2})\s*horas\b", content, re.IGNORECASE):
+            ctx_start = max(0, m.start() - 80)
+            contexto = content[ctx_start:m.start()].lower()
+            if "docen" in contexto or "semanales" in content[m.end():m.end()+15].lower():
+                continue
+            return f"{m.group(1)} horas"
         return None
 
     def _inferir_area_profesional(self, cargo: str | None) -> str | None:
