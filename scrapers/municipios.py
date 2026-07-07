@@ -985,7 +985,12 @@ def parsear_bases_estamento_grado(texto: str) -> list[dict[str, Any]]:
 
 def extraer_bases_estamento_grado(html, fuente, session, delay):
     """Descarga el PDF de bases fijado en la fuente (bases_pdf) y emite una
-    oferta por estamento+grado. El HTML de la página se ignora (SPA)."""
+    oferta por estamento+grado. El HTML de la página se ignora (SPA).
+
+    Estos PDFs pueden venir escaneados (sin capa de texto). Por eso se leen con
+    bases_pdf.leer_pdf(), que hace OCR cuando corresponde, en vez de _pdf_texto()
+    (solo capa de texto).
+    """
     pdf_url = fuente.get("bases_pdf")
     if not pdf_url:
         return []
@@ -994,10 +999,17 @@ def extraer_bases_estamento_grado(html, fuente, session, delay):
     if rp is None:
         logger.warning("  No se pudo bajar bases_pdf %s", pdf_url[:70])
         return []
-    texto = _pdf_texto(rp.content)
+    try:
+        from scrapers import bases_pdf
+        texto, metodo = bases_pdf.leer_pdf(rp.content, allow_ocr=True)
+    except Exception as exc:
+        logger.info("  bases_pdf: lector OCR no disponible (%s); usando capa de texto",
+                    type(exc).__name__)
+        texto, metodo = _pdf_texto(rp.content), "texto"
     if not texto:
-        logger.info("  PDF de bases sin texto extraíble: %s", pdf_url[:70])
+        logger.info("  PDF de bases sin texto extraíble/OCR: %s", pdf_url[:70])
         return []
+    logger.info("  bases_pdf %s → metodo=%s", pdf_url.rsplit("/", 1)[-1], metodo)
     grupos = parsear_bases_estamento_grado(texto)
     items = []
     for g in grupos:
