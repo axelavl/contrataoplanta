@@ -541,7 +541,12 @@ class EmpleosPublicosScraper(BaseScraper):
             "estamento": truncate(
                 html_unescape(clean_text(registro.get("Cargo Profesional"))), 60
             ),
-            "lugar_desempenio": None,
+            # Si la jerarquía baja a un establecimiento más específico que la
+            # institución resuelta (hospital, CRS, jardín), ese es el lugar de
+            # desempeño real. La ficha puede refinarlo después.
+            "lugar_desempenio": truncate(
+                self._lugar_desde_jerarquia(jerarquia, inst_nombre), 200
+            ) or None,
         }
 
     @staticmethod
@@ -936,6 +941,17 @@ class EmpleosPublicosScraper(BaseScraper):
                 "evento=institucion_ficha_descartada scraper=%s api=%s ficha=%s url=%s",
                 self.nombre, api_inst_id, inst_id, resultado.get("url_oferta"),
             )
+        if not resultado.get("lugar_desempenio"):
+            # La ficha no trae campo "Lugar de desempeño" explícito, pero la
+            # jerarquía puede bajar a un establecimiento más específico que la
+            # institución resuelta (hospital, CRS, jardín): ese es el lugar.
+            resultado["lugar_desempenio"] = truncate(
+                self._lugar_desde_jerarquia(
+                    metadata.get("institucion_jerarquia"),
+                    resultado.get("institucion_nombre"),
+                ),
+                200,
+            ) or None
         return resultado
 
     def _anexar_como_postular(
@@ -1277,6 +1293,32 @@ class EmpleosPublicosScraper(BaseScraper):
             if any(normalize_key(c) == clave for c in candidatos if c):
                 return inst.get("id")
         return None
+
+    @staticmethod
+    def _lugar_desde_jerarquia(
+        jerarquia: str | None, inst_nombre: str | None
+    ) -> str | None:
+        """Lugar de desempeño implícito en la jerarquía del aviso.
+
+        Cuando la jerarquía baja a una entidad MÁS específica que la
+        institución resuelta — "Ministerio de Salud / Servicio de Salud
+        Metropolitano Sur Oriente / Complejo Hospitalario San José de Maipo"
+        con el catálogo conociendo solo al Servicio — ese último segmento es
+        el establecimiento donde de verdad se desempeña el cargo. Sin esto se
+        perdía: la oferta quedaba atribuida al Servicio y sin lugar. Devuelve
+        None si la institución resuelta YA es el segmento más específico (no
+        hay nivel extra que rescatar).
+        """
+        texto = clean_text(jerarquia)
+        if not texto:
+            return None
+        segmentos = [p.strip() for p in texto.split("/") if p.strip()]
+        if len(segmentos) < 2:
+            return None
+        ultimo = segmentos[-1]
+        if inst_nombre and normalize_key(ultimo) == normalize_key(inst_nombre):
+            return None
+        return ultimo
 
     def _resolver_institucion(self, jerarquia: str | None) -> tuple[int | None, str | None]:
         """Resuelve (institucion_id, institucion_nombre) desde la jerarquía del
