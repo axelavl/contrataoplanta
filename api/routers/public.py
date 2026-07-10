@@ -1004,6 +1004,8 @@ async def track_evento(request: Request) -> Response:
             referrer=data.get("ref") or request.headers.get("referer"),
             user_agent=request.headers.get("user-agent", ""),
             ip=client_ip(request),
+            pais=request.headers.get("cf-ipcountry") or request.headers.get("x-country-code"),
+            ciudad=request.headers.get("cf-ipcity") or request.headers.get("x-city"),
         )
     return Response(status_code=204)
 
