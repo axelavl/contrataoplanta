@@ -211,6 +211,32 @@ def texto_desde_imagenes(imagenes: list[bytes]) -> str:
     return texto
 
 
+def _parece_url_pdf(href: str) -> bool:
+    """True si la URL apunta con alta probabilidad a un PDF.
+
+    No exige que la ruta TERMINE en .pdf: los gestores documentales sirven
+    rutas como '.../BASES+CONCURSO+-+DAF.pdf_1783454876591/<uuid>' (Portal de
+    Transparencia). El magic byte %PDF- al descargar es la validación final.
+    """
+    return ".pdf" in urlparse(href).path.lower()
+
+
+# Señales de "estas son las bases del concurso" en la RUTA del link (no solo
+# el nombre de archivo: en Portal de Transparencia el último segmento es un
+# uuid y el nombre real va en el segmento anterior).
+_RE_PDF_BASES = re.compile(
+    r"bases|concurso|convocatoria|llamado|perfil|tdr", re.I)
+
+
+def _elegir_pdf_bases(pdf_links: list[str] | None) -> str | None:
+    """Mejor candidato a 'bases del concurso' entre los PDFs de una página."""
+    absolutos = [l for l in (pdf_links or []) if l.startswith(("http://", "https://"))]
+    for link in absolutos:
+        if _RE_PDF_BASES.search(urlparse(link).path):
+            return link
+    return absolutos[0] if absolutos else None
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # HTML → texto estructurado
 # ══════════════════════════════════════════════════════════════════════════════
@@ -239,7 +265,7 @@ def extraer_texto_html(html: str, base_url: str = "") -> dict[str, Any]:
     pdf_links: list[str] = []
     for a in soup.find_all("a", href=True):
         href = urljoin(base_url, a["href"])
-        if href.lower().split("?")[0].endswith(".pdf") and href not in pdf_links:
+        if _parece_url_pdf(href) and href not in pdf_links:
             pdf_links.append(href)
 
     texto = re.sub(r"\n{3,}", "\n\n", soup.get_text("\n", strip=True))
@@ -462,10 +488,11 @@ def extraer_campos_oferta(
     _set("url_oferta", pub.get("url_postulacion"))
     for link in (pdf_links or []):
         # Solo absolutas: un HTML subido como archivo no tiene base para
-        # resolver hrefs relativos, y el form exige URLs http(s).
-        if link.startswith(("http://", "https://")) and re.search(
-                r"bases|concurso|convocatoria|perfil|tdr",
-                link.rsplit("/", 1)[-1], re.I):
+        # resolver hrefs relativos, y el form exige URLs http(s). Se busca en
+        # toda la RUTA (no solo el nombre): en Portal de Transparencia el
+        # último segmento es un uuid y el nombre real va en el anterior.
+        if link.startswith(("http://", "https://")) and _RE_PDF_BASES.search(
+                urlparse(link).path):
             _set("url_bases", link)
             break
 
@@ -475,6 +502,64 @@ def extraer_campos_oferta(
         advertencias.append(f"Ojo: el documento parece VENCIDO — {resumen.get('motivo')}")
 
     return campos, advertencias
+
+
+def _cargo_generico(cargo: str | None) -> bool:
+    """True si el cargo detectado es un encabezado genérico de post y no un
+    cargo real ("Bases de llamado a concurso público para proveer cargos…")."""
+    if not cargo:
+        return True
+    try:
+        from scrapers.intake import titulo_es_generico
+        if titulo_es_generico(cargo):
+            return True
+    except Exception:  # intake no disponible en este entorno
+        pass
+    return bool(re.search(r"\b(bases|llamado|concurso|convocatoria)\b", cargo, re.I))
+
+
+def _seguir_pdf_bases(
+    pdf_url: str,
+    campos: dict[str, Any],
+    advertencias: list[str],
+    *,
+    permitir_ocr: bool = True,
+) -> dict[str, Any] | None:
+    """Descarga las bases en PDF enlazadas desde la página y fusiona campos.
+
+    En los posts municipales (WordPress) el cuerpo casi no trae datos: el
+    cargo, el cierre, la renta y los requisitos viven en el PDF adjunto. El
+    HTML manda (setdefault); el PDF rellena lo que falte — salvo el cargo,
+    donde el título genérico del post cede ante el cargo real de las bases.
+    Devuelve metadatos del seguimiento, o None si el PDF no aportó.
+    """
+    from scrapers import bases_pdf
+
+    try:
+        contenido, ctype, url_final = descargar_recurso(pdf_url)
+        if not es_pdf(contenido, ctype, pdf_url):
+            return None
+        texto, metodo = bases_pdf.leer_pdf(contenido, allow_ocr=permitir_ocr)
+        if metodo == "sin_texto" or len(re.sub(r"\s", "", texto)) < 80:
+            return None
+        campos_pdf, adv_pdf = extraer_campos_oferta(texto, metodo=metodo)
+        if campos_pdf.get("cargo") and _cargo_generico(campos.get("cargo")):
+            campos["cargo"] = campos_pdf["cargo"]
+        for clave, valor in campos_pdf.items():
+            campos.setdefault(clave, valor)
+        campos.setdefault("url_bases", url_final)
+        # Del PDF solo interesa la advertencia de vigencia; las de "no se
+        # detectó X" duplicarían las del HTML que el PDF pudo haber resuelto.
+        advertencias.extend(a for a in adv_pdf if "VENCIDO" in a)
+        if campos.get("fecha_cierre"):
+            advertencias[:] = [a for a in advertencias if "fecha de cierre" not in a]
+        if campos.get("institucion_nombre"):
+            advertencias[:] = [a for a in advertencias if "No se detectó la institución" not in a]
+        return {"metodo": "html+pdf", "pdf_seguido": url_final,
+                "usado_ocr": metodo == "ocr", "texto_pdf": texto}
+    except ExtraccionError as exc:
+        advertencias.append(f"No se pudieron leer las bases enlazadas: {exc}")
+        return None
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -505,6 +590,10 @@ def extraer_desde_contenido(
                 "tesseract instalado?). Revisa el archivo o ingresa los datos a mano.")
         meta.update({"tipo": "pdf", "metodo": metodo, "usado_ocr": metodo == "ocr"})
         campos, advertencias = extraer_campos_oferta(texto, metodo=metodo, url=url)
+        # El documento MISMO son las bases, aunque la URL no termine en .pdf
+        # (Portal de Transparencia sirve '.../BASES.pdf_<ts>/<uuid>').
+        if url:
+            campos.setdefault("url_bases", url)
         if metodo == "ocr":
             advertencias.insert(0, "PDF escaneado: texto obtenido por OCR — revisa "
                                    "los campos con atención")
@@ -514,7 +603,11 @@ def extraer_desde_contenido(
         except UnicodeDecodeError:
             html = contenido.decode("latin-1", errors="replace")
         pagina = extraer_texto_html(html, base_url=url or "")
-        if len(re.sub(r"\s", "", pagina["texto"])) < 120:
+        pdf_candidato = _elegir_pdf_bases(pagina["pdf_links"])
+        if len(re.sub(r"\s", "", pagina["texto"])) < 120 and not pdf_candidato:
+            # Sin texto Y sin PDF adjunto no hay de dónde extraer. Con PDF
+            # adjunto se sigue igual: los posts municipales suelen ser solo
+            # el título + el link a las bases.
             raise ExtraccionError(
                 "La página casi no tiene texto (¿contenido cargado por "
                 "JavaScript?). Prueba con la URL del PDF de las bases.")
@@ -529,6 +622,16 @@ def extraer_desde_contenido(
             url=url,
             pdf_links=pagina["pdf_links"],
         )
+        # Seguir UNA vez las bases en PDF enlazadas: ahí viven el cargo real,
+        # el cierre, la renta y los requisitos que el post no trae.
+        if pdf_candidato:
+            seguimiento = _seguir_pdf_bases(
+                pdf_candidato, campos, advertencias, permitir_ocr=permitir_ocr)
+            if seguimiento:
+                texto_pdf = seguimiento.pop("texto_pdf", "")
+                if texto_pdf:
+                    texto = f"{texto}\n\n── Bases (PDF adjunto) ──\n{texto_pdf}"
+                meta.update(seguimiento)
 
     meta["caracteres"] = len(texto)
     meta["advertencias"] = advertencias
