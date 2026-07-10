@@ -14,6 +14,16 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://contrataoplanta.cl/cargos-a-contrata.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://contrataoplanta.cl/cargos-de-planta.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://contrataoplanta.cl/cursos.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -22,6 +32,71 @@
     <loc>https://contrataoplanta.cl/descargo.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://contrataoplanta.cl/empleos-carabineros.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://contrataoplanta.cl/empleos-fuerzas-armadas.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://contrataoplanta.cl/empleos-pdi.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://contrataoplanta.cl/empleos-publicos-abogados.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://contrataoplanta.cl/empleos-publicos-administrativos.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://contrataoplanta.cl/empleos-publicos-contadores.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://contrataoplanta.cl/empleos-publicos-enfermeros.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://contrataoplanta.cl/empleos-publicos-informaticos.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://contrataoplanta.cl/empleos-publicos-ingenieros.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://contrataoplanta.cl/empleos-publicos-medicos.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://contrataoplanta.cl/empleos-publicos-profesores.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://contrataoplanta.cl/empleos-publicos-psicologos.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://contrataoplanta.cl/empleos-publicos-trabajadores-sociales.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://contrataoplanta.cl/estadisticas.html</loc>
@@ -112,5 +187,10 @@
     <loc>https://contrataoplanta.cl/terminos.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://contrataoplanta.cl/trabajos-administracion-publica.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
 </urlset>

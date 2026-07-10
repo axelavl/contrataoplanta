@@ -1534,6 +1534,15 @@ footer {
   transition: color .15s;
 }
 .footer-link:hover { color: white; }
+/* Bloque "Búsquedas frecuentes" (SEO): fila completa entre las columnas y el
+   footer-bottom, con enlaces en línea que envuelven. */
+.footer-seo {
+  max-width: 1200px; margin: 28px auto 0;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+.footer-seo-links { display: flex; flex-wrap: wrap; gap: 4px 18px; }
+.footer-seo-links .footer-link { margin-bottom: 4px; }
 .footer-bottom {
   max-width: 1200px; margin: 28px auto 0;
   padding-top: 20px;
