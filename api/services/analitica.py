@@ -112,6 +112,19 @@ def sesion_anonima(user_agent: str, ip: str) -> str:
     return hashlib.sha256(semilla.encode("utf-8")).hexdigest()[:32]
 
 
+def _ips_excluidas() -> set[str]:
+    """Lee las IPs excluidas de site_config (clave 'ips_excluidas', CSV)."""
+    try:
+        row = execute_fetch_one(
+            "SELECT valor FROM site_config WHERE clave = 'ips_excluidas'", []
+        )
+        if row and row.get("valor"):
+            return {ip.strip() for ip in row["valor"].split(",") if ip.strip()}
+    except Exception:
+        pass
+    return set()
+
+
 def registrar_evento(
     *,
     tipo: str,
@@ -138,12 +151,14 @@ def registrar_evento(
         oid = int(oferta_id) if oferta_id not in (None, "") else None
     except (TypeError, ValueError):
         oid = None
+    excluida = ip in _ips_excluidas() if ip else False
     try:
         with get_cursor() as (conn, cur):
             cur.execute(
                 """INSERT INTO web_eventos
-                       (tipo, path, evento, oferta_id, referrer_host, dispositivo, sesion)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+                       (tipo, path, evento, oferta_id, referrer_host,
+                        dispositivo, sesion, excluida)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
                 [
                     tipo,
                     normalizar_path(path),
@@ -152,6 +167,7 @@ def registrar_evento(
                     host_de_referrer(referrer),
                     clasificar_dispositivo(user_agent),
                     sesion_anonima(user_agent, ip),
+                    excluida,
                 ],
             )
             conn.commit()
@@ -163,12 +179,25 @@ def registrar_evento(
 
 # ── Agregación (lado admin) ──────────────────────────────────────────────────
 
-def resumen_interno(dias: int = 30) -> dict[str, Any]:
-    """Métricas agregadas de `web_eventos` para los últimos `dias` días."""
+def resumen_interno(
+    dias: int = 30,
+    *,
+    excluir_propias: bool = True,
+    granularidad: str = "dia",
+) -> dict[str, Any]:
+    """Métricas agregadas de `web_eventos` para los últimos `dias` días.
+
+    ``excluir_propias``: filtra eventos marcados como ``excluida=TRUE``
+    (IPs del admin configuradas en site_config 'ips_excluidas').
+
+    ``granularidad``: 'dia' o 'semana' para la serie temporal.
+    """
     dias = max(1, min(int(dias or 30), 365))
+    filtro_excl = "AND NOT COALESCE(excluida, FALSE)" if excluir_propias else ""
+    trunc = "week" if granularidad == "semana" else "day"
     try:
         totales = execute_fetch_one(
-            """
+            f"""
             SELECT
                 COUNT(*) FILTER (WHERE tipo = 'pageview') AS paginas_vistas,
                 COUNT(DISTINCT sesion) FILTER (WHERE tipo = 'pageview') AS visitantes,
@@ -180,67 +209,82 @@ def resumen_interno(dias: int = 30) -> dict[str, Any]:
                     WHERE tipo = 'pageview' AND ts >= CURRENT_DATE
                 ) AS visitantes_hoy
             FROM web_eventos
-            WHERE ts >= NOW() - make_interval(days => %s)
+            WHERE ts >= NOW() - make_interval(days => %s) {filtro_excl}
             """,
             [dias],
         ) or {}
 
-        serie = execute_fetch_all(
-            """
-            SELECT TO_CHAR(DATE_TRUNC('day', ts), 'YYYY-MM-DD') AS dia,
-                   COUNT(*) FILTER (WHERE tipo = 'pageview')        AS vistas,
-                   COUNT(DISTINCT sesion) FILTER (WHERE tipo='pageview') AS visitantes
+        # Totales del período anterior (misma ventana desplazada) para comparación.
+        totales_prev = execute_fetch_one(
+            f"""
+            SELECT
+                COUNT(*) FILTER (WHERE tipo = 'pageview') AS paginas_vistas,
+                COUNT(DISTINCT sesion) FILTER (WHERE tipo = 'pageview') AS visitantes,
+                COUNT(*) FILTER (WHERE tipo = 'evento') AS eventos
             FROM web_eventos
             WHERE ts >= NOW() - make_interval(days => %s)
+              AND ts < NOW() - make_interval(days => %s) {filtro_excl}
+            """,
+            [dias * 2, dias],
+        ) or {}
+
+        serie = execute_fetch_all(
+            f"""
+            SELECT TO_CHAR(DATE_TRUNC('{trunc}', ts), 'YYYY-MM-DD') AS dia,
+                   COUNT(*) FILTER (WHERE tipo = 'pageview')              AS vistas,
+                   COUNT(DISTINCT sesion) FILTER (WHERE tipo='pageview')   AS visitantes,
+                   COUNT(*) FILTER (WHERE tipo = 'evento')                AS eventos
+            FROM web_eventos
+            WHERE ts >= NOW() - make_interval(days => %s) {filtro_excl}
             GROUP BY 1 ORDER BY 1 ASC
             """,
             [dias],
         )
 
         top_paginas = execute_fetch_all(
-            """
+            f"""
             SELECT COALESCE(path, '(desconocido)') AS path, COUNT(*) AS vistas
             FROM web_eventos
-            WHERE tipo = 'pageview' AND ts >= NOW() - make_interval(days => %s)
+            WHERE tipo = 'pageview' AND ts >= NOW() - make_interval(days => %s) {filtro_excl}
             GROUP BY 1 ORDER BY 2 DESC LIMIT 12
             """,
             [dias],
         )
 
         top_referidos = execute_fetch_all(
-            """
+            f"""
             SELECT referrer_host AS host, COUNT(*) AS visitas
             FROM web_eventos
             WHERE tipo = 'pageview' AND referrer_host IS NOT NULL
-              AND ts >= NOW() - make_interval(days => %s)
+              AND ts >= NOW() - make_interval(days => %s) {filtro_excl}
             GROUP BY 1 ORDER BY 2 DESC LIMIT 10
             """,
             [dias],
         )
 
         dispositivos = execute_fetch_all(
-            """
+            f"""
             SELECT COALESCE(dispositivo, 'otro') AS dispositivo, COUNT(*) AS vistas
             FROM web_eventos
-            WHERE tipo = 'pageview' AND ts >= NOW() - make_interval(days => %s)
+            WHERE tipo = 'pageview' AND ts >= NOW() - make_interval(days => %s) {filtro_excl}
             GROUP BY 1 ORDER BY 2 DESC
             """,
             [dias],
         )
 
         eventos_top = execute_fetch_all(
-            """
+            f"""
             SELECT evento, COUNT(*) AS total
             FROM web_eventos
             WHERE tipo = 'evento' AND evento IS NOT NULL
-              AND ts >= NOW() - make_interval(days => %s)
+              AND ts >= NOW() - make_interval(days => %s) {filtro_excl}
             GROUP BY 1 ORDER BY 2 DESC LIMIT 12
             """,
             [dias],
         )
 
         ofertas_top = execute_fetch_all(
-            """
+            f"""
             SELECT w.oferta_id,
                    COALESCE(o.cargo, '(oferta eliminada)') AS cargo,
                    COALESCE(o.institucion_nombre, '') AS institucion,
@@ -248,18 +292,15 @@ def resumen_interno(dias: int = 30) -> dict[str, Any]:
             FROM web_eventos w
             LEFT JOIN ofertas o ON o.id = w.oferta_id
             WHERE w.evento = 'ver_oferta' AND w.oferta_id IS NOT NULL
-              AND w.ts >= NOW() - make_interval(days => %s)
+              AND w.ts >= NOW() - make_interval(days => %s) {filtro_excl}
             GROUP BY w.oferta_id, o.cargo, o.institucion_nombre
             ORDER BY vistas DESC LIMIT 10
             """,
             [dias],
         )
 
-        # Embudo de conversión: sesiones distintas que llegan a cada paso.
-        # Mide cuánta gente avanza de "visitar" → "ver una oferta" →
-        # "hacer clic en Postular". Las tasas se calculan en el frontend.
         embudo_row = execute_fetch_one(
-            """
+            f"""
             SELECT
                 COUNT(DISTINCT sesion)                                            AS visitaron,
                 COUNT(DISTINCT sesion) FILTER (WHERE evento = 'ver_oferta')       AS vieron_oferta,
@@ -267,7 +308,7 @@ def resumen_interno(dias: int = 30) -> dict[str, Any]:
                 COUNT(DISTINCT sesion) FILTER (WHERE evento = 'click_bases')      AS vieron_bases,
                 COUNT(DISTINCT sesion) FILTER (WHERE evento = 'suscribir_alerta') AS se_suscribieron
             FROM web_eventos
-            WHERE sesion IS NOT NULL AND ts >= NOW() - make_interval(days => %s)
+            WHERE sesion IS NOT NULL AND ts >= NOW() - make_interval(days => %s) {filtro_excl}
             """,
             [dias],
         ) or {}
@@ -282,10 +323,37 @@ def resumen_interno(dias: int = 30) -> dict[str, Any]:
         for paso in embudo:
             paso["pct"] = round(paso["sesiones"] * 100 / base, 1)
 
+        # Horas pico: distribución de pageviews por hora del día.
+        horas = execute_fetch_all(
+            f"""
+            SELECT EXTRACT(HOUR FROM ts)::int AS hora, COUNT(*) AS vistas
+            FROM web_eventos
+            WHERE tipo = 'pageview' AND ts >= NOW() - make_interval(days => %s) {filtro_excl}
+            GROUP BY 1 ORDER BY 1
+            """,
+            [dias],
+        )
+
+        # Días de la semana más activos.
+        dias_semana = execute_fetch_all(
+            f"""
+            SELECT TO_CHAR(ts, 'Dy') AS dia_semana,
+                   EXTRACT(ISODOW FROM ts)::int AS dow,
+                   COUNT(*) AS vistas
+            FROM web_eventos
+            WHERE tipo = 'pageview' AND ts >= NOW() - make_interval(days => %s) {filtro_excl}
+            GROUP BY 1, 2 ORDER BY 2
+            """,
+            [dias],
+        )
+
         return {
             "disponible": True,
             "dias": dias,
+            "granularidad": granularidad,
+            "excluir_propias": excluir_propias,
             "totales": totales,
+            "totales_prev": totales_prev,
             "serie": serie,
             "top_paginas": top_paginas,
             "top_referidos": top_referidos,
@@ -293,6 +361,8 @@ def resumen_interno(dias: int = 30) -> dict[str, Any]:
             "eventos_top": eventos_top,
             "ofertas_top": ofertas_top,
             "embudo": embudo,
+            "horas": horas,
+            "dias_semana": dias_semana,
         }
     except Exception as exc:
         logger.warning(f"[analitica] resumen interno no disponible: {exc}")
