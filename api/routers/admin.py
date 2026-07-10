@@ -1123,9 +1123,27 @@ def admin_crear_oferta(
             row = cur.fetchone()
             nuevo_id = (row["id"] if isinstance(row, dict) else row[0]) if row else None
             conn.commit()
+    except psycopg2.errors.UniqueViolation as exc:
+        constraint = getattr(exc.diag, "constraint_name", "") or ""
+        if "url_oferta" in constraint and url_oferta:
+            with get_cursor() as (_c2, c2):
+                c2.execute(
+                    "SELECT id, cargo FROM ofertas WHERE url_oferta = %s LIMIT 1",
+                    (url_oferta,),
+                )
+                dup = c2.fetchone()
+            if dup:
+                dup_id = dup["id"] if isinstance(dup, dict) else dup[0]
+                dup_cargo = (dup["cargo"] if isinstance(dup, dict) else dup[1]) or ""
+                raise HTTPException(
+                    409,
+                    f"Ya existe una oferta con esa URL (ID {dup_id}: "
+                    f"{dup_cargo[:80]}). Edítala en vez de crear una nueva.",
+                ) from exc
+        detalle = (getattr(exc, "diag", None) and exc.diag.message_primary) or str(exc)
+        logger.warning("Error creando oferta manual (duplicado): %s", detalle)
+        raise HTTPException(409, f"No se pudo crear la oferta: {detalle}") from exc
     except psycopg2.Error as exc:
-        # Convertimos el error de DB en un 400 legible (con CORS) en vez de
-        # dejar que escape como 500 opaco → "Failed to fetch" en el panel.
         detalle = (getattr(exc, "diag", None) and exc.diag.message_primary) or str(exc)
         logger.warning("Error creando oferta manual: %s", detalle)
         raise HTTPException(400, f"No se pudo crear la oferta: {detalle}") from exc
