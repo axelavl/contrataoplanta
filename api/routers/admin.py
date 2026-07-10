@@ -1128,8 +1128,8 @@ def admin_crear_oferta(
         if "url_oferta" in constraint and url_oferta:
             with get_cursor() as (_c2, c2):
                 c2.execute(
-                    "SELECT id, cargo FROM ofertas WHERE url_oferta = %s LIMIT 1",
-                    (url_oferta,),
+                    "SELECT id, cargo FROM ofertas WHERE url_oferta = %s AND cargo = %s LIMIT 1",
+                    (url_oferta, cargo[:500]),
                 )
                 dup = c2.fetchone()
             if dup:
@@ -1137,7 +1137,7 @@ def admin_crear_oferta(
                 dup_cargo = (dup["cargo"] if isinstance(dup, dict) else dup[1]) or ""
                 raise HTTPException(
                     409,
-                    f"Ya existe una oferta con esa URL (ID {dup_id}: "
+                    f"Ya existe una oferta con esa URL y el mismo cargo (ID {dup_id}: "
                     f"{dup_cargo[:80]}). Edítala en vez de crear una nueva.",
                 ) from exc
         detalle = (getattr(exc, "diag", None) and exc.diag.message_primary) or str(exc)

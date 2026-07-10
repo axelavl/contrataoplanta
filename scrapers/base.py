@@ -2245,7 +2245,7 @@ class LegacyBaseScraper(abc.ABC):
         ALTER TABLE ofertas ADD COLUMN IF NOT EXISTS fecha_scraped TIMESTAMP DEFAULT NOW();
         ALTER TABLE ofertas ADD COLUMN IF NOT EXISTS fecha_actualizado TIMESTAMP DEFAULT NOW();
 
-        CREATE UNIQUE INDEX IF NOT EXISTS uq_ofertas_url_oferta ON ofertas (url_oferta);
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_ofertas_url_oferta_cargo ON ofertas (url_oferta, cargo) WHERE url_oferta IS NOT NULL;
         """
         connection = self.get_connection()
         try:
