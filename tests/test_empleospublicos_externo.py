@@ -90,6 +90,52 @@ def test_jerarquia_salud_sigue_resolviendo():
     assert nombre == "Servicio de Salud Magallanes"
 
 
+# ── Lugar de desempeño desde la jerarquía ────────────────────────────────────
+
+def test_lugar_desde_jerarquia_rescata_establecimiento():
+    """Si la jerarquía baja a un establecimiento más específico que la
+    institución resuelta, ese segmento es el lugar de desempeño (aviso real:
+    Complejo Hospitalario San José de Maipo bajo el SS Metropolitano Sur
+    Oriente, que es lo único que conoce el catálogo)."""
+    sc = _scraper()
+    lugar = sc._lugar_desde_jerarquia(
+        "Ministerio de Salud / Servicio de Salud Metropolitano Sur Oriente / "
+        "Complejo Hospitalario San José de Maipo",
+        "Servicio de Salud Metropolitano Sur Oriente",
+    )
+    assert lugar == "Complejo Hospitalario San José de Maipo"
+
+
+def test_lugar_desde_jerarquia_sin_nivel_extra_devuelve_none():
+    """Si la institución resuelta YA es el segmento más específico, no hay
+    lugar que rescatar (evita duplicar la institución como lugar)."""
+    sc = _scraper()
+    assert sc._lugar_desde_jerarquia(
+        "Ministerio de Salud / Servicio de Salud Magallanes",
+        "Servicio de Salud Magallanes",
+    ) is None
+    assert sc._lugar_desde_jerarquia("Servicio de Salud Magallanes", None) is None
+    assert sc._lugar_desde_jerarquia(None, "Cualquiera") is None
+
+
+def test_oferta_api_hereda_lugar_desde_jerarquia():
+    """El mapeo de la API pobla lugar_desempenio con el establecimiento cuando
+    la jerarquía trae un nivel bajo la institución resuelta."""
+    sc = _scraper()
+    oferta = sc._oferta_desde_api({
+        "url": "/pub/convocatorias/convpostularavisoTrabajo.aspx?i=141356",
+        "Cargo": "Psicólogo(a) Clínico(a) para Atención Primaria de Salud",
+        "Ministerio": "Ministerio de Salud",
+        "Institución / Entidad": (
+            "Servicio de Salud Magallanes / Hospital Clínico Regional"
+        ),
+        "Región": "Región de Magallanes",
+    })
+    assert oferta is not None
+    assert oferta["institucion_id"] == 30
+    assert oferta["lugar_desempenio"] == "Hospital Clínico Regional"
+
+
 # ── Ficha en portal externo (myfront) ────────────────────────────────────────
 
 _URL_AVISO = "https://www.empleospublicos.cl/pub/convocatorias/avisopizarronficha.aspx?i=19865"
