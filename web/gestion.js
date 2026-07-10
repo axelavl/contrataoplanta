@@ -731,6 +731,8 @@ async function loadAnalitica() {
     renderHoras(interno.horas || []);
     renderDiasSemana(interno.dias_semana || []);
     renderEmbudo(interno.embudo || []);
+    renderPaises(interno.paises || []);
+    renderCiudades(interno.ciudades || []);
     renderAnaliticaLista('an-paginas', interno.top_paginas || [], 'path', 'vistas');
     renderAnaliticaLista('an-referidos', interno.top_referidos || [], 'host', 'visitas', 'Tráfico directo (sin referido)');
     renderDispositivos(interno.dispositivos || []);
@@ -954,6 +956,48 @@ function renderDiasSemana(rows) {
       </div>
       <span style="font-size:11px;color:var(--muted);width:50px;text-align:right">${r.vistas.toLocaleString()}</span>
     </div>`;
+  }).join('');
+}
+
+// ── ORIGEN GEOGRÁFICO ─────────────────────────────────────────
+
+function renderPaises(rows) {
+  const tbody = document.getElementById('an-paises');
+  if (!rows.length || (rows.length === 1 && rows[0].pais === 'XX')) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="3">Sin datos geográficos aún. Los datos aparecerán con las próximas visitas.</td></tr>';
+    return;
+  }
+  const max = Math.max(1, ...rows.map(r => r.vistas || 0));
+  tbody.innerHTML = rows.filter(r => r.pais !== 'XX').map(r => {
+    const pct = Math.round(((r.vistas||0)/max)*100);
+    return `<tr>
+      <td style="max-width:180px">
+        <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escAttr(r.nombre)} (${r.pais})">${escAttr(r.nombre)}</div>
+        <div style="height:4px;background:var(--surface2);border-radius:3px;margin-top:4px;overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--accent)"></div></div>
+      </td>
+      <td style="text-align:right;font-weight:600;white-space:nowrap">${(r.vistas||0).toLocaleString()}</td>
+      <td style="text-align:right;color:var(--muted);font-size:12px;white-space:nowrap">${(r.visitantes||0).toLocaleString()} vis.</td>
+    </tr>`;
+  }).join('') || '<tr class="empty-row"><td colspan="3">Sin datos</td></tr>';
+}
+
+function renderCiudades(rows) {
+  const tbody = document.getElementById('an-ciudades');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="3">Sin datos de ciudad. Requiere Cloudflare Pro o headers X-City del proxy.</td></tr>';
+    return;
+  }
+  const max = Math.max(1, ...rows.map(r => r.vistas || 0));
+  tbody.innerHTML = rows.map(r => {
+    const pct = Math.round(((r.vistas||0)/max)*100);
+    return `<tr>
+      <td style="max-width:180px">
+        <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escAttr(r.ciudad)}, ${escAttr(r.pais_nombre)}">${escAttr(r.ciudad)}<span class="text-muted" style="font-size:11px"> ${escAttr(r.pais_nombre)}</span></div>
+        <div style="height:4px;background:var(--surface2);border-radius:3px;margin-top:4px;overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--green)"></div></div>
+      </td>
+      <td style="text-align:right;font-weight:600;white-space:nowrap">${(r.vistas||0).toLocaleString()}</td>
+      <td style="text-align:right;color:var(--muted);font-size:12px;white-space:nowrap">${(r.visitantes||0).toLocaleString()} vis.</td>
+    </tr>`;
   }).join('');
 }
 

@@ -125,6 +125,25 @@ def _ips_excluidas() -> set[str]:
     return set()
 
 
+_PAIS_NOMBRES: dict[str, str] = {
+    "CL": "Chile", "AR": "Argentina", "PE": "Perú", "CO": "Colombia",
+    "MX": "México", "BR": "Brasil", "EC": "Ecuador", "VE": "Venezuela",
+    "BO": "Bolivia", "UY": "Uruguay", "PY": "Paraguay", "US": "EE.UU.",
+    "ES": "España", "DE": "Alemania", "FR": "Francia", "GB": "Reino Unido",
+    "CA": "Canadá", "AU": "Australia", "IT": "Italia", "PT": "Portugal",
+    "CR": "Costa Rica", "PA": "Panamá", "DO": "Rep. Dominicana",
+    "GT": "Guatemala", "HN": "Honduras", "SV": "El Salvador",
+    "NI": "Nicaragua", "CU": "Cuba", "PR": "Puerto Rico",
+}
+
+
+def nombre_pais(codigo: str | None) -> str:
+    """Devuelve nombre legible de un código ISO 2 letras."""
+    if not codigo:
+        return "Desconocido"
+    return _PAIS_NOMBRES.get(codigo.upper(), codigo.upper())
+
+
 def registrar_evento(
     *,
     tipo: str,
@@ -134,10 +153,14 @@ def registrar_evento(
     referrer: str | None,
     user_agent: str,
     ip: str,
+    pais: str | None = None,
+    ciudad: str | None = None,
 ) -> bool:
     """Inserta un registro en `web_eventos`. Best-effort: nunca lanza.
 
     Devuelve True si se guardó, False si se descartó (bot) o falló el insert.
+    ``pais`` y ``ciudad`` vienen de headers de Cloudflare (CF-IPCountry,
+    CF-IPCity) o similares del proxy. No se almacena la IP.
     """
     if es_bot(user_agent):
         return False
@@ -152,13 +175,17 @@ def registrar_evento(
     except (TypeError, ValueError):
         oid = None
     excluida = ip in _ips_excluidas() if ip else False
+    pais_clean = (pais or "")[:2].upper() or None
+    if pais_clean == "XX":
+        pais_clean = None
+    ciudad_clean = (ciudad or "")[:100].strip() or None
     try:
         with get_cursor() as (conn, cur):
             cur.execute(
                 """INSERT INTO web_eventos
                        (tipo, path, evento, oferta_id, referrer_host,
-                        dispositivo, sesion, excluida)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
+                        dispositivo, sesion, excluida, pais, ciudad)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
                 [
                     tipo,
                     normalizar_path(path),
@@ -168,6 +195,8 @@ def registrar_evento(
                     clasificar_dispositivo(user_agent),
                     sesion_anonima(user_agent, ip),
                     excluida,
+                    pais_clean,
+                    ciudad_clean,
                 ],
             )
             conn.commit()
@@ -347,6 +376,37 @@ def resumen_interno(
             [dias],
         )
 
+        # Geolocalización: países y ciudades más frecuentes.
+        paises = execute_fetch_all(
+            f"""
+            SELECT COALESCE(pais, 'XX') AS pais,
+                   COUNT(*) AS vistas,
+                   COUNT(DISTINCT sesion) AS visitantes
+            FROM web_eventos
+            WHERE tipo = 'pageview' AND ts >= NOW() - make_interval(days => %s) {filtro_excl}
+            GROUP BY 1 ORDER BY 2 DESC LIMIT 15
+            """,
+            [dias],
+        )
+        for p in paises:
+            p["nombre"] = nombre_pais(p["pais"])
+
+        ciudades = execute_fetch_all(
+            f"""
+            SELECT COALESCE(ciudad, '(desconocida)') AS ciudad,
+                   COALESCE(pais, 'XX') AS pais,
+                   COUNT(*) AS vistas,
+                   COUNT(DISTINCT sesion) AS visitantes
+            FROM web_eventos
+            WHERE tipo = 'pageview' AND ciudad IS NOT NULL
+              AND ts >= NOW() - make_interval(days => %s) {filtro_excl}
+            GROUP BY 1, 2 ORDER BY 3 DESC LIMIT 15
+            """,
+            [dias],
+        )
+        for c in ciudades:
+            c["pais_nombre"] = nombre_pais(c["pais"])
+
         return {
             "disponible": True,
             "dias": dias,
@@ -363,6 +423,8 @@ def resumen_interno(
             "embudo": embudo,
             "horas": horas,
             "dias_semana": dias_semana,
+            "paises": paises,
+            "ciudades": ciudades,
         }
     except Exception as exc:
         logger.warning(f"[analitica] resumen interno no disponible: {exc}")
