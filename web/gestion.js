@@ -1277,6 +1277,7 @@ function openCrearOferta() {
   document.getElementById('extract-file').value = '';
   document.getElementById('extract-status').textContent = '';
   document.getElementById('edit-modal').classList.add('open');
+  snapshotModalOferta();
 }
 
 function openEdit(id, o) {
@@ -1326,11 +1327,33 @@ function openEdit(id, o) {
   document.getElementById('edit-url-oferta').value = o.url_oferta||'';
   document.getElementById('edit-url-bases').value = o.url_bases||'';
   document.getElementById('edit-modal').classList.add('open');
+  snapshotModalOferta();
 }
 function closeModal() {
   document.getElementById('edit-modal').classList.remove('open');
   _editingId = null;
   _creandoOferta = false;
+}
+
+// ── Protección contra cierre accidental del modal de oferta ────────────────
+// Antes un clic en el fondo oscuro, un Escape o un roce del ✕ cerraban el
+// modal sin preguntar y se perdía todo lo escrito. Se toma una foto del
+// formulario al abrir; cualquier vía de cierre pasa por intentarCerrarModal(),
+// que pide confirmación si hay cambios sin guardar. closeModal() queda como
+// cierre "duro" (post-guardado exitoso).
+let _modalSnapshot = '';
+function _serializarModalOferta() {
+  const campos = document.querySelectorAll('#edit-modal input, #edit-modal textarea, #edit-modal select');
+  return Array.from(campos).map(el => el.value).join('\u0000');
+}
+function snapshotModalOferta() { _modalSnapshot = _serializarModalOferta(); }
+function intentarCerrarModal() {
+  const abierto = document.getElementById('edit-modal').classList.contains('open');
+  if (abierto && _serializarModalOferta() !== _modalSnapshot &&
+      !confirm('Tienes cambios sin guardar en la oferta. ¿Cerrar y descartarlos?')) {
+    return;
+  }
+  closeModal();
 }
 async function saveEdit() {
   if (!_editingId && !_creandoOferta) return;
@@ -1385,7 +1408,7 @@ async function saveEdit() {
     loadOfertas(_ofertasPagina);
   } catch(e) { toast('Error: '+e.message,'error'); }
 }
-document.getElementById('edit-modal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
+document.getElementById('edit-modal').addEventListener('click', e => { if(e.target===e.currentTarget) intentarCerrarModal(); });
 
 // ── Importador: escanear URL o PDF y pre-llenar "Nueva oferta" ─────────────
 // Llama a POST /ofertas/extraer (multipart). El backend descarga la URL (web
@@ -2685,7 +2708,7 @@ document.addEventListener('click', e => {
     case 'bulk-sel-destacar':        bulkSeleccionadas('destacar'); break;
     case 'bulk-sel-quitar-destacada': bulkSeleccionadas('quitar-destacada'); break;
     case 'bulk-sel-limpiar':         _limpiarSeleccion(); break;
-    case 'close-modal':        closeModal(); break;
+    case 'close-modal':        intentarCerrarModal(); break;
     case 'save-edit':          saveEdit(); break;
     case 'extract-oferta':     extraerOferta(); break;
     case 'close-fuente-modal': closeFuenteModal(); break;
@@ -2764,7 +2787,7 @@ document.addEventListener('input', e => {
 
 // ── Keyboard ───────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
-  if (e.key==='Escape') closeModal();
+  if (e.key==='Escape') intentarCerrarModal();
   if (e.key==='Enter' && document.getElementById('auth-screen').style.display!=='none') doLogin();
   if (e.key==='Enter' && e.target.id==='dest-buscar') destSearch();
 });
