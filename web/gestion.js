@@ -706,10 +706,12 @@ const _AN_DISPOSITIVO = {
 
 async function loadAnalitica() {
   const dias = parseInt(document.getElementById('an-dias').value) || 30;
+  const granularidad = document.getElementById('an-granularidad').value || 'dia';
+  const excluir = document.getElementById('an-excluir').checked;
   const cards = document.getElementById('an-cards');
   cards.innerHTML = '<div class="stat-card"><div class="label">Cargando…</div><div class="value"><span class="spinner"></span></div></div>';
   try {
-    const d = await api(`/analitica?dias=${dias}`);
+    const d = await api(`/analitica?dias=${dias}&granularidad=${granularidad}&excluir_propias=${excluir}`);
     const interno = d.interno || {};
     if (interno.disponible === false) {
       cards.innerHTML = `<div class="stat-card" style="grid-column:1/-1"><div class="label" style="color:var(--yellow)">Analítica no disponible</div><div class="sub">${esc(interno.warning || 'Aplica las migraciones de la base de datos para empezar a medir el tráfico.')}</div></div>`;
@@ -719,11 +721,15 @@ async function loadAnalitica() {
       document.getElementById('an-chart').innerHTML = '<p class="text-muted">Aún no hay visitas registradas.</p>';
       document.getElementById('an-dispositivos').innerHTML = '<p class="text-muted">—</p>';
       document.getElementById('an-embudo').innerHTML = '<p class="text-muted">Aún no hay datos del embudo.</p>';
+      document.getElementById('an-horas').innerHTML = '<p class="text-muted">—</p>';
+      document.getElementById('an-dias-semana').innerHTML = '<p class="text-muted">—</p>';
       renderUmami(d.umami || {});
       return;
     }
-    renderAnaliticaCards(interno.totales || {});
-    renderAnaliticaChart(interno.serie || []);
+    renderAnaliticaCards(interno.totales || {}, interno.totales_prev || {});
+    renderAnaliticaChart(interno.serie || [], granularidad);
+    renderHoras(interno.horas || []);
+    renderDiasSemana(interno.dias_semana || []);
     renderEmbudo(interno.embudo || []);
     renderAnaliticaLista('an-paginas', interno.top_paginas || [], 'path', 'vistas');
     renderAnaliticaLista('an-referidos', interno.top_referidos || [], 'host', 'visitas', 'Tráfico directo (sin referido)');
@@ -736,18 +742,34 @@ async function loadAnalitica() {
   }
 }
 
-function renderAnaliticaCards(t) {
+function _pctCambio(actual, anterior) {
+  actual = actual || 0; anterior = anterior || 0;
+  if (!anterior) return actual > 0 ? '+100%' : '—';
+  const pct = Math.round(((actual - anterior) / anterior) * 100);
+  if (pct === 0) return '0%';
+  return pct > 0 ? `+${pct}%` : `${pct}%`;
+}
+function _colorCambio(actual, anterior) {
+  actual = actual || 0; anterior = anterior || 0;
+  if (actual > anterior) return 'var(--green)';
+  if (actual < anterior) return 'var(--red)';
+  return 'var(--muted)';
+}
+function renderAnaliticaCards(t, prev) {
+  prev = prev || {};
+  const cambioVistas = _pctCambio(t.paginas_vistas, prev.paginas_vistas);
+  const cambioVisitantes = _pctCambio(t.visitantes, prev.visitantes);
+  const cambioEventos = _pctCambio(t.eventos, prev.eventos);
   document.getElementById('an-cards').innerHTML = `
-    <div class="stat-card blue"><div class="label">Páginas vistas</div><div class="value">${(t.paginas_vistas||0).toLocaleString()}</div><div class="sub">en el período</div></div>
-    <div class="stat-card green"><div class="label">Visitantes</div><div class="value">${(t.visitantes||0).toLocaleString()}</div><div class="sub">aproximado, anónimo</div></div>
+    <div class="stat-card blue"><div class="label">Páginas vistas</div><div class="value">${(t.paginas_vistas||0).toLocaleString()}</div><div class="sub">vs anterior: <span style="color:${_colorCambio(t.paginas_vistas, prev.paginas_vistas)};font-weight:600">${cambioVistas}</span></div></div>
+    <div class="stat-card green"><div class="label">Visitantes</div><div class="value">${(t.visitantes||0).toLocaleString()}</div><div class="sub">vs anterior: <span style="color:${_colorCambio(t.visitantes, prev.visitantes)};font-weight:600">${cambioVisitantes}</span></div></div>
     <div class="stat-card"><div class="label">Vistas hoy</div><div class="value">${(t.vistas_hoy||0).toLocaleString()}</div></div>
     <div class="stat-card"><div class="label">Visitantes hoy</div><div class="value">${(t.visitantes_hoy||0).toLocaleString()}</div></div>
-    <div class="stat-card yellow"><div class="label">Acciones</div><div class="value">${(t.eventos||0).toLocaleString()}</div><div class="sub">clics y búsquedas</div></div>
+    <div class="stat-card yellow"><div class="label">Acciones</div><div class="value">${(t.eventos||0).toLocaleString()}</div><div class="sub">vs anterior: <span style="color:${_colorCambio(t.eventos, prev.eventos)};font-weight:600">${cambioEventos}</span></div></div>
   `;
 }
 
-// Gráfico de líneas en SVG puro (sin librerías: respeta el CSP script-src 'self').
-function renderAnaliticaChart(serie) {
+function renderAnaliticaChart(serie, granularidad) {
   const cont = document.getElementById('an-chart');
   if (!serie.length) { cont.innerHTML = '<p class="text-muted">Aún no hay visitas registradas en el período.</p>'; return; }
   const W = 760, H = 160, pad = 28;
@@ -884,6 +906,107 @@ async function exportAnalitica() {
     URL.revokeObjectURL(url);
     toast('CSV descargado ✓');
   } catch (e) { toast('Error: ' + e.message, 'error'); }
+}
+
+// ── HORAS PICO Y DÍAS DE LA SEMANA ────────────────────────────
+
+const _DIAS_SEMANA_LABEL = {
+  Mon: 'Lunes', Tue: 'Martes', Wed: 'Miércoles', Thu: 'Jueves',
+  Fri: 'Viernes', Sat: 'Sábado', Sun: 'Domingo',
+};
+
+function renderHoras(rows) {
+  const cont = document.getElementById('an-horas');
+  if (!rows.length) { cont.innerHTML = '<p class="text-muted">Sin datos</p>'; return; }
+  const todas = Array.from({length:24}, (_,i) => {
+    const r = rows.find(h => h.hora === i);
+    return { hora: i, vistas: r ? r.vistas : 0 };
+  });
+  const max = Math.max(1, ...todas.map(h => h.vistas));
+  cont.innerHTML = `<div style="display:flex;align-items:flex-end;gap:2px;height:70px">${
+    todas.map(h => {
+      const pct = Math.max(2, Math.round((h.vistas/max)*100));
+      const label = h.hora.toString().padStart(2,'0');
+      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center" title="${label}:00 — ${h.vistas.toLocaleString()} vistas">
+        <div style="width:100%;background:var(--accent);border-radius:2px 2px 0 0;height:${pct}%;min-height:2px;opacity:${h.vistas?1:0.2}"></div>
+      </div>`;
+    }).join('')
+  }</div>
+  <div style="display:flex;gap:2px;margin-top:2px">${
+    todas.map(h => h.hora % 6 === 0
+      ? `<div style="flex:1;text-align:center;font-size:9px;color:var(--muted)">${h.hora}h</div>`
+      : '<div style="flex:1"></div>'
+    ).join('')
+  }</div>`;
+}
+
+function renderDiasSemana(rows) {
+  const cont = document.getElementById('an-dias-semana');
+  if (!rows.length) { cont.innerHTML = '<p class="text-muted">Sin datos</p>'; return; }
+  const max = Math.max(1, ...rows.map(r => r.vistas));
+  cont.innerHTML = rows.map(r => {
+    const label = _DIAS_SEMANA_LABEL[r.dia_semana] || r.dia_semana;
+    const pct = Math.round((r.vistas/max)*100);
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <span style="font-size:12px;width:75px;flex-shrink:0">${label}</span>
+      <div style="flex:1;height:16px;background:var(--surface2);border-radius:4px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:var(--accent);border-radius:4px"></div>
+      </div>
+      <span style="font-size:11px;color:var(--muted);width:50px;text-align:right">${r.vistas.toLocaleString()}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── GESTIÓN DE IPS EXCLUIDAS ──────────────────────────────────
+
+async function toggleIpsModal() {
+  const modal = document.getElementById('an-ips-modal');
+  if (modal.style.display !== 'none') { modal.style.display = 'none'; return; }
+  modal.style.display = 'block';
+  try {
+    const d = await api('/analitica/mi-ip');
+    _renderIpsList(d.excluidas || [], d.mi_ip || '');
+    document.getElementById('an-ip-input').placeholder = `Ej: ${d.mi_ip || '1.2.3.4'}`;
+  } catch(e) { toast('Error cargando IPs: '+e.message, 'error'); }
+}
+
+function _renderIpsList(ips, miIp) {
+  const cont = document.getElementById('an-ips-list');
+  if (!ips.length) { cont.innerHTML = '<p class="text-muted" style="font-size:12px">No hay IPs excluidas. Agrega tu IP para ver solo tráfico real.</p>'; return; }
+  cont.innerHTML = ips.map(ip => `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px">
+    <code style="flex:1">${escAttr(ip)}</code>${ip===miIp?'<span style="font-size:11px;color:var(--green)">(tu IP actual)</span>':''}
+    <button class="btn btn-ghost btn-sm" style="color:var(--red);padding:2px 8px" data-action="remove-ip" data-ip="${escAttr(ip)}">quitar</button>
+  </div>`).join('');
+}
+
+async function addExcludedIp() {
+  const input = document.getElementById('an-ip-input');
+  const ip = input.value.trim();
+  if (!ip) { toast('Ingresa una IP', 'error'); return; }
+  try {
+    const d = await api('/analitica/excluir-ip', { method:'POST', body: JSON.stringify({ ip, accion:'agregar' }) });
+    _renderIpsList(d.excluidas || [], '');
+    input.value = '';
+    toast('IP excluida ✓');
+  } catch(e) { toast('Error: '+e.message, 'error'); }
+}
+
+async function addMyIp() {
+  try {
+    const info = await api('/analitica/mi-ip');
+    if (!info.mi_ip) { toast('No se pudo detectar tu IP', 'error'); return; }
+    const d = await api('/analitica/excluir-ip', { method:'POST', body: JSON.stringify({ ip: info.mi_ip, accion:'agregar' }) });
+    _renderIpsList(d.excluidas || [], info.mi_ip);
+    toast(`IP ${info.mi_ip} excluida ✓`);
+  } catch(e) { toast('Error: '+e.message, 'error'); }
+}
+
+async function removeExcludedIp(ip) {
+  try {
+    const d = await api('/analitica/excluir-ip', { method:'POST', body: JSON.stringify({ ip, accion:'quitar' }) });
+    _renderIpsList(d.excluidas || [], '');
+    toast('IP removida ✓');
+  } catch(e) { toast('Error: '+e.message, 'error'); }
 }
 
 // ── USUARIOS DEL PANEL ─────────────────────────────────────────
@@ -2741,6 +2864,11 @@ document.addEventListener('click', e => {
     case 'borrar-usuario':     borrarUsuario(parseInt(d.id), d.usuario||''); break;
     case 'load-scheduler':     loadScheduler(); break;
     case 'save-scheduler':     saveScheduler(); break;
+    case 'config-ips':         toggleIpsModal(); break;
+    case 'close-ips-modal':    document.getElementById('an-ips-modal').style.display='none'; break;
+    case 'add-ip':             addExcludedIp(); break;
+    case 'add-my-ip':          addMyIp(); break;
+    case 'remove-ip':          removeExcludedIp(d.ip); break;
   }
 });
 

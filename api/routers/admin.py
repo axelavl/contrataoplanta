@@ -456,6 +456,8 @@ def admin_stats(_user: str = Depends(_verify_admin_jwt)) -> dict[str, Any]:
 def admin_analitica(
     dias: int = Query(30, ge=1, le=365),
     incluir_umami: bool = Query(True),
+    excluir_propias: bool = Query(True),
+    granularidad: str = Query("dia"),
     _user: str = Depends(_verify_admin_jwt),
 ) -> dict[str, Any]:
     """Estadísticas de tráfico del sitio: analítica propia + Umami (si está).
@@ -463,8 +465,16 @@ def admin_analitica(
     La analítica propia sale de `web_eventos` (beacon de `web/analytics.js`).
     Umami se consulta solo si está configurado vía env vars; si no, la
     sección viene con `configurado=false` y el panel la oculta.
+
+    ``excluir_propias``: filtra visitas desde IPs configuradas en
+    site_config 'ips_excluidas' (por defecto activo).
+    ``granularidad``: 'dia' o 'semana' para la serie temporal.
     """
-    interno = analitica_resumen_interno(dias)
+    if granularidad not in ("dia", "semana"):
+        granularidad = "dia"
+    interno = analitica_resumen_interno(
+        dias, excluir_propias=excluir_propias, granularidad=granularidad,
+    )
     umami: dict[str, Any] = {"configurado": False}
     if incluir_umami and analitica_umami_configurado():
         umami = analitica_resumen_umami(dias)
@@ -498,6 +508,45 @@ def admin_analitica_export(
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename=estadisticas_{dias}d.csv"},
     )
+
+
+@router.get(f"/api/{ADMIN_PATH}/analitica/mi-ip", tags=["admin"])
+def admin_mi_ip(
+    request: Request,
+    _user: str = Depends(_verify_admin_jwt),
+) -> dict[str, Any]:
+    """Devuelve la IP del admin y las IPs actualmente excluidas."""
+    mi_ip = (
+        request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+        or request.headers.get("x-real-ip", "")
+        or (request.client.host if request.client else "")
+    )
+    conf = _get_site_config_db()
+    raw = conf.get("ips_excluidas", "")
+    excluidas = [ip.strip() for ip in raw.split(",") if ip.strip()] if raw else []
+    return {"mi_ip": mi_ip, "excluidas": excluidas, "mi_ip_excluida": mi_ip in excluidas}
+
+
+@router.post(f"/api/{ADMIN_PATH}/analitica/excluir-ip", tags=["admin"])
+def admin_excluir_ip(
+    payload: dict[str, Any],
+    _user: str = Depends(_require_admin),
+) -> dict[str, Any]:
+    """Agrega o quita una IP de la lista de excluidas en analítica."""
+    ip = (str(payload.get("ip") or "")).strip()
+    accion = (str(payload.get("accion") or "agregar")).strip()
+    if not ip:
+        raise HTTPException(400, "ip es requerida")
+    conf = _get_site_config_db()
+    raw = conf.get("ips_excluidas", "")
+    actuales = {s.strip() for s in raw.split(",") if s.strip()} if raw else set()
+    if accion == "quitar":
+        actuales.discard(ip)
+    else:
+        actuales.add(ip)
+    _set_site_config_db("ips_excluidas", ",".join(sorted(actuales)))
+    _auditar(_user, "excluir_ip", "site_config", None, {"ip": ip, "accion": accion})
+    return {"excluidas": sorted(actuales)}
 
 
 # Portales/scrapers de origen reconocibles por el dominio de la URL de la oferta.
@@ -1905,6 +1954,8 @@ def admin_set_config(
         "destacadas_auto", "destacadas_criterios", "destacadas_criterios_modo",
         # Recuadro "Anúnciate" (oferta + valores para publicar) en cursos.html.
         "cursos_anunciate_activo",
+        # IPs a excluir de la analítica (CSV). Ej: "1.2.3.4,5.6.7.8".
+        "ips_excluidas",
     }
     # `destacadas_criterios` debe ser JSON de una lista [{tipo,valor}]; si llega
     # algo que no parsea a lista, se descarta para no guardar basura.

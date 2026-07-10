@@ -382,81 +382,123 @@
     </div>
 
     <!-- Estadísticas del sitio -->
-    <div class="tab-panel" id="tab-estadisticas">
-      <div class="section-header">
+    <div class=”tab-panel” id=”tab-estadisticas”>
+      <div class=”section-header”>
         <h2>Estadísticas del sitio</h2>
-        <div style="display:flex;gap:8px;align-items:center">
-          <select id="an-dias" data-change="analitica" title="Período a mostrar">
-            <option value="7">Últimos 7 días</option>
-            <option value="30" selected>Últimos 30 días</option>
-            <option value="90">Últimos 90 días</option>
+        <div style=”display:flex;gap:8px;align-items:center;flex-wrap:wrap”>
+          <select id=”an-dias” data-change=”analitica” title=”Período a mostrar”>
+            <option value=”1”>Hoy</option>
+            <option value=”7”>Últimos 7 días</option>
+            <option value=”14”>Últimos 14 días</option>
+            <option value=”30” selected>Últimos 30 días</option>
+            <option value=”90”>Últimos 90 días</option>
+            <option value=”180”>Últimos 6 meses</option>
+            <option value=”365”>Último año</option>
           </select>
-          <button class="btn btn-ghost btn-sm" data-action="export-analitica">⬇ CSV</button>
-          <button class="btn btn-ghost btn-sm" data-action="load-analitica">↻ Actualizar</button>
+          <select id=”an-granularidad” data-change=”analitica” title=”Granularidad del gráfico”>
+            <option value=”dia” selected>Por día</option>
+            <option value=”semana”>Por semana</option>
+          </select>
+          <label style=”display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer” title=”Excluir visitas desde tus IPs configuradas”>
+            <input type=”checkbox” id=”an-excluir” checked data-change=”analitica”> Excluir mis visitas
+          </label>
+          <button class=”btn btn-ghost btn-sm” data-action=”config-ips” title=”Configurar IPs excluidas”>IPs</button>
+          <button class=”btn btn-ghost btn-sm” data-action=”export-analitica”>⬇ CSV</button>
+          <button class=”btn btn-ghost btn-sm” data-action=”load-analitica”>↻ Actualizar</button>
         </div>
       </div>
-      <p class="text-muted" style="margin:-4px 0 16px;font-size:13px">
+      <p class=”text-muted” style=”margin:-4px 0 16px;font-size:13px”>
         Tráfico real de visitas medido por el propio sitio — sin cookies de seguimiento,
         sin guardar direcciones IP ni datos personales. Los “visitantes” son una
         aproximación anónima que se reinicia cada día.
       </p>
 
+      <!-- Modal IPs excluidas -->
+      <div id=”an-ips-modal” style=”display:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:18px”>
+        <div style=”display:flex;justify-content:space-between;align-items:center;margin-bottom:12px”>
+          <strong>IPs excluidas de la analítica</strong>
+          <button class=”btn btn-ghost btn-sm” data-action=”close-ips-modal”>✕</button>
+        </div>
+        <p class=”text-muted” style=”font-size:12px;margin-bottom:12px”>
+          Las visitas desde estas IPs se marcan y no se cuentan en las estadísticas
+          cuando “Excluir mis visitas” está activo.
+        </p>
+        <div id=”an-ips-list” style=”margin-bottom:12px”></div>
+        <div style=”display:flex;gap:8px;align-items:center”>
+          <input type=”text” id=”an-ip-input” placeholder=”IP a excluir” style=”flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--fg);font-size:13px”>
+          <button class=”btn btn-sm” data-action=”add-ip”>Agregar</button>
+          <button class=”btn btn-ghost btn-sm” data-action=”add-my-ip”>Agregar mi IP</button>
+        </div>
+      </div>
+
       <!-- Tarjetas resumen -->
-      <div class="stats-grid" id="an-cards"></div>
+      <div class=”stats-grid” id=”an-cards”></div>
 
       <!-- Tendencia de visitas -->
-      <div class="section-header" style="margin-top:8px"><h2>Tendencia de visitas</h2></div>
-      <div class="table-wrap" style="padding:18px;margin-bottom:22px">
-        <div id="an-chart" style="min-height:160px"></div>
+      <div class=”section-header” style=”margin-top:8px”><h2>Tendencia de visitas</h2></div>
+      <div class=”table-wrap” style=”padding:18px;margin-bottom:22px”>
+        <div id=”an-chart” style=”min-height:160px”></div>
+      </div>
+
+      <!-- Horas pico y días de la semana -->
+      <div style=”display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px”>
+        <div class=”table-wrap” style=”padding:16px”>
+          <strong style=”font-size:14px;display:block;margin-bottom:12px”>Horas más activas</strong>
+          <div id=”an-horas” style=”min-height:80px”></div>
+        </div>
+        <div class=”table-wrap” style=”padding:16px”>
+          <strong style=”font-size:14px;display:block;margin-bottom:12px”>Días de la semana</strong>
+          <div id=”an-dias-semana” style=”min-height:80px”></div>
+        </div>
       </div>
 
       <!-- Embudo de conversión -->
-      <div class="section-header" style="margin-top:8px"><h2>Embudo de conversión</h2></div>
-      <p class="text-muted" style="margin:-4px 0 12px;font-size:13px">
+      <div class=”section-header” style=”margin-top:8px”><h2>Embudo de conversión</h2></div>
+      <p class=”text-muted” style=”margin:-4px 0 12px;font-size:13px”>
         Cuántos visitantes avanzan desde entrar al sitio hasta postular. Cada barra
         es el % respecto del total de visitantes del período.
       </p>
-      <div class="table-wrap" style="padding:18px;margin-bottom:22px">
-        <div id="an-embudo"></div>
+      <div class=”table-wrap” style=”padding:18px;margin-bottom:22px”>
+        <div id=”an-embudo”></div>
       </div>
 
       <!-- Páginas y referidos -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px">
-        <div class="table-wrap">
-          <div style="padding:14px 16px;border-bottom:1px solid var(--border)"><strong style="font-size:14px">Páginas más visitadas</strong></div>
-          <table><tbody id="an-paginas"><tr class="loading-row"><td colspan="2"><span class="spinner"></span></td></tr></tbody></table>
+      <div style=”display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px”>
+        <div class=”table-wrap”>
+          <div style=”padding:14px 16px;border-bottom:1px solid var(--border)”><strong style=”font-size:14px”>Páginas más visitadas</strong></div>
+          <table><tbody id=”an-paginas”><tr class=”loading-row”><td colspan=”2”><span class=”spinner”></span></td></tr></tbody></table>
         </div>
-        <div class="table-wrap">
-          <div style="padding:14px 16px;border-bottom:1px solid var(--border)"><strong style="font-size:14px">De dónde llegan (referidos)</strong></div>
-          <table><tbody id="an-referidos"><tr class="loading-row"><td colspan="2"><span class="spinner"></span></td></tr></tbody></table>
+        <div class=”table-wrap”>
+          <div style=”padding:14px 16px;border-bottom:1px solid var(--border)”><strong style=”font-size:14px”>De dónde llegan (referidos)</strong></div>
+          <table><tbody id=”an-referidos”><tr class=”loading-row”><td colspan=”2”><span class=”spinner”></span></td></tr></tbody></table>
         </div>
       </div>
 
       <!-- Dispositivos + eventos -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px">
-        <div class="table-wrap" style="padding:16px">
-          <strong style="font-size:14px;display:block;margin-bottom:12px">Dispositivos</strong>
-          <div id="an-dispositivos"></div>
+      <div style=”display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px”>
+        <div class=”table-wrap” style=”padding:16px”>
+          <strong style=”font-size:14px;display:block;margin-bottom:12px”>Dispositivos</strong>
+          <div id=”an-dispositivos”></div>
         </div>
-        <div class="table-wrap">
-          <div style="padding:14px 16px;border-bottom:1px solid var(--border)"><strong style="font-size:14px">Acciones de los visitantes</strong></div>
-          <table><tbody id="an-eventos"><tr class="empty-row"><td colspan="2">Sin datos</td></tr></tbody></table>
+        <div class=”table-wrap”>
+          <div style=”padding:14px 16px;border-bottom:1px solid var(--border)”><strong style=”font-size:14px”>Acciones de los visitantes</strong></div>
+          <table><tbody id=”an-eventos”><tr class=”empty-row”><td colspan=”2”>Sin datos</td></tr></tbody></table>
         </div>
       </div>
 
       <!-- Ofertas más vistas -->
-      <div class="section-header"><h2>Ofertas más vistas</h2></div>
-      <div class="table-wrap" style="margin-bottom:22px">
+      <div class=”section-header”><h2>Ofertas más vistas</h2></div>
+      <div class=”table-wrap” style=”margin-bottom:22px”>
         <table>
-          <thead><tr><th>ID</th><th>Cargo</th><th>Institución</th><th style="text-align:right">Vistas</th></tr></thead>
-          <tbody id="an-ofertas"><tr class="empty-row"><td colspan="4">Sin datos</td></tr></tbody>
+          <thead><tr><th>ID</th><th>Cargo</th><th>Institución</th><th style=”text-align:right”>Vistas</th></tr></thead>
+          <tbody id=”an-ofertas”><tr class=”empty-row”><td colspan=”4”>Sin datos</td></tr></tbody>
         </table>
       </div>
 
       <!-- Panel Umami (solo si está configurado) -->
-      <div id="an-umami-wrap" style="display:none">
-        <div class="section-header"><h2>Umami (analítica externa)</h2></div>
-        <div class="stats-grid" id="an-umami-cards"></div>
+      <div id=”an-umami-wrap” style=”display:none”>
+        <div class=”section-header”><h2>Umami (analítica externa)</h2></div>
+        <div class=”stats-grid” id=”an-umami-cards”></div>
       </div>
     </div>
 
