@@ -137,7 +137,10 @@ footer {
 .footer-seo-links { display: flex; flex-wrap: wrap; gap: 4px 18px; }
 .footer-seo-links .footer-link { margin-bottom: 4px; }
 @media (max-width: 860px) {
-  .nav-links { display: none; }
+  /* .nav-links NO se oculta aquí: el breakpoint móvil del sitio es 600px
+     (nav-mobile.js + redesign-overrides.css muestran la hamburguesa recién
+     a ≤600px). Ocultarlo a 860px dejaba a los anchos 601–860px sin ninguna
+     navegación en el header. */
   .lead { font-size: 16px; }
   main { padding-top: 20px; }
   .hero { padding: 20px; }
