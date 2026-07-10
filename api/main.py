@@ -247,7 +247,7 @@ def ensure_api_schema() -> None:
         "ALTER TABLE ofertas ADD COLUMN IF NOT EXISTS detectada_en TIMESTAMPTZ DEFAULT NOW()",
         "ALTER TABLE ofertas ADD COLUMN IF NOT EXISTS actualizada_en TIMESTAMPTZ DEFAULT NOW()",
         "ALTER TABLE ofertas ADD COLUMN IF NOT EXISTS creada_en TIMESTAMPTZ DEFAULT NOW()",
-        "CREATE UNIQUE INDEX IF NOT EXISTS uq_ofertas_url_oferta ON ofertas (url_oferta)",
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_ofertas_url_oferta_cargo ON ofertas (url_oferta, cargo) WHERE url_oferta IS NOT NULL",
         """
         CREATE TABLE IF NOT EXISTS alertas_suscripciones (
             id SERIAL PRIMARY KEY,
