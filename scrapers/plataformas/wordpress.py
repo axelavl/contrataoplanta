@@ -24,6 +24,10 @@ from scrapers.base import (
     parse_date,
     parse_renta,
 )
+from scrapers.campos_comunes import (
+    inferir_area_profesional,
+    inferir_ciudad_desde_institucion,
+)
 from scrapers.intake import titulo_es_noticia
 
 
@@ -113,12 +117,12 @@ class WordPressScraper(BaseScraper):
                 categoria=self.institucion.get("categoria"),
             ),
             "region": normalize_region(self.institucion.get("region")),
-            "ciudad": self._inferir_ciudad(self.institucion.get("nombre")),
+            "ciudad": inferir_ciudad_desde_institucion(self.institucion.get("nombre")),
             "renta_bruta_min": renta_min,
             "renta_bruta_max": renta_max,
             "grado_eus": grado_eus,
             "jornada": self._extraer_jornada(content_text),
-            "area_profesional": self._inferir_area_profesional(title),
+            "area_profesional": inferir_area_profesional(title),
             "fecha_publicacion": fecha_publicacion,
             "fecha_cierre": fecha_cierre,
             "url_oferta": url_oferta,

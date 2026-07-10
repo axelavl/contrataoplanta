@@ -71,6 +71,11 @@ try:
         registrar_log,
         upsert_oferta,
     )
+    from scrapers.campos_comunes import (
+        detectar_tipo_cargo as _cc_tipo_cargo,
+        detectar_nivel as _cc_nivel,
+        inferir_area_profesional as _cc_area,
+    )
     STANDALONE = False
 except ImportError:
     STANDALONE = True
@@ -98,6 +103,15 @@ except ImportError:
 
     def normalizar_region(r: str) -> str:  # type: ignore[misc]
         return r.strip()
+
+    def _cc_tipo_cargo(texto: str | None, categoria: str | None = None) -> str | None:  # type: ignore[misc]
+        return None
+
+    def _cc_nivel(cargo: str | None) -> str:  # type: ignore[misc]
+        return "Profesional"
+
+    def _cc_area(cargo: str | None) -> str:  # type: ignore[misc]
+        return "Administración"
 
     def marcar_ofertas_cerradas(*a: Any, **k: Any) -> int:  # type: ignore[misc]
         return 0
@@ -634,9 +648,9 @@ def construir_oferta(c: dict[str, Any], det: dict[str, Any]) -> dict:
         "descripcion": descripcion[:2000] if len(descripcion) > 30 else None,
         "institucion_nombre": nombre,
         "sector": FUENTE["sector"],
-        "area_profesional": normalizar_area(cargo),
-        "tipo_cargo": _tipo_cargo(campos.get("modalidad", ""), c["titulo"]),
-        "nivel": _nivel(cargo, c["titulo"]),
+        "area_profesional": _cc_area(cargo),
+        "tipo_cargo": _cc_tipo_cargo(f"{campos.get('modalidad', '')} {c['titulo']}"),
+        "nivel": _cc_nivel(f"{cargo} {c['titulo']}"),
         "region": region or FUENTE["region"],
         "ciudad": ciudad,
         "renta_bruta_min": renta,

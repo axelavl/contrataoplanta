@@ -324,6 +324,17 @@ def extraer_campos_oferta(
     `campos` usa las mismas claves que `POST /api/{ADMIN_PATH}/ofertas`.
     """
     from scrapers import bases_pdf, carga_manual
+    from scrapers.campos_comunes import (
+        detectar_tipo_cargo,
+        detectar_nivel,
+        inferir_area_profesional,
+        detectar_region,
+        inferir_ciudad_desde_texto,
+        inferir_ciudad_desde_institucion,
+        extraer_vacantes,
+        detectar_jornada,
+        detectar_modalidad,
+    )
     from extraction.contract_extractor import extract_contract_info
     from extraction.date_extractor import (
         extract_dates_from_tables,
@@ -467,16 +478,48 @@ def extraer_campos_oferta(
     _set("descripcion", oferta.get("descripcion") or perfil.get("descripcion"))
     _set("requisitos", oferta.get("requisitos_texto") or perfil.get("requisitos_texto"))
 
-    # ── Región (si el catálogo no la dio): "Región de/del X" en el texto ─────
+    # ── Región: catálogo > regex explícita > inferencia por ciudad/texto ─────
     if not campos.get("region"):
-        m = re.search(r"regi[oó]n\s+(?:de\s+|del\s+)?((?:la\s+)?[\wÁÉÍÓÚÑáéíóúñ'’]+"
-                      r"(?:\s+[\wÁÉÍÓÚÑáéíóúñ'’]+){0,3})", texto_completo, re.I)
+        m = re.search(r"regi[oó]n\s+(?:de\s+|del\s+)?((?:la\s+)?[\wÁÉÍÓÚÑáéíóúñ’’]+"
+                      r"(?:\s+[\wÁÉÍÓÚÑáéíóúñ’’]+){0,3})", texto_completo, re.I)
         if m:
-            try:
-                from db.database import normalizar_region
-                _set("region", normalizar_region(m.group(1)))
-            except Exception:  # entorno sin BD configurada
-                pass
+            from scrapers.base import normalizar_region as _nr
+            _set("region", _nr(m.group(1)))
+    if not campos.get("region"):
+        _set("region", detectar_region(texto_completo))
+
+    # ── Nivel / estamento (si no se extrajo de las bases) ────────────────────
+    if not campos.get("estamento") and campos.get("cargo"):
+        _set("estamento", detectar_nivel(campos["cargo"]))
+
+    # ── Área profesional ─────────────────────────────────────────────────────
+    if campos.get("cargo"):
+        _set("area_profesional", inferir_area_profesional(campos["cargo"]))
+
+    # ── Ciudad ───────────────────────────────────────────────────────────────
+    ciudad = inferir_ciudad_desde_institucion(campos.get("institucion_nombre"))
+    if not ciudad:
+        ciudad = inferir_ciudad_desde_texto(texto_completo)
+    _set("ciudad", ciudad)
+
+    # ── Vacantes (fallback con regex más amplia) ─────────────────────────────
+    if not campos.get("numero_vacantes"):
+        _set("numero_vacantes", extraer_vacantes(texto_completo))
+
+    # ── Jornada y modalidad (enriquecimiento) ────────────────────────────────
+    if not campos.get("jornada"):
+        j = detectar_jornada(texto_completo)
+        if j == "completa":
+            _set("jornada", "Jornada completa")
+        elif j == "parcial":
+            _set("jornada", "Jornada parcial")
+    _set("modalidad_trabajo", detectar_modalidad(texto_completo))
+
+    # ── Tipo contrato (fallback con campos_comunes si contract_extractor falló)
+    if not campos.get("tipo_contrato"):
+        tc = detectar_tipo_cargo(texto_completo, campos.get("sector"))
+        if tc:
+            _set("tipo_contrato", _TIPO_CONTRATO.get(tc))
 
     # ── Ubicación / URLs ─────────────────────────────────────────────────────
     _set("lugar_desempenio", _corto(perfil.get("dependencia"), 200))

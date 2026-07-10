@@ -60,6 +60,13 @@ try:
         registrar_log,
         upsert_oferta,
     )
+    from scrapers.campos_comunes import (
+        detectar_tipo_cargo as _cc_tipo_cargo,
+        detectar_nivel as _cc_nivel,
+        detectar_region as _cc_region,
+        inferir_area_profesional as _cc_area,
+        inferir_ciudad_desde_texto as _cc_ciudad,
+    )
     STANDALONE = False
 except ImportError:  # permite ejecutar el archivo suelto (solo dry-run/export)
     STANDALONE = True
@@ -87,6 +94,21 @@ except ImportError:  # permite ejecutar el archivo suelto (solo dry-run/export)
 
     def normalizar_region(r: str) -> str:  # type: ignore[misc]
         return r.title()
+
+    def _cc_tipo_cargo(texto: str | None, categoria: str | None = None) -> str | None:  # type: ignore[misc]
+        return None
+
+    def _cc_nivel(cargo: str | None) -> str:  # type: ignore[misc]
+        return "Profesional"
+
+    def _cc_region(texto: str | None) -> str | None:  # type: ignore[misc]
+        return None
+
+    def _cc_area(cargo: str | None) -> str:  # type: ignore[misc]
+        return "Administración"
+
+    def _cc_ciudad(texto: str | None) -> str | None:  # type: ignore[misc]
+        return None
 
     def marcar_ofertas_cerradas(*a: Any, **k: Any) -> int:  # type: ignore[misc]
         return 0
@@ -567,11 +589,11 @@ def _construir_oferta_api(
         "descripcion": descripcion[:2000] if len(descripcion) > 30 else None,
         "institucion_nombre": nombre,
         "sector": fuente.get("sector") or None,
-        "area_profesional": normalizar_area(cargo),
-        "tipo_cargo": _detectar_tipo_cargo(contexto) or _default_tipo_por_categoria(fuente),
-        "nivel": nivel_api or _detectar_nivel(cargo),
-        "region": region or _detectar_region(contexto) or fuente.get("region") or "Nacional",
-        "ciudad": ciudad or _detectar_ciudad(contexto),
+        "area_profesional": _cc_area(cargo),
+        "tipo_cargo": _cc_tipo_cargo(contexto, fuente.get("categoria")),
+        "nivel": nivel_api or _cc_nivel(cargo),
+        "region": region or _cc_region(contexto) or fuente.get("region") or "Nacional",
+        "ciudad": ciudad or _cc_ciudad(contexto),
         "renta_bruta_min": renta_bruta,
         "renta_bruta_max": None,
         "renta_texto": renta_texto,
@@ -796,11 +818,11 @@ def _construir_oferta_html(cargo: str, contexto: str, url: str, fuente: dict[str
         "descripcion": contexto[:2000] if len(contexto) > 30 else None,
         "institucion_nombre": nombre,
         "sector": fuente.get("sector") or None,
-        "area_profesional": normalizar_area(cargo_limpio),
-        "tipo_cargo": _detectar_tipo_cargo(contexto) or _default_tipo_por_categoria(fuente),
-        "nivel": _detectar_nivel(cargo_limpio),
-        "region": _detectar_region(contexto) or fuente.get("region") or "Nacional",
-        "ciudad": _detectar_ciudad(contexto),
+        "area_profesional": _cc_area(cargo_limpio),
+        "tipo_cargo": _cc_tipo_cargo(contexto, fuente.get("categoria")),
+        "nivel": _cc_nivel(cargo_limpio),
+        "region": _cc_region(contexto) or fuente.get("region") or "Nacional",
+        "ciudad": _cc_ciudad(contexto),
         "renta_bruta_min": None,
         "renta_bruta_max": None,
         "renta_texto": None,

@@ -20,6 +20,10 @@ from scrapers.base import (
     parse_renta,
     conexion,
 )
+from scrapers.campos_comunes import (
+    inferir_area_profesional,
+    inferir_ciudad_desde_institucion,
+)
 from scrapers.evaluation.audit_store import AuditStore
 
 
@@ -391,14 +395,14 @@ class GenericSiteScraper(BaseScraper):
                 categoria=self.institucion.get("categoria"),
             ),
             region=normalize_region(self.institucion.get("region")),
-            ciudad=self._infer_city(self.institucion.get("nombre")),
+            ciudad=inferir_ciudad_desde_institucion(self.institucion.get("nombre")),
             renta_texto=None,
             renta_min=renta_min,
             renta_max=renta_max,
             grado_eus=grado_eus,
             fecha_publicacion=fecha_publicacion,
             fecha_cierre=fecha_cierre,
-            area_profesional=self._infer_area(title or content_text),
+            area_profesional=inferir_area_profesional(title or content_text),
             url_bases=url_bases,
         )
 

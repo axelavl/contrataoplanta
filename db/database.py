@@ -522,21 +522,10 @@ def normalizar_tipo_cargo(texto: str) -> str:
 
 
 def normalizar_area(cargo: str) -> str:
-    """Infiere el área profesional desde el nombre del cargo."""
-    c = cargo.lower()
-    if any(w in c for w in ["abogad", "juridic", "jurídic", "legal", "fiscal"]): return "Derecho"
-    if any(w in c for w in ["médic", "medic", "enfermer", "kinesiol", "matron", "salud", "psiquiatr", "farmac"]): return "Salud"
-    if any(w in c for w in ["ingenier", "técnic", "tecnolog"]): return "Ingeniería"
-    if any(w in c for w in ["trabajador social", "asistente social", "social"]): return "Ciencias Sociales"
-    if any(w in c for w in ["psicolog"]): return "Psicología"
-    if any(w in c for w in ["contador", "contabilidad", "auditor", "finanz"]): return "Finanzas"
-    if any(w in c for w in ["econom"]): return "Economía"
-    if any(w in c for w in ["sistem", "informát", "computaci", "software", "datos", "ti ", " ti,", "tecnología inform"]): return "TI"
-    if any(w in c for w in ["architect", "diseñ"]): return "Arquitectura/Diseño"
-    if any(w in c for w in ["educad", "docent", "profesor", "pedagog"]): return "Educación"
-    if any(w in c for w in ["comunicacion", "comunicación", "periodist", "relacione"]): return "Comunicaciones"
-    if any(w in c for w in ["administr", "gestión", "gestión de personas", "rrhh", "recursos humanos"]): return "Administración"
-    if any(w in c for w in ["agrón", "agron", "veterinar", "forestal", "agropecuar"]): return "Agropecuario/Forestal"
-    if any(w in c for w in ["geolog", "geógraf", "ambiental", "ambient"]): return "Medioambiente"
-    if any(w in c for w in ["fiscaliz", "inspector", "inspector"]): return "Fiscalización"
-    return "Administración"  # categoría por defecto
+    """Infiere el área profesional desde el nombre del cargo.
+
+    Delegado a scrapers.campos_comunes.inferir_area_profesional (fuente
+    canónica). Este wrapper se mantiene por compatibilidad de imports.
+    """
+    from scrapers.campos_comunes import inferir_area_profesional
+    return inferir_area_profesional(cargo)
