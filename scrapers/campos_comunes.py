@@ -57,6 +57,7 @@ _RE_TIPO_PLANTA = re.compile(
     r"|\btipo\s+de\s+(?:contrato|cargo|vacante|v[ií]nculo)\s*:?\s*planta\b"
     r"|\bplanta\s+(?:directiv|profesional|t[eé]cnic|administrativ|auxiliar|fiscalizador|municipal|titular)"
     r"|\ba\s+planta\b"
+    r"|\bnombramiento\b"
     r"|\|\s*planta\s*(?=\||\n|$)"
     r")",
     re.I,
@@ -144,10 +145,10 @@ def detectar_nivel(cargo: str | None) -> str:
     c = cargo.lower()
     if any(w in c for w in _KEYWORDS_DIRECTIVO):
         return "Directivo"
-    if any(w in c for w in _KEYWORDS_TECNICO):
-        return "Técnico"
     if any(w in c for w in _KEYWORDS_PROFESIONAL):
         return "Profesional"
+    if any(w in c for w in _KEYWORDS_TECNICO):
+        return "Técnico"
     return "Profesional"
 
 
@@ -162,7 +163,7 @@ _AREA_MAP: list[tuple[str, list[str]]] = [
         "psiquiatr", "farmac", "odontolog", "quimic", "químic",
     ]),
     ("Ingeniería", [
-        "ingenier", "técnic", "tecnolog", "arquitect", "constructor",
+        "ingenier", "técnic", "tecnolog", "constructor",
         "desarrollador",
     ]),
     ("Ciencias Sociales", ["trabajador social", "asistente social"]),
@@ -173,7 +174,7 @@ _AREA_MAP: list[tuple[str, list[str]]] = [
         "sistem", "informát", "informatic", "computaci", "software",
         "datos", "programador", "ti ",
     ]),
-    ("Arquitectura/Diseño", ["diseñ"]),
+    ("Arquitectura/Diseño", ["arquitect", "architect", "diseñ"]),
     ("Educación", ["educad", "docent", "profesor", "pedagog"]),
     ("Comunicaciones", ["comunicacion", "comunicación", "periodist", "relacione"]),
     ("Agropecuario/Forestal", [
