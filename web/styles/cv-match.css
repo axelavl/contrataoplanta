@@ -1,0 +1,81 @@
+/* Componente "Buscar ofertas con mi CV" (web/cv-match.js).
+   Archivo propio y con ?v= en el <link>: Cloudflare cachea los CSS hasta 4 h
+   en el navegador y los cambios en index.css no llegaban a tiempo. */
+
+/* ── Formulario ─────────────────────────────────────────────────────── */
+.cv-card{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--r-l);box-shadow:var(--sombra);padding:24px}
+.cv-drop{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;border:2px dashed var(--borde);border-radius:var(--r-l,12px);padding:24px 14px;cursor:pointer;transition:border-color .15s,background .15s}
+.cv-drop:hover,.cv-drop.is-over,.cv-drop:focus-within{border-color:var(--cielo);background:var(--cielo-l)}
+.cv-drop input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.cv-drop-icono{color:var(--cielo)}
+.cv-drop-titulo{font-weight:700;font-size:15px;color:var(--texto)}
+.cv-drop-sub{font-size:12.5px;color:var(--texto2)}
+.cv-archivo{font-size:13px;font-weight:600;color:var(--cielo);word-break:break-all}
+.cv-archivo:empty{display:none}
+.cv-consent{display:flex;gap:9px;align-items:flex-start;margin:14px 0 4px;font-size:13px;color:var(--texto2);line-height:1.5;cursor:pointer}
+.cv-consent input{margin-top:2px;width:18px;height:18px;flex-shrink:0;accent-color:var(--cielo)}
+.cv-consent a{color:var(--cielo)}
+.cv-btn{margin-top:12px;width:100%;min-height:44px;background:var(--azul-m);color:#fff;border:none;border-radius:var(--r,8px);font-size:14.5px;font-weight:700;cursor:pointer;font-family:'Inter',system-ui,sans-serif;transition:opacity .15s}
+.cv-btn:disabled{opacity:.45;cursor:not-allowed}
+.cv-estado{margin-top:10px;font-size:13.5px;line-height:1.5;color:var(--texto2)}
+.cv-estado:empty{display:none}
+.cv-estado--error{color:var(--rojo)}
+
+/* Variante compacta dentro del sidebar del index */
+.cv-widget .widget-body{padding:14px}
+.cv-widget .cv-drop{padding:16px 10px}
+.cv-widget .cv-drop-titulo{font-size:14px}
+.cv-widget .cv-consent{font-size:12px}
+.cv-widget-intro{font-size:13px;color:var(--texto2);line-height:1.5;margin-bottom:12px}
+
+/* Acceso en móvil: el sidebar queda bajo el listado, así que se ofrece un
+   enlace arriba que baja directo al formulario. */
+.cv-atajo-movil{display:none}
+@media (max-width:900px){
+  .cv-atajo-movil{display:flex;align-items:center;justify-content:center;gap:8px;margin:0 0 12px;min-height:44px;padding:10px 14px;background:var(--azul-m);color:#fff;border-radius:var(--r,8px);font-size:14px;font-weight:700;text-decoration:none}
+}
+
+/* ── Resultados ─────────────────────────────────────────────────────── */
+.cv-subtitulo{font-family:'Fraunces',Georgia,serif;font-size:20px;font-weight:600;color:var(--texto);margin:0 0 10px}
+.cv-perfil{background:var(--bg2);border-radius:var(--r-l,12px);padding:18px 20px}
+.cv-perfil dl{display:grid;grid-template-columns:max-content 1fr;gap:6px 14px;font-size:14px;margin:0}
+.cv-perfil dt{color:var(--texto3);font-weight:600}
+.cv-perfil dd{color:var(--texto);margin:0}
+.cv-perfil-nota{margin:10px 0 0;font-size:12.5px;color:var(--texto3);line-height:1.5}
+.cv-res{margin-top:28px}
+.cv-res-sub{font-size:13.5px;color:var(--texto2);margin:0 0 14px;line-height:1.5}
+.cv-lista{display:flex;flex-direction:column;gap:12px;list-style:none;margin:0;padding:0}
+.cv-item{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--r-l,12px);box-shadow:var(--sombra);padding:16px 18px}
+.cv-item-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.cv-item-inst{font-size:11.5px;color:var(--texto3);font-weight:600;letter-spacing:.4px;text-transform:uppercase;margin-bottom:4px}
+.cv-item-cargo{font-family:'Fraunces',Georgia,serif;font-size:17px;font-weight:600;line-height:1.3;margin:0}
+.cv-item-cargo a{color:var(--texto);text-decoration:none}
+.cv-item-cargo a:hover{text-decoration:underline}
+.cv-banda{flex-shrink:0;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;white-space:nowrap}
+.cv-banda--alta{background:var(--verde-l);color:var(--verde)}
+.cv-banda--media{background:var(--naran-l);color:var(--naran)}
+.cv-banda--baja{background:var(--bg2);color:var(--texto2)}
+.cv-item-meta{font-size:12.5px;color:var(--texto2);margin:8px 0 10px}
+.cv-motivos{list-style:none;display:flex;flex-direction:column;gap:4px;font-size:13.5px;line-height:1.5;margin:0;padding:0}
+.cv-motivos li{padding-left:20px;position:relative;color:var(--texto2)}
+.cv-motivos li::before{position:absolute;left:0;font-weight:700}
+.cv-motivos .si::before{content:'✓';color:var(--verde)}
+.cv-motivos .no::before{content:'!';color:var(--naran)}
+.cv-vacio{padding:24px;text-align:center;color:var(--texto2);font-size:14px;line-height:1.6}
+
+/* ── Ventana de resultados en el index (<dialog>) ───────────────────── */
+.cv-dialog{margin:auto;border:none;padding:0;width:min(760px,calc(100vw - 24px));max-height:calc(100vh - 32px);border-radius:var(--r-l,12px);background:var(--bg);color:var(--texto);box-shadow:0 24px 80px rgba(10,46,110,.35)}
+.cv-dialog::backdrop{background:rgba(10,20,40,.55);backdrop-filter:blur(3px)}
+.cv-dialog-head{position:sticky;top:0;z-index:1;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 20px;background:var(--azul);color:#fff}
+.cv-dialog-titulo{font-family:'Fraunces',Georgia,serif;font-size:19px;font-weight:600;margin:0;color:#fff}
+.cv-dialog-cerrar{width:34px;height:34px;flex-shrink:0;border-radius:50%;border:none;background:rgba(255,255,255,.15);color:#fff;font-size:16px;cursor:pointer}
+.cv-dialog-cerrar:hover{background:rgba(255,255,255,.28)}
+.cv-dialog-body{padding:20px}
+
+@media (max-width:600px){
+  .cv-item-top{flex-direction:column}
+  .cv-perfil dl{grid-template-columns:1fr}
+  .cv-perfil dt{margin-top:6px}
+  .cv-dialog{width:100vw;max-width:100vw;max-height:100dvh;height:100dvh;border-radius:0;margin:0}
+  .cv-dialog-body{padding:16px}
+}

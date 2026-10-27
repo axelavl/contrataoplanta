@@ -3214,16 +3214,3 @@ html.js-nav .landing-ssr {
   color: var(--muted, #6b7280);
 }
 
-/* ── Botón "Buscar ofertas con mi CV" (arriba del sidebar) ───────────── */
-.cv-cta {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  min-height: 46px; padding: 10px 16px;
-  background: var(--azul-m); color: #fff;
-  border-radius: var(--r, 8px);
-  font-family: 'Inter', system-ui, sans-serif; font-size: 14.5px; font-weight: 700;
-  text-decoration: none; text-align: center;
-  box-shadow: var(--sombra);
-  transition: filter .15s, transform .15s;
-}
-.cv-cta:hover { filter: brightness(1.12); transform: translateY(-1px); }
-.cv-cta:focus-visible { outline: 3px solid var(--acento); outline-offset: 2px; }

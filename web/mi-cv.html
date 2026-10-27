@@ -15,60 +15,16 @@
 <link rel="stylesheet" href="styles/shared-layout.css">
 <link rel="stylesheet" href="styles/redesign-overrides.css">
 <link rel="stylesheet" href="styles/integracion/estilos.css">
+<link rel="stylesheet" href="styles/cv-match.css?v=20261027b">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;font-size:16px}
 body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--texto);-webkit-font-smoothing:antialiased;min-height:100vh}
 .page-body{max-width:860px;margin:0 auto;padding:32px 16px 64px}
+.cv-resultado-pagina{margin-top:28px}
 .skip-link{position:absolute;left:12px;top:-48px;z-index:1000;background:var(--azul,#0A2E6E);color:var(--blanco,#FAFAF8);padding:10px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;transition:top .2s}
 .skip-link:focus{top:10px}
 
-/* ── Formulario de carga ─────────────────────────────────────────── */
-.cv-card{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--r-l);box-shadow:var(--sombra);padding:24px}
-.cv-drop{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;border:2px dashed var(--borde);border-radius:var(--r-l);padding:28px 16px;cursor:pointer;transition:border-color .15s,background .15s}
-.cv-drop:hover,.cv-drop.is-over,.cv-drop:focus-within{border-color:var(--cielo);background:var(--cielo-l)}
-.cv-drop input{position:absolute;width:1px;height:1px;opacity:0}
-.cv-drop-titulo{font-weight:700;font-size:15px;color:var(--texto)}
-.cv-drop-sub{font-size:13px;color:var(--texto2)}
-.cv-archivo{font-size:13px;font-weight:600;color:var(--cielo);word-break:break-all}
-.cv-consent{display:flex;gap:10px;align-items:flex-start;margin:18px 0 6px;font-size:13.5px;color:var(--texto2);line-height:1.55}
-.cv-consent input{margin-top:3px;width:18px;height:18px;flex-shrink:0;accent-color:var(--cielo)}
-.cv-consent a{color:var(--cielo)}
-.cv-btn{margin-top:14px;width:100%;height:46px;background:var(--azul-m);color:white;border:none;border-radius:var(--r);font-size:15px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .15s}
-.cv-btn:disabled{opacity:.45;cursor:not-allowed}
-.cv-estado{margin-top:14px;font-size:14px;line-height:1.5;min-height:1.5em}
-.cv-estado--error{color:var(--rojo)}
-
-/* ── Perfil detectado ───────────────────────────────────────────── */
-.cv-perfil{margin-top:28px;background:var(--bg2);border-radius:var(--r-l);padding:18px 20px}
-.cv-perfil h2,.cv-res-titulo{font-family:'Fraunces',Georgia,serif;font-size:20px;color:var(--texto);margin-bottom:10px}
-.cv-perfil dl{display:grid;grid-template-columns:max-content 1fr;gap:6px 14px;font-size:14px}
-.cv-perfil dt{color:var(--texto3);font-weight:600}
-.cv-perfil dd{color:var(--texto)}
-.cv-perfil-nota{margin-top:10px;font-size:12.5px;color:var(--texto3);line-height:1.5}
-
-/* ── Resultados ─────────────────────────────────────────────────── */
-.cv-res{margin-top:32px}
-.cv-res-sub{font-size:13.5px;color:var(--texto2);margin-bottom:16px;line-height:1.5}
-.cv-lista{display:flex;flex-direction:column;gap:14px;list-style:none}
-.cv-item{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--r-l);box-shadow:var(--sombra);padding:18px 20px}
-.cv-item-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
-.cv-item-inst{font-size:11.5px;color:var(--texto3);font-weight:600;letter-spacing:.4px;text-transform:uppercase;margin-bottom:4px}
-.cv-item-cargo{font-family:'Fraunces',Georgia,serif;font-size:17px;font-weight:600;line-height:1.3}
-.cv-item-cargo a{color:var(--texto);text-decoration:none}
-.cv-item-cargo a:hover{text-decoration:underline}
-.cv-banda{flex-shrink:0;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;white-space:nowrap}
-.cv-banda--alta{background:var(--verde-l);color:var(--verde)}
-.cv-banda--media{background:var(--naran-l);color:var(--naran)}
-.cv-banda--baja{background:var(--bg2);color:var(--texto2)}
-.cv-item-meta{font-size:12.5px;color:var(--texto2);margin:8px 0 10px}
-.cv-motivos{list-style:none;display:flex;flex-direction:column;gap:4px;font-size:13.5px;line-height:1.5}
-.cv-motivos li{padding-left:20px;position:relative;color:var(--texto2)}
-.cv-motivos li::before{position:absolute;left:0;font-weight:700}
-.cv-motivos .si::before{content:'✓';color:var(--verde)}
-.cv-motivos .no::before{content:'!';color:var(--naran)}
-.cv-vacio{padding:24px;text-align:center;color:var(--texto2);font-size:14px;line-height:1.6}
-@media(max-width:600px){.cv-item-top{flex-direction:column}.cv-perfil dl{grid-template-columns:1fr}.cv-perfil dt{margin-top:6px}}
 </style>
 <script defer src="shared-shell.js"></script>
 </head>
@@ -96,40 +52,29 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 </div>
 
 <div class="page-body">
-  <form class="cv-card" id="cv-form" novalidate>
-    <label class="cv-drop" id="cv-drop">
-      <input type="file" id="cv-archivo" name="archivo" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+  <form class="cv-card" data-cv-form data-cv-destino="#cv-resultado" novalidate>
+    <label class="cv-drop" data-cv-drop>
+      <input type="file" data-cv-archivo name="archivo" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+      <span class="cv-drop-icono"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="m9 15 3-3 3 3"/></svg></span>
       <span class="cv-drop-titulo">Elige tu CV o arrástralo aquí</span>
       <span class="cv-drop-sub">PDF o Word (.docx), hasta 5 MB</span>
-      <span class="cv-archivo" id="cv-archivo-nombre" aria-live="polite"></span>
+      <span class="cv-archivo" data-cv-nombre aria-live="polite"></span>
     </label>
-
     <label class="cv-consent">
-      <input type="checkbox" id="cv-consent" name="consentimiento">
+      <input type="checkbox" data-cv-consent name="consentimiento">
       <span>Autorizo que mi CV se procese solo para sugerirme ofertas. Se lee en el momento y <strong>no se guarda</strong> en ningún servidor ni base de datos (Ley 19.628 y Ley 21.719). <a href="privacidad.html#cv">Más información</a>.</span>
     </label>
-
-    <button type="submit" class="cv-btn" id="cv-btn" disabled>Buscar ofertas para mi perfil</button>
-    <div class="cv-estado" id="cv-estado" role="status" aria-live="polite"></div>
+    <button type="submit" class="cv-btn" data-cv-btn disabled>Buscar ofertas para mi perfil</button>
+    <div class="cv-estado" data-cv-estado role="status" aria-live="polite"></div>
   </form>
 
-  <section class="cv-perfil" id="cv-perfil" hidden aria-labelledby="cv-perfil-h">
-    <h2 id="cv-perfil-h">Lo que leímos en tu CV</h2>
-    <dl id="cv-perfil-datos"></dl>
-    <p class="cv-perfil-nota">Si algo no corresponde, revisa que tu CV indique claramente tu título, tus cargos con sus años (por ejemplo «2019 – actualidad: Analista…») y tu ciudad.</p>
-  </section>
-
-  <section class="cv-res" id="cv-res" hidden aria-labelledby="cv-res-h">
-    <h2 class="cv-res-titulo" id="cv-res-h">Ofertas sugeridas</h2>
-    <p class="cv-res-sub" id="cv-res-sub"></p>
-    <ol class="cv-lista" id="cv-lista"></ol>
-  </section>
+  <div class="cv-resultado-pagina" id="cv-resultado" hidden></div>
 </div>
 </main>
 
 <div id="site-footer"></div>
 
-<script src="mi-cv.js?v=20261027"></script>
+<script src="cv-match.js?v=20261027b"></script>
 <script src="nav-mobile.js"></script>
 </body>
 </html>
