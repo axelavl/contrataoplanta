@@ -83,6 +83,7 @@
 <link rel="stylesheet" href="/styles/index.css">
 <link rel="stylesheet" href="/styles/redesign-overrides.css">
 <link rel="stylesheet" href="/styles/integracion/estilos.css">
+<link rel="stylesheet" href="/styles/cv-match.css?v=20261027b">
 <!-- Ajustes de UX móvil + modo oscuro. Va último para sobrescribir lo previo. -->
 <link rel="stylesheet" href="/styles/mobile-ux-fixes.css">
 <script defer src="/ui-strings.js"></script>
@@ -232,6 +233,7 @@
 
   <!-- COLUMNA OFERTAS -->
   <div class="resultados-shell">
+    <a class="cv-atajo-movil" href="#cv-widget"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="m9 15 3-3 3 3"/></svg><span>Buscar ofertas con mi CV</span></a>
     <p class="estado-listado-copy" id="estado-listado-copy" hidden>Mostrando concursos vigentes. Revisa los cerrados en la pestaña <strong>Cerradas</strong>.</p>
     <div class="resultados-header">
       <div class="resultados-head-left">
@@ -325,11 +327,32 @@
   <!-- ══ SIDEBAR ════════════════════════════════════════════════════ -->
   <div class="sidebar">
 
-    <!-- Acceso a "Buscar con mi CV" (mi-cv.html): botón simple arriba. -->
-    <a class="cv-cta" href="/mi-cv.html">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="m9 15 3-3 3 3"/></svg>
-      <span>Buscar ofertas con mi CV</span>
-    </a>
+    <!-- Buscar ofertas con mi CV (web/cv-match.js): se sube aquí mismo y
+         los resultados se abren en una ventana (#cv-dialog). -->
+    <div class="widget cv-widget" id="cv-widget">
+      <div class="widget-header">
+        <div class="widget-titulo">Ofertas para tu CV</div>
+      </div>
+      <div class="widget-body">
+        <p class="cv-widget-intro">Sube tu CV y te mostramos las ofertas vigentes que calzan con tu perfil.</p>
+        <form data-cv-form data-cv-destino="#cv-resultado" novalidate>
+          <label class="cv-drop" data-cv-drop>
+            <input type="file" data-cv-archivo name="archivo" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+            <span class="cv-drop-icono"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="m9 15 3-3 3 3"/></svg></span>
+            <span class="cv-drop-titulo">Elige tu CV</span>
+            <span class="cv-drop-sub">PDF o Word, hasta 5 MB</span>
+            <span class="cv-archivo" data-cv-nombre aria-live="polite"></span>
+          </label>
+          <label class="cv-consent">
+            <input type="checkbox" data-cv-consent name="consentimiento">
+            <span>Autorizo procesar mi CV solo para sugerirme ofertas. <strong>No se guarda.</strong> <a href="/privacidad.html#cv">Más info</a></span>
+          </label>
+          <button type="submit" class="cv-btn" data-cv-btn disabled>Buscar ofertas para mí</button>
+          <div class="cv-estado" data-cv-estado role="status" aria-live="polite"></div>
+        </form>
+      </div>
+    </div>
+
 
     <!-- Widget alertas (primero en el sidebar para alinearse con el
          inicio del recuadro de ofertas y dar protagonismo al CTA). -->
@@ -763,6 +786,15 @@
 </div>
 
 <!-- ══ JAVASCRIPT ══════════════════════════════════════════════════ -->
+<!-- Resultados de "Buscar ofertas con mi CV" -->
+<dialog class="cv-dialog" id="cv-dialog" aria-labelledby="cv-dialog-titulo">
+  <div class="cv-dialog-head">
+    <h2 class="cv-dialog-titulo" id="cv-dialog-titulo">Ofertas para tu CV</h2>
+    <button type="button" class="cv-dialog-cerrar" data-cv-cerrar aria-label="Cerrar">✕</button>
+  </div>
+  <div class="cv-dialog-body" id="cv-resultado"></div>
+</dialog>
+
 <script src="/rich-text.js?v=20260708"></script>
 <!-- JS principal en archivo externo (antes era un `<script>` inline
      de ~3 600 líneas). Cargado sync para replicar el timing del
@@ -780,6 +812,7 @@
 <script src="/integracion/mapa-chile.js"></script>
 <script src="/integracion/comparador.js"></script>
 <script src="/app.js?v=20260708"></script>
+<script src="/cv-match.js?v=20261027b"></script>
 <script src="/ads-config.js"></script>
 <script src="/ads.js"></script>
 <!-- Mejoras UX móvil: alto real de la cinta + acordeón de la ficha. -->
