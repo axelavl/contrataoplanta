@@ -60,6 +60,7 @@ from bs4 import BeautifulSoup
 
 # ── Integración con el proyecto (con fallback standalone) ───────────────────
 sys.path.insert(0, str(Path(__file__).parent.parent))
+from scrapers import cache_pdf  # noqa: E402
 try:
     from config import config
     from db.database import (
@@ -607,9 +608,13 @@ def recolectar(max_results: int | None, delay: float, con_detalle: bool,
             if rd is not None:
                 det = parsear_detalle(rd.text)
                 if det.get("bases_url") and not det.get("requisitos_texto"):
-                    rb = _get(session, urljoin(BASE, det["bases_url"]))
-                    if rb is not None:
-                        pdf_texto = _pdf_a_texto(rb.content)
+                    # Caché: bases ya leídas en otra corrida no se vuelven a
+                    # descargar (ahorra tráfico de proxy).
+                    pdf_texto = cache_pdf.texto_pdf(
+                        urljoin(BASE, det["bases_url"]),
+                        cache_pdf.descargador(_get, session),
+                        _pdf_a_texto, modo="texto")
+                    if pdf_texto is not None:
                         # Guardar el texto del PDF para que enrich (abajo) mine
                         # correo/fecha de cierre/funciones de las bases. Antes se
                         # leía det["texto_pdf"], clave que nunca se seteaba → el
@@ -676,7 +681,9 @@ def ejecutar(dry_run=False, verbose=False, max_results=None,
     ofertas: list[dict] = []
 
     try:
+        cache_pdf.configurar(escribir=not dry_run)
         ofertas = recolectar(max_results, delay, con_detalle, incluir_cerrados)
+        logger.info("  %s", cache_pdf.resumen())
         stats["encontradas"] = len(ofertas)
         logger.info("  → %d ofertas", len(ofertas))
         for datos in ofertas:

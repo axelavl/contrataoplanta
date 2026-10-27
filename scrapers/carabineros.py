@@ -59,6 +59,7 @@ from bs4 import BeautifulSoup
 
 # ── Integración con el proyecto (con fallback standalone) ───────────────────
 sys.path.insert(0, str(Path(__file__).parent.parent))
+from scrapers import cache_pdf  # noqa: E402
 try:
     from config import config
     from db.database import (
@@ -737,10 +738,12 @@ def recolectar(max_results: int | None, con_detalle: bool, delay: float,
             # requisitos / renta / objetivo-funciones que el detalle HTML no
             # haya entregado.
             if perfil_url and not (det.get("requisitos") and det.get("renta")):
-                time.sleep(delay)
-                rp = _get(session, perfil_url)
-                if rp is not None:
-                    perfil_texto = _pdf_a_texto(rp.content)
+                # Caché: si este PDF ya se leyó en una corrida anterior, se
+                # reutiliza el texto sin descargarlo (ahorra tráfico de proxy).
+                perfil_texto = cache_pdf.texto_pdf(
+                    perfil_url, cache_pdf.descargador(_get, session, delay), _pdf_a_texto,
+                    modo="texto")
+                if perfil_texto is not None:
                     det["texto_pdf"] = perfil_texto   # para enrich (email/cierre)
                     _fusionar_pdf(det, _datos_desde_pdf(perfil_texto),
                                   c["id"], "Perfil")
@@ -748,10 +751,12 @@ def recolectar(max_results: int | None, con_detalle: bool, delay: float,
             # PDF "Descriptor"/Bases del Concurso: escaneado (sin texto). Solo se
             # procesa con OCR habilitado; de lo contrario solo se enlaza.
             if bases_url and allow_ocr and not det.get("requisitos"):
-                time.sleep(delay)
-                rb = _get(session, bases_url)
-                if rb is not None:
-                    bases_texto = _pdf_a_texto(rb.content, allow_ocr=True)
+                # Con OCR la caché pesa doble: además del proxy evita repetir
+                # un OCR de varios segundos por PDF.
+                bases_texto = cache_pdf.texto_pdf(
+                    bases_url, cache_pdf.descargador(_get, session, delay),
+                    lambda b: _pdf_a_texto(b, allow_ocr=True), modo="ocr")
+                if bases_texto is not None:
                     det["texto_pdf"] = ((det.get("texto_pdf") or "") + "\n"
                                         + (bases_texto or "")).strip()
                     _fusionar_pdf(det, _datos_desde_pdf(bases_texto),
@@ -822,8 +827,10 @@ def ejecutar(
     ofertas: list[dict] = []
 
     try:
+        cache_pdf.configurar(escribir=not dry_run)
         ofertas = recolectar(max_results=max_results, con_detalle=con_detalle,
                              delay=delay, allow_ocr=allow_ocr)
+        logger.info("  %s", cache_pdf.resumen())
         stats["encontradas"] = len(ofertas)
         logger.info("  → %d ofertas", len(ofertas))
 
