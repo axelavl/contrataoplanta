@@ -26,6 +26,7 @@
     { slug: 'educacion',       etiqueta: 'Educación y párvulos' },
     { slug: 'ti',              etiqueta: 'TI y transformación digital del Estado' },
     { slug: 'prevencion',      etiqueta: 'Prevención de riesgos' },
+    { slug: 'ambiente',        etiqueta: 'Medio ambiente y ciencias' },
     { slug: 'atencion',        etiqueta: 'Atención ciudadana' },
     { slug: 'otros',           etiqueta: 'Otros' }
   ];
@@ -288,6 +289,99 @@
       descripcion: 'Capacitaciones para funcionarios del sector sobre las herramientas y sistemas de salud digital del Estado: registros clínicos, interoperabilidad y buenas prácticas en el uso de datos de salud.',
       gratuito: true,
       demo: false
+    },
+
+    // ── TI, Educación, Prevención y Medio ambiente (oct-2026) ───────────────
+    {
+      id: 'cea-sql',
+      titulo: 'Introducción a SQL',
+      proveedor: 'AcademiaCEA · Contraloría (CGR)',
+      categoria: 'ti',
+      modalidad: 'Online · Clave Única',
+      duracion: 'Curso introductorio',
+      nivel: 'estandar',
+      url: 'https://www.ceacgr.cl/aulavirtual/enrol/index.php?id=705',
+      descripcion: 'Curso de la Contraloría para aprender a consultar, organizar y trabajar con información guardada en bases de datos usando SQL. Dirigido a personas funcionarias del sector público.',
+      gratuito: true,
+      demo: false
+    },
+    {
+      id: 'cea-python',
+      titulo: 'Introducción a Python',
+      proveedor: 'AcademiaCEA · Contraloría (CGR)',
+      categoria: 'ti',
+      modalidad: 'Online · Clave Única',
+      duracion: 'Curso introductorio',
+      nivel: 'estandar',
+      url: 'https://www.ceacgr.cl/aulavirtual/enrol/index.php?id=706',
+      descripcion: 'Bases de programación en Python y su uso para procesar y analizar información. Dirigido a personas funcionarias del sector público.',
+      gratuito: true,
+      demo: false
+    },
+    {
+      id: 'cea-phishing',
+      titulo: 'Ciberseguridad: Phishing y Fraude Digital',
+      proveedor: 'AcademiaCEA · Contraloría (CGR)',
+      categoria: 'ti',
+      modalidad: 'Online · Clave Única',
+      duracion: '3 h',
+      nivel: 'estandar',
+      url: 'https://www.ceacgr.cl/aulavirtual/enrol/index.php?id=716',
+      descripcion: 'Continuación de «Introducción a la Ciberseguridad»: identificar riesgos, prevenir ataques y reconocer fraudes digitales. Pide conocimientos básicos o haber aprobado el curso introductorio.',
+      gratuito: true,
+      demo: false
+    },
+    {
+      id: 'cpeip-desarrollo-docente',
+      titulo: 'Cursos gratuitos para educadoras, docentes y asistentes de la educación',
+      proveedor: 'CPEIP · Ministerio de Educación',
+      categoria: 'educacion',
+      modalidad: 'Online',
+      duracion: 'Varía por curso',
+      nivel: 'estandar',
+      url: 'https://desarrollodocenteenlinea.cpeip.cl/',
+      descripcion: 'Plataforma del Ministerio de Educación para postular a cursos gratuitos, principalmente a distancia. Para educadoras de párvulos, docentes, directivos y asistentes de la educación de establecimientos con financiamiento del Estado.',
+      gratuito: true,
+      demo: false
+    },
+    {
+      id: 'isl-campus-prevencion',
+      titulo: 'Campus Prevención: cursos de seguridad laboral',
+      proveedor: 'Instituto de Seguridad Laboral · ISL',
+      categoria: 'prevencion',
+      modalidad: 'Online · con tu RUT',
+      duracion: 'Varía por curso',
+      nivel: 'estandar',
+      url: 'https://campusprevencionisl.cl/',
+      descripcion: 'Más de 50 cursos en línea y gratuitos del organismo público de seguridad laboral: uso de extintores, prevención de riesgos generales y específicos, gestión de desastres y normativa laboral. Al terminar descargas un diploma de participación.',
+      gratuito: true,
+      demo: false
+    },
+    {
+      id: 'mma-academia-adriana-hoffmann',
+      titulo: 'Academia de Formación Ambiental Adriana Hoffmann',
+      proveedor: 'Ministerio del Medio Ambiente',
+      categoria: 'ambiente',
+      modalidad: 'Online (e-learning)',
+      duracion: 'Según calendario',
+      nivel: 'estandar',
+      url: 'https://academiadeformacion.mma.gob.cl/',
+      descripcion: 'Cursos en línea del Ministerio del Medio Ambiente sobre cambio climático, economía circular, calidad del aire, biodiversidad y humedales. Dirigidos a funcionarios públicos y municipales, con cupos por calendario. Revisa las condiciones de inscripción en el sitio.',
+      gratuito: false,
+      demo: false
+    },
+    {
+      id: 'sea-academia',
+      titulo: 'Academia SEA: evaluación ambiental de proyectos',
+      proveedor: 'Servicio de Evaluación Ambiental · SEA',
+      categoria: 'ambiente',
+      modalidad: 'Online · Clave Única',
+      duracion: 'Según calendario',
+      nivel: 'estandar',
+      url: 'https://academia.sea.gob.cl/',
+      descripcion: 'Cursos gratuitos sobre el Sistema de Evaluación de Impacto Ambiental (SEIA): participación ciudadana, áreas de influencia y descripción de proyectos. Abiertos a funcionarios, consultores y ciudadanía.',
+      gratuito: true,
+      demo: false
     }
   ];
 
@@ -309,7 +403,20 @@
     'tecnología': 'ti',
     'recursos humanos': 'rrhh',
     'prevencion de riesgos': 'prevencion',
-    'prevención de riesgos': 'prevencion'
+    'prevención de riesgos': 'prevencion',
+    // Etiquetas de classification/area_profesional.py (oct-2026)
+    'ti': 'ti',
+    'derecho': 'derecho',
+    'fiscalización': 'derecho',
+    'fiscalizacion': 'derecho',
+    'psicología': 'salud',
+    'psicologia': 'salud',
+    'economía': 'finanzas',
+    'economia': 'finanzas',
+    'servicios generales': 'prevencion',
+    'ciencias': 'ambiente',
+    'medioambiente': 'ambiente',
+    'agropecuario/forestal': 'ambiente'
   };
 
   // Planes de aviso (precios REFERENCIALES en CLP/mes — ajustar al vender).
