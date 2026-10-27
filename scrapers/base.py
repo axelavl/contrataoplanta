@@ -2608,6 +2608,7 @@ class LegacyBaseScraper(abc.ABC):
         return """
         INSERT INTO ofertas (
             institucion_id,
+            institucion_nombre,
             cargo,
             descripcion,
             requisitos,
@@ -2636,6 +2637,8 @@ class LegacyBaseScraper(abc.ABC):
             fecha_actualizado
         ) VALUES (
             %(institucion_id)s,
+            -- NOT NULL en schema.sql; '' antes que perder la oferta.
+            COALESCE(%(institucion_nombre)s, ''),
             %(cargo)s,
             %(descripcion)s,
             %(requisitos)s,
@@ -2663,8 +2666,14 @@ class LegacyBaseScraper(abc.ABC):
             NOW(),
             NOW()
         )
-        ON CONFLICT (url_oferta) DO UPDATE
+        -- Debe calzar con uq_ofertas_url_oferta_cargo (migración
+        -- 20260710_0001): única por (url_oferta, cargo), parcial sobre
+        -- url_oferta IS NOT NULL. Con el antiguo `ON CONFLICT (url_oferta)`
+        -- Postgres rechaza TODOS los INSERT ("no unique or exclusion
+        -- constraint matching the ON CONFLICT specification").
+        ON CONFLICT (url_oferta, cargo) WHERE url_oferta IS NOT NULL DO UPDATE
         SET institucion_id = COALESCE(EXCLUDED.institucion_id, ofertas.institucion_id),
+            institucion_nombre = COALESCE(NULLIF(EXCLUDED.institucion_nombre, ''), ofertas.institucion_nombre),
             cargo = EXCLUDED.cargo,
             descripcion = COALESCE(EXCLUDED.descripcion, ofertas.descripcion),
             requisitos = COALESCE(EXCLUDED.requisitos, ofertas.requisitos),
@@ -2697,6 +2706,7 @@ class LegacyBaseScraper(abc.ABC):
         # SIEMPRE existan como claves nombradas, aunque el dict venga de un
         # scraper que no las setea → evita KeyError en el INSERT con %(...)s.
         defaults = {
+            "institucion_nombre": None,
             "email_postulacion": None,
             "email_consultas": None,
             "numero_vacantes": None,
