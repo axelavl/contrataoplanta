@@ -184,6 +184,7 @@
       data = [
         { href: 'index.html', text: 'Buscar', cls: '', id: '' },
         { href: 'favoritos.html', text: '♡ Mis favoritos', cls: 'nav-link-favs', id: 'mobile-nav-favoritos' },
+        { href: 'mi-cv.html', text: 'Buscar con mi CV', cls: '', id: '' },
         { href: 'preparacion.html', text: 'Preparación', cls: '', id: '' },
         { href: 'cursos.html', text: 'Capacítate', cls: '', id: '' },
         { href: 'faq.html', text: 'Preguntas frecuentes', cls: '', id: '' }
@@ -213,6 +214,7 @@
     var f = String(href || '').split('/').pop().split('#')[0].split('?')[0];
     if (f === '' || f === 'index.html') return _svg('<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>');
     if (f === 'favoritos.html') return _svg('<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 1 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8z"/>');
+    if (f === 'mi-cv.html') return _svg('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15l2 2 4-4"/>');
     if (f === 'preparacion.html') return _svg('<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>');
     if (f === 'cursos.html') return _svg('<path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2.7 2 6 2s6-1 6-2v-5"/>');
     if (f === 'faq.html') return _svg('<circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2.5-3 4"/><path d="M12 17h.01"/>');
