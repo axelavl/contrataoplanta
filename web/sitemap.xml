@@ -89,6 +89,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://contrataoplanta.cl/mi-cv.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://contrataoplanta.cl/preparacion.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>

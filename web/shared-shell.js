@@ -234,7 +234,7 @@
 
   function applyActiveNav(root) {
     var map = {
-      home: 'home', favoritos: 'favoritos', estadisticas: 'estadisticas', faq: 'faq',
+      home: 'home', favoritos: 'favoritos', micv: 'micv', estadisticas: 'estadisticas', faq: 'faq',
       calculadora: 'calculadora', preparacion: 'preparacion', cursos: 'cursos', panel: 'none',
       historial: 'home', terminos: 'none', privacidad: 'none', descargo: 'none', ruta: 'preparacion'
     };

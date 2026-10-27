@@ -552,6 +552,9 @@ app.include_router(_auth_router)
 from api.routers.public import router as _public_router  # noqa: E402
 app.include_router(_public_router)
 
+from api.routers.cv import router as _cv_router  # noqa: E402
+app.include_router(_cv_router)
+
 from api.routers.web import router as _web_router  # noqa: E402
 app.include_router(_web_router)
 
