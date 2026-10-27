@@ -1416,6 +1416,27 @@ async def main(argv: list[str] | None = None) -> int:
         except Exception as exc:
             log.warning("No se pudo validar URLs de ofertas: %s", exc)
 
+    # Retención de datos (db/mantenimiento.py): tablas de auditoría y logs
+    # crecen en cada corrida y en sep-2026 llenaron el volumen de Postgres.
+    # Best-effort: nunca rompe la corrida.
+    if not args.evaluate_only and db_enabled and not getattr(args, "dry_run", False):
+        try:
+            import psycopg2
+            from db.config import DB_CONFIG
+            from db.mantenimiento import purgar
+
+            def _mantenimiento() -> dict[str, int]:
+                conn = psycopg2.connect(**DB_CONFIG)
+                try:
+                    return purgar(conn)
+                finally:
+                    conn.close()
+
+            borradas = await asyncio.to_thread(_mantenimiento)
+            log.info("Mantenimiento de datos: %s filas borradas", sum(borradas.values()))
+        except Exception as exc:
+            log.warning("No se pudo aplicar la retención de datos: %s", exc)
+
     if db_enabled:
         cerrar_pool()
 

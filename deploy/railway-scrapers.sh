@@ -13,8 +13,8 @@
 # Qué hace:
 #   1. Una corrida de scrapers en modo producción CON OCR de Carabineros
 #      (--ocr; requiere el binario tesseract, que instala nixpacks.toml).
-#   2. Revalida url_oferta / url_bases de las filas recientes para que el
-#      frontend habilite "Ver bases" / "Postular" (run_all.py no lo hace solo).
+#      Al final run_all.py revalida url_oferta / url_bases y aplica la
+#      retención de datos (db/mantenimiento.py).
 #
 # Requisitos de entorno (los inyecta Railway): DATABASE_URL (o DB_*). No
 # necesita ADMIN_PASSWORD.
@@ -24,10 +24,8 @@ set -euo pipefail
 echo "[railway-scrapers] Iniciando corrida de scrapers (--ocr)…"
 python scrapers/run_all.py --mode production --ocr
 
-# La revalidación es best-effort: una URL externa intermitente no debe marcar
-# como fallida toda la corrida (igual criterio que el ExecStartPost del VPS).
-echo "[railway-scrapers] Revalidando URLs de ofertas recientes…"
-python validate_offer_urls.py --workers 20 --max-edad-h 24 \
-    || echo "[railway-scrapers] validate_offer_urls terminó con error (no crítico)"
+# La revalidación de URLs (validate_offer_urls) y la retención de datos
+# (db/mantenimiento.py) ya las hace run_all.py al final de la corrida; antes
+# este script volvía a validar todas las URLs (trabajo y tráfico duplicados).
 
 echo "[railway-scrapers] Listo."
