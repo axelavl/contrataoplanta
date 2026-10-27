@@ -169,3 +169,59 @@ def test_endpoint_archivo_invalido_422(cliente):
                      files={"archivo": ("cv.txt", b"texto plano " * 20)})
     assert r.status_code == 422
     assert "PDF" in r.json()["detail"]
+
+
+# ── Profesiones (detección y reglas de calce) ────────────────────────────────
+from api.services import profesiones_cv as prof
+
+
+@pytest.mark.parametrize("texto,esperado", [
+    ("TENS SERVICIO MÉDICO QUIRURGICO", ["tens"]),           # no es médico
+    ("Técnico en Enfermería (TENS) - Maternidad", ["tens"]),  # no es enfermera
+    ("TECNÓLOGO MÉDICO BANCO DE SANGRE", ["tecnologo_medico"]),
+    ("EU CLINICA SERVICIO CIRUGIA", ["enfermera"]),
+    ("Ingeniero/a en Automatización", ["ing_electrico"]),
+    ("Base de Datos Reemplazos Educadora Párvulos", ["educadora_parvulos"]),
+    ("Asistente de Tardes de Juego en mi Jardín", ["tecnico_parvulos"]),
+    ("Profesional de Apoyo a la Gestión Administrativa", []),
+    ("Enfermera supervisora de equipo de TENS", ["enfermera", "tens"]),
+])
+def test_detecta_profesion(texto, esperado):
+    assert prof.todas(cm._norm(texto)) == esperado
+
+
+def test_tecnico_no_calza_con_cargo_de_ingeniero():
+    p = cm.perfil_desde_texto("Técnico en Electricidad, INACAP\nPuente Alto\n"
+                              "2018 - actualidad: Electricista de mantención")
+    r = cm.afinidad(p, {"cargo": "Ingeniero/a en Automatización",
+                        "requisitos": "Formación: Ingeniería en Automatización o Electrónica."})
+    assert not r.nucleo
+
+
+def test_calce_solo_afin_no_es_banda_alta():
+    p = cm.perfil_desde_texto("Ingeniera Comercial, Universidad de Santiago\nSantiago\n"
+                              "2016 - 2019: Profesional de apoyo administrativo")
+    r = cm.afinidad(p, {"cargo": "Administrativo clínico", "region": "Metropolitana de Santiago",
+                        "requisitos": "Enseñanza media completa. 1 año de experiencia como administrativo."})
+    assert r.nucleo and r.banda != "alta"
+    assert any("afín" in x for x in r.razones)
+
+
+def test_reparo_si_exigen_especialidad():
+    p = cm.perfil_desde_texto("Médico Cirujano, Universidad de Chile\nSantiago\n"
+                              "2019 - actualidad: Médico EDF, CESFAM")
+    r = cm.afinidad(p, {"cargo": "Médico Residente UPC", "requisitos":
+                        "Título de médico cirujano con especialidad en Medicina Interna "
+                        "o Medicina de Urgencia (excluyente)"})
+    assert any("especialidad en medicina interna" in x for x in r.reparos)
+
+
+def test_region_no_sale_del_nombre_de_la_universidad():
+    p = cm.perfil_desde_texto("Ana Díaz\nKinesióloga, Universidad de Concepción\nViña del Mar")
+    assert p.region == "Valparaíso"
+
+
+def test_perfil_expone_profesion():
+    p = cm.perfil_desde_texto(CV_PSICOLOGA)
+    assert p.a_dict()["profesiones"] == ["Psicología"]
+    assert "texto_norm" not in p.a_dict()

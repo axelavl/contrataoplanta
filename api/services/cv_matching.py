@@ -24,10 +24,13 @@ import io
 import re
 import unicodedata
 import zipfile
+from collections import OrderedDict
 from dataclasses import dataclass, field
 from datetime import date
 from typing import Any, Iterable
 from xml.etree import ElementTree
+
+from api.services import profesiones_cv as PROF
 
 MAX_BYTES_CV = 5 * 1024 * 1024        # un CV real pesa mucho menos
 MAX_PAGINAS_PDF = 10
@@ -67,15 +70,6 @@ _AREAS_RAW: dict[str, tuple[str, ...]] = {
     "Comunicaciones": ("periodis", "comunicacion", "publicidad", "disenador",
                        "diseno grafico", "audiovisual", "marketing"),
 }
-
-_NIVEL_DIRECTIVO = ("director", "jefe de", "jefa de", "jefatura", "gerente",
-                    "coordinador", "coordinadora", "encargado", "encargada",
-                    "decano")
-_NIVEL_PROFESIONAL = ("profesional", "ingenier", "analista", "abogad",
-                      "psicolog", "enfermer", "medic", "docente", "academic",
-                      "licenciad", "titulad")
-_NIVEL_TECNICO = ("tecnico", "asistente", "auxiliar", "administrativo",
-                  "secretari", "operador", "tens")
 
 _REGIONES = (
     "Arica y Parinacota", "Tarapacá", "Antofagasta", "Atacama", "Coquimbo",
@@ -119,9 +113,20 @@ _RE_CAPACITACION = re.compile(
     r"post[ií]tulo|especializaci[oó]n)s?\s+"
     r"(?:universitarios?\s+)?(?:de\s+formaci[oó]n\s+)?(?:en|de|sobre)\s+"
     r"[^\n.;,|]{4,70})", re.I)
-_RE_ANIOS_EXIGIDOS = re.compile(
-    r"(\d{1,2})\s*a[nñ]os?(?:\s+de)?\s+(?:experiencia|ejercicio)", re.I)
-_RE_TOKEN = re.compile(r"[a-z]{4,}")
+# "3 años de experiencia", "1 a 5 años de experiencia" (→ 1),
+# "experiencia mínima de 3 años", "desde 3 años de experiencia".
+_RE_ANIOS_EXIGIDOS = (
+    re.compile(r"(\d{1,2})\s*(?:a\s*\d{1,2}\s*)?anos?(?:\s+de)?\s+(?:experiencia|ejercicio)"),
+    re.compile(r"experiencia\s+(?:\w+\s+){0,3}?(?:de\s+)?(\d{1,2})\s*anos?"),
+)
+_RE_ESPECIALIDAD = re.compile(
+    r"(?:con\s+)?especialidad(?:es)?\s+(?:en\s+)?((?:[a-z]+\s?){1,4}?)(?=\s+o\s|\s+y\s|,|\(|\.|$)")
+_RE_VENTANA_FORMACION = re.compile(r"titul|carrera|formacion|estudios|profesion|egresad")
+_RE_FIN_FRASE = re.compile(r"[a-z]{5,}\.\s")
+_RE_UNIVERSIDAD = re.compile(
+    r"(?:universidad|instituto profesional|centro de formacion tecnica|liceo|colegio|escuela)"
+    r"(?:\s+\w+){0,4}")
+_RE_TOKEN = re.compile(r"[a-z]{5,}")
 
 _PALABRAS_RUIDO = {
     "para", "como", "esta", "este", "desde", "hasta", "entre", "sobre", "otros",
@@ -137,7 +142,22 @@ _PALABRAS_RUIDO = {
     "departamento", "contrata", "planta", "honorarios", "jornada", "completa",
     "regional", "nacional", "comunal", "municipal", "programa", "apoyo",
     "encargado", "encargada", "asistente", "profesionales",
+    # genéricos de avisos y CV que no dicen nada del calce
+    "tecnico", "tecnica", "tecnicos", "clinica", "clinico", "horas", "turno",
+    "reemplazo", "reemplazos", "datos", "diurno", "servicios", "santiago",
+    "metropolitana", "instituto", "curso", "cursos", "diplomado", "certificado",
+    "manejo", "usuario", "office", "excel", "equipo", "trabajar", "personas",
+    "mayor", "menor", "minimo", "minima", "excluyente", "requisito", "requisitos",
+    "titulo", "licenciado", "licenciada", "ingeniero", "ingeniera",
 }
+# Nombres de lugares tampoco son coincidencias de perfil.
+_PALABRAS_RUIDO |= {w for r in (
+    "arica parinacota tarapaca antofagasta atacama coquimbo valparaiso "
+    "ohiggins higgins maule nuble biobio araucania lagos aysen magallanes "
+    "providencia nunoa condes maipu puente florida vina quilpue antonio "
+    "concepcion talcahuano angeles temuco valdivia osorno puerto montt "
+    "coyhaique punta arenas iquique calama copiapo serena rancagua talca "
+    "curico chillan granja pintana renca colina").split() for w in [r]}
 
 
 _RE_DIACRITICOS = re.compile(r"[\u0300-\u036f]")
@@ -155,11 +175,6 @@ def _norm(s: str | None) -> str:
 
 _AREAS = {area: tuple(_norm(c) for c in claves)
           for area, claves in _AREAS_RAW.items()}
-# Vocabulario de profesiones: solo estas raíces cuentan como "profesión
-# exigida", para no confundir adjetivos del cargo con la profesión del CV.
-_VOCAB_PROFESION = tuple(sorted(
-    {c for claves in _AREAS.values() for c in claves if len(c) >= 6},
-    key=len, reverse=True))
 
 
 def _tokens(texto_norm: str) -> set[str]:
@@ -225,6 +240,7 @@ def leer_cv(datos: bytes) -> str:
 # ── Perfil ───────────────────────────────────────────────────────────────────
 @dataclass
 class Perfil:
+    profesiones: list[str] = field(default_factory=list)   # claves de profesiones_cv
     areas: list[str] = field(default_factory=list)
     titulos: list[str] = field(default_factory=list)
     anios_experiencia: int | None = None
@@ -233,10 +249,12 @@ class Perfil:
     cargos_previos: list[str] = field(default_factory=list)
     capacitaciones: list[str] = field(default_factory=list)
     palabras: set[str] = field(default_factory=set)
+    texto_norm: str = ""
 
     def a_dict(self) -> dict[str, Any]:
-        """Lo que se devuelve al usuario (sin la bolsa de palabras)."""
+        """Lo que se devuelve al usuario (sin texto ni bolsa de palabras)."""
         return {
+            "profesiones": [PROF.POR_CLAVE[c].etiqueta for c in self.profesiones],
             "areas": self.areas,
             "titulos": self.titulos,
             "anios_experiencia": self.anios_experiencia,
@@ -252,22 +270,19 @@ def _detectar_areas(t: str) -> list[str]:
     return [a for a, n in sorted(puntajes.items(), key=lambda x: -x[1]) if n][:3]
 
 
-def _detectar_nivel(t: str) -> str | None:
-    for nivel, claves in (("Directivo", _NIVEL_DIRECTIVO),
-                          ("Profesional", _NIVEL_PROFESIONAL),
-                          ("Técnico", _NIVEL_TECNICO)):
-        if any(c in t for c in claves):
-            return nivel
-    return None
-
-
-def _detectar_region(t: str) -> str | None:
-    for r in _REGIONES:
-        if _norm(r) in t:
-            return r
-    for ciudad, region in _CIUDAD_REGION.items():
-        if re.search(rf"\b{re.escape(ciudad)}\b", t):
-            return region
+def _detectar_region(texto: str) -> str | None:
+    """Región del postulante. Se ignoran los nombres de lugar dentro de
+    instituciones ("Universidad de Concepción", línea por línea para no
+    comerse la ciudad de la línea siguiente) y se privilegia el encabezado
+    del CV, donde suele ir la dirección."""
+    t = " \n ".join(_RE_UNIVERSIDAD.sub(" ", _norm(l)) for l in texto.splitlines())
+    for zona in (t[:500], t):
+        for r in _REGIONES:
+            if _norm(r) in zona:
+                return r
+        for ciudad, region in _CIUDAD_REGION.items():
+            if re.search(rf"\b{re.escape(ciudad)}\b", zona):
+                return region
     return None
 
 
@@ -299,20 +314,49 @@ def _unicos(valores: Iterable[str], minimo: int, tope: int) -> list[str]:
     return salida
 
 
+def _detectar_profesiones(texto: str, titulos: list[str],
+                          cargos: list[str]) -> list[str]:
+    """Profesiones del postulante. Se toma la PRIMERA profesión de cada
+    título, cargo previo y línea del encabezado: así "Enfermera supervisora
+    de TENS" cuenta como enfermera, no como TENS. Si nada calza, se usa lo
+    que aparezca en el resto del CV."""
+    # Encabezado: primeras líneas, sin las de experiencia fechada.
+    lineas = [l for l in texto.splitlines()
+              if l.strip() and not re.search(r"(?:19|20)\d{2}", l)][:3]
+
+    def _de(frases: Iterable[str]) -> list[str]:
+        claves: list[str] = []
+        for frase in frases:
+            c = PROF.principal(_norm(frase))
+            if c and c not in claves:
+                claves.append(c)
+        return claves
+
+    # El título manda: una ingeniera comercial que trabajó de administrativa
+    # sigue siendo ingeniera comercial (lo afín se cubre por `campo`).
+    claves = _de([*titulos, *lineas]) or _de(cargos) or PROF.todas(_norm(texto))[:2]
+    return claves[:3]
+
+
 def perfil_desde_texto(texto: str, hoy: date | None = None) -> Perfil:
     t = _norm(texto)
+    titulos = _unicos((m.group(1) + m.group(2) for m in _RE_TITULO.finditer(texto)), 8, 4)
+    cargos = _unicos((m.group(1) for m in _RE_CARGO_PREVIO.finditer(texto)), 5, 8)
+    profesiones = _detectar_profesiones(texto, titulos, cargos)
+    areas = list(dict.fromkeys(PROF.POR_CLAVE[c].area for c in profesiones)) \
+        or _detectar_areas(t)
     return Perfil(
-        areas=_detectar_areas(t),
-        titulos=_unicos((m.group(1) + m.group(2) for m in _RE_TITULO.finditer(texto)),
-                        8, 4),
+        profesiones=profesiones,
+        areas=areas[:3],
+        titulos=titulos,
         anios_experiencia=_detectar_anios(texto, hoy),
-        nivel=_detectar_nivel(t),
-        region=_detectar_region(t),
-        cargos_previos=_unicos((m.group(1) for m in _RE_CARGO_PREVIO.finditer(texto)),
-                               5, 8),
+        nivel=PROF.POR_CLAVE[profesiones[0]].nivel if profesiones else None,
+        region=_detectar_region(texto),
+        cargos_previos=cargos,
         capacitaciones=_unicos((m.group(1) for m in _RE_CAPACITACION.finditer(texto)),
                                10, 10),
         palabras=_tokens(t),
+        texto_norm=t,
     )
 
 
@@ -329,122 +373,180 @@ class Resultado:
     banda: str                       # "alta" | "media" | "baja"
     razones: list[str] = field(default_factory=list)
     reparos: list[str] = field(default_factory=list)
-    #: Hubo al menos una señal de fondo (área, profesión, cargo previo o
-    #: palabras del cargo). Nivel, región y experiencia solos no bastan.
+    #: Hubo al menos una señal de fondo (profesión, cargo previo o palabras
+    #: del cargo). Región y experiencia solas no bastan para sugerir.
     nucleo: bool = False
 
 
 def _formacion_exigida(req: str) -> str:
-    """Parte de los requisitos que habla de formación/título."""
-    m = re.search(r"(?:formacion|titulo|profesion)[^|]{0,220}", req)
-    return m.group(0) if m else req[:220]
+    """Fragmentos de los requisitos que hablan de título/carrera/formación."""
+    partes = []
+    for m in _RE_VENTANA_FORMACION.finditer(req):
+        ini = m.start()
+        fin = ini + 260
+        if f := _RE_FIN_FRASE.search(req, ini, fin):
+            fin = f.end()
+        partes.append(req[ini:fin])
+    return " ".join(partes)
 
 
-def _raices_profesion(titulos: list[str]) -> list[str]:
-    raices: list[str] = []
-    for t in titulos:
-        texto = _norm(t)
-        for clave in _VOCAB_PROFESION:
-            if clave in texto and clave not in raices:
-                raices.append(clave)
-    return raices[:6]
+def _anios_exigidos(req: str) -> int | None:
+    for patron in _RE_ANIOS_EXIGIDOS:
+        if m := patron.search(req):
+            v = int(m.group(1))
+            if 0 < v <= 30:
+                return v
+    return None
 
 
-def afinidad(perfil: Perfil, oferta: dict[str, Any],
-             raices: list[str] | None = None) -> Resultado:
+@dataclass(frozen=True)
+class _AnalisisOferta:
+    profs_cargo: tuple[str, ...]
+    profs_req: tuple[str, ...]
+    anios_exigidos: int | None
+    especialidades: tuple[str, ...]
+
+
+#: Lo que no depende del CV se calcula una vez por oferta. Clave: id + hash
+#: del texto (si el scraper actualiza la oferta, cambia el hash). Solo se
+#: guardan tuplas cortas, nunca el texto: ~200 B por oferta.
+_CACHE_OFERTAS: OrderedDict[tuple, _AnalisisOferta] = OrderedDict()
+_CACHE_MAX = 20_000
+
+
+def _analizar_oferta(oferta: dict[str, Any], cargo: str, req: str) -> _AnalisisOferta:
+    clave = (oferta.get("id"), hash(cargo), hash(req))
+    if (hit := _CACHE_OFERTAS.get(clave)) is not None:
+        _CACHE_OFERTAS.move_to_end(clave)
+        return hit
+    a = _AnalisisOferta(
+        profs_cargo=tuple(PROF.todas(cargo)),
+        profs_req=tuple(PROF.todas(_formacion_exigida(req))) if req else (),
+        anios_exigidos=_anios_exigidos(req) if req else None,
+        especialidades=tuple(e.strip() for e in _RE_ESPECIALIDAD.findall(req) if e.strip()),
+    )
+    _CACHE_OFERTAS[clave] = a
+    if len(_CACHE_OFERTAS) > _CACHE_MAX:
+        _CACHE_OFERTAS.popitem(last=False)
+    return a
+
+
+def _etiquetas(claves: Iterable[str]) -> str:
+    return ", ".join(PROF.POR_CLAVE[c].etiqueta for c in claves)
+
+
+def afinidad(perfil: Perfil, oferta: dict[str, Any]) -> Resultado:
     """Puntúa una oferta contra el perfil y explica el porqué."""
     razones: list[str] = []
     reparos: list[str] = []
     puntaje = 0
     nucleo = False
+    solo_afin = False
 
     cargo = _norm(oferta.get("cargo"))
     req = _norm(oferta.get("requisitos"))[:4000]
     tokens_cargo = _tokens(cargo)
 
-    # Área: se infiere del cargo y de la formación exigida, no de la
-    # descripción completa (el texto institucional contamina).
-    areas_of: set[str] = set()
-    if oferta.get("area_profesional"):
-        areas_of.add(oferta["area_profesional"])
-    base_area = f"{cargo} {_formacion_exigida(req)}"
-    for a, claves in _AREAS.items():
-        if any(c in base_area for c in claves):
-            areas_of.add(a)
-    comunes = [a for a in perfil.areas if a in areas_of]
-    if comunes:
+    # 1) Profesión: la señal principal. Se busca en el cargo y en lo que las
+    #    bases dicen de título/carrera. (No se usa ofertas.area_profesional:
+    #    viene mal clasificado en muchas ofertas.)
+    analisis = _analizar_oferta(oferta, cargo, req)
+    profs_cargo = analisis.profs_cargo
+    profs_of = list(dict.fromkeys(analisis.profs_cargo + analisis.profs_req))
+    propias = set(perfil.profesiones)
+    if propias and profs_of:
+        exactas = [c for c in profs_of if c in propias]
+        if exactas:
+            nucleo = True
+            if exactas[0] in profs_cargo:
+                puntaje += 60
+                razones.append(f"El cargo es de tu profesión ({_etiquetas(exactas[:1])})")
+            else:
+                puntaje += 50
+                razones.append(f"Las bases aceptan tu formación ({_etiquetas(exactas[:1])})")
+        else:
+            afines = [c for c in profs_of
+                      if PROF.POR_CLAVE[c].campo not in PROF.CAMPOS_ESTRICTOS
+                      and any(PROF.POR_CLAVE[c].campo == PROF.POR_CLAVE[p].campo
+                              and PROF.puede_ejercer(p, c) for p in propias)]
+            if afines:
+                nucleo = True
+                solo_afin = True
+                puntaje += 30
+                razones.append(f"Cargo afín a tu formación ({_etiquetas(afines[:1])})")
+            else:
+                reparos.append(f"Piden otra formación: {_etiquetas(profs_of[:2])}")
+
+    # 2) Cargo ya ejercido: evidencia directa de idoneidad.
+    for previo in perfil.cargos_previos:
+        comunes = tokens_cargo & _tokens(_norm(previo))
+        if comunes and (nucleo or not profs_of):
+            nucleo = True
+            puntaje += 15
+            razones.append(f"Ya te desempeñaste como {previo}")
+            break
+
+    # 3) Palabras del cargo presentes en el CV (sin lugares ni genéricos).
+    solapa = tokens_cargo & perfil.palabras
+    if solapa and (nucleo or (not profs_of and len(solapa) >= 2)):
         nucleo = True
-        puntaje += 40
-        razones.append(f"Coincide tu área: {comunes[0]}")
-    elif perfil.areas and areas_of:
-        reparos.append("El área del cargo no coincide con la de tu CV")
+        puntaje += min(10, 5 * len(solapa))
+        razones.append("Tu CV menciona: " + ", ".join(sorted(solapa)[:3]))
 
-    nivel_of = oferta.get("nivel")
-    if perfil.nivel and nivel_of and _norm(perfil.nivel) == _norm(nivel_of):
-        puntaje += 10
-        razones.append(f"Nivel {nivel_of}, como tu trayectoria")
-
+    # 4) Región.
     region_of = oferta.get("region")
     if perfil.region and region_of:
         if _norm(perfil.region) in _norm(region_of):
-            puntaje += 15
+            puntaje += 10
             razones.append(f"Está en tu región ({region_of})")
         else:
             reparos.append(f"Se ubica en {region_of}")
 
-    solapa = tokens_cargo & perfil.palabras
-    if solapa:
-        nucleo = True
-        puntaje += min(15, 5 * len(solapa))
-        razones.append("Tu CV menciona: " + ", ".join(sorted(solapa)[:3]))
-
-    # Profesión exigida en las bases que el CV declara como título.
-    raices = _raices_profesion(perfil.titulos) if raices is None else raices
-    if raices and req:
-        hit = next((r for r in raices if r in req), None)
-        if hit:
-            nucleo = True
-            puntaje += 30
-            razones.append("Las bases piden tu profesión")
-
-    for previo in perfil.cargos_previos:
-        if tokens_cargo & _tokens(_norm(previo)):
-            nucleo = True
-            puntaje += 20
-            razones.append(f"Ya te desempeñaste como {previo}")
-            break
-
     if req:
         tokens_req = _tokens(req)
-        if tokens_req and len(tokens_req & perfil.palabras) / len(tokens_req) >= 0.25:
-            puntaje += 10
-            razones.append("Tu perfil cubre parte de los requisitos publicados")
-        if m := _RE_ANIOS_EXIGIDOS.search(req):
-            exigidos = int(m.group(1))
-            if 0 < exigidos <= 30:
-                plural = "s" if exigidos > 1 else ""
-                if perfil.anios_experiencia is None:
-                    reparos.append(f"Piden {exigidos} año{plural} de experiencia "
-                                   "(no pudimos deducirla de tu CV)")
-                elif perfil.anios_experiencia < exigidos:
-                    reparos.append(f"Piden {exigidos} año{plural} de experiencia y "
-                                   f"detectamos ~{perfil.anios_experiencia}")
-                else:
-                    puntaje += 10
-                    razones.append(f"Cumples la experiencia pedida ({exigidos} año{plural})")
+        # 5) Cursos y certificaciones del CV que las bases mencionan.
+        cursos = [c for c in perfil.capacitaciones
+                  if _tokens(_norm(c)) & tokens_req]
+        if cursos:
+            puntaje += min(10, 5 * len(cursos))
+            razones.append("Las bases valoran lo que acreditas: " + "; ".join(cursos[:2]))
+        # 6) Experiencia exigida.
+        exigidos = analisis.anios_exigidos
+        if exigidos:
+            plural = "s" if exigidos > 1 else ""
+            if perfil.anios_experiencia is None:
+                reparos.append(f"Piden {exigidos} año{plural} de experiencia "
+                               "(no pudimos deducirla de tu CV)")
+            elif perfil.anios_experiencia < exigidos:
+                puntaje -= 10
+                reparos.append(f"Piden {exigidos} año{plural} de experiencia y "
+                               f"detectamos ~{perfil.anios_experiencia}")
+            else:
+                puntaje += 10
+                razones.append(f"Cumples la experiencia pedida ({exigidos} año{plural})")
+        # 7) Especialidad exigida (p. ej. médicos) que el CV no muestra.
+        especialidades = analisis.especialidades
+        if especialidades and not any(
+                e.split()[-1] in perfil.texto_norm and "especiali" in perfil.texto_norm
+                for e in especialidades):
+            puntaje -= 15
+            reparos.append("Exigen especialidad en " + " o ".join(especialidades[:3])
+                           + "; no la vemos en tu CV")
     else:
         reparos.append("La oferta no publica requisitos en texto; revisa las bases")
 
-    banda = "alta" if puntaje >= 60 else "media" if puntaje >= 35 else "baja"
+    banda = "alta" if puntaje >= 70 else "media" if puntaje >= 45 else "baja"
+    if solo_afin and banda == "alta":
+        banda = "media"          # afín no es tu profesión exacta
     return Resultado(oferta=oferta, puntaje=puntaje, banda=banda,
                      razones=razones, reparos=reparos, nucleo=nucleo)
 
 
 def rankear(perfil: Perfil, ofertas: Iterable[dict[str, Any]],
-            top: int = 20, minimo: int = 25) -> list[Resultado]:
-    """Ofertas ordenadas por afinidad; descarta las que no alcanzan `minimo`."""
-    raices = _raices_profesion(perfil.titulos)
-    res = [r for r in (afinidad(perfil, o, raices) for o in ofertas)
+            top: int = 20, minimo: int = 30) -> list[Resultado]:
+    """Ofertas ordenadas por afinidad; descarta las que no alcanzan `minimo`
+    o no tienen ninguna señal de fondo."""
+    res = [r for r in (afinidad(perfil, o) for o in ofertas)
            if r.nucleo and r.puntaje >= minimo]
     res.sort(key=lambda r: (-r.puntaje, str(r.oferta.get("fecha_cierre") or "9999")))
     return res[:top]

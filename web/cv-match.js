@@ -43,8 +43,9 @@
     var sec = el('section', 'cv-perfil');
     sec.appendChild(el('h2', 'cv-subtitulo', 'Lo que leímos en tu CV'));
     var dl = el('dl');
+    var profesiones = (p.profesiones || []).join(' · ');
     [
-      ['Área', (p.areas || []).join(', ')],
+      profesiones ? ['Profesión', profesiones] : ['Área', (p.areas || []).join(', ')],
       ['Formación', (p.titulos || []).join(' · ')],
       ['Experiencia', p.anios_experiencia ? '~' + p.anios_experiencia + ' años' : ''],
       ['Región', p.region || ''],
@@ -54,18 +55,55 @@
       dl.appendChild(el('dd', null, f[1] || 'No detectado'));
     });
     sec.appendChild(dl);
+    if (!profesiones) {
+      sec.appendChild(el('p', 'cv-perfil-aviso',
+        'No identificamos tu profesión en el CV, así que las sugerencias son menos precisas. Escribe tu título completo cerca del inicio (por ejemplo «Técnico en Enfermería de Nivel Superior» o «Ingeniera Comercial»).'));
+    }
     sec.appendChild(el('p', 'cv-perfil-nota',
       'Si algo no corresponde, revisa que tu CV indique claramente tu título, tus cargos con sus años (por ejemplo «2019 – actualidad: Analista…») y tu ciudad.'));
     return sec;
   }
 
-  function pintarResultados(data) {
+  // En el index, la ficha de la oferta se abre ahí mismo (app.js expone
+  // abrirModal) y una píldora permite volver a los resultados.
+  var pildora = null;
+  function volverAResultados(dialog) {
+    if (!pildora) {
+      pildora = el('button', 'cv-volver', '← Volver a tus ofertas sugeridas');
+      pildora.type = 'button';
+      pildora.hidden = true;
+      document.body.appendChild(pildora);
+    }
+    pildora.onclick = function () {
+      pildora.hidden = true;
+      try { if (window.FichaOferta) window.FichaOferta.cerrar(); } catch (e) { /* noop */ }
+      try { if (typeof window.cerrarModal === 'function') window.cerrarModal(null, true); } catch (e) { /* noop */ }
+      dialog.showModal();
+    };
+    pildora.hidden = false;
+  }
+
+  function enlazarOferta(a, o, destino) {
+    var dialog = destino.closest('dialog');
+    if (!dialog || typeof window.abrirModal !== 'function') return;
+    a.addEventListener('click', function (e) {
+      if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) return;  // nueva pestaña
+      e.preventDefault();
+      dialog.close();
+      window.abrirModal(o.id);
+      volverAResultados(dialog);
+    });
+  }
+
+  function pintarResultados(data, destino) {
     var sec = el('section', 'cv-res');
     var res = data.resultados || [];
     sec.appendChild(el('h2', 'cv-subtitulo', 'Ofertas sugeridas'));
     if (res.length) {
       sec.appendChild(el('p', 'cv-res-sub', 'Revisamos ' + data.evaluadas +
         ' ofertas vigentes. Estas son las más afines; confirma siempre los requisitos en las bases antes de postular.'));
+      sec.appendChild(el('p', 'cv-leyenda',
+        'Afinidad alta: el cargo pide tu profesión y calzan otros requisitos. Media: calce parcial o cargo afín a tu formación. Baja: vale revisarla, pero hay reparos.'));
     }
     var lista = el('ol', 'cv-lista');
     if (!res.length) {
@@ -81,6 +119,7 @@
       var h = el('h3', 'cv-item-cargo');
       var a = el('a', null, o.cargo || 'Oferta');
       a.href = rutaOferta(o);
+      enlazarOferta(a, o, destino);
       h.appendChild(a);
       info.appendChild(h);
       top.appendChild(info);
@@ -111,6 +150,20 @@
     var dialog = destino && destino.closest('dialog');
     if (!input || !consent || !btn || !destino) return;
     var archivo = null;
+
+    // Tras cerrar la ventana, un botón en el formulario permite reabrirla
+    // sin volver a subir el CV.
+    var reabrir = null;
+    function mostrarReabrir() {
+      if (reabrir) { reabrir.hidden = false; return; }
+      reabrir = el('button', 'cv-reabrir', 'Ver de nuevo mis ofertas sugeridas');
+      reabrir.type = 'button';
+      reabrir.addEventListener('click', function () {
+        if (pildora) pildora.hidden = true;
+        dialog.showModal();
+      });
+      form.appendChild(reabrir);
+    }
 
     function setEstado(msg, esError) {
       estado.textContent = msg || '';
@@ -173,8 +226,9 @@
           setEstado('');
           destino.textContent = '';
           destino.appendChild(pintarPerfil(data.perfil || {}));
-          destino.appendChild(pintarResultados(data));
+          destino.appendChild(pintarResultados(data, destino));
           destino.hidden = false;
+          if (dialog) mostrarReabrir();
           if (dialog && typeof dialog.showModal === 'function') {
             if (!dialog.open) dialog.showModal();
             dialog.scrollTop = 0;
