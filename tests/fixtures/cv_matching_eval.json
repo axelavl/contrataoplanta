@@ -1,0 +1,533 @@
+{
+ "_nota": "Snapshot de ofertas vigentes en producción (27-oct-2026) y CV sintéticos con las ofertas pertinentes marcadas a mano. Ver tests/test_cv_matching_eval.py.",
+ "ofertas": [
+  {
+   "id": 202,
+   "cargo": "Base de Datos de Reemplazo de Asistente de Tardes de Juego en mi Jardín en la Comuna de La Granja",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "-Licencia de Enseñanza Media completa, de Institución reconocida por el Ministerio de Educación.\n-Deseable: Título Tec. de Niv. Med/Sup de Asist. de Párvulos, de reconocido por el Min.de Educación.",
+   "fecha_cierre": "2026-10-30"
+  },
+  {
+   "id": 196,
+   "cargo": "Base de Datos Reemplazos Educadora Párvulos, JI Temuco, Reg de la Araucanía",
+   "region": "La Araucanía",
+   "requisitos": "-Título Profesional de Educación Parvularia, de Institución reconocida por el Ministerio de Educación\n-Deseable: Un (1) año de experiencia en cargo similar",
+   "fecha_cierre": "2026-11-02"
+  },
+  {
+   "id": 193,
+   "cargo": "Base de datos, Asistente tardes de juego en mi jardín, Reemplazo, Comuna de San Felipe, Región de Va",
+   "region": "Valparaíso",
+   "requisitos": "-Licencia de Enseñanza Media completa, de Institución reconocida por el Ministerio de Educación.\n-Deseable: Título Tec. de Niv. Med/Sup de Asist. de Párvulos, de reconocido por el Min.de Educación.",
+   "fecha_cierre": "2026-11-03"
+  },
+  {
+   "id": 188,
+   "cargo": "Reemplazo de Auxiliar de Servicios Horario Diferido, Jardín Esperanza, Comuna de Peñalolén",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "-Licencia de Enseñanza Media completa, de Institución reconocida por el Ministerio de Educación.\n-Un (1) año de experiencia en labores similares.\n-Deseable: Conocimiento en saneamiento ambiental, uso de materiales peligrosos y primeros auxilios.",
+   "fecha_cierre": "2026-11-06"
+  },
+  {
+   "id": 179,
+   "cargo": "Asistente de Tardes de Juego en mi Jardín, Base de Datos Reemplazos, Comuna de San Miguel.",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "-Licencia de Enseñanza Media completa, de Institución reconocida por el Ministerio de Educación.\n-Deseable: Título Tec. de Niv. Med/Sup de Asist. de Párvulos, de reconocido por el Min.de Educación.",
+   "fecha_cierre": "2026-11-09"
+  },
+  {
+   "id": 175,
+   "cargo": "Base de datos Reemplazos Asistente de Párvulos, comuna Los Álamos, provincia de Arauco",
+   "region": "Biobío",
+   "requisitos": "-Título Técnico Niv. Medio o Superior de Asistente de Párvulos, reconocido por el Min. de Educación.\n-Deseable: Un (1) año de experiencia laboral como Asistente de Párvulos en jardín infantil.",
+   "fecha_cierre": "2026-11-13"
+  },
+  {
+   "id": 174,
+   "cargo": "Reemplazo Educadora de Parvulos, Jardín Los Petalitos, Comuna de Litueche, Región Libertador Bernard",
+   "region": "Lib. Gral. Bdo. O'Higgins",
+   "requisitos": "-Título de Educadora de párvulos o egresada de la carrera\n-Deseable experiencia laboral con niños/as",
+   "fecha_cierre": "2026-11-14"
+  },
+  {
+   "id": 170,
+   "cargo": "Base de Datos. Reemplazos de Educadora de Párvulos JI Sol Naciente, Ñuñoa. RMSO",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "-Título Profesional de Educación Parvularia, de Institución reconocida por el Ministerio de Educación\n-Deseable: Un (1) año de experiencia como Educador(a) de Párvulos en jardín infantil",
+   "fecha_cierre": "2026-11-14"
+  },
+  {
+   "id": 165,
+   "cargo": "Base de Datos Reemplazo Educadora de Párvulos, Dirección Regional Arica y Parinacota",
+   "region": "Arica y Parinacota",
+   "requisitos": "-Título Profesional de Educación Parvularia, de Institución reconocida por el Ministerio de Educación\n-Deseable: Un (1) año de experiencia como Educador(a) de Párvulos en jardín infantil\n-Conocimientos específicos en Desarrollo Socioemocional y Herramientas socioemocionales\n-Conocimientos específicos en Diversidad e Inclusión y  Necesdiades Educativas Especiales\n-Conocimientos específicos en Estrategias Pedagógicas\n-Conocimientos específicos en Gestión de Personas y Equipos\n-Conocimientos específicos en Gestión Educativa y Programas Educativos\n-Conocimientos específicos de Juegos en Etapas Tempranas\n-Conocimientos específicos en Métodos Educativos\n-Conocimientos específicos en Primeros Auxilios",
+   "fecha_cierre": "2026-11-15"
+  },
+  {
+   "id": 161,
+   "cargo": "Asistente de Tardes de Juego en mi Jardín, Base de Datos Reemplazos, Comuna de San Joaquín.",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "-Licencia de Enseñanza Media completa, de Institución reconocida por el Ministerio de Educación.\n-Deseable: Título Tec. de Niv. Med/Sup de Asist. de Párvulos, de reconocido por el Min.de Educación.",
+   "fecha_cierre": "2026-11-20"
+  },
+  {
+   "id": 159,
+   "cargo": "Práctica Laboral Técnico Jurídico, Oficina Regional, Viña Del Mar",
+   "region": "Valparaíso",
+   "requisitos": "-Señale Carrera De Estudios\n-Indique horas que involucra su práctica\n-Indique cuando debe iniciar su práctica\n-Señale si cuenta con seguro escolar vigente",
+   "fecha_cierre": "2026-11-22"
+  },
+  {
+   "id": 158,
+   "cargo": "Reemplazo de Asistente de Tardes de Juego en mi Jardín. JI Santiago Bueras. La Granja",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "-Licencia de Enseñanza Media completa, de Institución reconocida por el Ministerio de Educación.\n-Deseable: Título Tec. de Niv. Med/Sup de Asist. de Párvulos, de reconocido por el Min.de Educación.\n-Deseable Un (1) año de experiencia en cago similar o un (1) año de exp. en voluntariado con niños/as\n-Deseable conocimientos Específicos en Primeros Auxilios",
+   "fecha_cierre": "2026-11-22"
+  },
+  {
+   "id": 156,
+   "cargo": "Reemplazo Técnico en Párvulos JI Santiago Nueva Extremadura, La Pintana, RMSO",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "-Título Técnico de nivel medio de Asistente de Párvulos, de institución reconocida por el MINEDUC\n-Deseable: Deseable un (1) año de experiencia en cargo similar.",
+   "fecha_cierre": "2026-11-22"
+  },
+  {
+   "id": 154,
+   "cargo": "PROYECTO Asistente de Párvulos Integral ,segundo semestre, JI San Francisco de Asís _Las Condes_RMSO",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "-Título Técnico Niv. Medio o Superior de Asistente de Párvulos, reconocido por el Min. de Educación.\n-Deseable: Un (1) año de experiencia laboral como Asistente de Párvulos en jardín infantil.",
+   "fecha_cierre": "2026-11-23"
+  },
+  {
+   "id": 153,
+   "cargo": "Reemplazo Asistente TJMJ, JI San Francisco de Asís _Las Condes, RMSO",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "-Licencia de Enseñanza Media completa, de Institución reconocida por el Ministerio de Educación.\n-Deseable: Título Tec. de Niv. Med/Sup de Asist. de Párvulos, de reconocido por el Min.de Educación.\n-Deseable Un (1) año de experiencia en cago similar o un (1) año de exp. en voluntariado con niños/as\n-Deseable conocimientos Específicos en Primeros Auxilios",
+   "fecha_cierre": "2026-11-23"
+  },
+  {
+   "id": 150,
+   "cargo": "Reemplazo Asistente Tardes de Juego en Mi Jardín_JI Las Palmas I_ El Bosque_RMSO",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "-Licencia de Enseñanza Media completa, de Institución reconocida por el Ministerio de Educación.\n-Deseable: Título Tec. de Niv. Med/Sup de Asist. de Párvulos, de reconocido por el Min.de Educación.\n-Deseable Un (1) año de experiencia en cago similar o un (1) año de exp. en voluntariado con niños/as\n-Deseable conocimientos Específicos en Primeros Auxilios",
+   "fecha_cierre": "2026-11-24"
+  },
+  {
+   "id": 149,
+   "cargo": "Ingeniero/a en Automatización y Sistemas de Medición, Idiem, Universidad de Chile",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "DETALLES Y REQUISITOS:\n\nRequisitos:\n\n1. Formación académica: Ingeniería en Automatización y Robótica, Ingeniería Electrónica, Ingeniería en Instrumentación, Ingeniería afín.\n\n2. Conocimientos específicos\n\n- Sistemas de adquisición de datos (DAQ) para laboratorio: National Instruments, Advantech, HBM u otros similares.\n- Integración y configuración de sensores: LVDT, celdas de carga, transductores de presión y transductores de desplazamiento.\n- Programación de interfaces para adquisición y monitoreo de datos: LabVIEW, MATLAB, Python, entre otros.\n- Protocolos de comunicación: USB, RS232/485, Ethernet y Modbus.\n\n3. Experiencia laboral de 2 años, deseable (no excluyente).\n\n4. Otros requisitos\n\n- Residir en la RM\n\nCompetencias Profesional:\n\nPensamiento analítico, Gestión eficiente en situaciones críticas, Responsabilidad\n\nCompetencias Transversales IDIEM:",
+   "fecha_cierre": "2026-10-28"
+  },
+  {
+   "id": 148,
+   "cargo": "Ayudante, Idiem, Universidad de Chile",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "DETALLES Y REQUISITOS:\n\nRequisitos:\n\n- Conocimiento en normativa de Laboratorio Vial (Idealmente)\n- Licencia de conducir clase B y D\n- Manejo de software: Word y Excel Básico\n\nCompetencias Operación:\n\nIniciativa, Flexibilidad, Gestión eficiente en situaciones críticas\n\nCompetencias Transversales IDIEM:\n\nRespeto de las Políticas Internas de la Organización, Trabajo en equipo, Orientación a los resultados, Calidad/Excelencia, Orientación al Cliente, Probidad, Adaptabilidad",
+   "fecha_cierre": "2026-11-01"
+  },
+  {
+   "id": 147,
+   "cargo": "Médico Residente 28 hrs. UPC (UTI)",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "- Título de médico cirujano con especialidad en Medicina Interna o Medicina de Urgencia o Medicina Intensiva (excluyente)\n- Salud compatible con el cargo\n- Disponibilidad para trabajar con turnos rotativos\n- Manejo de herramientas computacionales a nivel de usuario.",
+   "fecha_cierre": "2026-11-08"
+  },
+  {
+   "id": 146,
+   "cargo": "Especialista en Instalaciones Eléctricas y CCDD",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "Necesitamos personas con capacidad para seguir y ejecutar procedimientos, responsables con los horarios de trabajo, con buenas habilidades de comunicación hacia los usuarios así como con el equipo interno.\nConocimientos comprobables en:\n- Instalaciones eléctricas de baja tensión \n\n- Análisis de circuitos en CA\n\n- Conocimientos de construcción de tableros eléctricos\n\n- Instalaciones de y corrientes débiles\n\n- Conocimientos básicos de normas de cableado estructurado, identificación, tendido, rotulación, certificación.\n\n- Lectura de planos y conocimiento a nivel de usuario de herramientas tipo autocad o similar\n\n- Nociones de mantenimiento de equipamiento eléctrico como UPS y Grupos eléctrogenos\n\n- Deseable conocimientos de respuesta a incidentes en infraestructura de datacenter\n\n- Familiarización siguiendo normas de prevención de riesgos\n\n- Buenas prácticas en el trabajo en terreno, en cuanto a elementos de seguridad, autonomía, orden.",
+   "fecha_cierre": "2026-10-30"
+  },
+  {
+   "id": 144,
+   "cargo": "Supervisor/a de Higiene Hospitalaria",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "- Título Técnico en Enfermería nivel Superior (TENS) o carrera técnica de salud afín, reconocida por el Estado. (no estudio profesional superior)\n- Excluyente experiencia mínima 3 años demostrable en servicios de higiene o asistencia clínica hospitalaria de alta complejidad.\n- Deseable curso IAAS (mínimo 80hrs)\n- Excluyente al menos 3 años de experiencia liderando equipos\n- Tener nacionalidad chile, o en caso de ser extranjeros deben poseer permanencia definitiva, estudios apostillados en Chile\n- Tener salud compatible con el cargo\n- Estar inscrito en la SIS",
+   "fecha_cierre": "2026-11-01"
+  },
+  {
+   "id": 143,
+   "cargo": "Encargado/a de Control de Gestión y Mejora Continua",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "NIVEL DE ESTUDIO:\n- Título profesional de carrera afín otorgado por una Universidad o Instituto Profesional reconocido por el Estado. - Requisito Excluyente.\n\nCARRERAS:\n- Ingeniería Comercial, Ingeniería en Control de Gestión, Administración Pública, Contador Auditor, Ingeniería Civil Industrial u otras carreras afines.\n\nEXPERIENCIA LABORAL EN CARGOS SIMILARES:\n- Desde 3 años de Experiencia Laboral en instituciones públicas o privadas afines a los requisitos de la vacante\n\nCURSOS DE ESPECIALIZACIÓN:\n- Estudios de especialización o capacitación en planificación estratégica, control de gestión, levantamiento y modelamiento de procesos, optimización y automatización de procesos, indicadores de gestión (Balanced Scorecard) y/o análisis financiero. - Requisito Deseable.",
+   "fecha_cierre": "2026-10-29"
+  },
+  {
+   "id": 142,
+   "cargo": "Ayudante de Laboratorio (Aridos) - Santiago - IDIEM, Universidad de Chile",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "DETALLES Y REQUISITOS:\n\nRequisitos:\n\n- Formación académica: Educación media completa o técnico afín\n- Al menos 1 año de experiencia laboral en el área de laboratorio.\n- Licencia de conducir clase B\n- Conocimientos en ejecución de ensayos del área de áridos y hormigones de prueba.\n\nCompetencias Operación:\n\nIniciativa, Flexibilidad, Gestión eficiente en situaciones críticas\n\nCompetencias Transversales IDIEM:\n\nRespeto de las Políticas Internas de la Organización, Trabajo en equipo, Orientación a los resultados, Calidad/Excelencia, Orientación al Cliente, Probidad, Adaptabilidad",
+   "fecha_cierre": "2026-11-18"
+  },
+  {
+   "id": 141,
+   "cargo": "Técnico/a de Laboratorio (Geotecnia) - Santiago - IDIEM",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "DETALLES Y REQUISITOS:\n\nRequisitos:\n\n- Experiencia laboral manejando grúa horquilla\n- Experiencia en laboratorio de mecánica de suelos, laboratorio vial o afín.\n- Licencia de conducir clase B y D\n- Manejo de software: Word y Excel Básico\n\nCompetencias Operación:\n\nIniciativa, Flexibilidad, Gestión eficiente en situaciones críticas\n\nCompetencias Transversales IDIEM:\n\nRespeto de las Políticas Internas de la Organización, Trabajo en equipo, Orientación a los resultados, Calidad/Excelencia, Orientación al Cliente, Probidad, Adaptabilidad",
+   "fecha_cierre": "2026-11-18"
+  },
+  {
+   "id": 140,
+   "cargo": "Ejecutivo/a Admisión y Matrícula",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "NIVEL DE ESTUDIO:\n- Desde Título Técnico de Nivel Superior otorgado por una institución de educación superior reconocida por el Estado. Requisito Excluyente.\n\nCARRERAS:\n- Ingeniería Comercial, Ingeniería en Administración de Empresas, Administración Pública, Ingeniería en Marketing, Técnico de Nivel Superior en Administración de Empresas, Técnico de Nivel Superior en Marketing, Técnico de Nivel Superior en Gestión Comercial y/o carreras afines.\n\nEXPERIENCIA LABORAL EN CARGOS SIMILARES:\n- Desde tres años de Experiencia Laboral en cargos comerciales con metas individuales, vinculados con ventas consultivas, servicios o intangibles.",
+   "fecha_cierre": "2026-11-01"
+  },
+  {
+   "id": 138,
+   "cargo": "Profesional de Apoyo a la Gestión Administrativa e Institucional",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "ESTUDIOS FORMALES:\n- Título profesional en Administración, Gestión Pública, Control de Gestión, Ingeniería Comercial o áreas afines.\n\nEXPERIENCIA:\n- 1 a 5 años de experiencia laboral.\n\n- AÑOS ESPECÍFICOS: al menos 1 a 2 años de experiencia en funciones administrativas, gestión de información, reportabilidad o seguimiento de procesos. Deseable experiencia en instituciones públicas o académicas.\n\nCURSOS Y CONOCIMIENTOS REQUERIDOS PARA EL CARGO:\n- Gestión y seguimiento de trámites administrativos; bases de datos y reportabilidad; gestión documental y archivo físico/digital; Microsoft Office nivel intermedio; plataformas colaborativas; conocimiento básico de normativa y procedimientos institucionales; nociones de documentación de procesos y mejora continua.\n\n- Deseable capacitación en herramientas ofimáticas, bases de datos, gestión documental, levantamiento de procesos y mejora continua.\n\n- Deseable manejo de plataformas institucionales.",
+   "fecha_cierre": "2026-10-27"
+  },
+  {
+   "id": 136,
+   "cargo": "Ejecutivo/a de Programas Corporativos",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "NIVEL DE ESTUDIO:\n- Título Técnico de Nivel Superior o Título Profesional en áreas afines al cargo, otorgado por una institución de educación superior reconocida por el Estado. - Requisito Excluyente.\n\nCARRERAS:\n- Ingeniería Comercial, Ingeniería Civil Industrial, Ingeniería en Administración de Empresas, Administración de Recursos Humanos, Relaciones Públicas, Comunicación Social, carreras técnicas de nivel superior relacionadas con administración, gestión comercial o negocios, u otras carreras afines a las funciones del cargo.\n\nEXPERIENCIA LABORAL EN CARGOS SIMILARES:\n- Desde 2 años de Experiencia Laboral realizando funciones similares al cargo en instituciones públicas o privadas.\n\nCURSO DE ESPECIALIZACIÓN REQUERIDOS:\n- Se valorará contar con cursos de capacitación y/o especialización en ventas consultivas, negociación comercial, gestión de clientes y/o desarrollo de negocios.",
+   "fecha_cierre": "2026-11-01"
+  },
+  {
+   "id": 133,
+   "cargo": "Coordinador Recursos Físicos",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "1.- Formación Académica: Título de Ingeniería Eléctrica/Técnico en Electricidad, Electromecánica, Automatización o Ingeniería en Mantenimiento Industrial o cargo relacionado al cargo.\n\n2.- Experiencia Laboral en general (Tiempo): Al menos 3 años de experiencia demostrable en el área de mantenimiento industrial o de infraestructura.\n\n3.-Estudios de Postítulo/Cursos (No excluyente): Diplomado en Gestión del Mantenimientos, Eficiencia Energética, Diplomado en mantenimiento industrial o diplomados relacionados al cargo.\n\n4.-Conocimientos Normativos: Ley N° 20.296 (Ley de Ascensores), conocimiento decreto supremo N°594, Decreto Supremo N° 08 y los Pliegos Técnicos RIC.",
+   "fecha_cierre": "2026-11-01"
+  },
+  {
+   "id": 131,
+   "cargo": "Encargado/a de Educación Ambiental y Visitas Guiadas l Quebrada de la Plata-Media Jornada",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "Formacion educacional\nTítulo profesional o técnico en áreas como educación ambiental, pedagogía, biología o ciencias naturales, ecología, ciencias ambientales, geografía, turismo o ecoturismo, patrimonio, gestión ambiental, conservación recursos naturales u otras disciplinas afines.\n\nExperiencia laboral\n- Experiencia mínima de 1 año en educación ambiental, divulgación científica o interpretación del patrimonio.\n\n- Experiencia deseable en realización de visitas guiadas, talleres o actividades educativas.\n\n- Experiencia deseable en manejo de grupos.\n\n- Se valorará experiencia con niños, niñas y jóvenes, establecimientos educacionales y organizaciones comunitarias.\n\n- Se valorará experiencia en áreas protegidas\n\nConocimientos\n\n- Metodologías de educación ambiental.\n\n- Interpretación ambiental y del patrimonio.\n\n- Biodiversidad y ecosistemas de Chile central.\n\n- Conservación y gestión de áreas protegidas.\n\n- Diseñode actividades educativas\n\n- Primeros auxilios\n\n- Licencia clase B",
+   "fecha_cierre": "2026-11-08"
+  },
+  {
+   "id": 130,
+   "cargo": "Guardaparque Monumento Natural Quebrada de la Plata-36 horas",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "Formación y experiencia laboral\n- Enseñanza básica completa. Se valorará enseñanza media completa\n\n- 2 años de experiencia práctica pertinente para el desempeño de labores de vigilancia preventiva, rondas, trabajo en terreno, cuidado de espacios naturales o funciones operativas similares.\n\n- Se considerará favorablemente el conocimiento del territorio y la experiencia en áreas protegidas, predios de conservación, parques o espacios naturales. La formación especializada en conservación o medio ambiente será deseable, pero no excluyente.\n\nConocimientos deseables\n- Identificación básica de riesgos y amenazas en espacios naturales, especialmente prevención de incendios forestales.\n\n- Registro de incidencias y comunicación de novedades.\n\n- Orientación básica a visitantes y prevención de conflictos.\n\n- Conocimiento del territorio, senderos y accesos del Monumento.\n\n- Primeros auxilios y procedimientos de aviso ante emergencias.\n\n- Licencia de conducir c y b\n\n- Reparaciones menores",
+   "fecha_cierre": "2026-11-08"
+  },
+  {
+   "id": 128,
+   "cargo": "Coordinador/a Equidad e Inclusión",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "NIVEL DE ESTUDIO:\n- Título profesional otorgado por una Institución de Educación Superior reconocida por el Estado- Requisito Excluyente.\n\nCARRERAS:\n- Terapia Ocupacional.\n\nEXPERIENCIA LABORAL EN CARGOS SIMILARES:\n- Mínimo 3 años de experiencia Laboral, con al menos 2 años en funciones relacionadas con inclusión, acompañamiento estudiantil o gestión de apoyos en instituciones de educación superior. Se valorará experiencia en instituciones públicas.\n\nCURSO DE ESPECIALIZACIÓN REQUERIDOS:\n- Deseable Magíster, Post título o perfeccionamiento en Educación Inclusión o Psicología Educacional",
+   "fecha_cierre": "2026-11-03"
+  },
+  {
+   "id": 127,
+   "cargo": "Laboratorista, Renca/Colina - IDIEM Universidad de Chile",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "DETALLES Y REQUISITOS:\n\nRequisitos:\n\n- Formación académica: Educación media completa\n- Licencia clase B (no excluyente)\n- Residir en la zona\n\nCompetencias Operación:\n\nIniciativa, Flexibilidad, Gestión eficiente en situaciones críticas\n\nCompetencias Transversales IDIEM:\n\nRespeto de las Políticas Internas de la Organización, Trabajo en equipo, Orientación a los resultados, Calidad/Excelencia, Orientación al Cliente, Probidad, Adaptabilidad",
+   "fecha_cierre": "2026-11-22"
+  },
+  {
+   "id": 124,
+   "cargo": "Técnico en Enfermería / TENS / Ayudante Tecnico (Reemplazo de verano)",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "Requisitos principales:\n* Titulo Técnico de Enfermería Nivel Superior\n* Deseable 1 experiencia previa en Instituciones de salud públicas o privadas\n* Deseable experiencia en Hospital o Clínica\n* Encontrarse Registrado en la Superintendencia de Salud\n* Salud compatible con el cargo\n* No encontrarse inhabilitado para ejercer cargos públicos. Certificado de Antecedentes al día (no puede tener antecedentes penales).\n* Tener Residencia Definitiva o tener nacionalidad chilena\n* Ser mayor de edad",
+   "fecha_cierre": "2026-10-30"
+  },
+  {
+   "id": 123,
+   "cargo": "Técnico en Enfermeria (TENS) - Servicio de Maternidad (Reemplazo de verano)",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "Requisitos principales\n\n- Título Técnico Nivel Superior en Enfermeria (excluyente). Mención en Gineco-Obstetricia (deseable).\n\n- Experiencia en funciones similares.\n\n- Requisitos ingreso Administración Pública:\n\n- Señalados en el artículo 12 de la Ley N º 18.834 sobre Estatuto Administrativo:\n\n- Ser ciudadano(a) o extranjero(a) poseedor de residencia definitiva.\n\n- Haber cumplido con la Ley de reclutamiento y movilización, cuando fuere procedente.\n\n- Tener salud compatible con el desempeño del cargo.\n\n- Haber aprobado la educación básica y poseer el nivel educacional o título profesional o técnico que por la naturaleza del empleo exija la ley.\n\n- No haber cesado en un cargo público como consecuencia de haber obtenido una calificación deficiente, o por medida disciplinaria.\n\n- No estar inhabilitado para el ejercicio de funciones o cargos públicos, ni hallarse condenado por delito que tenga asignada pena de crimen o simple delito.",
+   "fecha_cierre": "2026-11-02"
+  },
+  {
+   "id": 122,
+   "cargo": "Auxiliar de Servicio - Servicio de Maternidad (Reemplazo de Verano)",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "Requisitos\n- Enseñanza media completa (excluyente).\n\n- Al menos seis meses de experiencia en el cargo (deseable).\n\n- Requisitos ingreso Administración Pública, Señalados en el artículo 12 de la Ley N º 18.834 sobre Estatuto Administrativo:\n\n- Ser ciudadano(a) o extranjero(a) poseedor de residencia definitiva.\n\n- Haber cumplido con la Ley de reclutamiento y movilización, cuando fuere procedente.\n\n- Tener salud compatible con el desempeño del cargo.\n\n- Haber aprobado la educación básica y poseer el nivel educacional o título profesional o técnico que por la naturaleza del empleo exija la ley.\n\n- No haber cesado en un cargo público como consecuencia de haber obtenido una calificación deficiente, o por medida disciplinaria.\n\n- No estar inhabilitado para el ejercicio de funciones o cargos públicos, ni hallarse condenado por delito que tenga asignada pena de crimen o simple delito.",
+   "fecha_cierre": "2026-11-02"
+  },
+  {
+   "id": 37,
+   "cargo": "Profesional Asistente de Investigación Laboratorio de Eco Fisiología de Plantas",
+   "region": "Maule",
+   "requisitos": "- Título Profesional de 8 o más semestres de estudio como Licenciatura en Tecnología Médica, Licenciatura en Biotecnología, Licenciatura en Biología, Ingeniería en Biotecnología.\n\n- Experiencia laboral específica mínima de 2 años afín al campo de desempeño del cargo.",
+   "fecha_cierre": "2026-11-10"
+  },
+  {
+   "id": 36,
+   "cargo": "TENS UCI (HC641)",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "- Acreditar Título Técnico de Nivel Superior en Enfermería.\n\n- Estar inscrito como Prestador Individual en Superintendencia de Salud.\n\n- Contar con experiencia laboral en unidades de paciente critico por lo menos 1 año, excluyente.\n\n- Deseable Curso de RCP Básico",
+   "fecha_cierre": "2026-10-28"
+  },
+  {
+   "id": 35,
+   "cargo": "TENS INTERMEDIO - TIM (HC642)",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "- Acreditar Título Técnico de Nivel Superior en Enfermería.\n\n- Estar inscrito como Prestador Individual en Superintendencia de Salud.\n\n- Contar con 1 año de experiencia laboral en unidades de paciente crítico, excluyente.\n\n- Deseable Curso de RCP Básico",
+   "fecha_cierre": "2026-10-29"
+  },
+  {
+   "id": 34,
+   "cargo": "MEDICO RESIDENTE UCI 28 HRS (HC638)",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "PROFESIONALES:\n- Título médico cirujano\n\n- Poseer especialidad de Internista\n\n- Experiencia de al menos 1 año en Unidades de Pacientes Críticos",
+   "fecha_cierre": "2026-10-29"
+  },
+  {
+   "id": 231,
+   "cargo": "TENS SERVICIO MÉDICO QUIRURGICO",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "- Titulo Técnico de Enfermería Nivel Superior.- Registro Superintendencia de Salud.- Deseable 1 año de experiencia clínica comprobada en servicios médico quirúrgicos.- Deseable experiencia previa en servicios clínicos del HMS.- Manejo de MS Office, nivel usuario.- Curso en Prevención y Control de infecciones.- Curso RCP básico.",
+   "fecha_cierre": null
+  },
+  {
+   "id": 230,
+   "cargo": "TECNÓLOGO MÉDICO SERVICIO BANCO DE SANGRE",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "- Título Profesional Tecnólogo Médico.- Deseable 1 año de experiencia relacionada al cargo.- Mención en Banco de Sangre.- Conocimientos en hematología, inmunohematología y medicina transfusional.- Deseable conocimiento en técnicas de entrevista a donantes de sangre.- Deseable manejo de vía venosas periféricas.- Deseable manejo de Microsoft office nivel usuario.",
+   "fecha_cierre": null
+  },
+  {
+   "id": 229,
+   "cargo": "TENS CDT",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "Documentos: , se encuentra en búsqueda de TENS para CDT, para distintos Policlinicos, su principal función será realizar acciones de enfermería a los pacientes ambulatorios, de acuerdo a los procedimientos establecidos y la normativa legal vigente, con el fin de ofrecer una atención segura, oportuna y de calidad en el área de Policlínico del Hospital. Título de Técnico de Enfermería Nivel Superior. Conocimiento de Técnicas y procedimientos básicos de enfermería. Medidas de control y prevención de IAAS. Reanimación cardiopulmonar. Manejo de MS Office, nivel usuario.Múltiples vacantesLa Reina, Región Metropolitana",
+   "fecha_cierre": null
+  },
+  {
+   "id": 228,
+   "cargo": "PSIQUIATRA SERVICIO INFANTO JUVENIL",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "Titulo Psiquiatra Infantil. Certificación de la especialidad Psiquiatría Infanto Juvenil. Deseable experiencia laboral como Médico especialista.La Reina, Región Metropolitana",
+   "fecha_cierre": null
+  },
+  {
+   "id": 227,
+   "cargo": "TENS ANATOMÍA PATOLÓGICA- DIURNO",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "- Título de Técnico de Enfermería Nivel Superior.- Deseable 1 año de experiencia en Anatomía Patológica.- Conocimiento e identificación anatómica.- Conocimiento y preparación de soluciones.- Manejo de equipos y materiales para realizar inyección conservadora y autopsia.- Conocimiento exhaustivo de asepsia y antisepsia.- Manejo de REAS.La Reina, Región Metropolitana",
+   "fecha_cierre": null
+  },
+  {
+   "id": 226,
+   "cargo": "TENS ANESTESIA-SERVICIO PABELLONES QUIRÚRGICOS",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "-Técnico en Enfermería Nivel Superior.- N° de registro Superintendencia de Salud.- 3 años de experiencia clínica comprobada en servicios médico quirúrgicos.- Experiencia comprobada en pabellones quirúrgicos.- Deseable experiencia previa en servicios clínicos del HMS.- Curso en prevención y control de infecciones.- RCP Básico.- Curso protección radiólogica.- Manejo de MS Office, nivel usuario.- Deseable curso Anestesia para TENS.",
+   "fecha_cierre": null
+  },
+  {
+   "id": 225,
+   "cargo": "INSTRUMENTISTA QUIRURGICO-DIURNO",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "- Título Técnico de Enfermería Nivel Superior, Instrumentista Quirúrgico o EMC Instrumentista Quirúrgico.- N° Registro Superintendencia de Salud- 1 año de experiencia comprobada en pabellones quirúrgicos.- Deseable experiencia previa en servicios clínicos del HMS.- Curso en prevención y control de infecciones.- RCP Básico.- Deseable curso de protección Radiológica.- Manejo de MS Office, nivel usuario.",
+   "fecha_cierre": null
+  },
+  {
+   "id": 224,
+   "cargo": "TENS UCI PEDIATRICA-4TO TURNO",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "Título Técnico en Enfermería Nivel Superior. 2 años de experiencia clínica comprobada en servicios pediátricos. Deseable 1 año de experiencia clínica comprobada en servicios críticos pediátricos. Curso en prevención y control de infecciones. RCP Básico. Manejo de MS Office, nivel usuario.",
+   "fecha_cierre": null
+  },
+  {
+   "id": 223,
+   "cargo": "REEMPLAZO - ADMINISTRATIVO CLINICO AREA INGENIERIA",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "Enseñanza Media Completa. Requerido 1 año de experiencia en el area de logistica y/o administracion hospitalaria. Deseable 1 año de experiencia laboral en administracion de contratos. Conocimientos tecnicos o de gestion como administrativo. Conocimientos tecnicos o de gestion en sistemas de información, legales, logística, documentación. Computacional nivel intermedio o avanzado. Manejo de planillas Excel nivel intermedio. Conocimientos tecnicos o de gestion en Normativa de Compras públicas y sus modificaciones Deseables conocimientos administración de contratos. Deseables conocimientos en Indicadores de rendimiento Deseables conocimientos en Compras. Deseable Capacitación y/o cursos en el área de procedimientos. Deseable Capacitación y/o cursos en administración de contratos.La Reina, Región Metropolitana",
+   "fecha_cierre": null
+  },
+  {
+   "id": 222,
+   "cargo": "ANALISTA MESA DE SERVICIO DEPARTAMENTO TI",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "Título Técnico Nivel Superior en Informática, Técnico Nivel Superior en Mantención Red Computacional o Técnico Nivel Superior en Administración de Redes. Experiencia mínima de 3 años en cargos similares. Experiencia en entornos de servicio a usuarios bajo marcos de procedimientos orientados a la calidad, idealmente ITIL. Conocimientos avanzados en sistemas básicos de usuario (Office, Windows, herramientas de apoyo). Conocimientos en configuración de equipos de escritorio (PC, impresoras, otros dispositivos asociados). Conocimientos técnicos o de gestión en configuración de redes a nivel de Windows. Conocimientos técnicos o de gestión en Seguridad Informática.La Reina, Región Metropolitana",
+   "fecha_cierre": null
+  },
+  {
+   "id": 221,
+   "cargo": "ENFERMERA NAVEGADORA SERVICIO HEMATO-ONCOLOGÍA",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "-Título de Enfermera Universitaria.-N° Registro Superintendencia de Salud.-3 años de experiencia clínica comprobada en servicios médico-quirúrgicos.-1 año de experiencia clínica comprobada en el área.-Deseable experiencia previa en servicios clínicos del HMS.-Curso en prevención y control de infecciones mínimo 40 horas.-Curso de RCP básico.-Formación en Enfermería Oncológica.-Deseable formación en Calidad.-Deseable formación en Gestión.-Conocimientos en GES, Ley Ricarte Soto.- Manejo de MS Office, nivel usuario.La Reina, Región Metropolitana",
+   "fecha_cierre": null
+  },
+  {
+   "id": 220,
+   "cargo": "TENS SUA-4TO TURNO",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "-Título de Técnico Nivel Superior de Enfermería.-Registro en la Superintendencia de Salud.-2 años de experiencia clínica comprobada en servicios médico quirúrgicos.-Deseable experiencia clínica en servicios de Urgencia.-Curso en prevención y control de infecciones.-RCP básico. -Manejo de Office, nivel usuario.-Deseable PHTLS.-Disponibilidad para trabajar en la comuna de la Reina.",
+   "fecha_cierre": null
+  },
+  {
+   "id": 218,
+   "cargo": "TENS MEDICINA NUCLEAR",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "- Título de técnico de Enfermería Nivel Superior.- Mención y/o Especialización en Imagenología.- 1 año de experiencia laboral.- Conocimientos de técnicas y procedimientos básicos de Enfermería.- Manejo de MS Office, nivel usuario.- Autorización de Desempeño en Instalaciones Radioactivas de primera, segunda y tercera categoría Seremi de Salud Vigente.- Deseable conocimiento de técnicas y procedimientos básicos de exámenes de Medicina Nuclear.- Deseable conocimiento de normas de protección radiológica idealmente.La Reina, Región Metropolitana",
+   "fecha_cierre": null
+  },
+  {
+   "id": 217,
+   "cargo": "AUXILIAR DE SERVICIO-PABELLONES QUIRURGICOS",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "- Licencia Media completa.- Experiencia comprobada en cargos similares en instituciones de salud.- Deseable Curso en prevención y control de Infecciones.- Deseable Curso RCP básico.- Disponibilidad para trabajar en jornada Diurno o 4to turno.La Reina, Región Metropolitana",
+   "fecha_cierre": null
+  },
+  {
+   "id": 216,
+   "cargo": "AUXILIAR DE SERVICIO- DIURNO O 4TO TURNO",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "-Enseñanza Media Completa.-Disponibilidad de trabajar en jornada 4to turno o Diurno.-Deseable experiencia previa en servicios de salud.-Contar con vacuna contra la hepatitis B o disponibilidad para vacunarse.-Deseable curso RCP básico.-Deseable curso en prevención y control de infecciones.La Reina, Región Metropolitana",
+   "fecha_cierre": null
+  },
+  {
+   "id": 215,
+   "cargo": "AUXILIAR DE SERVICIO CDT-DIURNO",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "- Enseñanza Media Completa- Conocimientos técnicos o de gestión como auxiliar de Servicio.- Deseable experiencia como auxiliar de servicio o estafeta en unidades clínicas.- Disponibilidad para trabajar en jornada diurna.",
+   "fecha_cierre": null
+  },
+  {
+   "id": 214,
+   "cargo": "TENS LABORATORIO CLINICO 27 HORAS PART TIME",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "",
+   "fecha_cierre": null
+  },
+  {
+   "id": 213,
+   "cargo": "TENS UTI-4TO TURNO",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "- Título Técnico de Enfermería Nivel Superior.- N° Registro Superintendencia de Salud.- 3 años de experiencia clínica comprobada en servicios médico quirúrgicos.- Curso en Prevención y Control de Infecciones.- RCP Básico.- Manejo de MS Office, nivel usuario.- Experiencia comprobada en unidades criticas.- Experiencia previa en servicios clínicos del HMS.",
+   "fecha_cierre": null
+  },
+  {
+   "id": 212,
+   "cargo": "EU CLINICA SERVICIO CIRUGIA-4TO TURNO",
+   "region": "Metropolitana de Santiago",
+   "requisitos": "- Título Profesional Enfermera Universitaria.- N° de registro Superintendencia de Salud.- 1 año de experiencia clínica hospitalaria comprobada.- Curso en prevención y control de infecciones mínimo 20 hrs.- Curso RCP básico.- Manejo de MS Office, nivel usuario.",
+   "fecha_cierre": null
+  }
+ ],
+ "cvs": {
+  "tens": {
+   "texto": "Camila Rojas Fuentes\nTécnico de Nivel Superior en Enfermería (TENS), Instituto Profesional AIEP, 2017\nSantiago, Región Metropolitana\nExperiencia\n2019 - actualidad: TENS Unidad de Paciente Crítico, Clínica Dávila\n2017 - 2019: Técnico en enfermería, Servicio de Medicina, Hospital San Juan de Dios\nRegistro Superintendencia de Salud vigente. Curso IAAS 80 horas. Curso RCP básico.",
+   "pertinentes": [
+    35,
+    36,
+    123,
+    124,
+    144,
+    213,
+    214,
+    218,
+    220,
+    224,
+    225,
+    226,
+    227,
+    229,
+    231
+   ]
+  },
+  "educadora": {
+   "texto": "Francisca Muñoz\nEducadora de Párvulos, Universidad Católica de Temuco, 2015\nLicenciada en Educación\nTemuco, La Araucanía\n2018 - actualidad: Educadora de párvulos, Jardín Infantil JUNJI Los Aromos\n2015 - 2018: Educadora de párvulos, Sala Cuna Pequeños Pasos\nDiplomado en Neurodesarrollo infantil",
+   "pertinentes": [
+    165,
+    170,
+    174,
+    196
+   ]
+  },
+  "asist_parvulos": {
+   "texto": "Javiera Soto\nTécnico de nivel medio en Atención de Párvulos, Liceo Politécnico de La Granja\nEnseñanza media completa\nLa Granja, Santiago\n2020 - actualidad: Asistente de párvulos, Jardín Infantil Rayito de Sol\n2018 - 2020: Asistente de aula, Escuela Básica La Granja",
+   "pertinentes": [
+    150,
+    153,
+    154,
+    156,
+    158,
+    161,
+    175,
+    179,
+    193,
+    202
+   ]
+  },
+  "medico": {
+   "texto": "Dr. Tomás Pérez\nMédico Cirujano, Universidad de Chile, 2016\nEUNACOM aprobado\nSantiago\n2019 - actualidad: Médico residente UCI, Hospital del Salvador\n2017 - 2019: Médico EDF, CESFAM Pudahuel\nCurso ACLS, Curso de ventilación mecánica",
+   "pertinentes": [
+    34,
+    147
+   ]
+  },
+  "enfermera": {
+   "texto": "Daniela Castro\nEnfermera, Licenciada en Enfermería, Universidad Mayor, 2014\nSantiago, Providencia\n2018 - actualidad: Enfermera clínica Servicio de Cirugía, Hospital Militar\n2014 - 2018: Enfermera universitaria, Servicio de Oncología, Clínica Santa María\nDiplomado en Enfermería Oncológica. Curso IAAS.",
+   "pertinentes": [
+    212,
+    221
+   ]
+  },
+  "ing_electrico": {
+   "texto": "Rodrigo Valdés\nIngeniero Civil Electricista, Universidad de Santiago, 2012\nInstalador eléctrico clase A SEC\nSantiago\n2016 - actualidad: Ingeniero de proyectos eléctricos, Enel\n2012 - 2016: Ingeniero de mantenimiento, Metro de Santiago\nManejo de AutoCAD, normativa NCh Elec 4/2003",
+   "pertinentes": [
+    133,
+    146,
+    149
+   ]
+  },
+  "informatico": {
+   "texto": "Felipe Araya\nTécnico en Informática / Analista Programador, Duoc UC, 2019\nSantiago\n2021 - actualidad: Analista de soporte TI mesa de ayuda, Falabella\n2019 - 2021: Técnico de soporte computacional, Municipalidad de Maipú\nCertificación ITIL Foundation. Redes Cisco CCNA.",
+   "pertinentes": [
+    222
+   ]
+  },
+  "administrativo": {
+   "texto": "Valentina Morales\nIngeniera Comercial, Universidad de Santiago, 2016\nSantiago\n2019 - actualidad: Analista de control de gestión, Ministerio de Hacienda\n2016 - 2019: Profesional de apoyo administrativo, Universidad de Chile\nDiplomado en Gestión Pública. Manejo de Excel avanzado.",
+   "pertinentes": [
+    136,
+    138,
+    140,
+    143
+   ]
+  },
+  "abogado": {
+   "texto": "CURRÍCULUM VITAE\nIgnacio Herrera Lagos\nAbogado — Pontificia Universidad Católica de Chile\nLas Condes, Santiago\nEXPERIENCIA PROFESIONAL\nMarzo 2019 – a la fecha | Abogado asociado, Estudio Jurídico Carey\nEnero 2016 – Febrero 2019 | Abogado, Consejo de Defensa del Estado",
+   "pertinentes": []
+  },
+  "contador": {
+   "texto": "Paula Gómez\nContador Auditor, Universidad de Santiago de Chile\nDirección: Ñuñoa, Región Metropolitana\nExperiencia laboral\nAbril 2017 a la fecha — Analista contable, Tesorería General de la República\n2014 — 2017 — Asistente contable, Municipalidad de Ñuñoa",
+   "pertinentes": [
+    138,
+    143
+   ]
+  },
+  "tec_electricidad": {
+   "texto": "Luis Contreras\nTÉCNICO EN ELECTRICIDAD Y ELECTRÓNICA INDUSTRIAL — INACAP\nLicencia SEC clase B\nPuente Alto\nMantenimiento eléctrico de tableros y circuitos de baja tensión, 6 años\nElectricista de mantención, Hospital Sótero del Río (2018 - actualidad)",
+   "pertinentes": [
+    133,
+    146
+   ]
+  },
+  "sin_titulo": {
+   "texto": "Rosa Pérez\nPuente Alto, Santiago\nTengo 10 años de experiencia como auxiliar de aseo en hospitales y clínicas.\nHospital Sótero del Río, auxiliar de servicio, 2015 - 2024\nEnseñanza media completa",
+   "pertinentes": [
+    122,
+    188,
+    215,
+    216,
+    217
+   ]
+  },
+  "kinesiologo": {
+   "texto": "Matías Vera\nKinesiólogo, Universidad Andrés Bello\nViña del Mar\n2020 - actualidad: Kinesiólogo respiratorio UCI, Hospital Gustavo Fricke",
+   "pertinentes": []
+  },
+  "biologa": {
+   "texto": "Catalina Fuentes\nLicenciada en Biología, Universidad de Chile\nSantiago\n2021 - actualidad: Asistente de investigación, Laboratorio de Ecología Vegetal\nExperiencia en ecofisiología de plantas y fotosíntesis",
+   "pertinentes": [
+    37,
+    131
+   ]
+  }
+ }
+}
