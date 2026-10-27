@@ -78,6 +78,7 @@ from bs4 import BeautifulSoup
 
 # ── Integración con el proyecto (con fallback standalone) ───────────────────
 sys.path.insert(0, str(Path(__file__).parent.parent))
+from scrapers import cache_pdf  # noqa: E402
 try:
     from config import config
     from db.database import (
@@ -642,10 +643,14 @@ def recolectar(max_results: int | None, delay: float,
                 continue
             perfil: dict[str, Any] = {}
             if con_pdf:
-                time.sleep(delay)
-                rp = _get(session, c["url_pdf"])
-                if rp is not None and rp.content[:5] == b"%PDF-":
-                    perfil = parsear_perfil_pdf(pdf_a_texto(rp.content))
+                # Caché: el perfil PDF ya leído en otra corrida no se vuelve a
+                # descargar (ahorra tráfico de proxy). cache_pdf descarta lo
+                # que no sea PDF, como hacía el chequeo de "%PDF-".
+                texto_perfil = cache_pdf.texto_pdf(
+                    c["url_pdf"], cache_pdf.descargador(_get, session, delay),
+                    pdf_a_texto, modo="texto")
+                if texto_perfil:
+                    perfil = parsear_perfil_pdf(texto_perfil)
             o = construir_oferta_contrata(c, perfil)
             if o["url_original"] not in vistos:
                 vistos.add(o["url_original"])
@@ -745,7 +750,9 @@ def ejecutar(dry_run=False, verbose=False, max_results=None,
     ofertas: list[dict] = []
 
     try:
+        cache_pdf.configurar(escribir=not dry_run)
         ofertas = recolectar(max_results, delay, incluir_cerrados)
+        logger.info("  %s", cache_pdf.resumen())
         stats["encontradas"] = len(ofertas)
         logger.info("  → %d ofertas", len(ofertas))
         for datos in ofertas:
