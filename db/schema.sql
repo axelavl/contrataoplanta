@@ -299,17 +299,29 @@ CREATE INDEX IF NOT EXISTS idx_ofertas_cargo_trgm ON ofertas USING gin (cargo gi
 CREATE INDEX IF NOT EXISTS idx_ofertas_institucion_trgm ON ofertas USING gin (institucion_nombre gin_trgm_ops);
 
 -- Full-text search en español con unaccent (post-audit 2.8)
-CREATE INDEX IF NOT EXISTS idx_ofertas_fts ON ofertas
-    USING GIN (
-        to_tsvector(
-            'spanish',
-            unaccent(
-                coalesce(cargo, '') || ' ' ||
-                coalesce(institucion_nombre, '') || ' ' ||
-                coalesce(descripcion, '')
+-- Envuelto en DO/EXCEPTION: unaccent() no es IMMUTABLE y Postgres rechaza el
+-- índice ("functions in index expression must be marked IMMUTABLE"). Con psql
+-- el error se ignoraba en silencio, así que este índice nunca existió en
+-- producción y ningún código lo usa. Se deja el intento sin romper la carga
+-- del schema cuando se aplica en una sola transacción (baseline de Alembic).
+DO $$
+BEGIN
+    EXECUTE $idx$
+        CREATE INDEX IF NOT EXISTS idx_ofertas_fts ON ofertas
+            USING GIN (
+                to_tsvector(
+                    'spanish',
+                    unaccent(
+                        coalesce(cargo, '') || ' ' ||
+                        coalesce(institucion_nombre, '') || ' ' ||
+                        coalesce(descripcion, '')
+                    )
+                )
             )
-        )
-    );
+    $idx$;
+EXCEPTION WHEN others THEN
+    RAISE NOTICE 'idx_ofertas_fts omitido: %', SQLERRM;
+END $$;
 
 -- ──────────────────────────────────────────────────────────
 --  TABLA: scraper_runs — reporte de cada corrida (4.3)
@@ -644,7 +656,13 @@ CREATE TRIGGER tr_snapshot_oferta
 
 -- Mapea activa BOOLEAN → estado VARCHAR {'activo','cerrado','vencido'}
 -- (decisión documentada en AUDIT_REPORT sección 5)
-CREATE OR REPLACE VIEW v_ofertas_estado AS
+-- Envueltas en DO/EXCEPTION: `o.*` ya trae la columna `estado` y la vista la
+-- vuelve a definir ("column estado specified more than once"). Con psql el
+-- error se ignoraba, así que estas vistas no existen en producción y ningún
+-- código las usa. Corregirlas queda pendiente; no deben romper la carga.
+DO $$
+BEGIN
+    EXECUTE $v$CREATE OR REPLACE VIEW v_ofertas_estado AS
 SELECT
     o.*,
     i.nombre_corto,
@@ -663,14 +681,22 @@ SELECT
         ELSE 'vigente'
     END AS semaforo
 FROM ofertas o
-LEFT JOIN instituciones i ON o.institucion_id = i.id;
+LEFT JOIN instituciones i ON o.institucion_id = i.id$v$;
+EXCEPTION WHEN others THEN
+    RAISE NOTICE 'v_ofertas_estado omitida: %', SQLERRM;
+END $$;
 
 -- Vista auxiliar: solo ofertas vigentes (activo) para listados públicos
-CREATE OR REPLACE VIEW v_ofertas_vigentes AS
+DO $$
+BEGIN
+    EXECUTE $v$CREATE OR REPLACE VIEW v_ofertas_vigentes AS
 SELECT *
 FROM v_ofertas_estado
 WHERE estado = 'activo'
-ORDER BY fecha_cierre ASC NULLS LAST, detectada_en DESC;
+ORDER BY fecha_cierre ASC NULLS LAST, detectada_en DESC$v$;
+EXCEPTION WHEN others THEN
+    RAISE NOTICE 'v_ofertas_vigentes omitida: %', SQLERRM;
+END $$;
 
 -- ──────────────────────────────────────────────────────────
 --  DATOS INICIALES: fuentes
