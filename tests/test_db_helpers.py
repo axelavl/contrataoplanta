@@ -274,18 +274,20 @@ class NormalizarTipoCargoTests(unittest.TestCase):
 
 
 class NormalizarAreaTests(unittest.TestCase):
-    def test_default_is_administracion(self):
-        self.assertEqual(normalizar_area("algo raro no clasificable"), "Administración")
+    """`normalizar_area` delega en classification.area_profesional
+    (ver tests/test_area_profesional.py para los casos reales)."""
+
+    def test_no_clasificable_es_none(self):
+        # Antes caía en "Administración" por defecto: un área inventada.
+        self.assertIsNone(normalizar_area("algo raro no clasificable"))
 
     def test_derecho(self):
         for c in ["Abogado Municipal", "Asesor Jurídico", "Fiscal Regional"]:
             self.assertEqual(normalizar_area(c), "Derecho")
 
     def test_salud(self):
-        # "médic" matches "médico" via substring "médic"; "enfermer", "matron"
-        # match unaccented roots. "kinesiólogo"/"psicólogo" with accented "ó"
-        # do NOT match "kinesiol"/"psicolog" — see test_accent_mismatch_known_quirk.
-        for c in ["Médico General", "Enfermera", "Matrona", "Psiquiatra"]:
+        for c in ["Médico General", "Enfermera", "Matrona", "Psiquiatra",
+                  "Kinesiólogo", "TENS UCI"]:
             self.assertEqual(normalizar_area(c), "Salud")
 
     def test_ingenieria(self):
@@ -296,16 +298,9 @@ class NormalizarAreaTests(unittest.TestCase):
         self.assertEqual(normalizar_area("Trabajador Social"), "Ciencias Sociales")
         self.assertEqual(normalizar_area("Asistente social"), "Ciencias Sociales")
 
-    def test_psicologia_unaccented_root(self):
-        # The keyword "psicolog" only matches inputs without the "ó" accent.
+    def test_psicologia_con_y_sin_tilde(self):
         self.assertEqual(normalizar_area("Psicologo Clinico"), "Psicología")
-
-    def test_accent_mismatch_known_quirk(self):
-        # The keyword table uses unaccented roots ("psicolog", "kinesiol")
-        # while real inputs often carry accents ("psicólogo", "kinesiólogo").
-        # These fall through to the default bucket today.
-        self.assertEqual(normalizar_area("Psicólogo Clínico"), "Administración")
-        self.assertEqual(normalizar_area("Kinesiólogo"), "Administración")
+        self.assertEqual(normalizar_area("Psicólogo Clínico"), "Psicología")
 
     def test_finanzas(self):
         self.assertEqual(normalizar_area("Contador Auditor"), "Finanzas")
@@ -315,7 +310,7 @@ class NormalizarAreaTests(unittest.TestCase):
         self.assertEqual(normalizar_area("Economista"), "Economía")
 
     def test_ti(self):
-        self.assertEqual(normalizar_area("Ingeniero en Sistemas"), "Ingeniería")
+        self.assertEqual(normalizar_area("Ingeniero en Sistemas"), "TI")
         self.assertEqual(normalizar_area("Analista de Datos"), "TI")
         self.assertEqual(normalizar_area("Desarrollador Software"), "TI")
 
@@ -327,9 +322,9 @@ class NormalizarAreaTests(unittest.TestCase):
         self.assertEqual(normalizar_area("Periodista Institucional"), "Comunicaciones")
 
     def test_agropecuario(self):
-        self.assertEqual(normalizar_area("Médico Veterinario"), "Salud")
-        self.assertEqual(normalizar_area("Ingeniero Agrónomo"), "Ingeniería")
-        self.assertEqual(normalizar_area("Técnico Forestal"), "Ingeniería")
+        self.assertEqual(normalizar_area("Médico Veterinario"), "Agropecuario/Forestal")
+        self.assertEqual(normalizar_area("Ingeniero Agrónomo"), "Agropecuario/Forestal")
+        self.assertEqual(normalizar_area("Técnico Forestal"), "Agropecuario/Forestal")
 
     def test_medioambiente(self):
         self.assertEqual(normalizar_area("Analista Ambiental"), "Medioambiente")

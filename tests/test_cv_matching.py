@@ -172,7 +172,7 @@ def test_endpoint_archivo_invalido_422(cliente):
 
 
 # ── Profesiones (detección y reglas de calce) ────────────────────────────────
-from api.services import profesiones_cv as prof
+from classification import profesiones as prof
 
 
 @pytest.mark.parametrize("texto,esperado", [

@@ -1771,22 +1771,10 @@ class EmpleosPublicosScraper(BaseScraper):
         return None
 
     def _inferir_area_profesional(self, cargo: str | None) -> str | None:
-        key = normalize_key(cargo)
-        if not key:
-            return None
-        area_map = {
-            "salud": ["medic", "enfermer", "matron", "kinesio", "salud", "odontolog"],
-            "derecho": ["abogad", "jurid", "legal", "fiscal"],
-            "ingenieria": ["ingenier", "constructor", "arquitect", "informatic", "desarrollador"],
-            "educacion": ["docente", "profesor", "educador", "pedagog"],
-            "administracion": ["administr", "analista", "gestion", "rrhh", "recursos humanos"],
-            "finanzas": ["contador", "auditor", "finanza", "tesorer"],
-            "ciencias sociales": ["social", "psicolog", "sociolog", "terapeuta"],
-        }
-        for area, keywords in area_map.items():
-            if any(keyword in key for keyword in keywords):
-                return area
-        return "administracion"
+        """Respaldo cuando el portal no informa el área: clasificador común
+        (antes: mapa propio con "administracion" por defecto)."""
+        from classification.area_profesional import clasificar_area
+        return clasificar_area(cargo)
 
     @staticmethod
     def _monto_sin_simbolo(texto: str | None) -> int | None:

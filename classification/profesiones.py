@@ -1,4 +1,4 @@
-"""Catálogo de profesiones para el matching CV ↔ oferta.
+"""Catálogo de profesiones: matching CV ↔ oferta y área profesional de las ofertas.
 
 Por qué existe
 --------------
@@ -71,6 +71,10 @@ PROFESIONES: tuple[Profesion, ...] = (
        r"carrera de enfermeria|titulo (profesional )?de enfermeria|\beu\b"),
     _p("matrona", "Obstetricia (matrona/ón)", "Salud", "Profesional", "salud",
        r"\bmatron[ao]s?\b|obstetricia y puericultura"),
+    _p("veterinario", "Medicina veterinaria", "Agropecuario", "Profesional", "agro",
+       r"medic[oa]s? veterinari\w*|veterinari[oa]s?\b|medicina veterinaria"),
+    _p("agronomo", "Agronomía / forestal", "Agropecuario", "Profesional", "agro",
+       r"ingenier\w* (?:agronom\w*|forestal\w*)|\bagronom[oa]s?\b|tecnic[oa]s? (?:agricol|forestal|agropecuari)\w*"),
     _p("medico", "Medicina", "Salud", "Profesional", "salud",
        r"\bmedic[oa]s?\b(?:\s+cirujan[oa]s?)?|medicina general|\beunacom\b"),
     _p("kinesiologo", "Kinesiología", "Salud", "Profesional", "salud",
