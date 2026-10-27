@@ -85,6 +85,7 @@ if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
 from db.config import DB_CONFIG as _DB_CONFIG_STR  # noqa: E402
+from classification.area_profesional import clasificar_area  # noqa: E402
 
 # El resto de este archivo y los scrapers esperaban `port` como int,
 # mientras que el dict centralizado lo devuelve como string (para
@@ -1588,7 +1589,8 @@ class BaseScraper(abc.ABC):
                     self.fuente_id, raw.id_externo, canonical, raw.url, uhash, c_hash,
                     raw.cargo.strip()[:500], raw.descripcion, inst_id,
                     raw.institucion_nombre.strip()[:300], raw.sector,
-                    raw.area_profesional, tipo_norm, raw.nivel,
+                    raw.area_profesional or clasificar_area(raw.cargo, raw.descripcion),
+                    tipo_norm, raw.nivel,
                     region_norm, raw.ciudad,
                     renta_min, renta_max, renta_texto_final, renta_tipo, grado, raw.url_bases,
                     raw.fecha_publicacion, raw.fecha_cierre,
@@ -2128,7 +2130,11 @@ class LegacyBaseScraper(abc.ABC):
             "renta_tipo": renta_tipo,
             "grado_eus": truncate(grado_eus, 20),
             "jornada": truncate(normalized.get("jornada"), 100),
-            "area_profesional": truncate(normalized.get("area_profesional"), 200),
+            "area_profesional": truncate(
+                normalized.get("area_profesional")
+                or clasificar_area(normalized.get("cargo"), normalized.get("requisitos")),
+                200,
+            ),
             "fecha_publicacion": parse_date(normalized.get("fecha_publicacion")),
             "fecha_cierre": fecha_cierre,
             "url_oferta": clean_text(normalized.get("url_oferta") or normalized.get("url_original")),
@@ -2716,7 +2722,13 @@ class LegacyBaseScraper(abc.ABC):
             "renta_texto": None,
             "renta_tipo": None,
         }
-        return {**defaults, **offer}
+        params = {**defaults, **offer}
+        # Área: la que trae el scraper (p. ej. metadato oficial del portal) o,
+        # si no hay, la del clasificador común (cargo + requisitos).
+        if not params.get("area_profesional"):
+            params["area_profesional"] = clasificar_area(
+                params.get("cargo"), params.get("requisitos") or params.get("descripcion"))
+        return params
 
     def _mark_missing_offers_closed(
         self,

@@ -30,7 +30,7 @@ from datetime import date
 from typing import Any, Iterable
 from xml.etree import ElementTree
 
-from api.services import profesiones_cv as PROF
+from classification import profesiones as PROF
 
 MAX_BYTES_CV = 5 * 1024 * 1024        # un CV real pesa mucho menos
 MAX_PAGINAS_PDF = 10
@@ -240,7 +240,7 @@ def leer_cv(datos: bytes) -> str:
 # ── Perfil ───────────────────────────────────────────────────────────────────
 @dataclass
 class Perfil:
-    profesiones: list[str] = field(default_factory=list)   # claves de profesiones_cv
+    profesiones: list[str] = field(default_factory=list)   # claves de classification.profesiones
     areas: list[str] = field(default_factory=list)
     titulos: list[str] = field(default_factory=list)
     anios_experiencia: int | None = None
