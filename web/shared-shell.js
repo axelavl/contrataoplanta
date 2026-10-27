@@ -274,7 +274,7 @@
     if (alreadyLoaded) return;
 
     var script = document.createElement('script');
-    script.src = 'nav-mobile.js';
+    script.src = '/nav-mobile.js';
     script.id = 'nav-mobile-script';
     document.body.appendChild(script);
   }
@@ -283,7 +283,9 @@
     if (document.getElementById(id)) return;
     var alreadyLoaded = Array.prototype.some.call(document.scripts, function (s) {
       var currentSrc = s.getAttribute('src') || '';
-      var pattern = src.replace('.', '\\.');
+      // Se compara por nombre de archivo (sin la barra inicial) para detectar
+      // el script aunque la página lo haya cargado con ruta relativa.
+      var pattern = src.replace(/^\//, '').replace(/\./g, '\\.');
       return new RegExp('(^|/)' + pattern + '($|[?#])').test(currentSrc);
     });
     if (alreadyLoaded) return;
@@ -369,9 +371,9 @@
       .catch(function () { /* sin conexión: el sitio sigue normal */ });
   }
 
-  loadPartial('site-ribbon', 'partials/ribbon.html')
+  loadPartial('site-ribbon', '/partials/ribbon.html')
     .then(function () {
-      return loadPartial('site-header', 'partials/header.html');
+      return loadPartial('site-header', '/partials/header.html');
     })
     .then(function (ok) {
       if (ok) {
@@ -379,19 +381,19 @@
         updateFavCount(document);
       }
       ensureMobileNavScript();
-      ensureScript('theme-toggle.js', 'theme-toggle-script');
-      ensureScript('ribbon-data.js', 'ribbon-data-script');
-      ensureScript('logo-fallback.js', 'logo-fallback-script');
-      ensureScript('search-toggle.js', 'search-toggle-script');
-      ensureScript('plazo-colors.js', 'plazo-colors-script');
-      ensureScript('title-truncate.js', 'title-truncate-script');
-      ensureScript('share-mejoras.js', 'share-mejoras-script');
+      ensureScript('/theme-toggle.js', 'theme-toggle-script');
+      ensureScript('/ribbon-data.js', 'ribbon-data-script');
+      ensureScript('/logo-fallback.js', 'logo-fallback-script');
+      ensureScript('/search-toggle.js', 'search-toggle-script');
+      ensureScript('/plazo-colors.js', 'plazo-colors-script');
+      ensureScript('/title-truncate.js', 'title-truncate-script');
+      ensureScript('/share-mejoras.js', 'share-mejoras-script');
       // Ajustes de UX móvil + modo oscuro (costura cinta/header, contraste de
       // títulos de la ficha, acordeón). En el home ya van en el HTML; acá los
       // propagamos a TODAS las demás páginas que usan el shell. Idempotente.
       ensureStylesheet('styles/mobile-ux-fixes.css', 'mobile-ux-fixes-style');
-      ensureScript('mobile-ux.js', 'mobile-ux-script');
-      return loadPartial('site-footer', 'partials/footer.html');
+      ensureScript('/mobile-ux.js', 'mobile-ux-script');
+      return loadPartial('site-footer', '/partials/footer.html');
     })
     .then(function () {
       renderSiteConfig();
