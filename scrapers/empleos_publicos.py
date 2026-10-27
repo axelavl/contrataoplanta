@@ -37,6 +37,7 @@ _detectar_siguiente_pagina, paginación __doPostBack) quedan sin uso.
 
 import argparse
 import asyncio
+import hashlib
 import json
 import re
 import sys
@@ -276,6 +277,23 @@ class AsyncRateLimiter:
             await asyncio.sleep(sleep_time)
 
 
+def _proxy_cl_configurado() -> str | None:
+    """URL del proxy residencial chileno si está configurada (PROXY_CL)."""
+    try:
+        from config import config as _cfg
+        valor = (_cfg.PROXY_CL or "").strip()
+    except Exception:
+        import os
+        valor = os.getenv("PROXY_CL", "").strip()
+    return valor or None
+
+
+#: Las fichas de ofertas ya guardadas se vuelven a leer una vez por semana
+#: (escalonado por hash de URL), no en cada corrida: la ficha casi no cambia
+#: y, si el portal obliga a salir por proxy, cada ficha cuesta tráfico pagado.
+DIAS_REFRESCO_FICHA = 7
+
+
 class EmpleosPublicosScraper(BaseScraper):
     """Scraper principal para convocatorias activas de empleospublicos.cl."""
 
@@ -310,6 +328,14 @@ class EmpleosPublicosScraper(BaseScraper):
         # 30 detalles concurrentes: empíricamente la API soporta ese paralelismo
         # sin throttle agresivo. El semáforo evita saturar el servidor.
         self._detail_semaphore = asyncio.Semaphore(30)
+        # Respaldo por proxy residencial chileno (PROXY_CL) ante bloqueo por IP:
+        # el portal ya geobloqueó runners de datacenter (ver run_all.py). Se
+        # parte SIN proxy y solo si el portal devuelve 403 se activa para el
+        # resto de la corrida: si el servidor no está bloqueado, no se paga
+        # tráfico de proxy.
+        self._proxy_cl = _proxy_cl_configurado()
+        self._usar_proxy = False
+        self.stats.setdefault("detalles_omitidos", 0)
         # Filas en esquema estándar acumuladas durante el run (para --export)
         self.filas_estandar: list[dict[str, Any]] = []
 
@@ -482,8 +508,19 @@ class EmpleosPublicosScraper(BaseScraper):
             )
 
             ofertas = ofertas[: self.max_results] if self.max_results else ofertas
-            enriched = await self._enriquecer_ofertas(session, ofertas)
-            return enriched
+            # Solo se descarga la ficha de ofertas nuevas (o las que toca
+            # refrescar hoy). Las demás conservan descripción y requisitos ya
+            # guardados: el upsert hace COALESCE con lo existente.
+            vigentes = self._urls_con_ficha_vigente([o["url_oferta"] for o in ofertas])
+            a_enriquecer = [o for o in ofertas if o["url_oferta"] not in vigentes]
+            sin_ficha = [o for o in ofertas if o["url_oferta"] in vigentes]
+            self.stats["detalles_omitidos"] = len(sin_ficha)
+            self.logger.info(
+                "evento=fichas scraper=%s a_descargar=%s omitidas=%s proxy=%s",
+                self.nombre, len(a_enriquecer), len(sin_ficha), self._usar_proxy,
+            )
+            enriched = await self._enriquecer_ofertas(session, a_enriquecer)
+            return enriched + sin_ficha
 
     def _oferta_desde_api(self, registro: dict[str, Any]) -> dict[str, Any] | None:
         """Mapea un registro de ``apiConvocatorias.ashx`` al esquema interno.
@@ -611,6 +648,66 @@ class EmpleosPublicosScraper(BaseScraper):
             resultados.append(await task)
         return resultados
 
+    def _kwargs_proxy(self) -> dict[str, Any]:
+        if not self._usar_proxy:
+            return {}
+        # El proxy residencial intercepta TLS: igual que config.aplicar_proxy
+        # (requests) se desactiva la verificación SOLO en este tramo.
+        return {"proxy": self._proxy_cl, "ssl": False}
+
+    def _activar_proxy(self, url: str) -> bool:
+        """Activa el proxy chileno ante el primer 403. True si se activó."""
+        if self._usar_proxy or not self._proxy_cl:
+            if not self._proxy_cl and not getattr(self, "_aviso_sin_proxy", False):
+                self._aviso_sin_proxy = True
+                self.logger.error(
+                    "evento=bloqueo_ip scraper=%s url=%s detalle=%s",
+                    self.nombre, url,
+                    "el portal responde 403 a esta IP y PROXY_CL no está configurado",
+                )
+            return False
+        self._usar_proxy = True
+        self.logger.warning(
+            "evento=proxy_activado scraper=%s motivo=403 url=%s", self.nombre, url)
+        return True
+
+    def _urls_con_ficha_vigente(self, urls: list[str]) -> set[str]:
+        """URLs ya guardadas con ficha leída que NO toca refrescar hoy.
+
+        Cada oferta conocida se relee una vez cada DIAS_REFRESCO_FICHA días,
+        repartidas por hash de URL para no concentrar el trabajo en un día.
+        Ante cualquier error de DB (dry-run sin base, standalone) devuelve
+        vacío: se leen todas las fichas, como antes."""
+        if not urls:
+            return set()
+        try:
+            conn = self.get_connection()
+        except Exception:
+            return set()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT url_oferta FROM ofertas
+                    WHERE url_oferta = ANY(%s)
+                      AND descripcion IS NOT NULL
+                      AND requisitos IS NOT NULL
+                    """,
+                    (urls,),
+                )
+                conocidas = {fila[0] for fila in cur.fetchall()}
+        except Exception as exc:
+            self.logger.warning("evento=ficha_cache_error scraper=%s error=%s", self.nombre, exc)
+            return set()
+        finally:
+            try:
+                conn.close()
+            except Exception:
+                pass
+        hoy = date.today().toordinal() % DIAS_REFRESCO_FICHA
+        return {u for u in conocidas
+                if int(hashlib.sha1(u.encode()).hexdigest(), 16) % DIAS_REFRESCO_FICHA != hoy}
+
     async def _request_text(
         self,
         session: aiohttp.ClientSession,
@@ -645,10 +742,15 @@ class EmpleosPublicosScraper(BaseScraper):
                     data=request.data,
                     headers=headers,
                     allow_redirects=True,
+                    **self._kwargs_proxy(),
                 ) as response:
                     # 404/410 son terminales: no reintentamos.
                     if response.status in {404, 410}:
                         response.raise_for_status()
+                    # 403 del portal = bloqueo por IP: si hay proxy chileno,
+                    # se activa y se reintenta de inmediato (usa 1 de los 4 intentos).
+                    if response.status == 403 and self._activar_proxy(request.url):
+                        continue
                     if response.status in {403, 429, 500, 502, 503, 504}:
                         response.raise_for_status()
                     texto = await response.text(encoding="utf-8", errors="ignore")
@@ -765,6 +867,7 @@ class EmpleosPublicosScraper(BaseScraper):
                 allow_redirects=True,
                 headers={"User-Agent": next(self.user_agents)},
                 timeout=aiohttp.ClientTimeout(total=10),
+                **self._kwargs_proxy(),
             ) as resp:
                 final = str(resp.url)
                 if resp.status < 400 and final != url:
