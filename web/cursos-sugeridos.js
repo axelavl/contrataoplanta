@@ -34,7 +34,8 @@
     ['finanzas',      /contad|contab|finan|presupuest|tesorer|remuneracion|auditor|sigfe|cobranza|recaudac|control de gestion/],
     ['derecho',       /abogad|juridic|legal|fiscal|sumari|derecho/],
     ['ti',            /informatic|desarroll|software|program|sistemas|tecnolog|ciberseg|analista de datos|soporte tecnico|redes|base de datos/],
-    ['prevencion',    /prevencion de riesgo|prevencionista|seguridad laboral|experto en prevencion|higiene/],
+    ['prevencion',    /prevencion de riesgo|prevencionista|seguridad laboral|experto en prevencion|higiene|auxiliar de servicio|auxiliar de aseo|conductor|chofer|guardia|vigilante|mantencion/],
+    ['ambiente',      /ambient|biolog|ecolog|guardaparque|forestal|agronom|veterinar|geolog|conservacion|biodiversidad/],
     ['rrhh',          /recursos humanos|rrhh|gestion de personas|reclutam|bienestar de personal|capacitacion/],
     ['atencion',      /atencion a|atencion de|atencion al|atencion ciudadan|oirs|orientacion al usuario|atencion de publico/],
     ['admin-publica', /administrativ|administrad|gestion|jefatur|encargad|profesional|tecnico|analista|secretari|coordinad|jefe|director/]
