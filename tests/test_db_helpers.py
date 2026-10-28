@@ -161,7 +161,8 @@ class NormalizarDatosOfertaTests(unittest.TestCase):
         self.assertEqual(len(normalized["institucion_nombre"]), 300)
         self.assertEqual(len(normalized["sector"]), 80)
         self.assertEqual(len(normalized["area_profesional"]), 100)
-        self.assertEqual(len(normalized["tipo_cargo"]), 50)
+        # tipo_cargo inválido no se trunca: queda NULL (CHECK chk_ofertas_tipo_cargo).
+        self.assertIsNone(normalized["tipo_cargo"])
         self.assertEqual(len(normalized["nivel"]), 80)
         self.assertEqual(len(normalized["region"]), 80)
         self.assertEqual(len(normalized["ciudad"]), 80)

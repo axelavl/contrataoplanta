@@ -86,6 +86,7 @@ if str(_PROJECT_ROOT) not in sys.path:
 
 from db.config import DB_CONFIG as _DB_CONFIG_STR  # noqa: E402
 from classification.area_profesional import clasificar_area  # noqa: E402
+from db.sanear import canonizar_tipo_cargo, sanear_oferta  # noqa: E402
 
 # El resto de este archivo y los scrapers esperaban `port` como int,
 # mientras que el dict centralizado lo devuelve como string (para
@@ -1457,7 +1458,8 @@ class BaseScraper(abc.ABC):
         self._hashes_vistos.add(uhash)
 
         # Normalizaciones
-        tipo_norm = normalizar_tipo_cargo(raw.tipo_cargo)
+        # Canónico del CHECK chk_ofertas_tipo_cargo ('planta', 'contrata', …).
+        tipo_norm = canonizar_tipo_cargo(normalizar_tipo_cargo(raw.tipo_cargo))
         region_norm = normalizar_region(raw.region)
 
         # Renta: si el scraper no trajo valores, extraer del texto
@@ -1469,6 +1471,16 @@ class BaseScraper(abc.ABC):
             renta_min = extraida.minimo
             renta_max = extraida.maximo
             grado = extraida.grado_eus
+
+        # CHECKs de `ofertas`: renta/fechas fuera de rango quedan NULL en vez
+        # de rechazar la oferta completa (db/sanear.py).
+        _ok = sanear_oferta({
+            "renta_bruta_min": renta_min, "renta_bruta_max": renta_max,
+            "fecha_publicacion": raw.fecha_publicacion, "fecha_cierre": raw.fecha_cierre,
+            "url_oferta": raw.url,
+        })
+        renta_min, renta_max = _ok["renta_bruta_min"], _ok["renta_bruta_max"]
+        raw.fecha_publicacion, raw.fecha_cierre = _ok["fecha_publicacion"], _ok["fecha_cierre"]
 
         # Tipo de renta: la informada debe ser bruta; si solo hay líquida se
         # deja señalado (renta_tipo + marca en renta_texto).
@@ -2722,7 +2734,7 @@ class LegacyBaseScraper(abc.ABC):
             "renta_texto": None,
             "renta_tipo": None,
         }
-        params = {**defaults, **offer}
+        params = sanear_oferta({**defaults, **offer})
         # Área: la que trae el scraper (p. ej. metadato oficial del portal) o,
         # si no hay, la del clasificador común (cargo + requisitos).
         if not params.get("area_profesional"):
