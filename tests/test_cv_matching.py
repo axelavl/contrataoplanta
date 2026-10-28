@@ -225,3 +225,73 @@ def test_perfil_expone_profesion():
     p = cm.perfil_desde_texto(CV_PSICOLOGA)
     assert p.a_dict()["profesiones"] == ["Psicología"]
     assert "texto_norm" not in p.a_dict()
+
+
+# ── Áreas de trabajo y formatos de CV (oct-2026) ─────────────────────────────
+# CV sintético con el formato que antes se leía mal: cargo con fechas MM/AAAA
+# al final de la línea, títulos en la sección EDUCACIÓN sin la palabra
+# "título", "Diploma" (no "Diplomado") y una mención a la carrera de OTROS.
+CV_ADMIN_PUBLICO = """Camila Soto Rivas
+Santiago
+Profesional con experiencia en gestión de personas, análisis de datos y
+control de gestión en organismos públicos. Power BI, SQL, SIAPER.
+EXPERIENCIA PROFESIONAL
+SERVICIO NACIONAL DE ADUANAS
+Profesional Departamento de Gestión de las Personas 03/2021 - Presente
+• Reclutamiento y selección, remuneraciones y evaluación del desempeño.
+• Elaboración de reportes de gestión y análisis de datos en Power BI.
+MINISTERIO DE HACIENDA
+Analista de Control de Gestión 01/2019 - 02/2021
+• Seguimiento de indicadores de gestión y planificación estratégica.
+OTRAS ACTIVIDADES
+Ayudante en proyectos de investigación para optar al título de Investigador Policial.
+EDUCACIÓN
+UNIVERSIDAD DE CHILE
+Administradora Pública 2018
+ESPECIALIZACIONES
+Diploma en Gestión de Proyectos 2020
+"""
+
+
+def _of(cargo, req="", region="Metropolitana de Santiago", id_=1):
+    return {"id": id_, "cargo": cargo, "requisitos": req, "region": region}
+
+
+def test_lee_formato_mm_aaaa_educacion_y_diploma():
+    p = cm.perfil_desde_texto(CV_ADMIN_PUBLICO, hoy=date(2026, 10, 28))
+    assert p.anios_experiencia == 7                                  # desde 01/2019
+    assert "Administradora Pública" in p.titulos
+    assert not any("Investigador" in t for t in p.titulos)           # carrera de otros
+    assert any("Gestión de las Personas" in c for c in p.cargos_previos)
+    assert any(c.startswith("Diploma en Gestión de Proyectos") for c in p.capacitaciones)
+    assert {"gestion_personas", "control_gestion", "datos_estudios"} <= set(p.funciones)
+
+
+def test_oferta_sin_profesion_calza_por_area_de_trabajo():
+    p = cm.perfil_desde_texto(CV_ADMIN_PUBLICO)
+    r = cm.afinidad(p, _of("Analista de Datos - Estudios y Desarrollo",
+                           "Formación en áreas de la información orientadas a datos cuantitativos."))
+    assert r.nucleo and any("área de trabajo" in x for x in r.razones)
+
+
+def test_cargo_de_profesion_regulada_ajena_no_calza():
+    p = cm.perfil_desde_texto(CV_ADMIN_PUBLICO)
+    r = cm.afinidad(p, _of("Psicóloga(o) de Reclutamiento y Selección",
+                           "Título de Psicólogo. Deseable experiencia administrativa."))
+    assert not r.nucleo
+
+
+def test_cargo_tecnico_baja_para_perfil_profesional():
+    p = cm.perfil_desde_texto(CV_ADMIN_PUBLICO)
+    tec = cm.afinidad(p, _of("Técnico Administrativo Gestión de Personas", "Título técnico en administración."))
+    pro = cm.afinidad(p, _of("Profesional Gestión de Personas", "Título de Administrador Público."))
+    assert tec.puntaje < pro.puntaje and tec.banda != "alta"
+    assert any("nivel técnico" in x for x in tec.reparos)
+
+
+def test_curso_solo_calza_por_frase_en_capacitacion():
+    p = cm.perfil_desde_texto(CV_ADMIN_PUBLICO)
+    generico = cm.afinidad(p, _of("Profesional de Compras", "Título profesional. Experiencia en gestión pública."))
+    real = cm.afinidad(p, _of("Profesional de Proyectos", "Deseable capacitación en gestión de proyectos."))
+    assert not any("acreditas" in x for x in generico.razones)
+    assert any("acreditas" in x for x in real.razones)
