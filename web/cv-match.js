@@ -46,6 +46,7 @@
     var profesiones = (p.profesiones || []).join(' · ');
     [
       profesiones ? ['Profesión', profesiones] : ['Área', (p.areas || []).join(', ')],
+      ['Áreas de trabajo', (p.funciones || []).join(' · ')],
       ['Formación', (p.titulos || []).join(' · ')],
       ['Experiencia', p.anios_experiencia ? '~' + p.anios_experiencia + ' años' : ''],
       ['Región', p.region || ''],
