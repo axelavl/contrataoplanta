@@ -21,6 +21,11 @@
 # =============================================================================
 set -euo pipefail
 
+# Hora de Chile para el proceso: muchos scrapers usan date.today() como
+# fecha de publicación y el contenedor corre en UTC (de 21:00 a 24:00 de
+# Chile daba "mañana"). db/sanear.py también lo corrige al guardar.
+export TZ="America/Santiago"
+
 echo "[railway-scrapers] Iniciando corrida de scrapers (--ocr)…"
 python scrapers/run_all.py --mode production --ocr
 

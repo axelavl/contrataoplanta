@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import logging
 import unicodedata
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
 logger = logging.getLogger("db.sanear")
@@ -53,6 +53,16 @@ def canonizar_tipo_cargo(valor: Any) -> str | None:
     return None
 
 
+def hoy_chile() -> date:
+    """Fecha actual en Chile. El servidor (Railway) corre en UTC: entre las
+    21:00 y las 24:00 de Chile, `date.today()` ya es el día siguiente."""
+    try:
+        from zoneinfo import ZoneInfo
+        return datetime.now(ZoneInfo("America/Santiago")).date()
+    except Exception:  # sin base de zonas horarias: UTC-3 (horario de verano)
+        return datetime.now(timezone(timedelta(hours=-3))).date()
+
+
 def _a_fecha(valor: Any) -> date | None:
     if valor is None or valor == "":
         return None
@@ -78,7 +88,8 @@ def _a_entero(valor: Any) -> int | None:
 def sanear_oferta(datos: dict[str, Any], *, hoy: date | None = None) -> dict[str, Any]:
     """Copia de `datos` que cumple los CHECK de `ofertas`."""
     d = dict(datos)
-    hoy = hoy or date.today()
+    hoy_utc = datetime.now(timezone.utc).date()
+    hoy = hoy or hoy_chile()
     corregidos: list[str] = []
 
     if "tipo_cargo" in d and d["tipo_cargo"] is not None:
@@ -103,6 +114,16 @@ def sanear_oferta(datos: dict[str, Any], *, hoy: date | None = None) -> dict[str
         if v is None or not (HORAS_MIN <= v <= HORAS_MAX):
             d["horas_semanales"] = None
             corregidos.append("horas_semanales")
+
+    # Muchos scrapers usan `date.today()` como fecha de publicación cuando la
+    # fuente no la informa. En un servidor UTC, de 21:00 a 24:00 de Chile eso
+    # da "mañana" y el sitio la trata como oferta próxima (la oculta de las
+    # vigentes). Se corrige SOLO esa huella exacta: una fecha futura legítima
+    # (inicio de postulación de Empleos Públicos) no coincide con hoy UTC.
+    pub_raw = _a_fecha(d.get("fecha_publicacion"))
+    if pub_raw and pub_raw == hoy_utc and pub_raw > hoy:
+        d["fecha_publicacion"] = hoy
+        corregidos.append("fecha_publicacion_utc")
 
     limites = {"fecha_publicacion": hoy + timedelta(days=365),
                "fecha_cierre": hoy + timedelta(days=3 * 365)}

@@ -55,3 +55,20 @@ def test_fechas_fuera_de_rango():
 
 def test_no_agrega_claves_ausentes():
     assert sanear_oferta({"cargo": "X"}, hoy=HOY) == {"cargo": "X"}
+
+
+def test_fecha_de_hoy_utc_se_lleva_a_hoy_en_chile(monkeypatch):
+    """27-oct 21:47 Chile = 28-oct 00:47 UTC: el scraper de Laborum guardó
+    fecha_publicacion = 28 y el sitio ocultó 19 ofertas como 'próximas'."""
+    import db.sanear as s
+    from datetime import datetime as dt, timezone
+
+    class _Reloj(dt):
+        @classmethod
+        def now(cls, tz=None):
+            return dt(2026, 10, 28, 0, 47, tzinfo=timezone.utc).astimezone(tz) if tz else dt(2026, 10, 28, 0, 47)
+    monkeypatch.setattr(s, "datetime", _Reloj)
+    assert s.hoy_chile() == date(2026, 10, 27)
+    assert s.sanear_oferta({"fecha_publicacion": date(2026, 10, 28)})["fecha_publicacion"] == date(2026, 10, 27)
+    # Inicio de postulación futuro legítimo (Empleos Públicos): se respeta.
+    assert s.sanear_oferta({"fecha_publicacion": date(2026, 11, 2)})["fecha_publicacion"] == date(2026, 11, 2)
