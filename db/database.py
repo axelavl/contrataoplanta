@@ -146,7 +146,10 @@ def normalizar_datos_oferta(datos: dict) -> dict:
     }
     for campo, limite in limites.items():
         normalizados[campo] = truncar_texto(normalizados.get(campo), limite)
-    return normalizados
+    # CHECKs de `ofertas` (tipo_cargo canónico, rangos de renta/fechas/horas):
+    # un campo opcional inválido queda NULL en vez de rechazar la oferta.
+    from db.sanear import sanear_oferta
+    return sanear_oferta(normalizados)
 
 
 # ── Operaciones principales ──────────────────────────────────────────────────
