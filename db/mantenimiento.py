@@ -103,6 +103,42 @@ def purgar(conn, *, dry_run: bool = False) -> dict[str, int]:
     return resultado
 
 
+def cerrar_rechazadas_por_intake(conn, *, dry_run: bool = False) -> int:
+    """Cierra ofertas ACTIVAS que el filtro de entrada (scrapers/intake.py)
+    hoy rechazaría: el filtro solo impide que entren de nuevo, y sin este
+    paso la basura que ya estaba guardada (botones de compartir, bolsas
+    OMIL, perfiles de 2022…) seguiría publicada. Devuelve cuántas cerró."""
+    from scrapers.intake import intake_validate_offer
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT id, cargo, url_oferta, descripcion, requisitos,
+                       fecha_publicacion, fecha_cierre
+                FROM ofertas WHERE activa = TRUE AND url_oferta IS NOT NULL
+            """)
+            filas = cur.fetchall()
+        a_cerrar = []
+        for id_, cargo, url, desc, req, pub, cierre in filas:
+            d = intake_validate_offer({
+                "cargo": cargo, "url_oferta": url, "descripcion": desc or "",
+                "requisitos": req or "", "fecha_publicacion": pub, "fecha_cierre": cierre,
+            })
+            if d.discard:
+                a_cerrar.append(id_)
+        if a_cerrar and not dry_run:
+            with conn.cursor() as cur:
+                cur.execute("UPDATE ofertas SET activa = FALSE WHERE id = ANY(%s)", (a_cerrar,))
+            conn.commit()
+        if a_cerrar:
+            logger.info("mantenimiento: %s %d ofertas rechazadas por el filtro de entrada",
+                        "a cerrar" if dry_run else "cerradas", len(a_cerrar))
+        return len(a_cerrar)
+    except Exception as exc:
+        conn.rollback()
+        logger.warning("mantenimiento: cierre por intake omitido (%s)", str(exc).splitlines()[0][:160])
+        return 0
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--dry-run", action="store_true", help="Solo contar, no borrar")
@@ -113,6 +149,7 @@ def main() -> None:
     conn = psycopg2.connect(**DB_CONFIG)
     try:
         res = purgar(conn, dry_run=args.dry_run)
+        res["ofertas_cerradas_intake"] = cerrar_rechazadas_por_intake(conn, dry_run=args.dry_run)
         print({k: v for k, v in res.items()})
     finally:
         conn.close()

@@ -110,6 +110,8 @@ RENTA_MIN_RAZONABLE: int = 250_000  # < $250k mensual no es empleo público real
 # Muchos sitios WordPress municipales codifican la fecha de publicación en la
 # ruta: /2019/11/13/titulo/. Es la señal más fiable de antigüedad cuando el
 # scraper no extrajo fecha_publicacion del contenido.
+_OMIL_URL_RE = re.compile(
+    r"/ofertas?-de-empleos?/|bolsa-de-empleos?|bolsa-laboral|bolsa-de-trabajo|/omil(?:[/-]|$)")
 _URL_DATE_RE = re.compile(r"/(20\d{2})/(\d{1,2})/(\d{1,2})(?:/|$)")
 _URL_YM_RE = re.compile(r"/(20\d{2})/(\d{1,2})(?:/|$)")
 
@@ -698,10 +700,20 @@ def intake_validate_offer(
 
     # Botones de compartir en redes scrapeados como ofertas.
     if any(p in url_low for p in (
-        "sharer.php", "facebook.com/sharer", "twitter.com/share",
+        "sharer.php", "facebook.com/sharer", "facebook.com/share", "twitter.com/share",
+        "twitter.com/home?status", "twitter.com/intent", "x.com/intent", "x.com/share",
         "/intent/tweet", "wa.me/", "api.whatsapp.com", "linkedin.com/share",
+        "t.me/share", "telegram.me/share", "mailto:",
     )):
         return decision.reject("url_boton_compartir")
+
+    # Bolsas de empleo municipales (OMIL): intermedian avisos de EMPRESAS
+    # privadas (vendedor automotriz, chef…), no son empleos públicos.
+    # Solo en sitios municipales: JUNJI y otros servicios publican SUS PROPIAS
+    # ofertas bajo /oferta-de-empleo/ y no deben caer aquí.
+    _host = re.sub(r"^https?://", "", url_low).split("/", 1)[0]
+    if _OMIL_URL_RE.search(url_low) and ("muni" in _host or "municipalidad" in _host):
+        return decision.reject("bolsa_empleo_omil_privado")
 
     # 3b. Basura por URL — salvo que el título sea claramente un empleo
     #     (muchas municipalidades publican concursos bajo /noticias/).
@@ -769,8 +781,16 @@ def intake_validate_offer(
             fecha_cierre_efectiva = fc_txt
             offer.setdefault("fecha_cierre_desde_texto", fc_txt.isoformat())
 
+    # Antigüedad: la fecha de la URL (p. ej. /wp-content/uploads/2022/04/) es
+    # una cota segura — el documento no puede ser posterior a su subida — y
+    # muchos scrapers ponen fecha_publicacion = hoy cuando la fuente no la
+    # informa. Se usa la MÁS ANTIGUA de las dos; antes, la de "hoy" tapaba a
+    # la de la URL y perfiles de 2022 aparecían como ofertas nuevas.
+    _pub = _coerce_date(offer.get("fecha_publicacion"))
+    _url_f = fecha_desde_url(url)
+    _pub_efectiva = min(f for f in (_pub, _url_f) if f) if (_pub or _url_f) else None
     descartar, motivo_v, review_v = assess_vigencia(
-        offer.get("fecha_publicacion") or fecha_desde_url(url),
+        _pub_efectiva,
         fecha_cierre_efectiva,
         today=today,
         motivo_cierre_vencido=motivo_cierre,

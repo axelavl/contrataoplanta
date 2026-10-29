@@ -1517,6 +1517,18 @@ class BaseScraper(abc.ABC):
         from scrapers.evaluation.models import QualityDecision
         from scrapers.evaluation.quality_validator import QualityValidator
 
+        # Filtro transversal de basura/vencidos (scrapers/intake.py): antes
+        # solo lo aplicaba LegacyBaseScraper y este camino lo saltaba (botones
+        # de compartir, bolsas OMIL y perfiles de 2022 entraban como ofertas).
+        from scrapers.intake import intake_validate_offer
+        _intake = intake_validate_offer({
+            "cargo": raw.cargo, "url_oferta": raw.url, "descripcion": raw.descripcion,
+            "fecha_publicacion": raw.fecha_publicacion, "fecha_cierre": raw.fecha_cierre,
+        })
+        if _intake.discard:
+            self._registrar_descarte(conn, raw, _intake.motivo_descarte or "intake", "")
+            return
+
         audit_store = AuditStore()
         validator = QualityValidator(valid_institution_ids={inst_id} if inst_id is not None else set())
         validation = validator.validate(oferta_validable)
