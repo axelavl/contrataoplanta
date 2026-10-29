@@ -1423,12 +1423,14 @@ async def main(argv: list[str] | None = None) -> int:
         try:
             import psycopg2
             from db.config import DB_CONFIG
-            from db.mantenimiento import purgar
+            from db.mantenimiento import cerrar_rechazadas_por_intake, purgar
 
             def _mantenimiento() -> dict[str, int]:
                 conn = psycopg2.connect(**DB_CONFIG)
                 try:
-                    return purgar(conn)
+                    resultado = purgar(conn)
+                    resultado["ofertas_cerradas_intake"] = cerrar_rechazadas_por_intake(conn)
+                    return resultado
                 finally:
                     conn.close()
 
